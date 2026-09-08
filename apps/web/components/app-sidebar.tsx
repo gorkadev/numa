@@ -10,7 +10,14 @@ import {
   PencilEdit02Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
+import type { Game } from "@workspace/db/schema"
 import { Empty, EmptyDescription } from "@workspace/ui/components/empty"
+import {
+  Popover,
+  PopoverClose,
+  PopoverContent,
+  PopoverTrigger,
+} from "@workspace/ui/components/popover"
 import {
   Sidebar,
   SidebarContent,
@@ -27,8 +34,9 @@ import {
 } from "@workspace/ui/components/sidebar"
 
 export function AppSidebar({
+  games,
   ...props
-}: React.ComponentProps<typeof Sidebar>) {
+}: React.ComponentProps<typeof Sidebar> & { games: Game[] }) {
   const pathname = usePathname()
 
   return (
@@ -38,7 +46,13 @@ export function AppSidebar({
           href="/"
           className="flex items-center gap-2 group-data-[collapsible=icon]:hidden"
         >
-          <Image src="/logo.svg" alt="Numa" width={20} height={20} className="size-5" />
+          <Image
+            src="/logo.svg"
+            alt="Numa"
+            width={20}
+            height={20}
+            className="size-5"
+          />
           <span className="text-base font-medium">Numa</span>
         </Link>
         <SidebarTrigger />
@@ -62,17 +76,70 @@ export function AppSidebar({
         <SidebarGroup>
           <SidebarGroupLabel>Recents</SidebarGroupLabel>
           <SidebarGroupContent>
-            <Empty className="border p-3 group-data-[collapsible=icon]:hidden">
-              <EmptyDescription className="text-xs">
-                Your games will live here.
-              </EmptyDescription>
-            </Empty>
+            {games.length === 0 ? (
+              <Empty className="border p-3 group-data-[collapsible=icon]:hidden">
+                <EmptyDescription className="text-xs">
+                  Your games will live here.
+                </EmptyDescription>
+              </Empty>
+            ) : (
+              <SidebarMenu className="group-data-[collapsible=icon]:hidden">
+                {games.map((game) => (
+                  <SidebarMenuItem key={game.id}>
+                    <SidebarMenuButton
+                      isActive={pathname === `/games/${game.id}`}
+                      tooltip={game.title}
+                      render={<Link href={`/games/${game.id}`} />}
+                    >
+                      <span className="truncate">{game.title}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            )}
             <SidebarMenu className="hidden group-data-[collapsible=icon]:flex">
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Recents">
-                  <HugeiconsIcon icon={BubbleChatIcon} />
-                  <span>Recents</span>
-                </SidebarMenuButton>
+                <Popover>
+                  <PopoverTrigger
+                    render={
+                      <SidebarMenuButton>
+                        <HugeiconsIcon icon={BubbleChatIcon} />
+                        <span>Recents</span>
+                      </SidebarMenuButton>
+                    }
+                  />
+                  <PopoverContent
+                    side="right"
+                    align="start"
+                    className="gap-1 p-2"
+                  >
+                    {games.length === 0 ? (
+                      <Empty className="p-3">
+                        <EmptyDescription className="text-xs">
+                          Your games will live here.
+                        </EmptyDescription>
+                      </Empty>
+                    ) : (
+                      <SidebarMenu>
+                        {games.map((game) => (
+                          <SidebarMenuItem key={game.id}>
+                            <PopoverClose
+                              nativeButton={false}
+                              render={
+                                <SidebarMenuButton
+                                  isActive={pathname === `/games/${game.id}`}
+                                  render={<Link href={`/games/${game.id}`} />}
+                                >
+                                  <span className="truncate">{game.title}</span>
+                                </SidebarMenuButton>
+                              }
+                            />
+                          </SidebarMenuItem>
+                        ))}
+                      </SidebarMenu>
+                    )}
+                  </PopoverContent>
+                </Popover>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
