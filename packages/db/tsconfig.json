@@ -1,0 +1,15 @@
+{
+  "extends": "@workspace/typescript-config/base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
+    "module": "Preserve",
+    "moduleResolution": "Bundler",
+    "paths": {
+      "@workspace/db/*": ["./src/*"]
+    }
+  },
+  "include": ["."],
+  "exclude": ["node_modules", "drizzle"]
+}

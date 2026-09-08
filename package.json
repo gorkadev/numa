@@ -3,13 +3,18 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "build": "turbo build",
-    "dev": "turbo dev",
+    "build": "neon-env run -- turbo build",
+    "dev": "neon-env run -- turbo dev",
     "lint": "turbo lint",
     "format": "turbo format",
-    "typecheck": "turbo typecheck"
+    "typecheck": "turbo typecheck",
+    "db:studio": "neon-env run -- pnpm --filter @workspace/db db:studio",
+    "db:push": "neon-env run -- pnpm --filter @workspace/db db:push"
   },
   "devDependencies": {
+    "@neon/config": "^1.3.1",
+    "@neon/env": "^1.2.2",
+    "@workspace/db": "workspace:*",
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
     "prettier": "^3.8.3",
