@@ -1,4 +1,12 @@
-import { index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
+import {
+  index,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from "drizzle-orm/pg-core"
+import type { UIMessage } from "ai"
 
 /**
  * Drizzle owns the schema for this database. Change a table here, then run
@@ -20,6 +28,18 @@ export const games = pgTable(
     orgId: text("org_id").notNull(),
 
     title: text("title").notNull(),
+
+    /**
+     * The game's entire chat thread, stored in the AI SDK's `UIMessage` shape —
+     * the format `useChat` renders and posts — so a turn is a whole-document
+     * rewrite rather than an append to a messages table. One game owns exactly
+     * one thread, which is why this is a column and not a relation.
+     *
+     * `$type` is a compile-time assertion only: Postgres validates nothing
+     * beyond "this is JSON", so anything read back from an older shape must be
+     * treated as untrusted until validated.
+     */
+    messages: jsonb("messages").$type<UIMessage[]>().notNull().default([]),
 
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -44,9 +64,9 @@ export const games = pgTable(
      */
     index("games_org_id_created_at_idx").on(
       table.orgId,
-      table.createdAt.desc(),
+      table.createdAt.desc()
     ),
-  ],
+  ]
 )
 
 export type Game = typeof games.$inferSelect

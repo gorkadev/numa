@@ -1,21 +1,13 @@
 "use client"
 
-import { useActionState } from "react"
+import type { FormEvent } from "react"
 import {
-  Airplane01Icon,
   ArrowDown01Icon,
   ArrowUp02Icon,
-  Car01Icon,
-  CubeIcon,
-  FlashIcon,
-  GameController01Icon,
   GridIcon,
   Loading03Icon,
-  SwordIcon,
-  Target01Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { Button } from "@workspace/ui/components/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,33 +21,49 @@ import {
   InputGroupTextarea,
 } from "@workspace/ui/components/input-group"
 
-import { createGame } from "@/lib/games/actions"
+type ChatComposerProps = {
+  value: string
+  onValueChange: (value: string) => void
+  onSubmit: (value: string) => void
+  pending?: boolean
+  error?: string | null
+  placeholder?: string
+}
 
-const suggestions = [
-  { icon: CubeIcon, label: "Voxel survival" },
-  { icon: SwordIcon, label: "Ink samurai duel" },
-  { icon: FlashIcon, label: "Comic-book firefight" },
-  { icon: Airplane01Icon, label: "Realistic battlefield" },
-  { icon: Target01Icon, label: "Fight-first shooter" },
-  { icon: Car01Icon, label: "Jungle expedition drive" },
-  { icon: GameController01Icon, label: "Sunny kingdom platformer" },
-]
+/**
+ * Presentational composer: it owns no state and no transport. Every caller
+ * decides what submitting means — creating a game, sending a message — so the
+ * same UI can sit on the empty home screen and inside an open thread.
+ */
+export function ChatComposer({
+  value,
+  onValueChange,
+  onSubmit,
+  pending = false,
+  error = null,
+  placeholder = "Describe the game you want to build…",
+}: ChatComposerProps) {
+  const trimmed = value.trim()
 
-export function ChatComposer() {
-  const [state, formAction, pending] = useActionState(createGame, null)
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (pending || !trimmed) return
+
+    onSubmit(trimmed)
+  }
 
   return (
-    <form
-      action={formAction}
-      className="flex w-full flex-col items-center gap-6"
-    >
+    <form onSubmit={handleSubmit} className="flex w-full flex-col">
       <div className="flex w-full flex-col gap-2">
         <InputGroup>
           <InputGroupTextarea
-            name="title"
+            name="prompt"
             rows={3}
+            value={value}
             disabled={pending}
-            placeholder="Describe the game you want to build…"
+            placeholder={placeholder}
+            onChange={(event) => onValueChange(event.target.value)}
           />
           <InputGroupAddon align="block-end">
             <DropdownMenu>
@@ -76,7 +84,7 @@ export function ChatComposer() {
             </DropdownMenu>
             <InputGroupButton
               type="submit"
-              disabled={pending}
+              disabled={pending || !trimmed}
               className="ml-auto rounded-full"
               variant="default"
               size="icon-sm"
@@ -88,23 +96,7 @@ export function ChatComposer() {
             </InputGroupButton>
           </InputGroupAddon>
         </InputGroup>
-        {state?.error ? (
-          <p className="text-sm text-destructive">{state.error}</p>
-        ) : null}
-      </div>
-      <div className="flex flex-wrap justify-center gap-2">
-        {suggestions.map((suggestion) => (
-          <Button
-            key={suggestion.label}
-            type="button"
-            variant="outline"
-            size="sm"
-            className="text-muted-foreground"
-          >
-            <HugeiconsIcon icon={suggestion.icon} />
-            {suggestion.label}
-          </Button>
-        ))}
+        {error ? <p className="text-sm text-destructive">{error}</p> : null}
       </div>
     </form>
   )

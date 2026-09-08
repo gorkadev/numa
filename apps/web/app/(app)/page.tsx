@@ -1,6 +1,8 @@
 import Image from "next/image"
 
 import { auth } from "@clerk/nextjs/server"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { Button } from "@workspace/ui/components/button"
 import {
   Empty,
   EmptyContent,
@@ -10,7 +12,8 @@ import {
   EmptyTitle,
 } from "@workspace/ui/components/empty"
 
-import { ChatComposer } from "@/components/chat-composer"
+import { NewGameComposer } from "@/components/new-game-composer"
+import { suggestions } from "@/lib/games/suggestions"
 
 export default async function Page() {
   await auth.protect()
@@ -28,8 +31,22 @@ export default async function Page() {
             own words. If you can describe it, you can play it.
           </EmptyDescription>
         </EmptyHeader>
-        <EmptyContent className="max-w-3xl">
-          <ChatComposer />
+        <EmptyContent className="max-w-3xl gap-6">
+          <NewGameComposer />
+          <div className="flex flex-wrap justify-center gap-2">
+            {suggestions.map((suggestion) => (
+              <Button
+                key={suggestion.label}
+                type="button"
+                variant="outline"
+                size="sm"
+                className="text-muted-foreground"
+              >
+                <HugeiconsIcon icon={suggestion.icon} />
+                {suggestion.label}
+              </Button>
+            ))}
+          </div>
         </EmptyContent>
       </Empty>
     </div>

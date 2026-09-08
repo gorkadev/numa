@@ -23,8 +23,21 @@ const { postgres } = parseEnv(neonConfig, ["DATABASE_URL"])
  */
 const globalForDb = globalThis as unknown as { pool?: Pool }
 
-const pool =
-  globalForDb.pool ?? new Pool({ connectionString: postgres.databaseUrl })
+/**
+ * Neon hands out `?sslmode=require`, which `pg` already treats as an alias for
+ * `verify-full` — and warns about, because the next major of
+ * `pg-connection-string` will adopt libpq semantics, where `require` encrypts
+ * without verifying the certificate. Neon serves a publicly trusted
+ * certificate, so the strict mode is the one we want; asking for it by name
+ * keeps today's behaviour across that upgrade and silences the warning.
+ */
+const connectionString = (() => {
+  const url = new URL(postgres.databaseUrl)
+  url.searchParams.set("sslmode", "verify-full")
+  return url.toString()
+})()
+
+const pool = globalForDb.pool ?? new Pool({ connectionString })
 
 if (process.env.NODE_ENV !== "production") globalForDb.pool = pool
 

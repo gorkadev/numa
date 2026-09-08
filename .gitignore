@@ -46,4 +46,8 @@ next-env.d.ts
 
 # AI
 .atl
+.agents
+.claude
+
+# neon database
 .neon

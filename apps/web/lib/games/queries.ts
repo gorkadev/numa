@@ -20,3 +20,19 @@ export async function listGames(): Promise<Game[]> {
     orderBy: (game, { desc }) => desc(game.createdAt),
   })
 }
+
+/**
+ * Reads a single game by id. The `org_id` predicate is part of the lookup, not
+ * a check performed afterwards, so a game belonging to another organization is
+ * indistinguishable from one that does not exist — the caller cannot probe for
+ * ids it does not own.
+ */
+export async function getGame(id: string): Promise<Game | undefined> {
+  const { orgId } = await auth.protect()
+
+  if (!orgId) return undefined
+
+  return db.query.games.findFirst({
+    where: (game, { and, eq }) => and(eq(game.id, id), eq(game.orgId, orgId)),
+  })
+}

@@ -1,9 +1,40 @@
-import { auth } from "@clerk/nextjs/server";
+import { notFound } from "next/navigation"
 
-export default async function GamePage({ params }: PageProps<"/games/[id]">) {
-  await auth.protect()
+import { ChatThread } from "@/components/chat-thread"
+import { getGame } from "@/lib/games/queries"
 
+export default async function GamePage({
+  params,
+  searchParams,
+}: PageProps<"/games/[id]">) {
   const { id } = await params
 
-  return <p>{id}</p>
+  /**
+   * A game created from the home screen arrives with the prompt that named it
+   * still in the query string, because the thread — not the create action — is
+   * what sends a message. Repeated keys arrive as an array; only a single value
+   * is a prompt.
+   */
+  const { prompt } = await searchParams
+  const initialPrompt = typeof prompt === "string" ? prompt : undefined
+
+  /**
+   * `getGame` authenticates and scopes to the caller's org, so a missing game
+   * and one owned by another organization both land here as a 404.
+   */
+  const game = await getGame(id)
+
+  if (!game) notFound()
+
+  /**
+   * The persisted thread is rendered on the server, so a reload restores the
+   * conversation without a client-side fetch.
+   */
+  return (
+    <ChatThread
+      gameId={game.id}
+      initialMessages={game.messages}
+      initialPrompt={initialPrompt}
+    />
+  )
 }
