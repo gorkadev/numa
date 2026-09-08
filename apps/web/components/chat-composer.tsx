@@ -6,6 +6,7 @@ import {
   ArrowUp02Icon,
   GridIcon,
   Loading03Icon,
+  StopIcon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
@@ -25,6 +26,13 @@ type ChatComposerProps = {
   value: string
   onValueChange: (value: string) => void
   onSubmit: (value: string) => void
+  /**
+   * Cancels the answer in flight. Passing it turns the submit button into a
+   * stop button while `pending`; leaving it out keeps the button a spinner,
+   * which is what a composer with nothing to cancel — the home screen's game
+   * creation — should show.
+   */
+  onStop?: () => void
   pending?: boolean
   error?: string | null
   placeholder?: string
@@ -39,11 +47,13 @@ export function ChatComposer({
   value,
   onValueChange,
   onSubmit,
+  onStop,
   pending = false,
   error = null,
   placeholder = "Describe the game you want to build…",
 }: ChatComposerProps) {
   const trimmed = value.trim()
+  const stoppable = pending && Boolean(onStop)
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -82,16 +92,29 @@ export function ChatComposer({
                 <DropdownMenuItem>GPT-5</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            {/**
+             * One button, two meanings: while an answer streams it stops the
+             * turn instead of sending it. It switches to `type="button"` so
+             * the click cancels rather than resubmitting the form.
+             */}
             <InputGroupButton
-              type="submit"
-              disabled={pending || !trimmed}
+              type={stoppable ? "button" : "submit"}
+              onClick={stoppable ? onStop : undefined}
+              aria-label={stoppable ? "Stop generating" : "Send message"}
+              disabled={stoppable ? false : pending || !trimmed}
               className="ml-auto rounded-full"
               variant="default"
               size="icon-sm"
             >
               <HugeiconsIcon
-                icon={pending ? Loading03Icon : ArrowUp02Icon}
-                className={pending ? "animate-spin" : undefined}
+                icon={
+                  stoppable
+                    ? StopIcon
+                    : pending
+                      ? Loading03Icon
+                      : ArrowUp02Icon
+                }
+                className={!stoppable && pending ? "animate-spin" : undefined}
               />
             </InputGroupButton>
           </InputGroupAddon>

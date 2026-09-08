@@ -1,67 +1,82 @@
 import { db } from "@workspace/db"
 import { games } from "@workspace/db/schema"
-import { and, eq } from "drizzle-orm"
+import { eq } from "drizzle-orm"
 import type { UIMessage } from "ai"
 
 /**
- * A game's chat thread lives in `games.messages`. Unlike the rest of
- * `lib/games`, these helpers take `orgId` as an argument instead of deriving it
- * from `auth()`: the save runs inside the stream's `onEnd` callback, which
- * fires after the response has started and therefore cannot rely on Clerk's
- * request-scoped context still being readable. The route handler resolves the
- * session once, up front, and passes the result down — the tenant boundary is
- * still session-derived, never client-supplied.
+ * A game's chat thread lives in `games.messages`, alongside the two fields the
+ * chat transport needs to resume it: the session token and the stream cursor.
  *
- * In both helpers the `org_id` predicate is part of the `WHERE` clause rather
- * than a check applied afterwards, so a game owned by another organization is
- * indistinguishable from one that does not exist.
+ * These helpers run inside the `chat.agent` task, which executes on
+ * Trigger.dev — there is no Clerk request context there, so they cannot scope
+ * to an organization the way `lib/games/queries.ts` does. The tenant boundary
+ * moved rather than disappeared: reaching this code at all requires a
+ * session-scoped token, and those are minted only by the two server actions in
+ * `lib/games/chat-actions.ts`, each of which resolves the caller's org and
+ * refuses a game it does not own.
  */
 
 /**
- * Returns the persisted thread, or `undefined` when the game does not exist or
- * belongs to another organization. A game with no messages yet returns an empty
- * array — an existing game and an empty thread are different answers.
+ * Returns the persisted thread, or an empty array for a game with no messages
+ * yet. Unlike the previous route handler this does not distinguish a missing
+ * game: the agent is only ever reached for a chat id its owner authorized.
  *
- * The column's `UIMessage[]` type is an assertion, not a guarantee: `jsonb`
- * validates only that the value is JSON. The rows are checked by the caller,
- * which runs `validateUIMessages` over this history together with the incoming
- * message. Validating here as well would be redundant, and impossible besides:
- * `validateUIMessages` rejects an empty array, which is precisely the state a
- * brand-new game is in.
+ * The column's `UIMessage[]` type is an assertion, not a guarantee — `jsonb`
+ * validates only that the value is JSON. The incoming message is validated by
+ * the runtime before `hydrateMessages` sees it; stored history is trusted
+ * because this application wrote it.
  */
-export async function loadGameThread({
-  gameId,
-  orgId,
-}: {
-  gameId: string
-  orgId: string
-}): Promise<UIMessage[] | undefined> {
+export async function loadGameThread(gameId: string): Promise<UIMessage[]> {
   const game = await db.query.games.findFirst({
     columns: { messages: true },
-    where: (game, { and, eq }) =>
-      and(eq(game.id, gameId), eq(game.orgId, orgId)),
+    where: (game, { eq }) => eq(game.id, gameId),
   })
 
-  if (!game) return undefined
-
-  return game.messages
+  return game?.messages ?? []
 }
 
 /**
  * Rewrites the whole thread — one game owns one chat, so a turn is a full
  * document write rather than an append.
+ *
+ * `lastEventId` and the session token are written in the same statement as the
+ * messages because they describe the same instant: persisting the reply without
+ * advancing the cursor leaves the next reload resuming from before it.
  */
 export async function saveGameThread({
   gameId,
-  orgId,
   messages,
+  chatAccessToken,
+  lastEventId,
 }: {
   gameId: string
-  orgId: string
   messages: UIMessage[]
+  chatAccessToken?: string
+  lastEventId?: string
 }): Promise<void> {
   await db
     .update(games)
-    .set({ messages })
-    .where(and(eq(games.id, gameId), eq(games.orgId, orgId)))
+    .set({ messages, chatAccessToken, lastEventId })
+    .where(eq(games.id, gameId))
+}
+
+/**
+ * Records the chat session's token on its own, without touching the thread.
+ *
+ * This is written the moment the session is created rather than when the first
+ * turn ends, and that timing is the whole point: the transport resumes a stream
+ * only from a session it was handed on the first render, and it never creates
+ * one lazily to reconnect. Persisting only at the end of a turn leaves the
+ * window that matters — a tab reopened while the first answer is still
+ * streaming — with nothing to resume from, so the reply appears only once it
+ * has finished.
+ */
+export async function saveGameChatSession({
+  gameId,
+  chatAccessToken,
+}: {
+  gameId: string
+  chatAccessToken: string
+}): Promise<void> {
+  await db.update(games).set({ chatAccessToken }).where(eq(games.id, gameId))
 }

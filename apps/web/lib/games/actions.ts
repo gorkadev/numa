@@ -96,7 +96,7 @@ export async function createGame(
 
   /**
    * The prompt travels to the new game in the query string rather than being
-   * written to the thread here: the route handler is what turns a user message
+   * written to the thread here: the chat agent is what turns a user message
    * into a turn — it appends, calls the model and persists both sides — so
    * seeding the row directly would create a message the assistant never
    * answers. The thread strips the parameter once it has sent it.

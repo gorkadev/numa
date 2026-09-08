@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
 
 import { useChat } from "@ai-sdk/react"
-import { DefaultChatTransport, type UIMessage } from "ai"
+import { useTriggerChatTransport } from "@trigger.dev/sdk/chat/react"
+import type { UIMessage } from "ai"
 import { Bubble, BubbleContent } from "@workspace/ui/components/bubble"
 import {
   Message,
@@ -21,14 +22,30 @@ import {
 } from "@workspace/ui/components/message-scroller"
 
 import { ChatComposer } from "@/components/chat-composer"
+import {
+  mintGameChatAccessToken,
+  startGameChatSession,
+} from "@/lib/games/chat-actions"
+import type { gameChat } from "@/trigger/chat"
 
 export function ChatThread({
   gameId,
   initialMessages,
+  initialSessions,
   initialPrompt,
 }: {
   gameId: string
   initialMessages: UIMessage[]
+  /**
+   * The chat session persisted with the thread — the transport's token and its
+   * position in the response stream. Handing it over on the first render is
+   * what lets a reopened tab reconnect to the existing conversation instead of
+   * paying a round trip to create a second one.
+   */
+  initialSessions?: Record<
+    string,
+    { publicAccessToken: string; lastEventId?: string }
+  >
   /**
    * The prompt a freshly created game was named from, handed over in the query
    * string. It is a message that has not been sent yet, not history.
@@ -38,22 +55,32 @@ export function ChatThread({
   const [input, setInput] = useState("")
 
   /**
-   * One game owns one chat, so the game id doubles as the chat id — the
-   * transport puts it in the request body, which is how the route handler knows
-   * which thread to load and rewrite.
+   * One game owns one chat, so the game id doubles as the chat id — it is the
+   * chat the agent's Session is keyed on, which is how the task knows which
+   * thread to load and rewrite.
    *
-   * The server holds the thread, so only the new message is posted; sending the
-   * history back would be payload the handler discards anyway.
+   * There is no API route to talk to: the transport speaks to the agent
+   * directly, minting its token through server actions so the browser never
+   * holds the Trigger.dev secret key.
    */
-  const { messages, sendMessage, status, error } = useChat({
+  const transport = useTriggerChatTransport<typeof gameChat>({
+    task: "game-chat",
+    accessToken: ({ chatId }) => mintGameChatAccessToken(chatId),
+    startSession: ({ chatId, clientData }) =>
+      startGameChatSession({ chatId, clientData }),
+    sessions: initialSessions,
+  })
+
+  const { messages, sendMessage, stop, status, error } = useChat({
     id: gameId,
     messages: initialMessages,
-    transport: new DefaultChatTransport({
-      api: "/api/chat",
-      prepareSendMessagesRequest({ messages, id }) {
-        return { body: { id, message: messages[messages.length - 1] } }
-      },
-    }),
+    transport,
+    /**
+     * Reconnects to a turn that is still streaming when the tab mounts. A
+     * brand-new game has nothing to reconnect to, so it is gated on there
+     * being history.
+     */
+    resume: initialMessages.length > 0,
   })
 
   const pending = status === "submitted" || status === "streaming"
@@ -143,6 +170,13 @@ export function ChatThread({
           value={input}
           onValueChange={setInput}
           onSubmit={handleSubmit}
+          /**
+           * The transport turns this abort into a `stop` chunk on the session's
+           * input channel, which aborts the agent's `streamText` call while the
+           * run stays alive for the next message — so cancelling costs the
+           * conversation nothing.
+           */
+          onStop={stop}
           pending={pending}
           error={error ? "Something went wrong. Try again." : null}
           placeholder="Ask for a change…"

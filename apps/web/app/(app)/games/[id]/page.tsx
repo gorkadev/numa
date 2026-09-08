@@ -28,12 +28,24 @@ export default async function GamePage({
 
   /**
    * The persisted thread is rendered on the server, so a reload restores the
-   * conversation without a client-side fetch.
+   * conversation without a client-side fetch. The chat session travels with it:
+   * without the token and stream cursor the transport would open a fresh
+   * session rather than rejoin the one this game already has.
    */
+  const initialSessions = game.chatAccessToken
+    ? {
+        [game.id]: {
+          publicAccessToken: game.chatAccessToken,
+          lastEventId: game.lastEventId ?? undefined,
+        },
+      }
+    : undefined
+
   return (
     <ChatThread
       gameId={game.id}
       initialMessages={game.messages}
+      initialSessions={initialSessions}
       initialPrompt={initialPrompt}
     />
   )

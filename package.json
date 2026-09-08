@@ -8,6 +8,8 @@
     "lint": "turbo lint",
     "format": "turbo format",
     "typecheck": "turbo typecheck",
+    "trigger:dev": "neon-env run -- pnpm --filter web trigger:dev",
+    "trigger:deploy": "pnpm --filter web trigger:deploy",
     "db:studio": "neon-env run -- pnpm --filter @workspace/db db:studio",
     "db:push": "neon-env run -- pnpm --filter @workspace/db db:push"
   },

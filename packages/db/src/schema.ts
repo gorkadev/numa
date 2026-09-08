@@ -41,6 +41,32 @@ export const games = pgTable(
      */
     messages: jsonb("messages").$type<UIMessage[]>().notNull().default([]),
 
+    /**
+     * The Trigger.dev chat Session backing this game's thread, as the browser
+     * needs it back on page load. The Session outlives the runs it schedules,
+     * so a tab opened tomorrow reconnects to the same conversation instead of
+     * creating a second one.
+     *
+     * `chat_access_token` is the session-scoped PAT the transport authenticates
+     * with; it expires, and the transport mints a fresh one through the
+     * `mintChatAccessToken` action when it does, so a stale value here is a
+     * round trip rather than a failure.
+     */
+    chatAccessToken: text("chat_access_token"),
+
+    /**
+     * Cursor into the Session's durable response stream. This is what replaces
+     * stream-resumption plumbing: on reload the transport resubscribes from
+     * here, so chunks already rendered are not redelivered and an in-flight
+     * turn continues streaming.
+     *
+     * Written in the same statement as `messages` on purpose — a reload
+     * between the two writes would resume from a stale cursor and render the
+     * assistant's reply twice. It is keyed to the Session, not to a run, so it
+     * is never cleared when a run ends.
+     */
+    lastEventId: text("last_event_id"),
+
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
