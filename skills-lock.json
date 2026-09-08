@@ -7,6 +7,12 @@
       "skillPath": "skills/use-ai-sdk/SKILL.md",
       "computedHash": "0883204d11b055e968dee697c5858e68064c27dfd4deb6310212895daa65c5ad"
     },
+    "daytona": {
+      "source": "daytona/skills",
+      "sourceType": "github",
+      "skillPath": "skills/daytona/SKILL.md",
+      "computedHash": "81ccee7f7d9db14ac20650a1d06073c80045db70e3349ae88dbc0b4b26a5671c"
+    },
     "migrate-ai-sdk-v6-to-v7": {
       "source": "vercel/ai",
       "sourceType": "github",

@@ -67,6 +67,18 @@ export const games = pgTable(
      */
     lastEventId: text("last_event_id"),
 
+    /**
+     * The Daytona sandbox that hosts this game's files — one sandbox per game,
+     * created on the chat's first turn.
+     *
+     * Nullable because the row exists before the sandbox does: `createGame`
+     * writes the game, and the chat agent provisions the sandbox when the
+     * conversation actually starts. A null here means "not provisioned yet",
+     * which is also what a failed provision leaves behind — so read it as a
+     * hint, and confirm with Daytona before trusting the sandbox is alive.
+     */
+    sandboxId: text("sandbox_id"),
+
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

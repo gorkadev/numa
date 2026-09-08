@@ -1,8 +1,51 @@
 import { googleVertex } from "@ai-sdk/google-vertex"
 import { chat, upsertIncomingMessage } from "@trigger.dev/sdk/ai"
-import { streamText } from "ai"
+import {
+  getToolName,
+  isToolUIPart,
+  stepCountIs,
+  streamText,
+  type UIMessage,
+} from "ai"
 
+import { createGameSandbox } from "@/lib/daytona/utils"
+import { gameInstructions } from "@/lib/games/instructions"
+import { gameRevisionChunk } from "@/lib/games/revision"
 import { loadGameThread, saveGameThread } from "@/lib/games/thread"
+import { createGameTools } from "@/lib/games/tools"
+
+/**
+ * The tools that change what the player would see.
+ *
+ * `read_file` and `list_files` are deliberately absent: a turn that only looked
+ * at the game left the preview correct, and remounting the iframe anyway would
+ * restart a running game — losing the player's position to redraw the same
+ * bytes.
+ */
+const MUTATING_TOOLS = new Set(["write_file", "replace_text", "delete_file"])
+
+/**
+ * Whether this turn actually wrote to the sandbox.
+ *
+ * The subtle half is what counts as success. The file tools report their
+ * failures as an `{ error }` result rather than throwing, so the model can
+ * correct itself without the turn dying — which means a rejected path and a
+ * completed write arrive in the same `output-available` state. Trusting the
+ * state alone would reload the preview after a turn that changed nothing.
+ */
+function changedGameFiles(message: UIMessage | undefined): boolean {
+  if (!message) return false
+
+  return message.parts.some((part) => {
+    if (!isToolUIPart(part)) return false
+    if (!MUTATING_TOOLS.has(getToolName(part))) return false
+    if (part.state !== "output-available") return false
+
+    const output = part.output
+
+    return typeof output !== "object" || output === null || !("error" in output)
+  })
+}
 
 /**
  * One game owns one chat, so the chat id is the game id.
@@ -15,6 +58,29 @@ import { loadGameThread, saveGameThread } from "@/lib/games/thread"
  */
 export const gameChat = chat.agent({
   id: "game-chat",
+
+  /**
+   * The file tools, resolved per turn so they close over this chat's game.
+   *
+   * Declared here and not only on `streamText`, because this is the set the
+   * SDK re-converts stored history against on every later turn. A tool known
+   * only to `streamText` would work on the turn that called it and then lose
+   * its result formatting the moment the thread was replayed.
+   */
+  tools: ({ chatId }) => createGameTools(chatId),
+
+  /**
+   * Gives the game its sandbox, exactly once. This hook fires on the chat's
+   * very first user message and never on a continuation run, so it is the one
+   * place a per-chat resource can be minted without a guard.
+   *
+   * It runs before `hydrateMessages`, so the sandbox is in place before the
+   * model answers anything — the game has somewhere to be written from the
+   * first turn.
+   */
+  onChatStart: async ({ chatId }) => {
+    await createGameSandbox(chatId)
+  },
 
   /**
    * The database stays the source of truth for history: this loads the stored
@@ -37,6 +103,27 @@ export const gameChat = chat.agent({
   },
 
   /**
+   * Tells the browser to reload the preview, once the turn's last file write
+   * has landed.
+   *
+   * This hook rather than `onTurnComplete` because the stream is still open
+   * here — after it closes there is no channel left to reach the tab on. And
+   * the whole turn rather than each write, because the game is only worth
+   * looking at between edits: reloading after every `write_file` would show the
+   * player a half-applied change, twice.
+   *
+   * The revision is the payload rather than a bare ping so the signal is
+   * idempotent. The sandbox's preview URL never changes, so the browser
+   * remounts the frame by key — and receiving the same revision twice, as a
+   * resubscribing tab can, then costs a running game nothing.
+   */
+  onBeforeTurnComplete: async ({ responseMessage, writer }) => {
+    if (!changedGameFiles(responseMessage)) return
+
+    writer.write(gameRevisionChunk(Date.now()))
+  },
+
+  /**
    * Persists the finished turn: the full thread plus the cursor the transport
    * resubscribes from. One statement, so a reload can never land between the
    * two and replay the assistant's reply.
@@ -55,7 +142,7 @@ export const gameChat = chat.agent({
     })
   },
 
-  run: async ({ messages, signal }) =>
+  run: async ({ messages, tools, signal }) =>
     streamText({
       /**
        * Spread first, so every explicit option below still wins. This is what
@@ -63,13 +150,34 @@ export const gameChat = chat.agent({
        * steering and background injection — omitting it throws no error, those
        * features simply never run.
        */
-      ...chat.toStreamTextOptions(),
+      ...chat.toStreamTextOptions({ tools }),
       model: googleVertex("gemini-3.8-flash"),
+      /**
+       * An array of system messages, not a joined string: the provider gets one
+       * system block per concern, and each stays independently editable.
+       *
+       * Set after the spread on purpose. `toStreamTextOptions()` only fills in
+       * `system` when `chat.prompt.set()` has been called, which it has not —
+       * and `instructions` wins over `system` regardless, so this stays the
+       * prompt if a managed one is ever introduced without it being wired here.
+       */
+      instructions: gameInstructions,
       messages,
       /**
        * Fires on stop and on cancel. Without it, stopping updates the browser
        * while the model keeps generating server-side.
        */
       abortSignal: signal,
+      /**
+       * A turn is a loop, not a single answer: read the file, edit it, check
+       * the result, then reply. Without a stop condition the SDK ends the turn
+       * after the first tool call, leaving the model's work unreported and the
+       * user reading silence.
+       *
+       * The ceiling is high enough for a multi-file change and low enough that
+       * a model stuck retrying a failing edit gives up rather than burning the
+       * turn.
+       */
+      stopWhen: stepCountIs(25),
     }),
 })
