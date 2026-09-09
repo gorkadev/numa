@@ -45,6 +45,57 @@ const SAFE_SEGMENT = /^[A-Za-z0-9._-]+$/
 const ENTRY_FILE = "index.html"
 
 /**
+ * The parts of a game that are worth stopping the turn over.
+ *
+ * A closed set rather than free text, and asked for *before* the question, so
+ * the model has to place its uncertainty somewhere real before it writes a
+ * word of it. Left open, "ask the player" collapses into asking for
+ * reassurance — "shall I continue?" — which costs the player a decision and
+ * buys the game nothing. Naming the dimension first is what keeps the question
+ * about the game.
+ */
+const ASK_DIMENSIONS = [
+  "loop",
+  "goal",
+  "challenge",
+  "controls",
+  "world",
+  "progression",
+  "look",
+  "feel",
+  "audio",
+] as const
+
+/**
+ * What each dimension covers, in the prompt itself.
+ *
+ * The enum values alone are ambiguous — "feel" and "look" are one thing to a
+ * player and two to a designer — so the split is spelled out where the model
+ * reads it rather than left to be guessed at.
+ */
+const ASK_DIMENSION_GUIDE = [
+  "loop — the moment-to-moment action the player repeats",
+  "goal — what winning is, and what ends a run",
+  "challenge — what opposes the player, and how hard it pushes",
+  "controls — the input scheme and how the player moves",
+  "world — the setting, its layout and how much of it exists",
+  "progression — what changes across a session: levels, unlocks, difficulty",
+  "look — art direction, palette, camera framing",
+  "feel — pacing, weight and tone: floaty or heavy, calm or frantic",
+  "audio — music and sound effects",
+].join("; ")
+
+/**
+ * What the player's answer looks like coming back from the browser.
+ *
+ * Written out rather than inferred from the schema below, because the inferred
+ * form names types from packages this one does not depend on and TypeScript
+ * will not emit it. Exported so the component that produces the answer and the
+ * schema that validates it cannot drift apart silently.
+ */
+export type AskPlayerOutput = { optionId: string; label: string }
+
+/**
  * What every tool in this module hands back on failure.
  *
  * A returned error, not a thrown one. A throw inside `execute` ends the step
@@ -156,6 +207,86 @@ export function createGameTools(gameId: string): ToolSet {
   }
 
   return {
+    /**
+     * The one tool here with no `execute`, and no sandbox behind it.
+     *
+     * That absence is the mechanism, not an omission: when the model calls a
+     * tool the SDK cannot run, `streamText` ends with the call left pending,
+     * the run suspends, and nothing resumes until the player answers in the
+     * UI. So this is not a question the model asks and then answers for
+     * itself — the turn genuinely stops here.
+     *
+     * Because nothing on the server produces the result, the shape of that
+     * result has to be declared: `outputSchema` is what types the answer the
+     * client sends back and what the model reads on the next turn. Without
+     * it the output is `unknown` on both ends.
+     */
+    ask_player: tool({
+      description: [
+        "Ask the player to choose between concrete directions for their game.",
+        "The turn stops here and waits for their answer, so spend it on a decision that is genuinely theirs: what the game should be, not whether you may proceed.",
+        "Ask when the request leaves a real fork open and the options would produce visibly different games. Do not ask for permission, for reassurance, or about anything you can decide yourself and change later.",
+        "One question per call, always: the player answers, and their answer is what tells you which question is worth asking next. On the first message of a new game expect a short run of them, three or four, each following from the last — then build. Once the game is on screen, asking becomes rare, because a default they can react to beats a question they must answer before seeing anything.",
+        "Never re-ask a dimension already settled, whether the player chose it here or described it themselves.",
+      ].join(" "),
+      inputSchema: z.object({
+        /**
+         * First in the object on purpose. The model fills these fields in
+         * order as it streams, so choosing the area comes before writing the
+         * question rather than being labelled onto one already written.
+         */
+        dimension: z
+          .enum(ASK_DIMENSIONS)
+          .describe(
+            `The part of the game this decision is about. ${ASK_DIMENSION_GUIDE}.`
+          ),
+        question: z
+          .string()
+          .min(1)
+          .describe(
+            "The question, in one sentence, addressed to the player. Plain language about the game they will play — not implementation detail, file names or library choices."
+          ),
+        options: z
+          .array(
+            z.object({
+              id: z
+                .string()
+                .min(1)
+                .describe(
+                  'Short stable identifier for this option, e.g. "top_down" or "side_on". Lowercase, no spaces.'
+                ),
+              label: z
+                .string()
+                .min(1)
+                .describe(
+                  "A few words naming the option, as it will read on a button."
+                ),
+              description: z
+                .string()
+                .min(1)
+                .describe(
+                  "One sentence on what picking this would mean for the game, in terms the player can feel rather than build notes."
+                ),
+            })
+          )
+          .min(2)
+          .max(4)
+          .describe(
+            "Two to four options that genuinely differ. Every one must be something you are willing to build, and no two may be rewordings of the same game."
+          ),
+      }),
+      /**
+       * The player's choice, echoed back as both halves of the option. The id
+       * is what the next turn should branch on; the label is there so the
+       * transcript still reads as a conversation when the history is replayed
+       * without the original option list in view.
+       */
+      outputSchema: z.object({
+        optionId: z.string(),
+        label: z.string(),
+      }),
+    }),
+
     read_file: tool({
       description:
         "Read a file from the game directory. Use it before editing a file you did not write this turn — the sandbox keeps files between turns, so what is on disk may not match what you remember.",
