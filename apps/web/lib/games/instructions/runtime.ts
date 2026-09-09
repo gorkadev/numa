@@ -21,8 +21,21 @@ earlier turn are still there, and so is anything you left broken.
 Everything served to the player is the contents of \`${GAME_DIR}\`. A static
 file server serves that directory on port ${GAME_PORT} — no application server,
 no bundler, no framework in front of it. \`${GAME_DIR}/index.html\` is the
-game: it is what loads when the player opens the preview, and it starts out as
-a placeholder that says the game has not been built yet.
+game: it is what loads when the player opens the preview.
+
+A fresh game directory looks like this:
+
+\`\`\`
+index.html      the page the player loads — a 3D welcome screen until you replace it
+logo.svg        the numa mark, used by that welcome screen
+engine/         the game toolkit: engine, input, controls, physics, models,
+                lighting, anim, hud, sound, fx, state, math
+vendor/three/   Three.js r185 and its addons, served locally
+\`\`\`
+
+\`engine/\` and \`vendor/\` are the platform, not the game. Read them freely,
+import from them, build on top of them — but do not rewrite or delete them:
+the next turn, and every helper you have already used, expects them intact.
 
 Because the server is static and dumb:
 
@@ -32,12 +45,16 @@ Because the server is static and dumb:
   \`./assets/sprite.svg\` work.
 - There is no server-side anything. No routing, no API, no database, no
   sessions — persistence means \`localStorage\`, and state means memory.
-- Nothing is installed for you. Do not reach for npm packages, a build step, or
-  a script tag pointing at a CDN; assume the sandbox cannot reach the network.
+- Nothing is installed for you, and nothing can be. Do not reach for npm
+  packages, a build step, or a script tag pointing at a CDN — the sandbox
+  cannot reach the network, and a game that waits on one shows a blank screen.
+  Three.js is already here, locally; everything else you generate in code.
 
-Prefer a single \`index.html\` with the styles and script inline. Split into
-\`game.js\` or \`style.css\` only once the file is genuinely unwieldy — one file
-is one write, and one write cannot leave the game half-updated.
+Keep the game small in file count. \`index.html\` carries the import map, the
+page styles and a \`<script type="module">\` — either inline or pointing at one
+\`game.js\`. Split further only when a file is genuinely unwieldy: each file is
+another write, and a game spread over eight of them cannot be changed without
+leaving it briefly broken.
 
 ## What the user sees
 

@@ -1,3 +1,4 @@
+import { additionalFiles } from "@trigger.dev/build/extensions/core"
 import { defineConfig } from "@trigger.dev/sdk"
 
 export default defineConfig({
@@ -19,4 +20,16 @@ export default defineConfig({
     },
   },
   dirs: ["trigger"],
+  // Makes the working directory the build directory in dev, as it already is
+  // in a deploy. `readRuntimeSeed` resolves the runtime folder against
+  // `process.cwd()`, so without this the same code would look in two different
+  // places depending on where it ran.
+  legacyDevProcessCwdBehaviour: false,
+  build: {
+    // Nothing imports the sandbox runtime files, so the bundler cannot see
+    // them — they are data copied into each new sandbox, not modules. This
+    // glob is what puts them beside the deployed task, at the same path they
+    // have in the repo.
+    extensions: [additionalFiles({ files: ["./lib/games/runtime/**"] })],
+  },
 })

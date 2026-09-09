@@ -1,5 +1,6 @@
 import type { SystemModelMessage } from "ai"
 
+import { engineInstructions } from "./engine"
 import { runtimeInstructions } from "./runtime"
 import { workflowInstructions } from "./workflow"
 
@@ -12,10 +13,11 @@ import { workflowInstructions } from "./workflow"
  * concern at a time.
  *
  * Order is the point: how a turn should go, then the environment it happens
- * in. Read the other way round, the model learns about a directory before it
- * knows what it is for.
+ * in, then what is already built inside it. Read the other way round, the
+ * model learns an API before it knows what it is for.
  */
 export const gameInstructions: SystemModelMessage[] = [
   workflowInstructions,
   runtimeInstructions,
+  engineInstructions,
 ]

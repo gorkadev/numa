@@ -1,7 +1,13 @@
-import type { Sandbox } from "@daytona/sdk"
+import {
+  DaytonaGoneError,
+  DaytonaNotFoundError,
+  type Sandbox,
+} from "@daytona/sdk"
 import { db } from "@workspace/db"
 import { games } from "@workspace/db/schema"
 import { eq } from "drizzle-orm"
+
+import { readRuntimeSeed } from "@/lib/games/runtime-seed"
 
 import { daytona } from "./client"
 
@@ -20,15 +26,36 @@ export type SandboxResult = { sandbox: Sandbox }
  * directory a preview server would be pointed at later.
  */
 export const GAME_DIR = "/home/daytona/game"
-const INDEX_PATH = `${GAME_DIR}/index.html`
+
+/**
+ * Label every sandbox this app creates carries, holding the id of the game it
+ * hosts.
+ *
+ * The `games.sandbox_id` column is the fast path from a game to its sandbox,
+ * but it is not a complete record of what exists: `createGameSandbox` writes
+ * that column only after the seed upload succeeds, so a failure in between
+ * leaves a live sandbox no row will ever point at. The label is the other
+ * direction of the same link, and it is written by Daytona at creation time
+ * rather than by us afterwards — which makes it the one identifier a
+ * half-provisioned sandbox is still guaranteed to have.
+ *
+ * That is what `deleteGameSandboxes` sweeps on, so deleting a game cannot
+ * strand compute this app is still paying for.
+ */
+export const GAME_LABEL = "gameId"
 
 /**
  * Provisions the sandbox that will host one game and records it on the row.
  *
- * Called once per game, from the chat agent's `onChatStart`. The seed document
- * exists so the sandbox is servable from the very first moment: an empty
- * directory would make a preview URL 404 until the model produced its first
- * file, and "not built yet" is a much worse signal than a placeholder page.
+ * Called once per game, from the chat agent's `onChatStart`. Everything under
+ * `lib/games/runtime/` is copied in verbatim, so the sandbox is servable from
+ * the very first moment: an empty directory would make a preview URL 404 until
+ * the model produced its first file, and "not built yet" is a much worse
+ * signal than a placeholder page.
+ *
+ * The whole folder is copied rather than a hardcoded `index.html` so that
+ * seeding a new file into every future game is a matter of dropping it in that
+ * folder — no list here to keep in sync with what is actually on disk.
  *
  * The sandbox id is written last, after the seed lands. That ordering is what
  * makes a null `sandboxId` mean "no usable sandbox": persisting the id first
@@ -42,10 +69,25 @@ const INDEX_PATH = `${GAME_DIR}/index.html`
 export async function createGameSandbox(
   gameId: string
 ): Promise<SandboxResult> {
-  const sandbox = await daytona.create()
+  const { folders, files } = await readRuntimeSeed()
+  const sandbox = await daytona.create({ labels: { [GAME_LABEL]: gameId } })
 
   await sandbox.fs.createFolder(GAME_DIR, "755")
-  await sandbox.fs.uploadFile(Buffer.from("New Game"), INDEX_PATH)
+
+  /**
+   * Sequential, and before the upload: each folder may be the parent of the
+   * next, and every destination below needs its directory already standing.
+   */
+  for (const folder of folders) {
+    await sandbox.fs.createFolder(`${GAME_DIR}/${folder}`, "755")
+  }
+
+  await sandbox.fs.uploadFiles(
+    files.map(({ relativePath, contents }) => ({
+      source: contents,
+      destination: `${GAME_DIR}/${relativePath}`,
+    }))
+  )
 
   await db
     .update(games)
@@ -169,4 +211,63 @@ export async function startGameServer(
   }
 
   return { sandbox }
+}
+
+/**
+ * True for the two ways Daytona says "this sandbox is not there any more".
+ *
+ * Both are successes for a caller whose goal is deletion: the sandbox is gone,
+ * which is precisely what was asked for. Everything else — auth, rate limits, a
+ * runner that is down — has to keep propagating, because swallowing it would
+ * report a clean delete while the sandbox keeps running.
+ */
+function isAlreadyGone(error: unknown): boolean {
+  return (
+    error instanceof DaytonaNotFoundError || error instanceof DaytonaGoneError
+  )
+}
+
+async function deleteSandbox(sandbox: Sandbox): Promise<void> {
+  try {
+    await daytona.delete(sandbox)
+  } catch (error) {
+    if (!isAlreadyGone(error)) throw error
+  }
+}
+
+/**
+ * Destroys every sandbox belonging to one game.
+ *
+ * Deleting a game row is cheap; the sandbox behind it is billed compute, so
+ * this runs *before* the row goes and is allowed to throw. Deleting the row
+ * first would be irreversible in the wrong direction: the id would be gone and
+ * with it the only cheap handle on the sandbox, which would keep running.
+ *
+ * Both links are followed rather than just the column, because they fail in
+ * opposite situations. The label sweep catches sandboxes whose id never reached
+ * the row — a create that succeeded and a seed upload that did not. The
+ * recorded id catches sandboxes created before this app labelled anything.
+ * Whichever the sweep already handled is skipped, so the common case still
+ * costs one delete.
+ */
+export async function deleteGameSandboxes(
+  gameId: string,
+  sandboxId: string | null
+): Promise<void> {
+  const deleted = new Set<string>()
+
+  for await (const sandbox of daytona.list({
+    labels: { [GAME_LABEL]: gameId },
+  })) {
+    await deleteSandbox(sandbox)
+    deleted.add(sandbox.id)
+  }
+
+  if (!sandboxId || deleted.has(sandboxId)) return
+
+  try {
+    await deleteSandbox(await daytona.get(sandboxId))
+  } catch (error) {
+    if (!isAlreadyGone(error)) throw error
+  }
 }

@@ -5,3 +5,6 @@ node_modules/
 coverage/
 pnpm-lock.yaml
 .pnpm-store/
+# Vendored Three.js shipped into each game sandbox: minified upstream builds,
+# not ours to format.
+apps/web/lib/games/runtime/vendor/

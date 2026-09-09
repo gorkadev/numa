@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>numa — your game goes here</title>
+
+    <!--
+      The import map is what makes `import * as THREE from "three"` work with no
+      bundler and no network: it points the bare specifiers at the copy of
+      three.js that ships inside the sandbox. Every game needs these two lines,
+      and they must live in the document that loads the modules — an import map
+      inside a module file does nothing.
+    -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "./vendor/three/three.module.min.js",
+          "three/addons/": "./vendor/three/addons/"
+        }
+      }
+    </script>
+
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #070912;
+        --fg: #f4f4f5;
+        --muted: rgba(244, 244, 245, 0.58);
+        --accent: #4aa8ff;
+      }
+
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: var(--bg);
+        color: var(--fg);
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+      }
+
+      /*
+        The copy sits over the canvas and never intercepts a click: the scene
+        behind it reacts to the pointer, and a stray drag on a paragraph should
+        not stop it.
+      */
+      #overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 2;
+        display: grid;
+        align-content: end;
+        justify-items: center;
+        gap: 0.625rem;
+        padding: 0 2rem 12vh;
+        text-align: center;
+        pointer-events: none;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 1.375rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+
+      p {
+        margin: 0;
+        max-width: 30rem;
+        font-size: 0.875rem;
+        line-height: 1.6;
+        color: var(--muted);
+      }
+
+      .hint {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+        padding: 0.5rem 0.875rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.04);
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        color: var(--muted);
+      }
+
+      /*
+        Three dots pulsing is the only moving thing guaranteed to be on screen:
+        if WebGL is unavailable the scene never appears, and a completely still
+        page is indistinguishable from a broken one.
+      */
+      .dots {
+        display: inline-flex;
+        gap: 0.3rem;
+      }
+
+      .dots span {
+        width: 0.3rem;
+        height: 0.3rem;
+        border-radius: 50%;
+        background: var(--accent);
+        animation: pulse 1.4s ease-in-out infinite;
+      }
+
+      .dots span:nth-child(2) {
+        animation-delay: 0.18s;
+      }
+
+      .dots span:nth-child(3) {
+        animation-delay: 0.36s;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 0.25;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
+
+      /* A logo that cannot be drawn in 3D is still a logo. */
+      #fallback {
+        position: fixed;
+        inset: 0;
+        display: none;
+        place-items: center;
+        z-index: 1;
+      }
+
+      #fallback img {
+        width: 4rem;
+        opacity: 0.9;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .dots span {
+          animation: none;
+          opacity: 0.6;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="fallback"><img src="./logo.svg" alt="numa" /></div>
+
+    <div id="overlay">
+      <h1>Nothing here yet</h1>
+      <p>
+        This is where your game will run. Describe what you want to play in the
+        chat and it will show up here.
+      </p>
+      <span class="hint">
+        <span class="dots" aria-hidden="true"
+          ><span></span><span></span><span></span
+        ></span>
+        Waiting for your first idea
+      </span>
+    </div>
+
+    <script type="module">
+      import * as THREE from "three"
+      import { SVGLoader } from "three/addons/loaders/SVGLoader.js"
+
+      import { createEngine } from "./engine/engine.js"
+      import { addLighting, createGradientSky } from "./engine/lighting.js"
+      import { addBloom, createParticles } from "./engine/fx.js"
+      import { glow, metal } from "./engine/models.js"
+      import { damp, random } from "./engine/math.js"
+
+      const reducedMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      ).matches
+
+      /*
+        The whole scene is optional decoration. A machine without WebGL, or a
+        context the browser refuses to give, must still leave a readable page —
+        so the failure path shows the flat logo instead of an error.
+      */
+      try {
+        await start()
+      } catch (error) {
+        document.getElementById("fallback").style.display = "grid"
+      }
+
+      async function start() {
+        const engine = createEngine({
+          background: 0x070912,
+          fov: 42,
+          cameraPosition: [0, 0, 13],
+          fog: 0x070912,
+          fogRange: [14, 34],
+        })
+
+        createGradientSky(engine, 0x101a3a, 0x05060d)
+        const lights = addLighting(engine, "night", { applyBackground: false })
+        lights.sun.intensity = 1.4
+
+        /*
+          A coloured rim from the opposite side. One light gives an object a lit
+          face and a dead one; a second, in a different hue and much dimmer,
+          separates the silhouette from the background and is most of what makes
+          a single object on a dark field look composed rather than dropped in.
+        */
+        const rim = new THREE.DirectionalLight(0x8b5cf6, 2.6)
+        rim.position.set(-9, -2, 4)
+        engine.add(rim)
+
+        addBloom(engine, { strength: 1, radius: 0.62, threshold: 0.55 })
+
+        const logo = await buildLogo()
+        engine.add(logo)
+
+        /*
+          Motes drifting upward, seeded once. They are what give the empty space
+          a sense of depth — without them the logo floats in a void and the page
+          reads as flat.
+        */
+        const motes = createParticles(engine, {
+          count: 220,
+          size: 0.06,
+          color: 0x8fc4ff,
+          gravity: 0.35,
+          drag: 0.05,
+          lifetime: Infinity,
+        })
+        for (let i = 0; i < 220; i++) {
+          motes.burst(
+            new THREE.Vector3(
+              random.range(-9, 9),
+              random.range(-6, 6),
+              random.range(-6, 2)
+            ),
+            1,
+            { speed: 0.25, spread: 1 }
+          )
+        }
+
+        /*
+          Parallax rather than orbit controls: the page is a welcome screen, not
+          a model viewer. The pointer nudges the scene and it always drifts back,
+          so it cannot be left facing the wrong way.
+        */
+        const pointer = { x: 0, y: 0 }
+        window.addEventListener("pointermove", (event) => {
+          pointer.x = (event.clientX / window.innerWidth) * 2 - 1
+          pointer.y = (event.clientY / window.innerHeight) * 2 - 1
+        })
+
+        /*
+          The idle sway is not decoration: seen straight on, an extruded mark is
+          indistinguishable from a flat one. Turning it a few degrees either way
+          keeps a lit edge on screen, which is the only thing that says "solid".
+        */
+        engine.onUpdate((dt, { elapsed }) => {
+          const drift = reducedMotion ? 0 : 1
+          const targetY =
+            pointer.x * 0.5 + Math.sin(elapsed * 0.4) * 0.34 * drift
+          const targetX = -0.14 + pointer.y * 0.22
+
+          logo.rotation.y = damp(logo.rotation.y, targetY, 0.25, dt)
+          logo.rotation.x = damp(logo.rotation.x, targetX, 0.25, dt)
+          logo.position.y = 1.9 + Math.sin(elapsed * 0.8) * 0.18 * drift
+        })
+
+        engine.start()
+      }
+
+      /*
+        The logo, extruded.
+
+        `SVGLoader` gives back the same paths the file draws; turning them into
+        shapes and extruding them is what makes the mark an object with edges
+        that catch the light, rather than a picture pasted onto a plane. SVG's
+        Y axis points down and three's points up, hence the flip.
+      */
+      async function buildLogo() {
+        const data = await new SVGLoader().loadAsync("./logo.svg")
+        const group = new THREE.Group()
+
+        const front = glow(0x3b82f6, 0.55, { roughness: 0.25, metalness: 0.35 })
+        const sides = metal(0x1e40af, { roughness: 0.35 })
+
+        for (const path of data.paths) {
+          for (const shape of SVGLoader.createShapes(path)) {
+            const geometry = new THREE.ExtrudeGeometry(shape, {
+              depth: 1.6,
+              bevelEnabled: true,
+              bevelThickness: 0.35,
+              bevelSize: 0.25,
+              bevelSegments: 3,
+            })
+            const mesh = new THREE.Mesh(geometry, [front, sides])
+            mesh.castShadow = true
+            group.add(mesh)
+          }
+        }
+
+        group.scale.y = -1
+
+        /*
+          Centred on its own bounds rather than on the viewBox: the artwork does
+          not fill the box, and centring on the box would leave the mark visibly
+          off to one side.
+        */
+        const bounds = new THREE.Box3().setFromObject(group)
+        const centre = bounds.getCenter(new THREE.Vector3())
+        const size = bounds.getSize(new THREE.Vector3())
+        const pivot = new THREE.Group()
+        group.position.set(-centre.x, -centre.y, -centre.z)
+        pivot.add(group)
+        /* Sized against the taller axis so the mark keeps its proportions. */
+        pivot.scale.setScalar(3.4 / Math.max(size.x, size.y))
+        pivot.position.y = 1.9
+        return pivot
+      }
+    </script>
+  </body>
+</html>
