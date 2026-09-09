@@ -2,25 +2,20 @@
 
 import type { FormEvent } from "react"
 import {
-  ArrowDown01Icon,
   ArrowUp02Icon,
-  GridIcon,
   Loading03Icon,
   StopIcon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@workspace/ui/components/dropdown-menu"
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
   InputGroupTextarea,
 } from "@workspace/ui/components/input-group"
+
+import { ModelPicker } from "@/components/model-picker"
+import type { GameModelId } from "@/lib/ai/model-catalog"
 
 type ChatComposerProps = {
   value: string
@@ -36,6 +31,16 @@ type ChatComposerProps = {
   pending?: boolean
   error?: string | null
   placeholder?: string
+  /**
+   * The selected model, and the way to change it. Both are passed straight
+   * through to the picker — the composer is presentational, so the model is
+   * the caller's state for the same reason the text is.
+   *
+   * Optional together: a composer whose caller has nowhere to send the choice
+   * shows no picker rather than a control that decides nothing.
+   */
+  modelId?: GameModelId
+  onModelChange?: (modelId: GameModelId) => void
 }
 
 /**
@@ -51,6 +56,8 @@ export function ChatComposer({
   pending = false,
   error = null,
   placeholder = "Describe the game you want to build…",
+  modelId,
+  onModelChange,
 }: ChatComposerProps) {
   const trimmed = value.trim()
   const stoppable = pending && Boolean(onStop)
@@ -76,22 +83,9 @@ export function ChatComposer({
             onChange={(event) => onValueChange(event.target.value)}
           />
           <InputGroupAddon align="block-end">
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <InputGroupButton type="button">
-                    <HugeiconsIcon icon={GridIcon} />
-                    Kimi K3
-                    <HugeiconsIcon icon={ArrowDown01Icon} />
-                  </InputGroupButton>
-                }
-              />
-              <DropdownMenuContent>
-                <DropdownMenuItem>Kimi K3</DropdownMenuItem>
-                <DropdownMenuItem>Claude Opus 5</DropdownMenuItem>
-                <DropdownMenuItem>GPT-5</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {modelId && onModelChange ? (
+              <ModelPicker value={modelId} onValueChange={onModelChange} />
+            ) : null}
             {/**
              * One button, two meanings: while an answer streams it stops the
              * turn instead of sending it. It switches to `type="button"` so
@@ -108,11 +102,7 @@ export function ChatComposer({
             >
               <HugeiconsIcon
                 icon={
-                  stoppable
-                    ? StopIcon
-                    : pending
-                      ? Loading03Icon
-                      : ArrowUp02Icon
+                  stoppable ? StopIcon : pending ? Loading03Icon : ArrowUp02Icon
                 }
                 className={!stoppable && pending ? "animate-spin" : undefined}
               />

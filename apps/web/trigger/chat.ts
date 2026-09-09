@@ -1,4 +1,3 @@
-import { googleVertex } from "@ai-sdk/google-vertex"
 import { chat, upsertIncomingMessage } from "@trigger.dev/sdk/ai"
 import {
   getToolName,
@@ -7,7 +6,10 @@ import {
   streamText,
   type UIMessage,
 } from "ai"
+import { z } from "zod"
 
+import { gameModelSettings } from "@/lib/ai/agent"
+import { gameModelIdSchema } from "@/lib/ai/model-catalog"
 import { createGameSandbox } from "@/lib/daytona/utils"
 import { gameInstructions } from "@/lib/games/instructions"
 import { gameRevisionChunk } from "@/lib/games/revision"
@@ -58,6 +60,20 @@ function changedGameFiles(message: UIMessage | undefined): boolean {
  */
 export const gameChat = chat.agent({
   id: "game-chat",
+
+  /**
+   * The model the player picked, validated against the closed set in the
+   * catalog. The id crosses from the browser, so an unrecognised one is
+   * rejected here rather than handed to the provider.
+   *
+   * Everything is optional, and the object itself defaults to empty: the turn
+   * of a client that sends no choice at all — an older tab, or the app before
+   * a picker exists — has to remain answerable, and `gameModelSettings` fills
+   * in the default.
+   */
+  clientDataSchema: z
+    .object({ model: gameModelIdSchema.optional() })
+    .default({}),
 
   /**
    * The file tools, resolved per turn so they close over this chat's game.
@@ -161,7 +177,7 @@ export const gameChat = chat.agent({
     })
   },
 
-  run: async ({ messages, tools, signal }) =>
+  run: async ({ messages, tools, clientData, signal }) =>
     streamText({
       /**
        * Spread first, so every explicit option below still wins. This is what
@@ -170,7 +186,12 @@ export const gameChat = chat.agent({
        * features simply never run.
        */
       ...chat.toStreamTextOptions({ tools }),
-      model: googleVertex("gemini-3.8-flash"),
+      /**
+       * Resolved per turn, not per chat: the choice is read off the message
+       * that arrived, so switching models continues the same thread rather
+       * than starting a second one.
+       */
+      ...gameModelSettings(clientData?.model),
       /**
        * An array of system messages, not a joined string: the provider gets one
        * system block per concern, and each stays independently editable.

@@ -9,6 +9,7 @@ import { games } from "@workspace/db/schema"
 import { generateText } from "ai"
 import { and, eq } from "drizzle-orm"
 
+import { DEFAULT_GAME_MODEL_ID, isGameModelId } from "@/lib/ai/model-catalog"
 import { deleteGameSandboxes } from "@/lib/daytona/utils"
 
 export type CreateGameState = { error: string } | null
@@ -78,6 +79,14 @@ export async function createGame(
     return { error: "Describe the game you want to build." }
   }
 
+  /**
+   * The model the composer was showing. It arrives from the browser, so an
+   * unrecognised one falls back to the default rather than being carried
+   * forward — this value ends up in a URL, and the URL is read as a choice.
+   */
+  const model = formData.get("model")
+  const modelId = isGameModelId(model) ? model : DEFAULT_GAME_MODEL_ID
+
   const title = await generateTitle(prompt)
 
   const [game] = await db
@@ -102,11 +111,17 @@ export async function createGame(
    * written to the thread here: the chat agent is what turns a user message
    * into a turn — it appends, calls the model and persists both sides — so
    * seeding the row directly would create a message the assistant never
-   * answers. The thread strips the parameter once it has sent it.
+   * answers. The thread strips both parameters once it has sent it.
+   *
+   * The model goes the same way, and for the same reason it is not a column:
+   * the first turn has to be sent with what the home screen was showing, and
+   * after that the thread's own picker owns the choice.
    *
    * `redirect` throws a control-flow exception, so nothing below it runs.
    */
-  redirect(`/games/${game.id}?prompt=${encodeURIComponent(prompt)}`)
+  redirect(
+    `/games/${game.id}?prompt=${encodeURIComponent(prompt)}&model=${modelId}`
+  )
 }
 
 /**
