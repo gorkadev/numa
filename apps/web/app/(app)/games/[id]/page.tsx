@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation"
 
 import { GameChat } from "@/components/game-chat"
+import { isGameModelId } from "@/lib/ai/model-catalog"
+import { signPreviewToken } from "@/lib/games/preview-token"
 import { getGame } from "@/lib/games/queries"
 
 export default async function GamePage({
@@ -15,8 +17,15 @@ export default async function GamePage({
    * what sends a message. Repeated keys arrive as an array; only a single value
    * is a prompt.
    */
-  const { prompt } = await searchParams
+  const { prompt, model } = await searchParams
   const initialPrompt = typeof prompt === "string" ? prompt : undefined
+
+  /**
+   * The model that screen was showing, travelling with it. Anything else in
+   * the parameter is ignored rather than corrected: the thread already starts
+   * on the default, so an edited URL simply does not move it.
+   */
+  const initialModelId = isGameModelId(model) ? model : undefined
 
   /**
    * `getGame` authenticates and scopes to the caller's org, so a missing game
@@ -41,13 +50,24 @@ export default async function GamePage({
       }
     : undefined
 
+  /**
+   * The preview's authorization, minted here so the signing secret stays on the
+   * server. It doubles as the "is there anything to preview" signal: until the
+   * chat's first turn provisions a sandbox the proxy has nothing to serve, and a
+   * token for a pane that will not render is pointless — so a null `sandboxId`
+   * yields no token, and the pane is left out entirely rather than shown broken.
+   */
+  const previewToken = game.sandboxId ? signPreviewToken(game.id) : undefined
+
   return (
     <GameChat
       gameId={game.id}
-      hasSandbox={Boolean(game.sandboxId)}
+      title={game.title}
+      previewToken={previewToken}
       initialMessages={game.messages}
       initialSessions={initialSessions}
       initialPrompt={initialPrompt}
+      initialModelId={initialModelId}
     />
   )
 }
