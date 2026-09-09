@@ -87,19 +87,38 @@ export const gameChat = chat.agent({
    * thread on every turn and ignores the browser's copy, except for the new
    * message, which arrives in `incomingMessages` already validated.
    *
-   * `upsertIncomingMessage` appends that message and reports whether anything
-   * changed, so the write is skipped on the turns that carry no new user
-   * message. Writing here — before the model streams — is what makes a refresh
-   * mid-answer still find the question in the thread.
+   * Nothing is written here, deliberately. `upsertIncomingMessage` appends a
+   * genuinely new message and no-ops otherwise — and the turn that answers an
+   * `ask_player` question is exactly the no-op case: the browser sends the
+   * existing assistant message's id carrying a slim tool-state advance, which
+   * the runtime overlays onto the chain only *after* this hook returns. A
+   * write from here could therefore never carry the player's answer.
+   * `onTurnStart` persists the merged chain instead, which covers both cases
+   * in one statement.
    */
   hydrateMessages: async ({ chatId, trigger, incomingMessages }) => {
     const stored = await loadGameThread(chatId)
 
-    if (upsertIncomingMessage(stored, { trigger, incomingMessages })) {
-      await saveGameThread({ gameId: chatId, messages: stored })
-    }
+    upsertIncomingMessage(stored, { trigger, incomingMessages })
 
     return stored
+  },
+
+  /**
+   * Writes the thread down before the model streams a word of the turn.
+   *
+   * This is the only point where the player's answer to `ask_player` exists in
+   * a form worth storing: it arrives as a state advance on a message the row
+   * already holds, and the runtime merges it in between `hydrateMessages` and
+   * here.
+   *
+   * Before the turn rather than after it, because the turn it opens is a build
+   * that runs for minutes. Until this lands, a reload reads the row back and
+   * finds the question unanswered — putting the same choice to the player a
+   * second time, on top of a game already being built from their first answer.
+   */
+  onTurnStart: async ({ chatId, uiMessages }) => {
+    await saveGameThread({ gameId: chatId, messages: uiMessages })
   },
 
   /**
