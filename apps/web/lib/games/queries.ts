@@ -36,3 +36,24 @@ export async function getGame(id: string): Promise<Game | undefined> {
     where: (game, { and, eq }) => and(eq(game.id, id), eq(game.orgId, orgId)),
   })
 }
+
+/**
+ * Reads a single game by id alone, with no session and no `org_id` predicate.
+ *
+ * This deliberately steps outside the tenant boundary every other read in this
+ * module enforces, because the preview proxy cannot get inside it: the game runs
+ * in a frame on an opaque origin, whose module scripts are fetched without
+ * cookies, so there is no session for `auth.protect()` to find. The proxy proves
+ * authorization a different way — with a short-lived token this server signed
+ * for this exact game id.
+ *
+ * So the token check is not a convenience the caller may skip; it *is* the
+ * access control this function does not perform. Call this only after
+ * `verifyPreviewToken` has returned `true` for the same id. Anywhere else, use
+ * `getGame`.
+ */
+export async function getGameForPreview(id: string): Promise<Game | undefined> {
+  return db.query.games.findFirst({
+    where: (game, { eq }) => eq(game.id, id),
+  })
+}

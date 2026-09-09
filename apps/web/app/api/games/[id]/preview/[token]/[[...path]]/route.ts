@@ -1,5 +1,6 @@
 import { GAME_PORT, startGameServer } from "@/lib/daytona/utils"
-import { getGame } from "@/lib/games/queries"
+import { verifyPreviewToken } from "@/lib/games/preview-token"
+import { getGameForPreview } from "@/lib/games/queries"
 
 /**
  * Headers that describe the *hop*, not the payload. `content-encoding` and
@@ -19,20 +20,32 @@ const STRIPPED_RESPONSE_HEADERS = new Set([
  * The sandbox's own preview URL is not something the browser can be handed
  * directly: it needs a per-sandbox token that is reissued on every restart, and
  * an unauthenticated visitor to that URL would bypass the org check entirely.
- * Routing it through here keeps the token server-side and makes the preview
- * inherit the game's own authorization — `getGame` is org-scoped, so a game
- * belonging to another organization 404s exactly as its page does.
+ * Routing it through here keeps that token server-side.
  *
- * Same-origin also matters for the iframe: cookies, `postMessage` and devtools
- * all behave as if the game were part of the app.
+ * Authorization is the signed token in the path, not the session cookie. The
+ * frame is sandboxed onto an opaque origin, and a null origin never satisfies a
+ * module script's `same-origin` credentials mode — so subresource requests
+ * arrive here with no cookies whatever the session looks like. Reaching for the
+ * session would redirect them to `/sign-in` instead, which the frame reports as
+ * a CORS failure. See `lib/games/preview-token` for why the token sits in a
+ * path segment.
  */
 async function proxy(
   request: Request,
-  ctx: { params: Promise<{ id: string; path?: string[] }> }
+  ctx: { params: Promise<{ id: string; token: string; path?: string[] }> }
 ): Promise<Response> {
-  const { id, path } = await ctx.params
+  const { id, token: previewToken, path } = await ctx.params
 
-  const game = await getGame(id)
+  /**
+   * A bad or expired token answers 404 rather than 403, for the same reason
+   * `getGame` folds the org boundary into the lookup: a distinct status would
+   * confirm which game ids exist to a caller holding no valid token for any.
+   */
+  if (!verifyPreviewToken(previewToken, id)) {
+    return new Response("Not found", { status: 404 })
+  }
+
+  const game = await getGameForPreview(id)
 
   if (!game) return new Response("Not found", { status: 404 })
 
@@ -58,6 +71,10 @@ async function proxy(
   /**
    * The catch-all is undefined at the proxy root, which is the index request.
    * Segments arrive decoded, so they are re-encoded rather than joined raw.
+   *
+   * Only `path` goes upstream. The preview token is this route's authorization
+   * and means nothing to the sandbox, which serves the game's files from its own
+   * root — forwarding it would ask for a directory that does not exist.
    */
   const target = new URL(
     (path ?? []).map(encodeURIComponent).join("/"),
@@ -93,6 +110,19 @@ async function proxy(
   }
 
   headers.set("cache-control", "no-store")
+
+  /**
+   * The preview frame is sandboxed without `allow-same-origin`, so it runs on an
+   * opaque origin and every request it makes here is cross-origin. Classic
+   * scripts and images would not care, but ES modules — the game entry point and
+   * every bare specifier its import map resolves — are always fetched in CORS
+   * mode, so without this they fail before executing a line.
+   *
+   * `*` is safe precisely because it forbids credentials: a real cross-origin
+   * page still cannot read an authenticated preview, while the null-origin frame
+   * (which sends no credentials of its own) can.
+   */
+  headers.set("access-control-allow-origin", "*")
 
   return new Response(upstream.body, {
     status: upstream.status,
