@@ -226,7 +226,8 @@ export function createGameTools(gameId: string): ToolSet {
         "Ask the player to choose between concrete directions for their game.",
         "The turn stops here and waits for their answer, so spend it on a decision that is genuinely theirs: what the game should be, not whether you may proceed.",
         "Ask when the request leaves a real fork open and the options would produce visibly different games. Do not ask for permission, for reassurance, or about anything you can decide yourself and change later.",
-        "One question per call, always: the player answers, and their answer is what tells you which question is worth asking next. On the first message of a new game expect a short run of them, three or four, each following from the last — then build. Once the game is on screen, asking becomes rare, because a default they can react to beats a question they must answer before seeing anything.",
+        "Building is the default. A first message that names the kind of game is enough to build with sensible defaults; ask only when the game itself is undecided, one question per call and at most two before the first build. Once the game is on screen, asking becomes rare, because a default they can react to beats a question they must answer before seeing anything.",
+        "Never use it to reply to a question the player asked you — answer that in text.",
         "Never re-ask a dimension already settled, whether the player chose it here or described it themselves.",
       ].join(" "),
       inputSchema: z.object({
