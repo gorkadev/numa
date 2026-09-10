@@ -7,9 +7,11 @@
  * and it gives the HUD one thing to listen to.
  *
  * `localStorage` is the only persistence available: there is no server behind
- * the game. It is per-browser, and it can be missing or blocked entirely, so
- * every read here is defensive — a high score that throws on load is a game
- * that will not start.
+ * the game. In the preview it is a memory-backed stand-in installed by the
+ * proxy — the frame is sandboxed onto an opaque origin, where the real one
+ * throws on access — so saves last as long as the frame does. Every read here
+ * stays defensive regardless: a high score that throws on load is a game that
+ * will not start.
  */
 
 /** The phases nearly every game has. A game may add its own. */

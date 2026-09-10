@@ -1,4 +1,5 @@
 import { GAME_PORT, startGameServer } from "@/lib/daytona/utils"
+import { injectPreviewStorageShim } from "@/lib/games/preview-storage"
 import { verifyPreviewToken } from "@/lib/games/preview-token"
 import { getGameForPreview } from "@/lib/games/queries"
 
@@ -123,6 +124,37 @@ async function proxy(
    * (which sends no credentials of its own) can.
    */
   headers.set("access-control-allow-origin", "*")
+
+  /**
+   * HTML is rewritten on its way through; everything else is passed straight
+   * on as a stream.
+   *
+   * The rewrite is the storage shim — see `lib/games/preview-storage.ts` for
+   * why a frame with no same-origin privilege needs one, and why the game
+   * cannot be trusted to defend itself against a `localStorage` that throws.
+   * It is applied to every HTML document rather than only to `index.html`,
+   * because a game is free to navigate the frame to a page of its own and that
+   * page runs under the same opaque origin.
+   *
+   * Buffering the body is what injection costs, and it is charged only to
+   * HTML: a game's textures, audio and Three.js bundles are the large
+   * responses here and they still stream. `content-length` was already
+   * stripped above, so the rewritten document needs no header repair.
+   *
+   * `HEAD` is excluded because a `HEAD` response carries no body to rewrite,
+   * and handing one a body is a protocol violation rather than a harmless
+   * extra.
+   */
+  if (
+    request.method === "GET" &&
+    upstream.headers.get("content-type")?.includes("text/html")
+  ) {
+    return new Response(injectPreviewStorageShim(await upstream.text()), {
+      status: upstream.status,
+      statusText: upstream.statusText,
+      headers,
+    })
+  }
 
   return new Response(upstream.body, {
     status: upstream.status,
