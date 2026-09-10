@@ -62,6 +62,9 @@ importers:
       '@hugeicons/react':
         specifier: ^1.1.10
         version: 1.1.10(react@19.2.4)
+      '@polar-sh/sdk':
+        specifier: ^0.49.0
+        version: 0.49.0
       '@trigger.dev/sdk':
         specifier: 4.5.16
         version: 4.5.16(@ai-sdk/otel@1.0.93(zod@4.4.3))(ai@7.0.93(zod@4.4.3))(bufferutil@4.1.0)(react@19.2.4)(utf-8-validate@6.0.6)(zod@4.4.3)
@@ -2312,6 +2315,9 @@ packages:
   '@opentelemetry/semantic-conventions@1.43.0':
     resolution: {integrity: sha512-eSYWTm620tTk45EKSedaUL8MFYI8hW164hIXsgIHyxu3VobUB3fFCu5t0hQby6OoWRPsG1KkKUG2M5UadiLiVg==}
     engines: {node: '>=14'}
+
+  '@polar-sh/sdk@0.49.0':
+    resolution: {integrity: sha512-9UYb70iKjJCtWYlu0OF5HLYBLmkxHwqr2RlXwuxXQgRGqq56IQWlVG+NO7e1YJ7I5GW0CBHhGIjRbQ9hYM6ycQ==}
 
   '@prisma/config@6.19.3':
     resolution: {integrity: sha512-CBPT44BjlQxEt8kiMEauji2WHTDoVBOKl7UlewXmUgBPnr/oPRZC3psci5chJnYmH0ivEIog2OU9PGWoki3DLQ==}
@@ -9184,6 +9190,11 @@ snapshots:
   '@opentelemetry/semantic-conventions@1.41.1': {}
 
   '@opentelemetry/semantic-conventions@1.43.0': {}
+
+  '@polar-sh/sdk@0.49.0':
+    dependencies:
+      standardwebhooks: 1.1.1
+      zod: 4.4.3
 
   '@prisma/config@6.19.3(magicast@0.3.5)':
     dependencies:
