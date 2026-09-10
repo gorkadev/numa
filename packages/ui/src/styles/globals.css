@@ -1,6 +1,41 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "./typeset.css";
+
+/**
+ * The reading rhythm the agent's replies are set in.
+ *
+ * A preset rather than the defaults because typeset is written for a document
+ * page and this is a chat bubble: the text is `text-sm`, so the base size is
+ * pinned to 0.875rem instead of following the surrounding layout, and the
+ * space between blocks is pulled in from 1.25em. A paragraph and the list
+ * under it are one answer here, not two sections of an article.
+ */
+.typeset-chat {
+    --typeset-font-body: var(--font-sans);
+    --typeset-font-heading: var(--font-sans);
+    --typeset-font-mono: var(--font-mono);
+    --typeset-size: 0.875rem;
+    --typeset-leading: 1.65;
+    --typeset-flow: 0.75em;
+}
+
+/**
+ * Hands the text colour back to whatever contains it.
+ *
+ * Typeset pins itself and its headings to `--color-foreground`, which is right
+ * for a page and wrong inside a bubble: the bubble picks its own foreground to
+ * pair with its background, and a variant that changes one without the other
+ * is how a reply ends up unreadable on its own surface.
+ *
+ * This sits outside `@layer components`, so it wins over typeset's own rules
+ * regardless of specificity.
+ */
+.typeset-chat,
+.typeset-chat :is(h1, h2, h3, h4, h5, h6) {
+    color: inherit;
+}
 
 /**
  * The marquee's fade widths. Registering them is what makes them animate as

@@ -64,6 +64,7 @@ import {
 import { Spinner } from "@workspace/ui/components/spinner"
 
 import { ChatComposer } from "@/components/chat-composer"
+import { Markdown } from "@/components/markdown"
 import { gameModelMetadata, readThreadModel } from "@/lib/ai/message-model"
 import { DEFAULT_GAME_MODEL_ID, type GameModelId } from "@/lib/ai/model-catalog"
 import {
@@ -409,15 +410,36 @@ export function ChatThread({
                           )
                         }
 
+                        /**
+                         * An empty text block is what the start of a reply
+                         * looks like: the part exists before any token has
+                         * landed in it. Rendering it would put an empty
+                         * bubble on screen for the length of the round trip.
+                         */
+                        if (!block.text.trim()) return null
+
+                        const isUser = message.role === "user"
+
                         return (
                           <Bubble
                             key={block.key}
-                            align={message.role === "user" ? "end" : "start"}
-                            variant={
-                              message.role === "user" ? "default" : "secondary"
-                            }
+                            align={isUser ? "end" : "start"}
+                            variant={isUser ? "default" : "secondary"}
                           >
-                            <BubbleContent>{block.text}</BubbleContent>
+                            {/**
+                             * Only the agent's half is markdown. What the
+                             * player typed is their own text, and running it
+                             * through a renderer would reformat it — an
+                             * asterisk they meant literally would silently
+                             * turn into emphasis on their own message.
+                             */}
+                            <BubbleContent>
+                              {isUser ? (
+                                block.text
+                              ) : (
+                                <Markdown>{block.text}</Markdown>
+                              )}
+                            </BubbleContent>
                           </Bubble>
                         )
                       })}
@@ -626,7 +648,7 @@ function AskPlayer({
 }) {
   return (
     <Bubble variant="muted" align="start" className="w-full max-w-full">
-      <BubbleContent className="w-full dark:!bg-card p-4 !bg-transparent">
+      <BubbleContent className="w-full !bg-transparent p-4 dark:!bg-card">
         <Questionnaire
           /**
            * Number keys pick an option, Enter commits. The primitive scopes
