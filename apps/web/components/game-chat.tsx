@@ -9,7 +9,7 @@ import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { ChatPreview } from "@/components/chat-preview"
-import { ChatThread } from "@/components/chat-thread"
+import { ChatThread } from "@/components/chat/chat-thread"
 import { GameMenu } from "@/components/game-menu"
 import type { GameModelId } from "@/lib/ai/model-catalog"
 

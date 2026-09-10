@@ -41,16 +41,32 @@ import {
  * moving the pointer into a portalled panel leaves the message's hover behind
  * and would otherwise pull the trigger out from under it.
  */
-export function MessageActions({ message }: { message: UIMessage }) {
+export function MessageActions({
+  message,
+  copyText,
+}: {
+  message: UIMessage
+  /**
+   * What the copy button copies, when it is not just `message`'s own text.
+   *
+   * A grouped run of consecutive assistant messages renders as one row with
+   * one footer, but the footer's token/credit/tool details still come from
+   * `message` alone — the LAST message of the run, which is where a turn's
+   * totals are accumulated (see `withTurnMeta`). Copying, though, is a player
+   * action on what they read, which is the whole run — so it takes the whole
+   * run's text as an override rather than reading it off `message`.
+   */
+  copyText?: string
+}) {
   const meta = readMessageMeta(message)
-  const text = messageText(message)
+  const text = copyText ?? messageText(message)
   const tools = message.parts.filter(isToolUIPart)
   const details = tools.length > 0 || meta.tokens !== undefined
 
   if (!text && !details && meta.sentAt === undefined) return null
 
   return (
-    <MessageFooter className="gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover/message:opacity-100 has-data-[popup-open]:opacity-100">
+    <MessageFooter className="gap-0.5 opacity-0 transition-opacity group-hover/message:opacity-100 focus-within:opacity-100 has-data-[popup-open]:opacity-100">
       {text ? <CopyButton text={text} /> : null}
       {details ? <DetailsButton message={message} /> : null}
       {meta.sentAt !== undefined ? <SentAt at={meta.sentAt} /> : null}
@@ -198,7 +214,7 @@ function DetailsButton({ message }: { message: UIMessage }) {
             <h3 className="text-xs font-medium text-muted-foreground">
               Tokens
             </h3>
-            <dl className="flex flex-col gap-1 text-xs bg-muted p-3 rounded-2xl">
+            <dl className="flex flex-col gap-1 rounded-2xl bg-muted p-3 text-xs">
               <Stat label="Input" value={meta.tokens.input} />
               {meta.tokens.cached > 0 ? (
                 <Stat label="Cached" value={meta.tokens.cached} />
@@ -220,7 +236,7 @@ function DetailsButton({ message }: { message: UIMessage }) {
         {tools.length > 0 ? (
           <section className="flex flex-col gap-1.5">
             <h3 className="text-xs font-medium text-muted-foreground">Tools</h3>
-            <dl className="flex flex-col gap-1 text-xs bg-muted p-3 rounded-2xl">
+            <dl className="flex flex-col gap-1 rounded-2xl bg-muted p-3 text-xs">
               {tools.map(({ name, count }) => (
                 <Stat key={name} label={toolNoun(name)} value={count} />
               ))}
