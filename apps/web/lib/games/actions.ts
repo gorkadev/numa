@@ -9,7 +9,7 @@ import { games } from "@workspace/db/schema"
 import { generateText } from "ai"
 import { and, eq } from "drizzle-orm"
 
-import { DEFAULT_GAME_MODEL_ID, isGameModelId } from "@/lib/ai/model-catalog"
+import { DEFAULT_TIER_ID, isTierId } from "@/lib/ai/model-catalog"
 import { deleteGameSandboxes } from "@/lib/daytona/utils"
 import { ensureBillingCustomer } from "@/lib/polar/customers"
 
@@ -81,12 +81,12 @@ export async function createGame(
   }
 
   /**
-   * The model the composer was showing. It arrives from the browser, so an
+   * The tier the composer was showing. It arrives from the browser, so an
    * unrecognised one falls back to the default rather than being carried
    * forward — this value ends up in a URL, and the URL is read as a choice.
    */
-  const model = formData.get("model")
-  const modelId = isGameModelId(model) ? model : DEFAULT_GAME_MODEL_ID
+  const tier = formData.get("tier")
+  const tierId = isTierId(tier) ? tier : DEFAULT_TIER_ID
 
   const title = await generateTitle(prompt)
 
@@ -148,14 +148,14 @@ export async function createGame(
    * seeding the row directly would create a message the assistant never
    * answers. The thread strips both parameters once it has sent it.
    *
-   * The model goes the same way, and for the same reason it is not a column:
+   * The tier goes the same way, and for the same reason it is not a column:
    * the first turn has to be sent with what the home screen was showing, and
    * after that the thread's own picker owns the choice.
    *
    * `redirect` throws a control-flow exception, so nothing below it runs.
    */
   redirect(
-    `/games/${game.id}?prompt=${encodeURIComponent(prompt)}&model=${modelId}`
+    `/games/${game.id}?prompt=${encodeURIComponent(prompt)}&tier=${tierId}`
   )
 }
 

@@ -11,7 +11,7 @@ import { cn } from "@workspace/ui/lib/utils"
 import { ChatPreview } from "@/components/chat-preview"
 import { ChatThread } from "@/components/chat/chat-thread"
 import { GameMenu } from "@/components/game-menu"
-import type { GameModelId } from "@/lib/ai/model-catalog"
+import type { TierId } from "@/lib/ai/model-catalog"
 
 /**
  * The client boundary for a game: the page stays a server component that only
@@ -29,7 +29,7 @@ export function GameChat({
   initialMessages,
   initialSessions,
   initialPrompt,
-  initialModelId,
+  initialTierId,
 }: {
   gameId: string
   /** The game's name, as the header shows it. */
@@ -50,8 +50,8 @@ export function GameChat({
     { publicAccessToken: string; lastEventId?: string }
   >
   initialPrompt?: string
-  /** The model the home screen's picker was on, when the game came from there. */
-  initialModelId?: GameModelId
+  /** The tier the home screen's picker was on, when the game came from there. */
+  initialTierId?: TierId
 }) {
   /**
    * The preview's revision, owned here because the two panes are siblings: the
@@ -145,7 +145,7 @@ export function GameChat({
           initialMessages={initialMessages}
           initialSessions={initialSessions}
           initialPrompt={initialPrompt}
-          initialModelId={initialModelId}
+          initialTierId={initialTierId}
           onRevision={setRevision}
         />
       </div>

@@ -6,7 +6,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { Button } from "@workspace/ui/components/button"
 
 import { ChatComposer } from "@/components/chat-composer"
-import { DEFAULT_GAME_MODEL_ID, type GameModelId } from "@/lib/ai/model-catalog"
+import { DEFAULT_TIER_ID, type TierId } from "@/lib/ai/model-catalog"
 import { createGame } from "@/lib/games/actions"
 import { suggestions } from "@/lib/games/suggestions"
 
@@ -21,19 +21,19 @@ import { suggestions } from "@/lib/games/suggestions"
  */
 export function NewGameComposer() {
   const [value, setValue] = useState("")
-  const [modelId, setModelId] = useState<GameModelId>(DEFAULT_GAME_MODEL_ID)
+  const [tierId, setTierId] = useState<TierId>(DEFAULT_TIER_ID)
   const [state, formAction, pending] = useActionState(createGame, null)
 
   /**
-   * The model rides along with the prompt, and the action puts it back in the
+   * The tier rides along with the prompt, and the action puts it back in the
    * query string of the page it redirects to — the same route the prompt takes.
-   * Nothing is stored: a model choice is what the next turn is sent with, not a
+   * Nothing is stored: a tier choice is what the next turn is sent with, not a
    * property of the game, so the games table has no business holding it.
    */
   function handleSubmit(prompt: string) {
     const formData = new FormData()
     formData.set("prompt", prompt)
-    formData.set("model", modelId)
+    formData.set("tier", tierId)
 
     startTransition(() => {
       formAction(formData)
@@ -46,8 +46,8 @@ export function NewGameComposer() {
         value={value}
         onValueChange={setValue}
         onSubmit={handleSubmit}
-        modelId={modelId}
-        onModelChange={setModelId}
+        tierId={tierId}
+        onTierChange={setTierId}
         pending={pending}
         error={state?.error ?? null}
       />

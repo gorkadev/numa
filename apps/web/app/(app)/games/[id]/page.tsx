@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
 
 import { GameChat } from "@/components/game-chat"
-import { isGameModelId } from "@/lib/ai/model-catalog"
+import { isTierId } from "@/lib/ai/model-catalog"
 import { signPreviewToken } from "@/lib/games/preview-token"
 import { getGame } from "@/lib/games/queries"
 
@@ -17,15 +17,15 @@ export default async function GamePage({
    * what sends a message. Repeated keys arrive as an array; only a single value
    * is a prompt.
    */
-  const { prompt, model } = await searchParams
+  const { prompt, tier } = await searchParams
   const initialPrompt = typeof prompt === "string" ? prompt : undefined
 
   /**
-   * The model that screen was showing, travelling with it. Anything else in
+   * The tier that screen was showing, travelling with it. Anything else in
    * the parameter is ignored rather than corrected: the thread already starts
    * on the default, so an edited URL simply does not move it.
    */
-  const initialModelId = isGameModelId(model) ? model : undefined
+  const initialTierId = isTierId(tier) ? tier : undefined
 
   /**
    * `getGame` authenticates and scopes to the caller's org, so a missing game
@@ -67,7 +67,7 @@ export default async function GamePage({
       initialMessages={game.messages}
       initialSessions={initialSessions}
       initialPrompt={initialPrompt}
-      initialModelId={initialModelId}
+      initialTierId={initialTierId}
     />
   )
 }

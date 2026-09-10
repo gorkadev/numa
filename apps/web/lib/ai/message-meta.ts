@@ -2,7 +2,7 @@ import type { LanguageModelUsage, UIMessage } from "ai"
 import { z } from "zod"
 
 import { turnCreditCost, turnUsageTokens } from "./pricing"
-import type { GameModelId } from "./model-catalog"
+import type { ModelEntryId } from "./model-registry"
 
 /**
  * What a turn is worth reporting about itself, recorded on the message that
@@ -58,7 +58,7 @@ export function sentAtMetadata(): { sentAt: number } {
  * What a message is willing to say about itself, or an empty object for one
  * that predates any of this.
  *
- * Parsed rather than cast, exactly as `readThreadModel` is: the column is
+ * Parsed rather than cast, exactly as `readThreadTier` is: the column is
  * `jsonb`, so `UIMessage["metadata"]` being `unknown` is the truth and a
  * thread written by an older build legitimately has nothing here. Everything
  * downstream renders what is present and omits what is not — a missing
@@ -93,7 +93,7 @@ export function withTurnMeta(
   {
     modelId,
     usage,
-  }: { modelId: GameModelId; usage: LanguageModelUsage | undefined }
+  }: { modelId: ModelEntryId; usage: LanguageModelUsage | undefined }
 ): UIMessage[] {
   const last = messages.at(-1)
 

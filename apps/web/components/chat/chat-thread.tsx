@@ -25,14 +25,14 @@ import { AssistantAvatar } from "@/components/chat/assistant-avatar"
 import { ChatMessage } from "@/components/chat/chat-message"
 import { Thinking } from "@/components/chat/thinking"
 import { useGameChat } from "@/components/chat/use-game-chat"
-import type { GameModelId } from "@/lib/ai/model-catalog"
+import type { TierId } from "@/lib/ai/model-catalog"
 
 export function ChatThread({
   gameId,
   initialMessages,
   initialSessions,
   initialPrompt,
-  initialModelId,
+  initialTierId,
   onRevision,
 }: {
   gameId: string
@@ -53,13 +53,13 @@ export function ChatThread({
    */
   initialPrompt?: string
   /**
-   * The model the home screen's picker was on, handed over in the query string
+   * The tier the home screen's picker was on, handed over in the query string
    * beside the prompt it created the game with. It seeds the picker here so the
    * first turn is sent with what the player actually chose; from then on this
    * thread's own picker owns the value, which is why it is only the initial
    * one and not a controlled prop.
    */
-  initialModelId?: GameModelId
+  initialTierId?: TierId
   /**
    * Reports the revision the agent stamps on a turn that changed the game's
    * files. The thread owns the stream, but the preview is its sibling, so the
@@ -73,8 +73,8 @@ export function ChatThread({
     stop,
     onAnswer,
     send,
-    modelId,
-    setModelId,
+    tierId,
+    setTierId,
     pending,
     input,
     setInput,
@@ -83,7 +83,7 @@ export function ChatThread({
     initialMessages,
     initialSessions,
     initialPrompt,
-    initialModelId,
+    initialTierId,
     onRevision,
   })
 
@@ -173,8 +173,8 @@ export function ChatThread({
            * conversation nothing.
            */
           onStop={stop}
-          modelId={modelId}
-          onModelChange={setModelId}
+          tierId={tierId}
+          onTierChange={setTierId}
           pending={pending}
           placeholder="Ask for a change…"
         />

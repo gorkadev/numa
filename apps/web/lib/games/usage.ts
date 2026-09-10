@@ -4,7 +4,7 @@ import { turnUsage } from "@workspace/db/schema"
 import type { LanguageModelUsage } from "ai"
 import { eq } from "drizzle-orm"
 
-import type { GameModelId } from "@/lib/ai/model-catalog"
+import type { ModelEntryId } from "@/lib/ai/model-registry"
 import {
   RATE_TABLE_VERSION,
   turnCostMicroUsd,
@@ -84,7 +84,7 @@ export async function recordTurnUsage({
   stopped,
 }: {
   gameId: string
-  modelId: GameModelId
+  modelId: ModelEntryId
   turn: number
   runId: string
   usage: LanguageModelUsage | undefined

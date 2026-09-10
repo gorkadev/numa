@@ -1,6 +1,6 @@
 import type { LanguageModelUsage } from "ai"
 
-import type { GameModelId } from "./model-catalog"
+import type { ModelEntryId } from "./model-registry"
 
 /**
  * Server-only: what a turn is estimated to have cost.
@@ -57,7 +57,7 @@ type ModelRate = {
   }
 }
 
-const RATES: Record<GameModelId, ModelRate> = {
+const RATES: Record<ModelEntryId, ModelRate> = {
   /**
    * VERIFIED against Google's published pricing.
    *
@@ -156,7 +156,7 @@ export function turnCostMicroUsd({
   modelId,
   usage,
 }: {
-  modelId: GameModelId
+  modelId: ModelEntryId
   usage: LanguageModelUsage
 }): number {
   const rate = RATES[modelId]
@@ -239,7 +239,7 @@ export function turnCreditCost({
   modelId,
   usage,
 }: {
-  modelId: GameModelId
+  modelId: ModelEntryId
   usage: LanguageModelUsage
 }): number {
   const costMicroUsd = turnCostMicroUsd({ modelId, usage })

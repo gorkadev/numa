@@ -9,10 +9,15 @@ import {
 } from "ai"
 import { z } from "zod"
 
-import { gameModelSettings, resolveGameModelId } from "@/lib/ai/agent"
+import { orchestratorModelSettings } from "@/lib/ai/agent"
 import { withTurnMeta } from "@/lib/ai/message-meta"
-import { withThreadModel } from "@/lib/ai/message-model"
-import { gameModelIdSchema } from "@/lib/ai/model-catalog"
+import { withThreadTier } from "@/lib/ai/message-model"
+import { tierIdSchema, type TierId } from "@/lib/ai/model-catalog"
+import {
+  resolveModel,
+  resolveTier,
+  type ModelEntryId,
+} from "@/lib/ai/model-registry"
 import { turnCreditCost } from "@/lib/ai/pricing"
 import { createGameSandbox } from "@/lib/daytona/utils"
 import { gameInstructions } from "@/lib/games/instructions"
@@ -54,6 +59,17 @@ function changedGameFiles(message: UIMessage | undefined): boolean {
 
     return typeof output !== "object" || output === null || !("error" in output)
   })
+}
+
+/**
+ * The concrete registry entry the orchestrator runs this turn on — the tier's
+ * `strong` slot, resolved through the same two functions
+ * `orchestratorModelSettings` itself calls (decision 18). The credits chunk,
+ * the persisted message and the cost ledger all name this exact id, so the
+ * entry that is billed can never drift from the entry that actually ran.
+ */
+function orchestratorEntryId(tier: TierId | undefined): ModelEntryId {
+  return resolveModel(resolveTier(tier), "strong").primary.id
 }
 
 /**
@@ -100,17 +116,18 @@ export const gameChat = chat.agent({
   id: "game-chat",
 
   /**
-   * The model the player picked, validated against the closed set in the
+   * The tier the player picked, validated against the closed set in the
    * catalog. The id crosses from the browser, so an unrecognised one is
-   * rejected here rather than handed to the provider.
+   * rejected here rather than resolved to a model — the schema decides what is
+   * *allowed*.
    *
    * Everything is optional, and the object itself defaults to empty: the turn
    * of a client that sends no choice at all — an older tab, or the app before
-   * a picker exists — has to remain answerable, and `gameModelSettings` fills
-   * in the default.
+   * a picker exists — has to remain answerable, and `resolveTier` fills in the
+   * default.
    */
   clientDataSchema: z
-    .object({ model: gameModelIdSchema.optional() })
+    .object({ tier: tierIdSchema.optional() })
     .default({}),
 
   /**
@@ -266,7 +283,7 @@ export const gameChat = chat.agent({
   onTurnStart: async ({ chatId, uiMessages, clientData }) => {
     await saveGameThread({
       gameId: chatId,
-      messages: withThreadModel(uiMessages, clientData?.model),
+      messages: withThreadTier(uiMessages, clientData?.tier),
     })
   },
 
@@ -310,7 +327,7 @@ export const gameChat = chat.agent({
       writer.write(
         turnCreditsChunk(
           turnCreditCost({
-            modelId: resolveGameModelId(clientData?.model),
+            modelId: orchestratorEntryId(clientData?.tier),
             usage,
           })
         )
@@ -353,6 +370,8 @@ export const gameChat = chat.agent({
     finishReason,
     stopped,
   }) => {
+    const modelId = orchestratorEntryId(clientData?.tier)
+
     /**
      * The reply is stored carrying what it cost. `withTurnMeta` is the durable
      * counterpart to the transient `data-turn-credits` part written in
@@ -362,10 +381,10 @@ export const gameChat = chat.agent({
      */
     await saveGameThread({
       gameId: chatId,
-      messages: withTurnMeta(
-        withThreadModel(uiMessages, clientData?.model),
-        { modelId: resolveGameModelId(clientData?.model), usage }
-      ),
+      messages: withTurnMeta(withThreadTier(uiMessages, clientData?.tier), {
+        modelId,
+        usage,
+      }),
       chatAccessToken,
       lastEventId,
     })
@@ -373,16 +392,17 @@ export const gameChat = chat.agent({
     /**
      * `chatId` is the game id.
      *
-     * The model id comes from `resolveGameModelId`, the same function
-     * `gameModelSettings` resolves the provider through, because the ledger has
-     * to name the model that actually ran. A turn from an older tab sends no
-     * choice at all and is still answered by the default model; recording that
-     * as `undefined` would leave the cheapest question ("which model is this
-     * costing us?") unanswerable for exactly those turns.
+     * `modelId` is the concrete registry entry the orchestrator's `strong`
+     * slot resolved to, computed once above through `orchestratorEntryId` so
+     * the ledger can never disagree with what was just persisted on the
+     * message. A turn from an older tab sends no tier at all and is still
+     * answered on the default tier's `strong` entry; recording that entry
+     * rather than `undefined` keeps the cheapest question ("which model is
+     * this costing us?") answerable for exactly those turns.
      */
     await recordTurnUsage({
       gameId: chatId,
-      modelId: resolveGameModelId(clientData?.model),
+      modelId,
       turn,
       runId,
       usage,
@@ -402,10 +422,11 @@ export const gameChat = chat.agent({
       ...chat.toStreamTextOptions({ tools }),
       /**
        * Resolved per turn, not per chat: the choice is read off the message
-       * that arrived, so switching models continues the same thread rather
-       * than starting a second one.
+       * that arrived, so switching tiers continues the same thread rather
+       * than starting a second one. `orchestratorModelSettings` always runs
+       * the tier's `strong` slot (decisions 2 and 18).
        */
-      ...gameModelSettings(clientData?.model),
+      ...orchestratorModelSettings(clientData?.tier),
       /**
        * An array of system messages, not a joined string: the provider gets one
        * system block per concern, and each stays independently editable.

@@ -63,36 +63,36 @@ Registry Property, Usage Priced by the Concrete Entry, Per-Thread Tier
 Persistence With Legacy Mapping, Picker Shows Tiers, Initial Registry
 Population; `agent-orchestration`: Orchestrator Runs the Tier's Strong Slot.
 
-- [ ] 1a.1 Create `apps/web/lib/ai/model-registry.ts`: `Slot`, `ProviderId`,
+- [x] 1a.1 Create `apps/web/lib/ai/model-registry.ts`: `Slot`, `ProviderId`,
       `ModelEntryId`, `ModelEntry`, the three Gemini entries, `TIER_PROFILES`
       (one candidate per slot for now), `resolveModel(tier, slot)`, `resolveTier`.
-- [ ] 1a.2 Modify `apps/web/lib/ai/model-catalog.ts`: add `TIERS`,
+- [x] 1a.2 Modify `apps/web/lib/ai/model-catalog.ts`: add `TIERS`,
       `tierIdSchema`, `TierId`, `DEFAULT_TIER_ID = "balanced"`, `isTierId`,
       `getTier`; keep the old enum only as `legacyModelIdSchema` +
       `LEGACY_MODEL_TIER`; remove `GAME_MODELS`/`GameModel`/`getGameModel`/
       `DEFAULT_GAME_MODEL_ID`.
-- [ ] 1a.3 Modify `apps/web/lib/ai/models.ts`: provider factory per
+- [x] 1a.3 Modify `apps/web/lib/ai/models.ts`: provider factory per
       `ProviderId`, instance cache keyed by `ModelEntryId`.
-- [ ] 1a.4 Modify `apps/web/lib/ai/agent.ts`: `resolveTier` replaces
+- [x] 1a.4 Modify `apps/web/lib/ai/agent.ts`: `resolveTier` replaces
       `resolveGameModelId`; `orchestratorModelSettings(tier)` returns
       `{ model, providerOptions }` for `resolveModel(tier, "strong")`.
-- [ ] 1a.5 Modify `apps/web/lib/ai/pricing.ts`: `RATES: Record<ModelEntryId,
+- [x] 1a.5 Modify `apps/web/lib/ai/pricing.ts`: `RATES: Record<ModelEntryId,
       ModelRate>`; `turnCostMicroUsd`/`turnCreditCost` take
       `modelId: ModelEntryId`. Rates unchanged here; `RATE_TABLE_VERSION`
       unchanged.
-- [ ] 1a.6 Modify `apps/web/lib/ai/message-model.ts`: `{ tier }` metadata,
+- [x] 1a.6 Modify `apps/web/lib/ai/message-model.ts`: `{ tier }` metadata,
       `readThreadTier` (walks backwards, legacy `model` → `LEGACY_MODEL_TIER`,
       newest record wins, no match → `undefined`), `withThreadTier`.
-- [ ] 1a.7 Modify `apps/web/components/model-picker.tsx`: list `TIERS` with
+- [x] 1a.7 Modify `apps/web/components/model-picker.tsx`: list `TIERS` with
       label + tagline, narrow with `isTierId`; no model/provider names.
-- [ ] 1a.8 Modify `apps/web/components/chat-composer.tsx`,
+- [x] 1a.8 Modify `apps/web/components/chat-composer.tsx`,
       `new-game-composer.tsx`, `components/chat/use-game-chat.ts`,
       `components/game-chat.tsx`, `components/chat/chat-thread.tsx`,
       `lib/games/actions.ts`, `app/(app)/games/[id]/page.tsx`: `GameModelId`
       props/state → `TierId`; hand-off moves from `?model=` to `?tier=`.
-- [ ] 1a.9 Modify `apps/web/lib/ai/message-meta.ts`, `lib/games/usage.ts`:
+- [x] 1a.9 Modify `apps/web/lib/ai/message-meta.ts`, `lib/games/usage.ts`:
       `modelId: ModelEntryId`.
-- [ ] 1a.10 Modify `apps/web/trigger/chat.ts`: `clientDataSchema` carries
+- [x] 1a.10 Modify `apps/web/trigger/chat.ts`: `clientDataSchema` carries
       `{ tier: tierIdSchema.optional() }.default({})`; `withThreadTier` calls;
       resolve the orchestrator's entry id via `resolveModel(resolveTier(tier),
       "strong")` for credits/meta/ledger; `orchestratorModelSettings` in

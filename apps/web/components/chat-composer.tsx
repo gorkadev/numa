@@ -12,7 +12,7 @@ import {
 import { Spinner } from "@workspace/ui/components/spinner"
 
 import { ModelPicker } from "@/components/model-picker"
-import type { GameModelId } from "@/lib/ai/model-catalog"
+import type { TierId } from "@/lib/ai/model-catalog"
 
 type ChatComposerProps = {
   value: string
@@ -29,15 +29,15 @@ type ChatComposerProps = {
   error?: string | null
   placeholder?: string
   /**
-   * The selected model, and the way to change it. Both are passed straight
-   * through to the picker — the composer is presentational, so the model is
+   * The selected tier, and the way to change it. Both are passed straight
+   * through to the picker — the composer is presentational, so the tier is
    * the caller's state for the same reason the text is.
    *
    * Optional together: a composer whose caller has nowhere to send the choice
    * shows no picker rather than a control that decides nothing.
    */
-  modelId?: GameModelId
-  onModelChange?: (modelId: GameModelId) => void
+  tierId?: TierId
+  onTierChange?: (tierId: TierId) => void
 }
 
 /**
@@ -53,8 +53,8 @@ export function ChatComposer({
   pending = false,
   error = null,
   placeholder = "Describe the game you want to build…",
-  modelId,
-  onModelChange,
+  tierId,
+  onTierChange,
 }: ChatComposerProps) {
   const trimmed = value.trim()
   const stoppable = pending && Boolean(onStop)
@@ -113,8 +113,8 @@ export function ChatComposer({
             onKeyDown={handleKeyDown}
           />
           <InputGroupAddon align="block-end">
-            {modelId && onModelChange ? (
-              <ModelPicker value={modelId} onValueChange={onModelChange} />
+            {tierId && onTierChange ? (
+              <ModelPicker value={tierId} onValueChange={onTierChange} />
             ) : null}
             {/**
              * One button, two meanings: while an answer streams it stops the

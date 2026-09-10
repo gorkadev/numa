@@ -7,8 +7,8 @@ import { useTriggerChatTransport } from "@trigger.dev/sdk/chat/react"
 import { lastAssistantMessageIsCompleteWithToolCalls, type UIMessage } from "ai"
 
 import { sentAtMetadata } from "@/lib/ai/message-meta"
-import { gameModelMetadata, readThreadModel } from "@/lib/ai/message-model"
-import { DEFAULT_GAME_MODEL_ID, type GameModelId } from "@/lib/ai/model-catalog"
+import { readThreadTier, tierMetadata } from "@/lib/ai/message-model"
+import { DEFAULT_TIER_ID, type TierId } from "@/lib/ai/model-catalog"
 import { withoutContinuationOf } from "@/lib/ai/resume-stream"
 import {
   mintGameChatAccessToken,
@@ -32,7 +32,7 @@ export function useGameChat({
   initialMessages,
   initialSessions,
   initialPrompt,
-  initialModelId,
+  initialTierId,
   onRevision,
 }: {
   gameId: string
@@ -53,13 +53,13 @@ export function useGameChat({
    */
   initialPrompt?: string
   /**
-   * The model the home screen's picker was on, handed over in the query string
+   * The tier the home screen's picker was on, handed over in the query string
    * beside the prompt it created the game with. It seeds the picker here so the
    * first turn is sent with what the player actually chose; from then on this
    * thread's own picker owns the value, which is why it is only the initial
    * one and not a controlled prop.
    */
-  initialModelId?: GameModelId
+  initialTierId?: TierId
   /**
    * Reports the revision the agent stamps on a turn that changed the game's
    * files. The thread owns the stream, but the preview is its sibling, so the
@@ -70,26 +70,23 @@ export function useGameChat({
   const [input, setInput] = useState("")
 
   /**
-   * The model the next turn is sent with. It lives here rather than in the
+   * The tier the next turn is sent with. It lives here rather than in the
    * composer because this is the component holding the transport: the picker
    * changes a value the agent has to receive, not a piece of local form state.
    *
    * Per turn, not per chat — the transport reads it on every send, so a thread
-   * can be started on one model and continued on another.
+   * can be started on one tier and continued on another.
    *
    * Restored from the thread first, because that is where the choice was
-   * recorded: the agent stamps the model every turn ran with onto that turn's
-   * last message, so a reload picks the conversation back up on the model it
+   * recorded: the agent stamps the tier every turn ran with onto that turn's
+   * last message, so a reload picks the conversation back up on the tier it
    * was actually running — including a turn that only answered an `ask_player`
    * question, which sends no message of its own to hang the choice on. The
    * query string is only the brand-new game's case, when there is no message to
    * read it off yet.
    */
-  const [modelId, setModelId] = useState<GameModelId>(
-    () =>
-      readThreadModel(initialMessages) ??
-      initialModelId ??
-      DEFAULT_GAME_MODEL_ID
+  const [tierId, setTierId] = useState<TierId>(
+    () => readThreadTier(initialMessages) ?? initialTierId ?? DEFAULT_TIER_ID
   )
 
   /**
@@ -109,10 +106,10 @@ export function useGameChat({
     /**
      * The player's choice, on its way to the agent's `clientDataSchema` as
      * per-turn metadata. The hook keeps this option in a ref, so switching
-     * models takes effect on the next send without rebuilding the transport
+     * tiers takes effect on the next send without rebuilding the transport
      * or disturbing the stream in flight.
      */
-    clientData: { model: modelId },
+    clientData: { tier: tierId },
     sessions: initialSessions,
   })
 
@@ -244,7 +241,7 @@ export function useGameChat({
    * cannot disagree.
    */
   function handleSubmit(text: string) {
-    sendMessage({ text, metadata: outgoingMetadata(modelId) })
+    sendMessage({ text, metadata: outgoingMetadata(tierId) })
     setInput("")
   }
 
@@ -270,11 +267,11 @@ export function useGameChat({
     sentInitialPrompt.current = true
 
     if (initialMessages.length === 0) {
-      sendMessage({ text: initialPrompt, metadata: outgoingMetadata(modelId) })
+      sendMessage({ text: initialPrompt, metadata: outgoingMetadata(tierId) })
     }
 
     window.history.replaceState(null, "", `/games/${gameId}`)
-  }, [gameId, initialMessages.length, initialPrompt, modelId, sendMessage])
+  }, [gameId, initialMessages.length, initialPrompt, tierId, sendMessage])
 
   /**
    * A stable per-call answer handler, built once around `addToolOutput`
@@ -298,8 +295,8 @@ export function useGameChat({
     stop,
     onAnswer,
     send: handleSubmit,
-    modelId,
-    setModelId,
+    tierId,
+    setTierId,
     pending,
     input,
     setInput,
@@ -307,13 +304,13 @@ export function useGameChat({
 }
 
 /**
- * What an outgoing message carries: the model it is being sent to, and the
+ * What an outgoing message carries: the tier it is being sent with, and the
  * moment the player sent it.
  *
  * One function so the two never disagree about which messages get stamped —
  * every send goes through here, and the thread's footer relies on `sentAt`
  * existing on anything the browser produced.
  */
-function outgoingMetadata(model: GameModelId) {
-  return { ...gameModelMetadata(model), ...sentAtMetadata() }
+function outgoingMetadata(tier: TierId) {
+  return { ...tierMetadata(tier), ...sentAtMetadata() }
 }

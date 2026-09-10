@@ -17,35 +17,34 @@ import {
   ItemTitle,
 } from "@workspace/ui/components/item"
 
-import {
-  GAME_MODELS,
-  getGameModel,
-  isGameModelId,
-  type GameModelId,
-} from "@/lib/ai/model-catalog"
+import { TIERS, getTier, isTierId, type TierId } from "@/lib/ai/model-catalog"
 
 type ModelPickerProps = {
-  value: GameModelId
-  onValueChange: (value: GameModelId) => void
+  value: TierId
+  onValueChange: (value: TierId) => void
   disabled?: boolean
 }
 
 /**
- * Chooses which model builds the game. It owns nothing: the selection lives
+ * Chooses which tier builds the game. It owns nothing: the selection lives
  * with whoever owns the conversation, because that is the component that has
  * to hand the id to the transport as client data — a picker holding its own
  * state would show a choice the agent never hears about.
  *
- * A radio group rather than plain items, so the menu says which model is
+ * A radio group rather than plain items, so the menu says which tier is
  * current instead of only offering the switch. `DropdownMenuRadioItem` draws
  * the check on the selected row for free.
+ *
+ * It lists tiers only — never a provider or a concrete model name. The
+ * player picks a power/budget trade-off; the model registry decides what runs
+ * behind it (`lib/ai/model-registry.ts`).
  */
 export function ModelPicker({
   value,
   onValueChange,
   disabled = false,
 }: ModelPickerProps) {
-  const selected = getGameModel(value)
+  const selected = getTier(value)
 
   return (
     <DropdownMenu>
@@ -53,31 +52,31 @@ export function ModelPicker({
         render={
           <InputGroupButton type="button" disabled={disabled} size="sm">
             <HugeiconsIcon icon={GridIcon} />
-            {selected.name}
+            {selected.label}
             <HugeiconsIcon icon={ArrowDown01Icon} />
           </InputGroupButton>
         }
       />
       {/**
        * Wide enough for a tagline to breathe: the descriptions are the reason
-       * the menu exists — the names alone do not say which model to pick.
+       * the menu exists — the labels alone do not say which tier to pick.
        */}
       <DropdownMenuContent className="w-72" align="start">
         <DropdownMenuRadioGroup
           value={value}
           /**
            * Base UI types the radio value as `any`, so the id is narrowed back
-           * here rather than asserted — a value that is not a model in the
-           * catalog is dropped instead of travelling on to the agent.
+           * here rather than asserted — a value that is not a tier is dropped
+           * instead of travelling on to the agent.
            */
           onValueChange={(next) => {
-            if (isGameModelId(next)) onValueChange(next)
+            if (isTierId(next)) onValueChange(next)
           }}
         >
-          {GAME_MODELS.map((model) => (
+          {TIERS.map((tier) => (
             <DropdownMenuRadioItem
-              key={model.id}
-              value={model.id}
+              key={tier.id}
+              value={tier.id}
               /**
                * Base UI keeps a radio item's menu open on click, which suits a
                * list you tick several things in. This one is a single choice
@@ -93,8 +92,8 @@ export function ModelPicker({
                */}
               <Item size="xs">
                 <ItemContent>
-                  <ItemTitle>{model.name}</ItemTitle>
-                  <ItemDescription>{model.tagline}</ItemDescription>
+                  <ItemTitle>{tier.label}</ItemTitle>
+                  <ItemDescription>{tier.tagline}</ItemDescription>
                 </ItemContent>
               </Item>
             </DropdownMenuRadioItem>

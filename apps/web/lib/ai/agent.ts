@@ -1,35 +1,28 @@
-import {
-  DEFAULT_GAME_MODEL_ID,
-  isGameModelId,
-  type GameModelId,
-} from "./model-catalog"
-import { gameModel } from "./models"
+import type { TierId } from "./model-catalog"
+import { resolveModel, resolveTier, type ResolvedModel } from "./model-registry"
 
 /**
- * What to build with when the browser did not say, or said something this
- * server does not recognise.
+ * Turns whatever the browser said the tier was into the `streamText` options
+ * the orchestrator runs with this turn.
  *
- * The id is checked again here even though `clientDataSchema` already parsed
- * it, because the fallback is the point: a turn arriving from an older tab, or
- * from a client sending nothing at all, should be answered with the default
- * model rather than failing. The schema decides what is *allowed*; this decides
- * what to do when the answer is missing.
+ * The orchestrator always runs the tier's `strong` slot — it routes, does
+ * tweaks itself, and writes every reply the player sees, so its quality is the
+ * baseline. `resolveTier` supplies the default for a turn that named no tier
+ * at all or named one this server does not recognise; `resolveModel` is then
+ * the only path from that tier to a concrete model (decisions 2 and 18).
  *
- * Exported rather than kept inside `gameModelSettings` because two callers need
- * the *decision* and only one needs the provider it leads to: the cost ledger
- * records which model ran, and it has to reach that answer by this rule and no
- * other. Re-deriving the fallback at the second call site would work until the
- * day this rule changed, and then quietly file every defaulted turn under the
- * wrong model.
+ * `providerOptions` rides along from the resolved entry: a slot's primary can
+ * declare reasoning effort or another per-call option, and it has to reach
+ * every call made on it without this function — or its caller — knowing that
+ * option exists.
  */
-export function resolveGameModelId(id: GameModelId | undefined): GameModelId {
-  return isGameModelId(id) ? id : DEFAULT_GAME_MODEL_ID
-}
+export function orchestratorModelSettings(
+  tier: TierId | undefined
+): {
+  model: ResolvedModel["model"]
+  providerOptions: ResolvedModel["primary"]["providerOptions"]
+} {
+  const { model, primary } = resolveModel(resolveTier(tier), "strong")
 
-/**
- * Turns whatever the browser said it wanted into the `streamText` options for
- * this turn.
- */
-export function gameModelSettings(id: GameModelId | undefined) {
-  return { model: gameModel(resolveGameModelId(id)) }
+  return { model, providerOptions: primary.providerOptions }
 }
