@@ -1,11 +1,7 @@
 "use client"
 
 import type { FormEvent, KeyboardEvent } from "react"
-import {
-  ArrowUp02Icon,
-  Loading03Icon,
-  StopIcon,
-} from "@hugeicons/core-free-icons"
+import { ArrowUp02Icon, StopIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   InputGroup,
@@ -13,6 +9,7 @@ import {
   InputGroupButton,
   InputGroupTextarea,
 } from "@workspace/ui/components/input-group"
+import { Spinner } from "@workspace/ui/components/spinner"
 
 import { ModelPicker } from "@/components/model-picker"
 import type { GameModelId } from "@/lib/ai/model-catalog"
@@ -133,12 +130,13 @@ export function ChatComposer({
               variant={stoppable ? "destructive" : "default"}
               size="icon-sm"
             >
-              <HugeiconsIcon
-                icon={
-                  stoppable ? StopIcon : pending ? Loading03Icon : ArrowUp02Icon
-                }
-                className={!stoppable && pending ? "animate-spin" : undefined}
-              />
+              {stoppable ? (
+                <HugeiconsIcon icon={StopIcon} />
+              ) : pending ? (
+                <Spinner />
+              ) : (
+                <HugeiconsIcon icon={ArrowUp02Icon} />
+              )}
             </InputGroupButton>
           </InputGroupAddon>
         </InputGroup>
