@@ -159,7 +159,7 @@ export function GameMenu({
         >
           <HugeiconsIcon icon={MoreHorizontalIcon} strokeWidth={2} />
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-40">
+        <DropdownMenuContent align="start" className="w-40">
           <DropdownMenuItem onClick={openRename}>
             <HugeiconsIcon icon={PencilEdit02Icon} strokeWidth={2} />
             Rename

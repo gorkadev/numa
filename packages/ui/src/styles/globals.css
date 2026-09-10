@@ -2,6 +2,22 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/**
+ * The marquee's fade widths. Registering them is what makes them animate as
+ * lengths — an unregistered custom property flips between values discretely,
+ * which would make the fades snap instead of slide.
+ */
+@property --marquee-fade-s {
+    syntax: "<length>";
+    inherits: false;
+    initial-value: 0px;
+}
+@property --marquee-fade-e {
+    syntax: "<length>";
+    inherits: false;
+    initial-value: 0px;
+}
+
 @custom-variant dark (&:is(.dark *));
 @source "../../../apps/**/*.{ts,tsx}";
 @source "../../../components/**/*.{ts,tsx}";
@@ -9,6 +25,49 @@
 
 @theme inline {
     --font-heading: var(--font-sans);
+
+    /**
+     * The marquee used by `MarqueeText`.
+     *
+     * One leg only — `alternate` plays it back to make the return trip, which is
+     * what keeps a single rule able to hold at both ends: the flat head of the
+     * easing and the flat tail of the previous leg meet at each extremity and
+     * add up. Distance, duration and easing all come from the element, since
+     * only it knows how far its own text overflows; that is why this block is
+     * `inline`, so the values resolve per element rather than once at `:root`.
+     */
+    --animate-marquee: marquee var(--marquee-duration, 6s)
+        var(--marquee-ease, linear) infinite alternate;
+
+    @keyframes marquee {
+        from {
+            transform: translateX(0);
+        }
+        to {
+            transform: translateX(var(--marquee-shift, 0px));
+        }
+    }
+
+    /**
+     * The edge fades, moved in lockstep with the text above: the side the text
+     * has travelled away from fades in exactly as the side it is travelling
+     * towards fades out. Same duration, same easing, same direction, started by
+     * the same hover — so the two cannot drift apart.
+     */
+    --animate-marquee-fade: marquee-fade var(--marquee-duration, 6s)
+        var(--marquee-ease, linear) infinite alternate;
+
+    @keyframes marquee-fade {
+        from {
+            --marquee-fade-s: 0px;
+            --marquee-fade-e: var(--marquee-fade-size);
+        }
+        to {
+            --marquee-fade-s: var(--marquee-fade-size);
+            --marquee-fade-e: 0px;
+        }
+    }
+
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);

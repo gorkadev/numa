@@ -61,7 +61,12 @@ function CommandDialog({
         )}
         showCloseButton={showCloseButton}
       >
-        {children}
+        {/**
+         * The `Command` root is not optional decoration: every other piece —
+         * `CommandInput` first of all — reads cmdk's store out of the context
+         * this establishes, and finds `undefined` without it.
+         */}
+        <Command className="rounded-none bg-transparent">{children}</Command>
       </DialogContent>
     </Dialog>
   )

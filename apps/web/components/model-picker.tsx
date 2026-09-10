@@ -75,7 +75,17 @@ export function ModelPicker({
           }}
         >
           {GAME_MODELS.map((model) => (
-            <DropdownMenuRadioItem key={model.id} value={model.id}>
+            <DropdownMenuRadioItem
+              key={model.id}
+              value={model.id}
+              /**
+               * Base UI keeps a radio item's menu open on click, which suits a
+               * list you tick several things in. This one is a single choice
+               * that is done the moment it is made, so leaving the menu up
+               * would only ask the player to dismiss it.
+               */
+              closeOnClick
+            >
               {/**
                * `Item` at `xs` drops its own padding inside a menu (see the
                * `in-data-[slot=dropdown-menu-content]` variant), so the row

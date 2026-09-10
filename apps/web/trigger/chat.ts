@@ -9,6 +9,7 @@ import {
 import { z } from "zod"
 
 import { gameModelSettings } from "@/lib/ai/agent"
+import { withThreadModel } from "@/lib/ai/message-model"
 import { gameModelIdSchema } from "@/lib/ai/model-catalog"
 import { createGameSandbox } from "@/lib/daytona/utils"
 import { gameInstructions } from "@/lib/games/instructions"
@@ -133,8 +134,11 @@ export const gameChat = chat.agent({
    * finds the question unanswered — putting the same choice to the player a
    * second time, on top of a game already being built from their first answer.
    */
-  onTurnStart: async ({ chatId, uiMessages }) => {
-    await saveGameThread({ gameId: chatId, messages: uiMessages })
+  onTurnStart: async ({ chatId, uiMessages, clientData }) => {
+    await saveGameThread({
+      gameId: chatId,
+      messages: withThreadModel(uiMessages, clientData?.model),
+    })
   },
 
   /**
@@ -168,10 +172,11 @@ export const gameChat = chat.agent({
     uiMessages,
     chatAccessToken,
     lastEventId,
+    clientData,
   }) => {
     await saveGameThread({
       gameId: chatId,
-      messages: uiMessages,
+      messages: withThreadModel(uiMessages, clientData?.model),
       chatAccessToken,
       lastEventId,
     })

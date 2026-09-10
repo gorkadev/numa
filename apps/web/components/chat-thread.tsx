@@ -59,6 +59,7 @@ import {
 import { Spinner } from "@workspace/ui/components/spinner"
 
 import { ChatComposer } from "@/components/chat-composer"
+import { gameModelMetadata, readThreadModel } from "@/lib/ai/message-model"
 import { DEFAULT_GAME_MODEL_ID, type GameModelId } from "@/lib/ai/model-catalog"
 import {
   mintGameChatAccessToken,
@@ -117,9 +118,20 @@ export function ChatThread({
    *
    * Per turn, not per chat — the transport reads it on every send, so a thread
    * can be started on one model and continued on another.
+   *
+   * Restored from the thread first, because that is where the choice was
+   * recorded: the agent stamps the model every turn ran with onto that turn's
+   * last message, so a reload picks the conversation back up on the model it
+   * was actually running — including a turn that only answered an `ask_player`
+   * question, which sends no message of its own to hang the choice on. The
+   * query string is only the brand-new game's case, when there is no message to
+   * read it off yet.
    */
   const [modelId, setModelId] = useState<GameModelId>(
-    initialModelId ?? DEFAULT_GAME_MODEL_ID
+    () =>
+      readThreadModel(initialMessages) ??
+      initialModelId ??
+      DEFAULT_GAME_MODEL_ID
   )
 
   /**
@@ -236,8 +248,15 @@ export function ChatThread({
 
   const pending = status === "submitted" || status === "streaming"
 
+  /**
+   * The metadata records the choice on the message itself, which is what the
+   * next mount reads back rather than starting over on the default. It covers
+   * only the turns that send a message, so the agent re-stamps it from
+   * `clientData` on every turn; both are set from this same state, so they
+   * cannot disagree.
+   */
   function handleSubmit(text: string) {
-    sendMessage({ text })
+    sendMessage({ text, metadata: gameModelMetadata(modelId) })
     setInput("")
   }
 
@@ -263,11 +282,11 @@ export function ChatThread({
     sentInitialPrompt.current = true
 
     if (initialMessages.length === 0) {
-      sendMessage({ text: initialPrompt })
+      sendMessage({ text: initialPrompt, metadata: gameModelMetadata(modelId) })
     }
 
     window.history.replaceState(null, "", `/games/${gameId}`)
-  }, [gameId, initialMessages.length, initialPrompt, sendMessage])
+  }, [gameId, initialMessages.length, initialPrompt, modelId, sendMessage])
 
   /**
    * Whether the agent has been handed the turn but has not put anything on
@@ -570,7 +589,7 @@ function AskPlayer({
 }) {
   return (
     <Bubble variant="muted" align="start" className="w-full max-w-full">
-      <BubbleContent className="w-full !bg-card p-4">
+      <BubbleContent className="w-full dark:!bg-card p-4 !bg-transparent">
         <Questionnaire
           /**
            * Number keys pick an option, Enter commits. The primitive scopes

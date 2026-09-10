@@ -1,6 +1,6 @@
 "use client"
 
-import type { FormEvent } from "react"
+import type { FormEvent, KeyboardEvent } from "react"
 import {
   ArrowUp02Icon,
   Loading03Icon,
@@ -62,25 +62,58 @@ export function ChatComposer({
   const trimmed = value.trim()
   const stoppable = pending && Boolean(onStop)
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-
+  function submit() {
     if (pending || !trimmed) return
 
     onSubmit(trimmed)
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    submit()
+  }
+
+  /**
+   * Enter sends, Shift+Enter writes a new line — the convention every chat the
+   * player has used already follows, and the composer is a message box before
+   * it is a form.
+   *
+   * `isComposing` is the load-bearing part: while an IME candidate window is
+   * open, Enter commits the candidate rather than the message. Without the
+   * guard, writing anything in Japanese, Chinese or Korean would fire a send on
+   * the first accepted word.
+   */
+  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key !== "Enter" || event.shiftKey) return
+    if (event.nativeEvent.isComposing) return
+
+    event.preventDefault()
+
+    submit()
   }
 
   return (
     <form onSubmit={handleSubmit} className="flex w-full flex-col">
       <div className="flex w-full flex-col gap-2">
         <InputGroup>
+          {/**
+           * The control grows with what is typed — `field-sizing-content` on
+           * the base textarea — so it needs a ceiling of its own, or a message
+           * of a few paragraphs pushes the composer past the viewport and
+           * takes the send button with it. Past the cap the textarea scrolls
+           * internally instead, which keeps the whole message readable without
+           * the layout moving.
+           */}
           <InputGroupTextarea
+            className="max-h-48 resize-none overflow-y-auto py-3"
             name="prompt"
             rows={3}
             value={value}
             disabled={pending}
             placeholder={placeholder}
             onChange={(event) => onValueChange(event.target.value)}
+            onKeyDown={handleKeyDown}
           />
           <InputGroupAddon align="block-end">
             {modelId && onModelChange ? (
@@ -97,7 +130,7 @@ export function ChatComposer({
               aria-label={stoppable ? "Stop generating" : "Send message"}
               disabled={stoppable ? false : pending || !trimmed}
               className="ml-auto rounded-full"
-              variant="default"
+              variant={stoppable ? "destructive" : "default"}
               size="icon-sm"
             >
               <HugeiconsIcon
