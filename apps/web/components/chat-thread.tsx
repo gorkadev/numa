@@ -20,6 +20,11 @@ import {
   Tick02Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@workspace/ui/components/alert"
 import { Bubble, BubbleContent } from "@workspace/ui/components/bubble"
 import {
   Collapsible,
@@ -424,7 +429,22 @@ export function ChatThread({
           <MessageScrollerButton />
         </MessageScroller>
       </MessageScrollerProvider>
-      <div className="mx-auto w-full max-w-3xl shrink-0 px-4 pb-4">
+      <div className="mx-auto flex w-full max-w-3xl shrink-0 flex-col gap-2 px-4 pb-4">
+        {/**
+         * The failure gets its own surface with the real message in it, rather
+         * than one generic line under the composer. A turn can die for reasons
+         * the player can act on and that look nothing alike — no credits left,
+         * the sandbox failed to start, the model refused — and collapsing all
+         * of them into "something went wrong" turns a fixable problem into a
+         * dead end.
+         */}
+        {error ? (
+          <Alert variant="destructive">
+            <HugeiconsIcon icon={Alert01Icon} strokeWidth={2} />
+            <AlertTitle>That turn did not go through</AlertTitle>
+            <AlertDescription>{error.message}</AlertDescription>
+          </Alert>
+        ) : null}
         <ChatComposer
           value={input}
           onValueChange={setInput}
@@ -439,7 +459,6 @@ export function ChatThread({
           modelId={modelId}
           onModelChange={setModelId}
           pending={pending}
-          error={error ? "Something went wrong. Try again." : null}
           placeholder="Ask for a change…"
         />
       </div>

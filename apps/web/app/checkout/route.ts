@@ -1,6 +1,49 @@
 import { auth } from "@clerk/nextjs/server"
 
 import { polar } from "@/lib/polar/client"
+import {
+  POLAR_PRODUCT_PRO_ID,
+  POLAR_PRODUCT_TOPUP_ID,
+} from "@/lib/polar/products"
+
+/**
+ * Whether this organization holds a PAID subscription.
+ *
+ * Specifically the Pro product, and not merely "any active subscription" —
+ * which is the trap, because every organization gets one.
+ * `ensureBillingCustomer` subscribes each org to the free plan the moment it
+ * opens the application, so `activeSubscriptions.length > 0` is true for
+ * literally everybody and a guard built on it blocks nobody. It would look like
+ * a rule and behave like a comment.
+ *
+ * The rule that was actually wanted is that extra credits extend a plan rather
+ * than replace one. Top-up credits carry `rollover: true` and never expire, so
+ * a free user who can buy them repeatedly has found a pay-as-you-go product
+ * nobody designed, at the price point with the worst margin and the least
+ * predictable revenue — and the monthly plan becomes the option only the
+ * inattentive choose.
+ *
+ * Any failure answers `false`, and that direction is deliberate. Everywhere
+ * else in this integration an unanswerable question is forgiven — see the
+ * credit gate in `trigger/chat.ts` — because refusing there takes away
+ * something the customer already paid for. Here the unanswerable question is
+ * blocking a PURCHASE that has not happened yet, and a refused checkout costs
+ * the buyer a retry rather than anything they own. Selling a top-up we could
+ * not justify is the more expensive mistake, so this one fails closed.
+ */
+async function hasPaidSubscription(orgId: string): Promise<boolean> {
+  try {
+    const state = await polar.customers.getStateExternal({ externalId: orgId })
+
+    return state.activeSubscriptions.some(
+      (subscription) => subscription.productId === POLAR_PRODUCT_PRO_ID
+    )
+  } catch (error) {
+    console.error("Failed to read Polar customer state", error)
+
+    return false
+  }
+}
 
 /**
  * Opens a Polar checkout for the products named in the query string and sends
@@ -62,6 +105,40 @@ export async function GET(request: Request): Promise<Response> {
       { error: "Missing products in query params" },
       { status: 400 }
     )
+  }
+
+  /**
+   * A top-up may only be bought on top of a subscription.
+   *
+   * The reason is the top-up's own terms rather than anything technical: its
+   * credits carry `rollover: true`, so they never expire. That makes a
+   * standalone top-up a strictly better deal than the monthly plan for anyone
+   * who thinks about it for ten seconds — buy a pack, use it over however many
+   * months it lasts, buy another when it runs out. Nobody is doing anything
+   * wrong in that story, which is exactly the problem: the lower-margin,
+   * lumpier, less predictable product wins by default, and the plan the
+   * business is actually built on becomes the option only the inattentive pick.
+   * The top-up is meant to be a release valve for a heavy month, not the
+   * product.
+   *
+   * It is enforceable here precisely because this application mints the
+   * checkout session rather than linking to a hosted one. Polar will happily
+   * sell the product to anybody who reaches a checkout for it; the control is
+   * that no such checkout ever comes into existence. Refusing here means there
+   * is no URL to visit, no link to share, and nothing to bookmark from a
+   * previous purchase — which a client-side guard, or a pricing page that
+   * simply hides the button, would all fail to achieve.
+   *
+   * 409 rather than 403: the request is not forbidden, the account is in the
+   * wrong state for it, and the fix is to subscribe first.
+   */
+  if (products.includes(POLAR_PRODUCT_TOPUP_ID)) {
+    if (!(await hasPaidSubscription(orgId))) {
+      return Response.json(
+        { error: "A paid plan is required to buy extra credits" },
+        { status: 409 }
+      )
+    }
   }
 
   try {

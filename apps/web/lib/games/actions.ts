@@ -11,6 +11,7 @@ import { and, eq } from "drizzle-orm"
 
 import { DEFAULT_GAME_MODEL_ID, isGameModelId } from "@/lib/ai/model-catalog"
 import { deleteGameSandboxes } from "@/lib/daytona/utils"
+import { ensureBillingCustomer } from "@/lib/polar/customers"
 
 export type CreateGameState = { error: string } | null
 
@@ -88,6 +89,40 @@ export async function createGame(
   const modelId = isGameModelId(model) ? model : DEFAULT_GAME_MODEL_ID
 
   const title = await generateTitle(prompt)
+
+  /**
+   * Provisioning MOVED to the application shell — `app/(app)/layout.tsx` calls
+   * `ensureBillingCustomer` on every render, so an organization gets its free
+   * plan simply by opening the app, whatever its vintage and whether or not it
+   * ever creates a game. This call stayed behind anyway, and the reason is the
+   * one thing a layout cannot promise.
+   *
+   * A Server Action is an HTTP endpoint. It can be POSTed directly, and the
+   * action runs BEFORE any render, so nothing guarantees the shell provisioned
+   * this organization first. Keeping the call here means the path that is about
+   * to create a billable resource has provisioned billing itself rather than
+   * assuming somebody upstream did.
+   *
+   * It is idempotent, so the cost of keeping it is one state read on the
+   * already-provisioned path — the same read the layout does — and the cost of
+   * dropping it would be a game created for an organization with no plan.
+   *
+   * `ensureBillingCustomer` needs a Clerk request context: it reads the active
+   * organization off the session and the contact address off the signed-in
+   * user. The `chat.agent` task cannot do either. It runs on Trigger.dev with
+   * no request, no cookies and no session — which is exactly why
+   * `lib/games/thread.ts` and `lib/games/usage.ts` resolve the org from the
+   * game row instead of from the caller. So provisioning cannot happen at the
+   * moment credits are first SPENT; it has to happen somewhere that still has a
+   * user attached, and both the shell and this action do.
+   *
+   * Before the insert, so a game is never created for an organization this
+   * never got the chance to provision. It cannot throw, so it also cannot stop
+   * the insert that follows — a billing failure must not cost the user their
+   * game. Its return value is ignored here: this caller wants the side effect,
+   * not the summary the layout builds from it.
+   */
+  await ensureBillingCustomer()
 
   const [game] = await db
     .insert(games)

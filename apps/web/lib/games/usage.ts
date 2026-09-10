@@ -25,6 +25,32 @@ import { ingestTurnCredits } from "@/lib/polar/events"
  */
 
 /**
+ * The organization a game belongs to, or `undefined` if the game is gone.
+ *
+ * One column, no `org_id` predicate, and that asymmetry with
+ * `lib/games/queries.ts` is the point: this exists precisely for the callers
+ * that have no session to derive the boundary from and must read it out of the
+ * row instead. The tenant check happened upstream, when a session-scoped chat
+ * token was minted for this game id — see the module note above.
+ *
+ * It lives here rather than in the trigger task because two callers now need
+ * it: this module, to attribute a finished turn's cost, and the credit gate in
+ * `trigger/chat.ts`, to decide whether the turn may start at all. A second copy
+ * of the query in the task file would be one predicate away from disagreeing
+ * with this one about what a game's owner is.
+ */
+export async function getGameOrgId(
+  gameId: string
+): Promise<string | undefined> {
+  const game = await db.query.games.findFirst({
+    columns: { orgId: true },
+    where: (game, { eq }) => eq(game.id, gameId),
+  })
+
+  return game?.orgId
+}
+
+/**
  * Records what one finished turn spent, and what that is estimated to have
  * cost. One row, never updated.
  *
@@ -82,12 +108,9 @@ export async function recordTurnUsage({
      * charge it to and the column is `notNull`. Dropping the row is the only
      * option, and it is a narrow enough window to accept.
      */
-    const game = await db.query.games.findFirst({
-      columns: { orgId: true },
-      where: (game, { eq }) => eq(game.id, gameId),
-    })
+    const orgId = await getGameOrgId(gameId)
 
-    if (!game) return
+    if (!orgId) return
 
     const credits = turnCreditCost({ modelId, usage })
 
@@ -116,7 +139,7 @@ export async function recordTurnUsage({
       .insert(turnUsage)
       .values({
         gameId,
-        orgId: game.orgId,
+        orgId,
         modelId,
         turn,
         runId,
@@ -135,7 +158,7 @@ export async function recordTurnUsage({
       .returning({ id: turnUsage.id })
 
     const ingested = await ingestTurnCredits({
-      orgId: game.orgId,
+      orgId,
       gameId,
       turn,
       credits,

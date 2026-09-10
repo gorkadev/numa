@@ -1,3 +1,4 @@
+import { logger } from "@trigger.dev/sdk"
 import { chat, upsertIncomingMessage } from "@trigger.dev/sdk/ai"
 import {
   getToolName,
@@ -16,7 +17,8 @@ import { gameInstructions } from "@/lib/games/instructions"
 import { gameRevisionChunk } from "@/lib/games/revision"
 import { loadGameThread, saveGameThread } from "@/lib/games/thread"
 import { createGameTools } from "@/lib/games/tools"
-import { recordTurnUsage } from "@/lib/games/usage"
+import { getGameOrgId, recordTurnUsage } from "@/lib/games/usage"
+import { getCreditBalance } from "@/lib/polar/balance"
 
 /**
  * The tools that change what the player would see.
@@ -48,6 +50,37 @@ function changedGameFiles(message: UIMessage | undefined): boolean {
     const output = part.output
 
     return typeof output !== "object" || output === null || !("error" in output)
+  })
+}
+
+/**
+ * The stream part that tells the browser a turn was refused for credits.
+ *
+ * A `data-*` part rather than the thrown error's message, for the same reason
+ * `lib/games/revision.ts` uses one: this is a notification about the account,
+ * not something anybody wants replayed as conversation. `transient` keeps it
+ * out of the response message — which in this case would not exist anyway,
+ * since the turn is about to be aborted.
+ *
+ * `balance` is `number | null`, and the null is load-bearing. An exhausted
+ * organization has a real number to show, and that number can be NEGATIVE:
+ * metering is asynchronous and eventually consistent, so a turn that started
+ * with credits can finish having spent past zero. `null` is the unprovisioned
+ * case — there is no Polar customer, therefore no meter, therefore no number to
+ * quote. A UI that printed `0` for both would tell somebody who never had an
+ * account that they had spent everything.
+ *
+ * It is written through `chat.response.write` rather than a hook's `writer`
+ * because `onValidateMessages` does not receive one: its event is
+ * `{ messages, chatId, turn, trigger }` and nothing else. `chat.response.write`
+ * reaches the same run-scoped output stream from anywhere inside the run, which
+ * is exactly what a hook with no writer needs.
+ */
+function writeCreditsExhausted(balance: number | null): void {
+  chat.response.write({
+    type: "data-credits-exhausted",
+    data: { balance },
+    transient: true,
   })
 }
 
@@ -86,6 +119,98 @@ export const gameChat = chat.agent({
    * its result formatting the moment the thread was replayed.
    */
   tools: ({ chatId }) => createGameTools(chatId),
+
+  /**
+   * Refuses a turn the organization has no credits for.
+   *
+   * This is the first hook of the per-turn lifecycle — it runs before
+   * `hydrateMessages`, before `onChatStart` and before `onTurnStart` — and
+   * throwing from it aborts the turn. That position is worth more than it
+   * looks: a refusal on a game's very first message happens BEFORE
+   * `onChatStart`, so no Daytona sandbox is minted for a turn that will never
+   * run. Gating any later would pay for the compute and then decline to use it.
+   *
+   * `chatId` is the game id, and the organization is read out of the game row
+   * because there is nothing else to read it from — this task has no Clerk
+   * request context, which is the same reason `lib/games/thread.ts` and
+   * `lib/games/usage.ts` work the way they do.
+   *
+   * # Why an unreadable balance lets the turn through
+   *
+   * This is the contentious decision in the whole feature, so it is written
+   * down rather than left to be rediscovered from behaviour.
+   *
+   * A balance of zero is an ANSWER. Polar was asked, Polar replied, the
+   * organization has spent what it was granted. Acting on it is enforcement,
+   * and enforcement is the point of the feature.
+   *
+   * `"unavailable"` is not an answer. It means the question could not be asked:
+   * Polar was down, the network failed, the token was wrong. The organization
+   * behind it might have zero credits or ten thousand, and this code has no way
+   * to tell. Refusing on it converts every wobble at the billing vendor into a
+   * total outage of the product for everybody, including the customers who have
+   * paid — the failure mode where a dependency that only decides whether you
+   * MAY work ends up deciding whether you work at all.
+   *
+   * So: fail closed on facts, fail open on ignorance. `"unprovisioned"` is a
+   * fact and is enforced — an organization with no Polar customer holds no
+   * entitlement, and letting it through would make provisioning optional and
+   * therefore pointless.
+   *
+   * That trade is right at these amounts and only at these amounts. A turn is
+   * worth cents, an outage is worth the product, and the arithmetic is not
+   * close. It stops being right the moment a single turn is expensive enough
+   * that a determined abuser can profit from making this call fail — at which
+   * point the answer is not to flip this branch to a refusal, it is to stop
+   * depending on a synchronous read of somebody else's eventually-consistent
+   * counter. See the reservation note in `lib/polar/balance.ts`.
+   *
+   * # What this does not do
+   *
+   * It does not prevent an overdraft. The meter lags four to ten seconds behind
+   * ingestion, so two tabs starting turns at once both read the same
+   * pre-spend balance and both run. This bounds the loss to roughly one round
+   * of concurrent turns; it does not eliminate it, and it was never going to.
+   */
+  onValidateMessages: async ({ messages, chatId }) => {
+    const orgId = await getGameOrgId(chatId)
+
+    /**
+     * No game row means no tenant, which means nothing to charge this turn to
+     * and nothing `recordTurnUsage` could attribute it to afterwards. It is a
+     * fact rather than an unknown — the row is gone — so it is refused.
+     */
+    if (!orgId) {
+      writeCreditsExhausted(null)
+
+      throw new Error("This game no longer exists")
+    }
+
+    const credits = await getCreditBalance(orgId)
+
+    if (credits.status === "unavailable") {
+      logger.warn("Credit balance unavailable, allowing turn", {
+        chatId,
+        orgId,
+      })
+
+      return messages
+    }
+
+    if (credits.status === "unprovisioned") {
+      writeCreditsExhausted(null)
+
+      throw new Error("Out of credits")
+    }
+
+    if (credits.balance <= 0) {
+      writeCreditsExhausted(credits.balance)
+
+      throw new Error("Out of credits")
+    }
+
+    return messages
+  },
 
   /**
    * Gives the game its sandbox, exactly once. This hook fires on the chat's
