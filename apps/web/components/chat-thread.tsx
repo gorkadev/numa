@@ -65,6 +65,8 @@ import { Spinner } from "@workspace/ui/components/spinner"
 
 import { ChatComposer } from "@/components/chat-composer"
 import { Markdown } from "@/components/markdown"
+import { MessageActions } from "@/components/message-actions"
+import { sentAtMetadata } from "@/lib/ai/message-meta"
 import { gameModelMetadata, readThreadModel } from "@/lib/ai/message-model"
 import { DEFAULT_GAME_MODEL_ID, type GameModelId } from "@/lib/ai/model-catalog"
 import {
@@ -280,7 +282,7 @@ export function ChatThread({
    * cannot disagree.
    */
   function handleSubmit(text: string) {
-    sendMessage({ text, metadata: gameModelMetadata(modelId) })
+    sendMessage({ text, metadata: outgoingMetadata(modelId) })
     setInput("")
   }
 
@@ -306,7 +308,7 @@ export function ChatThread({
     sentInitialPrompt.current = true
 
     if (initialMessages.length === 0) {
-      sendMessage({ text: initialPrompt, metadata: gameModelMetadata(modelId) })
+      sendMessage({ text: initialPrompt, metadata: outgoingMetadata(modelId) })
     }
 
     window.history.replaceState(null, "", `/games/${gameId}`)
@@ -347,7 +349,7 @@ export function ChatThread({
         <MessageScroller className="flex-1">
           <MessageScrollerViewport>
             <MessageScrollerContent className="mx-auto w-full max-w-3xl px-4 py-8">
-              {messages.map((message) => (
+              {messages.map((message, index) => (
                 <MessageScrollerItem
                   key={message.id}
                   messageId={message.id}
@@ -443,6 +445,16 @@ export function ChatThread({
                           </Bubble>
                         )
                       })}
+                      {/**
+                       * Withheld while the turn is still being written. The
+                       * row would report a token count and a tool tally for a
+                       * message that is not finished — numbers that are wrong
+                       * by definition until the turn lands, and that would
+                       * change under the reader as it streams.
+                       */}
+                      {pending && index === messages.length - 1 ? null : (
+                        <MessageActions message={message} />
+                      )}
                     </MessageContent>
                   </Message>
                 </MessageScrollerItem>
@@ -504,6 +516,18 @@ export function ChatThread({
       </div>
     </div>
   )
+}
+
+/**
+ * What an outgoing message carries: the model it is being sent to, and the
+ * moment the player sent it.
+ *
+ * One function so the two never disagree about which messages get stamped —
+ * every send goes through here, and the thread's footer relies on `sentAt`
+ * existing on anything the browser produced.
+ */
+function outgoingMetadata(model: GameModelId) {
+  return { ...gameModelMetadata(model), ...sentAtMetadata() }
 }
 
 /**

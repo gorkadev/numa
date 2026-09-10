@@ -10,6 +10,7 @@ import {
 import { z } from "zod"
 
 import { gameModelSettings, resolveGameModelId } from "@/lib/ai/agent"
+import { withTurnMeta } from "@/lib/ai/message-meta"
 import { withThreadModel } from "@/lib/ai/message-model"
 import { gameModelIdSchema } from "@/lib/ai/model-catalog"
 import { turnCreditCost } from "@/lib/ai/pricing"
@@ -352,9 +353,19 @@ export const gameChat = chat.agent({
     finishReason,
     stopped,
   }) => {
+    /**
+     * The reply is stored carrying what it cost. `withTurnMeta` is the durable
+     * counterpart to the transient `data-turn-credits` part written in
+     * `onBeforeTurnComplete`: the same numbers, kept on the message instead of
+     * spent on the sidebar, so the thread can still answer "what did this turn
+     * take?" after a reload. See `lib/ai/message-meta.ts`.
+     */
     await saveGameThread({
       gameId: chatId,
-      messages: withThreadModel(uiMessages, clientData?.model),
+      messages: withTurnMeta(
+        withThreadModel(uiMessages, clientData?.model),
+        { modelId: resolveGameModelId(clientData?.model), usage }
+      ),
       chatAccessToken,
       lastEventId,
     })
