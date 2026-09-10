@@ -52,3 +52,6 @@ next-env.d.ts
 
 # neon database
 .neon
+
+# CodeGraph local index
+.codegraph/
