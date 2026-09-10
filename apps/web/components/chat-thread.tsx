@@ -72,6 +72,8 @@ import {
 } from "@/lib/games/chat-actions"
 import { readGameRevision } from "@/lib/games/revision"
 import type { AskPlayerOutput } from "@/lib/games/tools"
+import { readTurnCredits } from "@/lib/games/turn-credits"
+import { publishTurnCredits } from "@/lib/polar/credits-channel"
 import type { gameChat } from "@/trigger/chat"
 
 export function ChatThread({
@@ -247,6 +249,22 @@ export function ChatThread({
         const revision = readGameRevision(part)
 
         if (revision !== null) onRevision?.(revision)
+
+        /**
+         * The credit cost of the turn goes straight to the sidebar rather than
+         * through a prop or a callback on this component: the counter is
+         * application chrome and this is page content, so they have no shared
+         * ancestor that is not the server layout. See
+         * `lib/polar/credits-channel.ts`.
+         *
+         * Not an `else if`. A turn writes both parts and the two are unrelated
+         * facts — one says the game changed, the other says what it cost —
+         * so chaining them would make the credit update depend on whether any
+         * file happened to be written.
+         */
+        const credits = readTurnCredits(part)
+
+        if (credits !== null) publishTurnCredits(credits)
       },
     }
   )

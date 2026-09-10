@@ -12,11 +12,13 @@ import { z } from "zod"
 import { gameModelSettings, resolveGameModelId } from "@/lib/ai/agent"
 import { withThreadModel } from "@/lib/ai/message-model"
 import { gameModelIdSchema } from "@/lib/ai/model-catalog"
+import { turnCreditCost } from "@/lib/ai/pricing"
 import { createGameSandbox } from "@/lib/daytona/utils"
 import { gameInstructions } from "@/lib/games/instructions"
 import { gameRevisionChunk } from "@/lib/games/revision"
 import { loadGameThread, saveGameThread } from "@/lib/games/thread"
 import { createGameTools } from "@/lib/games/tools"
+import { turnCreditsChunk } from "@/lib/games/turn-credits"
 import { getGameOrgId, recordTurnUsage } from "@/lib/games/usage"
 import { getCreditBalance } from "@/lib/polar/balance"
 
@@ -282,7 +284,38 @@ export const gameChat = chat.agent({
    * remounts the frame by key — and receiving the same revision twice, as a
    * resubscribing tab can, then costs a running game nothing.
    */
-  onBeforeTurnComplete: async ({ responseMessage, writer }) => {
+  onBeforeTurnComplete: async ({
+    responseMessage,
+    writer,
+    usage,
+    clientData,
+  }) => {
+    /**
+     * What the turn cost, sent before the balance in Polar has moved.
+     *
+     * This is the only hook that has both the numbers and a way out: `usage`
+     * is the whole turn's token total, and `writer` is a stream that
+     * `onTurnComplete` no longer has. Computing it with the same
+     * `turnCreditCost` the ledger uses is what guarantees the number the user
+     * watches leave their balance is the number they are actually charged —
+     * a second formula here would drift from the invoice within a month.
+     *
+     * Ahead of the reload signal, and outside its early return: a turn that
+     * only answered a question changed no files but still spent credits.
+     * Ordering it first also means the deduction reaches the sidebar before
+     * the preview starts remounting an iframe.
+     */
+    if (usage) {
+      writer.write(
+        turnCreditsChunk(
+          turnCreditCost({
+            modelId: resolveGameModelId(clientData?.model),
+            usage,
+          })
+        )
+      )
+    }
+
     if (!changedGameFiles(responseMessage)) return
 
     writer.write(gameRevisionChunk(Date.now()))

@@ -5,9 +5,7 @@ import { useEffect, useState, useSyncExternalStore } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { OrganizationSwitcher, UserButton } from "@clerk/nextjs"
 import {
-  Coins01Icon,
   MessageCircleIcon,
   PencilEdit02Icon,
   SearchIcon,
@@ -33,7 +31,6 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarTrigger,
@@ -46,7 +43,12 @@ import {
 } from "@workspace/ui/components/tooltip"
 
 import { CommandPalette } from "@/components/command-palette"
+import { CreditsButton } from "@/components/credits-button"
 import { GameRow } from "@/components/game-row"
+import { NavUser } from "@/components/nav-user"
+import { UpgradeCard } from "@/components/upgrade-card"
+import { useLiveBilling } from "@/hooks/use-live-billing"
+import type { BillingSummary } from "@/lib/polar/plan"
 
 /**
  * What every rail button wears.
@@ -90,8 +92,33 @@ function useIsMac() {
 
 export function AppSidebar({
   games,
+  billing: initialBilling,
+  upgradeHref,
   ...props
-}: React.ComponentProps<typeof Sidebar> & { games: Game[] }) {
+}: React.ComponentProps<typeof Sidebar> & {
+  games: Game[]
+  billing: BillingSummary
+  /**
+   * The checkout URL for the Pro product, built by the layout.
+   *
+   * It arrives as a prop because this file is a client component and the
+   * product id lives in a variable with no `NEXT_PUBLIC_` prefix — see
+   * `components/upgrade-card.tsx` for what reading it here would actually do,
+   * which is quietly produce a link to `products=undefined` rather than fail.
+   */
+  upgradeHref: string
+}) {
+  /**
+   * The prop is where the number STARTS, not where it stays.
+   *
+   * The layout renders above every page, so it never re-runs while a game is
+   * being built inside it — a credit count taken from the prop alone is
+   * accurate at first paint and stale for the rest of the session. The hook
+   * keeps it moving; see `hooks/use-live-billing.ts` for the three things it
+   * listens to and why the optimistic subtraction is safe.
+   */
+  const billing = useLiveBilling(initialBilling)
+
   const pathname = usePathname()
   const router = useRouter()
   const isMac = useIsMac()
@@ -338,21 +365,11 @@ export function AppSidebar({
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
+          <UpgradeCard plan={billing.plan} href={upgradeHref} />
           <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton className={MENU_ICON} tooltip="Credits">
-                <HugeiconsIcon icon={Coins01Icon} />
-                <span>Credits</span>
-              </SidebarMenuButton>
-              <SidebarMenuBadge>$1.00</SidebarMenuBadge>
-            </SidebarMenuItem>
+            <CreditsButton {...billing} className={MENU_ICON} />
           </SidebarMenu>
-          <div className="flex items-center justify-between group-data-[collapsible=icon]:justify-center">
-            <span className="group-data-[collapsible=icon]:hidden">
-              <OrganizationSwitcher />
-            </span>
-            <UserButton />
-          </div>
+          <NavUser />
         </SidebarFooter>
       </Sidebar>
     </>
