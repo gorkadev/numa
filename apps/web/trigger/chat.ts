@@ -8,7 +8,7 @@ import {
 } from "ai"
 import { z } from "zod"
 
-import { gameModelSettings } from "@/lib/ai/agent"
+import { gameModelSettings, resolveGameModelId } from "@/lib/ai/agent"
 import { withThreadModel } from "@/lib/ai/message-model"
 import { gameModelIdSchema } from "@/lib/ai/model-catalog"
 import { createGameSandbox } from "@/lib/daytona/utils"
@@ -16,6 +16,7 @@ import { gameInstructions } from "@/lib/games/instructions"
 import { gameRevisionChunk } from "@/lib/games/revision"
 import { loadGameThread, saveGameThread } from "@/lib/games/thread"
 import { createGameTools } from "@/lib/games/tools"
+import { recordTurnUsage } from "@/lib/games/usage"
 
 /**
  * The tools that change what the player would see.
@@ -166,6 +167,20 @@ export const gameChat = chat.agent({
    * Persists the finished turn: the full thread plus the cursor the transport
    * resubscribes from. One statement, so a reload can never land between the
    * two and replay the assistant's reply.
+   *
+   * The cost ledger is written here too, and after the thread on purpose. The
+   * thread is what the player loses if this hook goes wrong; the ledger is an
+   * observation about it, so it may never delay or endanger the write it
+   * describes — hence second, and behind a `recordTurnUsage` that cannot throw.
+   *
+   * This is the hook that can measure a turn at all. `usage` here covers the
+   * WHOLE turn — every step of the `stepCountIs(25)` loop summed, not just the
+   * final answer — and that total is the thing nobody can currently see. Each
+   * step re-sends the accumulated context, so a turn's cost grows with the
+   * number of steps it took rather than with the length of the reply it
+   * produced: a model that read three files, wrote two, and answered in one
+   * line is dramatically more expensive than a long reply written in one pass,
+   * and the chat looks identical either way.
    */
   onTurnComplete: async ({
     chatId,
@@ -173,12 +188,37 @@ export const gameChat = chat.agent({
     chatAccessToken,
     lastEventId,
     clientData,
+    usage,
+    turn,
+    runId,
+    finishReason,
+    stopped,
   }) => {
     await saveGameThread({
       gameId: chatId,
       messages: withThreadModel(uiMessages, clientData?.model),
       chatAccessToken,
       lastEventId,
+    })
+
+    /**
+     * `chatId` is the game id.
+     *
+     * The model id comes from `resolveGameModelId`, the same function
+     * `gameModelSettings` resolves the provider through, because the ledger has
+     * to name the model that actually ran. A turn from an older tab sends no
+     * choice at all and is still answered by the default model; recording that
+     * as `undefined` would leave the cheapest question ("which model is this
+     * costing us?") unanswerable for exactly those turns.
+     */
+    await recordTurnUsage({
+      gameId: chatId,
+      modelId: resolveGameModelId(clientData?.model),
+      turn,
+      runId,
+      usage,
+      finishReason,
+      stopped,
     })
   },
 
