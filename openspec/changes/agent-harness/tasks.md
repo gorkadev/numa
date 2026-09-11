@@ -233,7 +233,7 @@ Ownership (concurrent half).
 
 ## Unit 5 — Chromium snapshot (gated)
 
-- [ ] 5.0 (GATE) Spike against the design's go/no-go: snapshot ≤ 2.5 GiB and
+- [x] 5.0 (GATE) Spike against the design's go/no-go: snapshot ≤ 2.5 GiB and
       builds; sandbox start ≤ 5 s slower than today; check p50 ≤ 15 s / p95 ≤
       30 s on a Three.js game; non-blank SwiftShader screenshot; a seeded
       `pageerror` is caught; 1 GiB RAM (or ≤ 2 GiB, cost accepted). Record the
