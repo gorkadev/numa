@@ -19,6 +19,7 @@ import {
   type RunSubagentResult,
   type SubagentProgress,
 } from "../run-subagent"
+import { turnState } from "../turn-state"
 
 /** At most 4 tasks in one call (design.md decision 3). */
 const MAX_TASKS_PER_BATCH = 4
@@ -69,12 +70,44 @@ export const taskSpecSchema = z.object({
     .array(z.string())
     .default([])
     .describe(
-      "Ids of other tasks in this same batch that must finish first. Not yet enforced by run_tasks — see design.md decision 12 and unit 4."
+      "Ids of other tasks that must finish before this one starts — from this same batch, or from an earlier run_tasks call in this same turn. A dependency this call cannot resolve (an unknown id, a self-dependency, or a dependency cycle) blocks the task instead of running it."
     ),
   skills: z.array(z.string()).default([]),
 })
 
 export type TaskSpec = z.infer<typeof taskSpecSchema>
+
+/**
+ * Rejects a batch with two tasks sharing an id at input, before dispatch.
+ * `run_tasks`' own bookkeeping (`indexById`, `remaining` in the scheduler
+ * below) is keyed by task id — a duplicate would silently overwrite one
+ * task's slot with the other's, so the second task would never run and
+ * never be reported back. Zod's own input validation is what surfaces this
+ * to the model as a correctable tool-input error, the same channel every
+ * other schema violation on this tool already uses.
+ */
+const tasksArraySchema = z
+  .array(taskSpecSchema)
+  .min(1)
+  .max(MAX_TASKS_PER_BATCH)
+  .superRefine((tasks, ctx) => {
+    const seenAt = new Map<string, number>()
+
+    tasks.forEach((task, index) => {
+      const firstIndex = seenAt.get(task.id)
+
+      if (firstIndex !== undefined) {
+        ctx.addIssue({
+          code: "custom",
+          path: [index, "id"],
+          message: `Duplicate task id "${task.id}" (already used by task ${firstIndex}) — every task in one run_tasks call needs a unique id.`,
+        })
+        return
+      }
+
+      seenAt.set(task.id, index)
+    })
+  })
 
 /** One task's outcome, reported back to the orchestrator's model. */
 type TaskOutcome = {
@@ -134,12 +167,13 @@ function abortedBeforeStartOutcome(task: TaskSpec): TaskOutcome {
 }
 
 /**
- * Reported when a task's `dependsOn` can never be satisfied within this
- * batch: an id naming a task outside the batch, a task depending on itself,
- * or a cycle among the batch's own `dependsOn` edges all look identical from
- * the scheduler's point of view — none of them ever reaches "finished this
- * turn" (design.md decision 12) — so one message covers all three rather
- * than diagnosing which one applies.
+ * Reported when a task's `dependsOn` can never be satisfied: an id that
+ * never finished in this batch, an earlier call this turn, or at all (an
+ * unknown id), a task depending on itself, or a cycle among the batch's own
+ * `dependsOn` edges all look identical from the scheduler's point of view —
+ * none of them ever reaches "finished this turn" (design.md decision 12) —
+ * so one message covers all of them rather than diagnosing which one
+ * applies.
  */
 function unmetDependencyOutcome(task: TaskSpec): TaskOutcome {
   return {
@@ -147,7 +181,7 @@ function unmetDependencyOutcome(task: TaskSpec): TaskOutcome {
     envelope: {
       agent: task.id,
       status: "blocked",
-      summary: `dependsOn (${task.dependsOn.join(", ") || "none"}) could not be satisfied within this batch — a missing task id, a self-dependency, or a dependency cycle. Fix the ids or split the batch.`,
+      summary: `dependsOn (${task.dependsOn.join(", ") || "none"}) could not be satisfied — an id that never finished this turn (in this batch or an earlier call), a self-dependency, or a dependency cycle. Fix the ids, wait for the dependency to finish first, or split the batch.`,
     },
     wroteFiles: false,
   }
@@ -209,8 +243,9 @@ function renderOutcomes(outcomes: TaskOutcome[]): string {
  *
  * A batch of up to `MAX_TASKS_PER_BATCH` tasks runs through a scheduler that
  * starts up to `POOL_CAP` workers at once, only once a task's `dependsOn`
- * has finished this batch and no already-running task's `owns` overlaps its
- * own (`file-ownership`'s Parallel Dispatch Requires Disjoint Ownership
+ * has finished this turn — this batch, or an earlier `run_tasks` call this
+ * same turn — and no already-running task's `owns` overlaps its own
+ * (`file-ownership`'s Parallel Dispatch Requires Disjoint Ownership
  * requirement; `agent-orchestration`'s concurrent half of the same rule).
  * Two tasks whose ownership overlaps never run concurrently — the scheduler
  * simply never starts the second until the first (or whichever running task
@@ -223,11 +258,9 @@ export function createRunTasksTool(gameId: string): Tool {
     description: [
       "Dispatch one or more workers to make changes to the game's files, each against a declared task.",
       "Each task gets its own worker, scoped so it can only write the files it declares owning — give every task everything it needs to work alone: a clear goal, the exact files it owns, and nothing that depends on another task's output arriving first, unless you list that dependency in dependsOn.",
-      "Tasks whose owns do not overlap run concurrently, up to 3 at once; tasks that share a file, or that depend on another task in the same batch via dependsOn, run only after what they depend on or conflict with has finished. Keep a batch to tasks that genuinely belong together; a task whose files nothing else touches can go in its own call.",
+      "Tasks whose owns do not overlap run concurrently, up to 3 at once; tasks that share a file, or that depend on another task via dependsOn (this batch, or an earlier run_tasks call this turn), run only after what they depend on or conflict with has finished. Keep a batch to tasks that genuinely belong together; a task whose files nothing else touches can go in its own call.",
     ].join(" "),
-    inputSchema: z.object({
-      tasks: z.array(taskSpecSchema).min(1).max(MAX_TASKS_PER_BATCH),
-    }),
+    inputSchema: z.object({ tasks: tasksArraySchema }),
     /**
      * Concurrency is built entirely inside this generator, not left to the
      * model emitting several tool calls: every task in the batch is
@@ -300,6 +333,17 @@ export function createRunTasksTool(gameId: string): Tool {
 
         const result: RunSubagentResult = next.value
 
+        /**
+         * Recorded in `turnState`, not only in this call's own `done` set,
+         * so a LATER `run_tasks` call this same turn can satisfy a
+         * `dependsOn` naming this task id (the cross-call half of decision
+         * 12 — see `canStart` above). Only a task that actually ran gets
+         * marked: one rejected before it started (an unmet dependency, or
+         * the turn ending first) never finished, so nothing later should be
+         * able to depend on it either.
+         */
+        turnState.markTaskFinished(task.id)
+
         settle(task, {
           taskId: task.id,
           envelope: result.envelope,
@@ -311,7 +355,7 @@ export function createRunTasksTool(gameId: string): Tool {
        * The pool: starts as many ready tasks as `POOL_CAP` allows, waits for
        * one to finish when the pool is full or nothing else is ready, and
        * rejects whatever is left once neither is true — every task still
-       * pending at that point has a `dependsOn` this batch can never satisfy
+       * pending at that point has a `dependsOn` this turn can never satisfy
        * (design.md decision 12).
        */
       async function scheduleAndRun(): Promise<void> {
@@ -321,8 +365,22 @@ export function createRunTasksTool(gameId: string): Tool {
         const running = new Map<string, { task: TaskSpec; promise: Promise<void> }>()
         const allPromises: Promise<void>[] = []
 
+        /**
+         * A dependency is ready when it has finished — either earlier in
+         * THIS batch (`done`), or in an earlier `run_tasks` call THIS SAME
+         * TURN (`turnState.isTaskFinished`, unit 4's correction: decision
+         * 12's "has not finished this turn" is turn-scoped, not
+         * batch-scoped, and the tool's own description pushes the model
+         * toward splitting work across several calls). An id that is part of
+         * this batch is always resolved against `done`, never
+         * `turnState` — it has not finished yet by definition until this
+         * batch's own scheduler marks it so, however many turns' worth of
+         * unrelated tasks happen to share that id in `finishedTaskIds`.
+         */
         function canStart(task: TaskSpec): boolean {
-          const depsReady = task.dependsOn.every((dep) => ids.has(dep) && done.has(dep))
+          const depsReady = task.dependsOn.every((dep) =>
+            ids.has(dep) ? done.has(dep) : turnState.isTaskFinished(dep)
+          )
           if (!depsReady) return false
           return [...running.values()].every((r) => !ownershipOverlaps(task.owns, r.task.owns))
         }

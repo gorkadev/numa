@@ -1129,19 +1129,88 @@ None.
   sequential-only behavior for a single-task batch, or a batch whose tasks
   all conflict pairwise, is unchanged (the scheduler degrades to running one
   task at a time in that case, by construction)
-- **Authored changed lines: 320** (273 insertions + 47 deletions across 2
-  files, `git diff --stat -- . ':!openspec' ':!apps/web/next.config.ts'`
-  against `agent-harness/3-file-ownership`, excluding the pre-existing
-  unrelated `apps/web/next.config.ts` diff). **Under the 400-line budget** —
-  the second unit in this change to land under it (after unit 2b's 230), a
-  consequence of this unit's scope being genuinely narrow: one file's
-  dispatch loop plus one small pairwise-overlap helper, no new registry,
-  runner or instructions module.
+- **Authored changed lines (before correction): 320** (273 insertions + 47
+  deletions across 2 files, `git diff --stat -- . ':!openspec'
+  ':!apps/web/next.config.ts'` against `agent-harness/3-file-ownership`,
+  excluding the pre-existing unrelated `apps/web/next.config.ts` diff).
+  **Updated total after the correction below: 414** (361 insertions + 53
+  deletions across 3 files — `run-tasks.ts`, `ownership.ts`,
+  `turn-state.ts` — `git diff --stat agent-harness/3-file-ownership --
+  apps/web/lib/games/harness/tools/run-tasks.ts
+  apps/web/lib/games/harness/ownership.ts
+  apps/web/lib/games/harness/turn-state.ts`). This crosses the 400-line
+  budget by 14 lines. Not re-split: the correction fixes three defects
+  (a spec-compliance gap, a silent-data-loss input bug, and stale docs) in
+  code this same unit already owns, and splitting a bug fix for code not
+  yet merged into its own PR would not reduce total reviewer burden, only
+  fragment it. `size:exception` recommended for this slice, consistent with
+  every over-budget unit already shipped in this change.
+
+### Correction (parent review of `2e47962`, same attempt token, one scoped fix)
+
+Three issues found in review, all fixed in this one correction:
+
+1. **Cross-call `dependsOn` was rejected.** `canStart`'s dependency check
+   required `ids.has(dep)` (the id must be in THIS batch), so a task naming
+   an id from an EARLIER `run_tasks` call in the same turn came back
+   `blocked` — violating design.md decision 12's actual wording ("has not
+   finished this turn", turn-scoped, not batch-scoped) and directly
+   contradicted by this same tool's own description, which tells the model
+   it can split work across several calls. Fixed by adding
+   `finishedTaskIds: Set<string>` to `turn-state.ts`'s `TurnStateData`
+   (reset in both `init()` and `reset()`, alongside `unavailable`/`served`),
+   with `isTaskFinished`/`markTaskFinished` accessors mirroring the existing
+   `isUnavailable`/`markUnavailable` pattern. `run-tasks.ts`'s `runOneTask`
+   calls `turnState.markTaskFinished(task.id)` once a task actually runs to
+   completion (never for a task rejected before it started — an unmet
+   dependency or the turn ending first never "finished", so nothing later
+   can depend on it either). `canStart` now resolves a dependency against
+   `done` (this batch) when the id is in the batch, and against
+   `turnState.isTaskFinished` otherwise — an id in the batch is never
+   checked against `turnState`, since by definition it has not finished
+   until this batch's own scheduler says so.
+2. **Duplicate task ids in one batch silently dropped a task.** `indexById`
+   and `remaining` are keyed by task id; a second task sharing an id
+   overwrote the first's slot, so one task never ran and was never reported
+   back — a silent data-loss bug, not a crash. Fixed with a `.superRefine`
+   on a new `tasksArraySchema` (now `inputSchema`'s `tasks` field): duplicate
+   ids fail zod validation before dispatch, reported per zod v4's
+   `ctx.addIssue({ code: "custom", path: [index, "id"], message })`, at the
+   exact index of the offending task, naming which id repeated and which
+   task first used it — surfaced to the model as a correctable tool-input
+   error, the same channel every other schema violation on this tool already
+   uses.
+3. **Stale docs.** `taskSpecSchema.dependsOn`'s `.describe()` still said "Not
+   yet enforced by run_tasks" from before unit 4 existed. Rewritten to state
+   what is actually enforced now: a dependency in the same batch is waited
+   for, one that finished in an earlier call this same turn counts as done,
+   and anything else (unknown id, self-dependency, cycle) blocks the task.
+   The same stale "this batch" framing was also corrected in three other
+   comments/strings this unit had written before the fix (the tool's own
+   `description`, `createRunTasksTool`'s top JSDoc, and the scheduler's
+   rejection-branch comment) and in `unmetDependencyOutcome`'s summary text,
+   so nothing in the file still implies `dependsOn` is batch-scoped.
+
+Verification: `pnpm --filter web typecheck` → exit 0. `pnpm --filter web
+lint` → 0 errors, the same 12 pre-existing warnings established as the
+baseline since unit 2a; no new warning from any file this correction
+touched.
+
+Files touched by the correction: `apps/web/lib/games/harness/tools/run-tasks.ts`
+(modified further), `apps/web/lib/games/harness/turn-state.ts` (modified —
+new `finishedTaskIds` field and accessors). `ownership.ts` was not touched by
+the correction.
+
+Committed on `agent-harness/4-parallel`, same branch as `2e47962`, one commit
+after it, no other changes.
 
 ### Status
 
-2/2 tasks in unit 4 complete. Ready for `sdd-verify`. Report the manual
-dev-verification scenario (interleaved progress, a `dependsOn`-gated task,
-and a rejected-unmet-dependency task) to the user/maintainer. Per the
-interactive pace instruction, this batch stops here; unit 5 (Chromium
-snapshot) is a separate apply and depends on its own gate spike (5.0) first.
+2/2 tasks in unit 4 complete, correction applied and verified. Ready for
+`sdd-verify`. Report the updated `size:exception` line-count (414, was 320)
+and the manual dev-verification scenario (interleaved progress, a
+`dependsOn`-gated task including one that depends on an id from an earlier
+call this turn, a rejected-unmet-dependency task, and a rejected-duplicate-id
+batch) to the user/maintainer. Per the interactive pace instruction, this
+batch stops here; unit 5 (Chromium snapshot) is a separate apply and depends
+on its own gate spike (5.0) first.

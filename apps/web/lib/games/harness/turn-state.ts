@@ -28,6 +28,12 @@ import type { AgentUsageEntry } from "@/lib/ai/pricing"
  * way — see `AgentUsageEntry`'s comment in `pricing.ts`), so `resolveModel`'s
  * caller builds hooks that read/write these two fields instead, and the
  * composite it returns never has to know `turnState` exists.
+ *
+ * `finishedTaskIds` backs `run_tasks`' cross-call `dependsOn` check (design.md
+ * decision 12, unit 4): "has not finished this turn" means any earlier
+ * `run_tasks` call in this same turn, not only the current batch, so a task
+ * id from a call that already returned must still satisfy a later batch's
+ * dependency on it.
  */
 type TurnStateData = {
   turn: number
@@ -39,6 +45,8 @@ type TurnStateData = {
   unavailable: Set<ModelEntryId>
   /** The entry that actually served the latest call on each slot. */
   served: Partial<Record<Slot, ServedCall>>
+  /** Ids of every `run_tasks` task that has run to completion this turn, across every call. */
+  finishedTaskIds: Set<string>
 }
 
 const local = chat.local<TurnStateData>({ id: "turnState" })
@@ -106,6 +114,20 @@ export const turnState = {
     local.served = { ...local.served, [slot]: served }
   },
 
+  /** Whether a `run_tasks` task with this id has finished, in this or an earlier call this turn. */
+  isTaskFinished(taskId: string): boolean {
+    return local.finishedTaskIds.has(taskId)
+  },
+
+  /**
+   * Records that a `run_tasks` task finished, so a later call this same turn
+   * can satisfy a `dependsOn` naming it. A new `Set` rather than a mutating
+   * `.add`, for the same shallow-proxy reason as `markUnavailable` above.
+   */
+  markTaskFinished(taskId: string): void {
+    local.finishedTaskIds = new Set(local.finishedTaskIds).add(taskId)
+  },
+
   /**
    * Called once from `onBoot`, which — unlike `onChatStart` — fires on every
    * fresh worker, continuation runs included. The values here are
@@ -121,13 +143,14 @@ export const turnState = {
       verifyCalls: 0,
       unavailable: new Set(),
       served: {},
+      finishedTaskIds: new Set(),
     })
   },
 
   /**
    * Called once from `onTurnStart`, so a turn never inherits the previous
-   * turn's ledger, verify count, tier, deadline, unavailable candidates or
-   * served entries.
+   * turn's ledger, verify count, tier, deadline, unavailable candidates,
+   * served entries or finished task ids.
    */
   reset(turn: number, deadline: number, tier: TierId): void {
     local.turn = turn
@@ -137,6 +160,7 @@ export const turnState = {
     local.verifyCalls = 0
     local.unavailable = new Set()
     local.served = {}
+    local.finishedTaskIds = new Set()
   },
 
   /**
