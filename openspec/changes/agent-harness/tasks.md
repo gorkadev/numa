@@ -260,18 +260,18 @@ Turn-Caused vs Pre-Existing Errors, One Corrective Retry, Honest Reporting
 After Retry, Never Claim Success Without Running Verify, Behavior When the
 Verifier Is Unavailable.
 
-- [ ] 6.1 Create `apps/web/lib/daytona/verify-script.ts`: the fixed Python
+- [x] 6.1 Create `apps/web/lib/daytona/verify-script.ts`: the fixed Python
       Playwright script (constants only, no interpolated model/player text),
       uploaded from a repo constant outside `GAME_DIR`; parses console errors
       (cap 20 × 300 chars) and diffs against `.numa/verify/last.json`.
-- [ ] 6.2 Create `apps/web/lib/daytona/verify.ts`: runs the script via
+- [x] 6.2 Create `apps/web/lib/daytona/verify.ts`: runs the script via
       `process.executeCommand`, returns `{ status: "pass" | "fail" |
       "unavailable", findings }`.
-- [ ] 6.3 Create `apps/web/lib/games/harness/tools/verify.ts`: dispatch tool
+- [x] 6.3 Create `apps/web/lib/games/harness/tools/verify.ts`: dispatch tool
       (verifier role, `strong` slot, no tools, 3 steps, 90 s + 60 s check
       budget, 2 calls/turn cap); on `fail`, the orchestrator gets exactly one
       corrective `run_tasks` pass before the next `verify` call is refused.
-- [ ] 6.4 Create `apps/web/lib/games/instructions/roles/verifier.ts`: model
+- [x] 6.4 Create `apps/web/lib/games/instructions/roles/verifier.ts`: model
       may only add visual findings, never clear a code-decided console
       verdict.
 

@@ -34,6 +34,18 @@ import type { AgentUsageEntry } from "@/lib/ai/pricing"
  * `run_tasks` call in this same turn, not only the current batch, so a task
  * id from a call that already returned must still satisfy a later batch's
  * dependency on it.
+ *
+ * `verifyBaseline` backs `tools/verify.ts` (unit 6): the console-error
+ * baseline (`.numa/verify/last.json`, downloaded once per turn) has to stay
+ * frozen across a turn's corrective retry. `harness/tools/verify.ts`'s Python
+ * check unconditionally overwrites that sandbox file on every run — that is
+ * what makes it the right baseline for the NEXT turn — so a second read from
+ * the file mid-turn would diff the retry's result against its OWN previous
+ * call's output instead of what the turn actually started from, silently
+ * reclassifying a still-broken, turn-caused error as "pre-existing" the
+ * moment the corrective pass fails to fix it. Caching the value read on the
+ * turn's first `verify` call, here, and reusing it for the second, is what
+ * keeps that categorization honest for both calls.
  */
 type TurnStateData = {
   turn: number
@@ -47,6 +59,8 @@ type TurnStateData = {
   served: Partial<Record<Slot, ServedCall>>
   /** Ids of every `run_tasks` task that has run to completion this turn, across every call. */
   finishedTaskIds: Set<string>
+  /** The console-error baseline `verify` read at the start of this turn; `undefined` until the first `verify` call reads it. */
+  verifyBaseline: string[] | undefined
 }
 
 const local = chat.local<TurnStateData>({ id: "turnState" })
@@ -88,6 +102,14 @@ export const turnState = {
   },
   set verifyCalls(value: number) {
     local.verifyCalls = value
+  },
+
+  /** The baseline cached on this turn's first `verify` call, or `undefined` before that call runs. */
+  get verifyBaseline(): string[] | undefined {
+    return local.verifyBaseline
+  },
+  set verifyBaseline(value: string[] | undefined) {
+    local.verifyBaseline = value
   },
 
   /** Whether a slot fallback already ruled this entry out this turn. */
@@ -144,6 +166,7 @@ export const turnState = {
       unavailable: new Set(),
       served: {},
       finishedTaskIds: new Set(),
+      verifyBaseline: undefined,
     })
   },
 
@@ -161,6 +184,7 @@ export const turnState = {
     local.unavailable = new Set()
     local.served = {}
     local.finishedTaskIds = new Set()
+    local.verifyBaseline = undefined
   },
 
   /**

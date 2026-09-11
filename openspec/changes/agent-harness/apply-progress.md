@@ -1364,3 +1364,175 @@ creation time.
 user/maintainer. Per the interactive pace instruction, this batch stops
 here; unit 6 (verify role) is a separate apply and depends on this unit's
 `CHROMIUM_LABEL` and the confirmed-resolving `DAYTONA_GAME_SNAPSHOT`.
+
+## Unit 6 — Verify role (PR 9)
+
+Branch: `agent-harness/6-verify-role` (stacked on
+`agent-harness/5-chromium-snapshot`).
+
+- [x] 6.1 Create `apps/web/lib/daytona/verify-script.ts`
+- [x] 6.2 Create `apps/web/lib/daytona/verify.ts`
+- [x] 6.3 Create `apps/web/lib/games/harness/tools/verify.ts`
+- [x] 6.4 Create `apps/web/lib/games/instructions/roles/verifier.ts`
+
+4/4 tasks in unit 6 complete. Units 7a–10b remain (`[ ]`), unassigned to this
+apply batch.
+
+### Files Changed
+
+| File | Action |
+|---|---|
+| `apps/web/lib/daytona/verify-script.ts` | Created |
+| `apps/web/lib/daytona/verify.ts` | Created |
+| `apps/web/lib/games/harness/tools/verify.ts` | Created |
+| `apps/web/lib/games/instructions/roles/verifier.ts` | Created |
+| `apps/web/lib/games/harness/turn-state.ts` | Modified — new `verifyBaseline` field/accessors |
+| `apps/web/trigger/chat.ts` | Modified — `verify` declared, gated, wired |
+| `apps/web/lib/games/tool-parts.ts` | Modified — `verify` tool label |
+
+### Work Unit Evidence
+
+| Evidence | Value |
+|---|---|
+| Focused command | `pnpm turbo typecheck --filter=web` → exit 0 (all three packages). `pnpm lint` run directly inside `apps/web` → 0 errors, the same 13 pre-existing warnings established as the baseline since unit 5 (12 from unit 2a onward, plus `DAYTONA_GAME_SNAPSHOT`'s `turbo/no-undeclared-env-vars`). No new warning from any file this unit touched. |
+| Runtime harness | N/A in this apply session — requires an interactive dev session with `HARNESS_PHASES` on and a live Daytona sandbox provisioned from the Chromium snapshot, neither of which is available to a headless apply run. `HARNESS_PHASES` stays off, so `verify` is declared on `chat.agent({ tools })` but excluded from every real turn's `activeTools`, same as `explore`/`run_tasks`. Manual scenario for the user, per tasks.md's own row for this unit: seed a `pageerror` in a dev game's sandbox (e.g. temporarily add a `setTimeout` throw to a game file, matching the unit 5 spike's own `SEED_ERROR` technique), set `HARNESS_PHASES=true`, dispatch `verify` and confirm (a) the console error is categorized as turn-caused (no baseline yet, so every error counts as caused, per design.md), (b) the tool's rendered envelope text begins `"Verify result: FAIL."`, (c) a corrective `run_tasks` pass that removes the seeded throw followed by a second `verify` call in the same turn reports `"Verify result: PASS."`, and (d) a third `verify` call in that same turn is refused without running anything (`outcome: "refused"`, no sandbox round trip). A second scenario: run `verify` against a sandbox created before `DAYTONA_GAME_SNAPSHOT` existed (no `hasChromium` label) and confirm it reports `"Verify result: UNAVAILABLE."` without attempting to launch Chromium. |
+| Rollback boundary | Revert the four new files, the `turnState.verifyBaseline` field/accessors, and the `verify` wiring in `trigger/chat.ts`/`tool-parts.ts`. `HARNESS_PHASES` already gates `verify` out of every real turn's `activeTools`, so the revert changes nothing a live turn could observe either way — the same self-contained shape units 2b/3/4/5 each documented for their own additive wiring. `turnState.verifyBaseline` is new and unread by anything outside `tools/verify.ts`, so removing it alongside is safe. |
+
+### Deviations from Design
+
+1. **`trigger/chat.ts` and `lib/games/tool-parts.ts` are touched, though
+   design.md's File Changes table lists only the four Create rows for unit
+   6.** The same kind of scope gap units 1c and 3 each documented for their
+   own file lists: a dispatch tool that is never declared on
+   `chat.agent({ tools })` and never added to `PHASE_TOOLS` is unreachable —
+   `explore` (unit 2b) and `run_tasks` (unit 3) both needed the identical
+   wiring in these same two files, and the orchestrator's own apply prompt
+   for this unit explicitly named both files and pointed at unit 2b's wiring
+   as the pattern to follow. Both diffs are the same shape as unit 2b's own:
+   one import, one `tools` factory entry, one `PHASE_TOOLS` addition, one
+   `TOOL_LABELS` entry — no other behavior in either file changed.
+2. **The console-error baseline is frozen for the whole turn in
+   `turnState.verifyBaseline`, read once from the sandbox's
+   `.numa/verify/last.json` on the turn's first `verify` call, rather than
+   re-read from the file on every call.** Neither task 6.1 nor 6.2 names this
+   explicitly — task 6.1 only says the script "diffs against
+   `.numa/verify/last.json`" — but the script also has to keep that same file
+   current for the NEXT turn (so a future turn's own first check has an
+   accurate "before this turn" baseline), and those two needs conflict within
+   ONE turn: the script unconditionally overwrites `last.json` with its own
+   run's result every time it runs. Without freezing, a corrective retry's
+   own categorization would diff against the FIRST call's just-written
+   result — which still contains the very error the retry was meant to fix —
+   so a still-broken, still turn-caused error would misclassify as
+   "pre-existing" on the second call, silently reporting `pass` when the game
+   still does not work. Traced through by hand before writing any code (see
+   the header comment on `TurnStateData.verifyBaseline` in `turn-state.ts`
+   and `readVerifyBaseline`'s own comment in `lib/daytona/verify.ts` for the
+   full reasoning); this is the one piece of unit 6 where getting the
+   mechanism wrong would have silently broken the spec's own "Honest
+   Reporting After Retry" scenario rather than failing loudly.
+3. **The verify script's dynamic inputs (the game's port, the frozen
+   baseline, and both `.numa/verify/` paths) cross into the fixed Python
+   source through `process.executeCommand`'s `env` parameter, never through
+   string interpolation into the script body.** Task 6.1's own wording
+   ("constants only, no interpolated model/player text") is about not
+   injecting untrusted text into the script's SOURCE; an env var carrying
+   harness-controlled values (never model or player text) is the same
+   technique the unit 5 spike's own `SEED_ERROR` env var already used and
+   validated, not a new risk this unit introduces.
+4. **`harness/tools/verify.ts` defines its own `VerifyOutcome` type
+   (`"pass" | "fail" | "unavailable" | "refused"`), a strict superset of
+   `lib/daytona/verify.ts`'s `VerifyStatus` (`"pass" | "fail" |
+   "unavailable"`, task 6.2's own return type).** `refused` is this tool's
+   own outcome for the 2-calls-per-turn cap (task 6.3) — a call that never
+   reached `lib/daytona/verify.ts` at all, so it does not belong on that
+   module's own status type.
+5. **`lib/daytona/verify.ts` declares a local `VerifyFinding` type
+   (`{ message, severity }`, no `taskId`) instead of importing
+   `harness/envelope.ts`'s `Finding`.** `lib/daytona` is infrastructure;
+   keeping it free of any `lib/games` import (parallel to the `lib/ai` ↔
+   `lib/games` boundary `pricing.ts` and `envelope.ts` already document) means
+   `harness/tools/verify.ts` — which already imports both modules — is the
+   one place that widens a `VerifyFinding[]` into a real `Finding[]`
+   (`toFindings`), not `lib/daytona/verify.ts` itself. `taskId` stays unset on
+   every finding this unit produces: mapping a console error back to the task
+   that owns the file it concerns (design.md's Data Flow: "findings→owner
+   task") needs `.numa/tasks.json` (unit 8's `submit_plan`), which does not
+   exist yet — the same forward-declaration gap unit 3's `TaskSpec.skills`
+   and unit 1b's `AgentUsageEntry.role` each documented for their own
+   not-yet-built dependencies.
+6. **The verifier's own additional finding is detected by exact string
+   comparison against `NO_ADDITIONAL_FINDINGS`, not by parsing structured
+   output.** The role catalogue gives the verifier no tools at all (design.md:
+   "verifier | ... | strong | none"), so there is no `submit_finding`-style
+   tool call to structure its answer with — its whole result is free text,
+   the same shape `explorerInstructions`/`workerInstructions` already produce
+   for their own roles. `roles/verifier.ts` and `tools/verify.ts` share one
+   exported constant for the exact "nothing to add" sentence, so the prompt
+   and the code can never drift apart on what counts as "nothing to add."
+   This is the deterministic mechanism behind task 6.4's "model may only add
+   visual findings, never clear a code-decided console verdict": the code
+   never removes or edits a code-decided finding, and only ever appends the
+   verifier's own reply as one more finding, never uses it to change
+   `outcome`.
+7. **"Never Claim Success Without Running Verify" and the "Honest Reporting
+   After Retry" reply-composition half of that requirement are not enforced
+   by any file in this unit.** Both are, in the end, about what the
+   ORCHESTRATOR's own final reply says — no file design.md's Unit 6 File
+   Changes row names, and none of this unit's four tasks, touches the
+   orchestrator's own instructions (`instructions/workflow.ts`,
+   `instructions/index.ts`). What this unit delivers is the mechanical
+   foundation those two requirements need to be satisfiable at all: `verify`
+   only ever reports a code-decided `outcome` a real check produced (never a
+   model's own claim), and a corrective retry's `fail` genuinely stays `fail`
+   when the underlying error persists (Deviation 2 above) — so the
+   information an honest reply would need is always available to the
+   orchestrator's model. Whether the orchestrator's own prompt actually
+   instructs it to use that information honestly is a later unit's prompt
+   work, not a unit 6 code guarantee.
+
+### Issues Found
+
+None.
+
+### Workload / PR Boundary
+
+- Mode: stacked-to-main chained PR slice (PR 9 of 15)
+- Current work unit: 6 — Verify role
+- Boundary: starts from `agent-harness/5-chromium-snapshot`, ends with a
+  working `verify` dispatch tool — deterministic console-error check plus a
+  visual-review sub-agent, budget-capped at 2 calls per turn — declared on
+  `chat.agent({ tools })` and narrowed out of every real turn by
+  `activeTools` while `HARNESS_PHASES` stays off; `explore`'s and
+  `run_tasks`' own paths (units 2b/3/4) are unaffected — neither file either
+  imports from touches anything `verify`-specific
+- **Authored changed lines: 640** (629 insertions + 11 deletions across 7
+  files — 4 new plus `turn-state.ts`, `trigger/chat.ts`, `tool-parts.ts` —
+  per `git diff --cached --stat`, excluding `openspec/**` and the
+  pre-existing unrelated `apps/web/next.config.ts` diff, which was never
+  staged this session). This is **over the 400-line budget**, consistent
+  with every other unit in this change except 2b and 5. It was implemented
+  honestly rather than trimmed: the fixed Python script
+  (`verify-script.ts`, 154 lines) and the TypeScript check runner
+  (`verify.ts`, 186 lines) are both genuinely new logic — a headless-browser
+  check, a turn-frozen baseline diff, and the code/model split decision 13
+  requires — and the codebase's existing block-comment density was
+  preserved/extended, including the load-bearing reasoning behind Deviation
+  2 above, which a reviewer checking a spec-correctness property (not
+  reportable success after a failed retry) needs to verify the mechanism is
+  actually sound. **Recommendation: `size:exception` for this slice**,
+  consistent with every over-budget unit already shipped in this change.
+
+### Status
+
+4/4 tasks in unit 6 complete. Ready for `sdd-verify`. Report the
+`size:exception` line-count risk, the `trigger/chat.ts`/`tool-parts.ts`
+scope gap (Deviation 1), the turn-frozen-baseline mechanism (Deviation 2 —
+worth a maintainer's own read, since it is the one place this unit could
+have silently shipped a spec violation), and the reply-composition gap
+(Deviation 7, for whichever unit next touches `instructions/workflow.ts`) to
+the user/maintainer. Runtime harness is explicitly N/A per the apply
+prompt's own instruction — it requires an interactive dev session with
+`HARNESS_PHASES` on, not available to this headless apply run. Per the
+interactive pace instruction, this batch stops here; unit 7a (skills
+registry) is a separate apply.

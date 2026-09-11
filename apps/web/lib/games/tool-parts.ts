@@ -72,6 +72,17 @@ export const TOOL_LABELS: Record<
     done: "Built",
     failed: "Couldn't build",
   },
+  /**
+   * Also behind `HARNESS_PHASES` — see `harness/tools/verify.ts` and
+   * `trigger/chat.ts`. `verify` never appears in `MUTATING_TOOLS` below: the
+   * check reads the sandbox's console/screenshot state, it never writes to
+   * the game's own files.
+   */
+  verify: {
+    active: "Checking",
+    done: "Checked",
+    failed: "Couldn't check",
+  },
 }
 
 /**
