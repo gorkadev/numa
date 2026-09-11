@@ -306,17 +306,17 @@ Satisfies `agent-orchestration`: Size Routing, Fixed Phase Order, Question
 Behavior Based on Message Specificity; `file-ownership`: Engine/Vendor
 Protections Preserved (plan half, decision 12).
 
-- [ ] 8.1 Create `apps/web/lib/games/harness/tools/plan.ts` +
+- [x] 8.1 Create `apps/web/lib/games/harness/tools/plan.ts` +
       `plan-store.ts`: `submit_plan` validates ≤ 6 tasks, known roles/skills,
       acyclic `dependsOn`, no `owns` entry under `engine/`/`vendor/`/`.numa/`,
       disjoint ownership outside dependency chains; on success writes
       `.numa/design.md` then `.numa/tasks.json` (design before tasks).
-- [ ] 8.2 Create `apps/web/lib/games/instructions/roles/planner.ts`.
-- [ ] 8.3 Modify `apps/web/lib/games/instructions/workflow.ts`: routing rule
+- [x] 8.2 Create `apps/web/lib/games/instructions/roles/planner.ts`.
+- [x] 8.3 Modify `apps/web/lib/games/instructions/workflow.ts`: routing rule
       (tweak vs phased) plus WHEN TO USE / WHEN NOT TO USE on `plan`.
-- [ ] 8.4 Modify `apps/web/lib/games/harness/flags.ts`: `HARNESS_PHASES`
+- [x] 8.4 Modify `apps/web/lib/games/harness/flags.ts`: `HARNESS_PHASES`
       turned on by default.
-- [ ] 8.5 Modify `apps/web/lib/games/instructions/index.ts`: orchestrator
+- [x] 8.5 Modify `apps/web/lib/games/instructions/index.ts`: orchestrator
       skills cut down to engine-core (routing now lives in the workflow
       prompt, not full engine instructions).
 

@@ -1,9 +1,14 @@
 /**
- * Gates the phased flow (understand → design → tasks → workers → verify)
- * behind an env var. Off by default: unit 2a's runner and role catalogue
- * exist, but no dispatch tool is declared on the orchestrator's tool set yet
- * (that starts in unit 2b, still behind this same flag), so the single-loop
- * path stays the only one a real turn can take until unit 8 flips this
- * default to on (design.md decision 8, "Rollout").
+ * Gates the phased flow (understand → plan → workers → verify) behind an
+ * env var — on by default since unit 8, now that size routing (`plan` vs.
+ * direct edits) lives in `instructions/workflow.ts`'s own prompt (design.md
+ * decision 8, "Rollout": "the single-loop path stays the default ... until
+ * unit 8 flips this default to on").
+ *
+ * Set `HARNESS_PHASES=false` to fall back to the single-loop path — the
+ * exact rollback boundary tasks.md's unit 8 row names ("Set HARNESS_PHASES
+ * back to off"). Every dispatch tool stays declared on `chat.agent({ tools })`
+ * either way (decision 6); only `activeTools` in `trigger/chat.ts` changes
+ * with this flag.
  */
-export const HARNESS_PHASES = process.env.HARNESS_PHASES === "true"
+export const HARNESS_PHASES = process.env.HARNESS_PHASES !== "false"

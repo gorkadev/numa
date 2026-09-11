@@ -11,7 +11,6 @@ import {
   type WorkerFocus,
 } from "@/lib/games/instructions/roles/worker"
 import {
-  ALL_SKILL_NAMES,
   mergeSkills,
   ROLE_DEFAULT_SKILLS,
   skillBodies,
@@ -25,6 +24,7 @@ import {
   type RunSubagentResult,
   type SubagentProgress,
 } from "../run-subagent"
+import { rejectDuplicateTaskIds, taskSpecSchema, type TaskSpec } from "../task-spec"
 import { turnState } from "../turn-state"
 import { createLoadSkillTool } from "./load-skill"
 
@@ -44,79 +44,24 @@ const MAX_TASKS_PER_BATCH = 4
 const POOL_CAP = 3
 
 /**
- * One task handed to `run_tasks`, matching design.md's Interfaces section:
- * `skills: SkillName[]` (`lib/games/skills/registry.ts`, unit 7a) is the
- * orchestrator's per-task extra skills, pushed into the worker's instructions
- * on top of its role's defaults (`buildInstructions` below,
- * `agent-skills`'s Orchestrator-Selected Extra Skills requirement).
- */
-export const taskSpecSchema = z.object({
-  id: z
-    .string()
-    .min(1)
-    .describe('A short id for this task, stable within the turn, e.g. "t1".'),
-  role: z.enum(["gameplay", "visuals", "audio"]),
-  title: z.string().min(1).describe("A few words naming the task."),
-  goal: z
-    .string()
-    .min(1)
-    .max(1200)
-    .describe(
-      "The task's goal, procedure, constraints and done-when condition, in plain language. This is the worker's whole brief — write it as if the worker has read nothing else about the game."
-    ),
-  owns: z
-    .array(z.string().min(1))
-    .min(1)
-    .describe(
-      'File paths this task may write. A directory ending in "/" owns everything under it; anything else must match exactly.'
-    ),
-  dependsOn: z
-    .array(z.string())
-    .default([])
-    .describe(
-      "Ids of other tasks that must finish before this one starts — from this same batch, or from an earlier run_tasks call in this same turn. A dependency this call cannot resolve (an unknown id, a self-dependency, or a dependency cycle) blocks the task instead of running it."
-    ),
-  skills: z
-    .array(z.enum(ALL_SKILL_NAMES))
-    .default([])
-    .describe(
-      `Extra skills to push into this worker's instructions on top of its role's defaults, when this task needs one its role does not already carry. One or more of: ${ALL_SKILL_NAMES.join(", ")}.`
-    ),
-})
-
-export type TaskSpec = z.infer<typeof taskSpecSchema>
-
-/**
- * Rejects a batch with two tasks sharing an id at input, before dispatch.
- * `run_tasks`' own bookkeeping (`indexById`, `remaining` in the scheduler
- * below) is keyed by task id — a duplicate would silently overwrite one
- * task's slot with the other's, so the second task would never run and
- * never be reported back. Zod's own input validation is what surfaces this
- * to the model as a correctable tool-input error, the same channel every
- * other schema violation on this tool already uses.
+ * `taskSpecSchema`/`TaskSpec` moved to `../task-spec.ts` in unit 8, shared
+ * with `submit_plan`'s own array schema (`harness/plan-validation.ts`) — see
+ * that module's own doc comment for why. `skills: SkillName[]`
+ * (`lib/games/skills/registry.ts`, unit 7a) is the orchestrator's per-task
+ * extra skills, pushed into the worker's instructions on top of its role's
+ * defaults (`buildInstructions` below, `agent-skills`'s Orchestrator-Selected
+ * Extra Skills requirement).
+ *
+ * Batch-level constraints on top of the shared per-task schema: at most
+ * `MAX_TASKS_PER_BATCH`, and no duplicate id (`rejectDuplicateTaskIds`,
+ * `../task-spec.ts` — the same check `submit_plan`'s own array schema uses,
+ * since both tools key their own bookkeeping by task id).
  */
 const tasksArraySchema = z
   .array(taskSpecSchema)
   .min(1)
   .max(MAX_TASKS_PER_BATCH)
-  .superRefine((tasks, ctx) => {
-    const seenAt = new Map<string, number>()
-
-    tasks.forEach((task, index) => {
-      const firstIndex = seenAt.get(task.id)
-
-      if (firstIndex !== undefined) {
-        ctx.addIssue({
-          code: "custom",
-          path: [index, "id"],
-          message: `Duplicate task id "${task.id}" (already used by task ${firstIndex}) — every task in one run_tasks call needs a unique id.`,
-        })
-        return
-      }
-
-      seenAt.set(task.id, index)
-    })
-  })
+  .superRefine(rejectDuplicateTaskIds)
 
 /** One task's outcome, reported back to the orchestrator's model. */
 type TaskOutcome = {

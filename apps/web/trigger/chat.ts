@@ -25,6 +25,7 @@ import { createGameSandbox } from "@/lib/daytona/utils"
 import { HARNESS_PHASES } from "@/lib/games/harness/flags"
 import { createExploreTool } from "@/lib/games/harness/tools/explore"
 import { createLoadSkillTool } from "@/lib/games/harness/tools/load-skill"
+import { createPlanTool } from "@/lib/games/harness/tools/plan"
 import { createRunTasksTool } from "@/lib/games/harness/tools/run-tasks"
 import { createVerifyTool } from "@/lib/games/harness/tools/verify"
 import { turnState } from "@/lib/games/harness/turn-state"
@@ -109,18 +110,18 @@ function changedGameFiles(message: UIMessage | undefined): boolean {
 }
 
 /**
- * Dispatch tools gated behind `HARNESS_PHASES` (unit 2a/2b's `flags.ts`).
+ * Dispatch tools gated behind `HARNESS_PHASES` (unit 2a/2b's `flags.ts`, on
+ * by default since unit 8).
  *
  * Decision 6 in design.md: every tool, dispatch tools included, stays
  * declared on `chat.agent({ tools })` regardless of the flag, so a stored
- * `explore`/`run_tasks`/`verify`/`load_skill` tool-call part keeps
+ * `explore`/`plan`/`run_tasks`/`verify`/`load_skill` tool-call part keeps
  * re-converting correctly even on a turn that ran with the flag off. Only
  * `activeTools` — which candidate this turn's model may actually call —
- * changes with the flag. `explore` (unit 2b), `run_tasks` (unit 3),
- * `verify` (unit 6) and `load_skill` (unit 7b) are wired in today; `plan`
- * adds itself here once its own unit (8) wires it in.
+ * changes with the flag. `explore` (unit 2b), `run_tasks` (unit 3), `verify`
+ * (unit 6), `load_skill` (unit 7b) and `plan` (unit 8) are all wired in now.
  */
-const PHASE_TOOLS = new Set(["explore", "run_tasks", "verify", "load_skill"])
+const PHASE_TOOLS = new Set(["explore", "plan", "run_tasks", "verify", "load_skill"])
 
 /**
  * Every declared tool name, minus the phase tools, unless `HARNESS_PHASES` is
@@ -267,17 +268,16 @@ export const gameChat = chat.agent({
 
   /**
    * The file tools plus every dispatch tool, resolved per turn so they close
-   * over this chat's game. `explore` (unit 2b), `run_tasks` (unit 3) and
-   * `verify` (unit 6) are the dispatch tools declared so far; `activeTools`
-   * in `run` below is what actually keeps them out of a turn while
-   * `HARNESS_PHASES` is off, not this declaration.
+   * over this chat's game: `explore` (unit 2b), `plan` (unit 8), `run_tasks`
+   * (unit 3), `verify` (unit 6) and `load_skill` (unit 7b). `activeTools` in
+   * `run` below is what actually keeps them out of a turn when
+   * `HARNESS_PHASES` is off (an explicit opt-out since unit 8; on by
+   * default), not this declaration.
    *
-   * `load_skill` (unit 7b) joins them here too: today it is a redundant
-   * fallback for the orchestrator, since `instructions/index.ts` still pushes
-   * every skill's full body (unit 7b keeps that prompt identical until unit 8
-   * cuts it down to `engine-core` alone), but it is declared and gated the
-   * same way as every dispatch tool so it needs no separate wiring once that
-   * cut lands.
+   * `load_skill` no longer overlaps with the orchestrator's own pushed
+   * skills the way it did through unit 7b: unit 8 cuts `instructions/index.ts`
+   * down to `engine-core` alone, so `load_skill` is this turn's real path to
+   * the other 7 skills, not a redundant fallback.
    *
    * Declared here and not only on `streamText`, because this is the set the
    * SDK re-converts stored history against on every later turn. A tool known
@@ -287,6 +287,7 @@ export const gameChat = chat.agent({
   tools: ({ chatId }) => ({
     ...createGameTools(chatId),
     explore: createExploreTool(chatId),
+    plan: createPlanTool(chatId),
     run_tasks: createRunTasksTool(chatId),
     verify: createVerifyTool(chatId),
     load_skill: createLoadSkillTool(),
@@ -662,10 +663,11 @@ export const gameChat = chat.agent({
       stopWhen: stepCountIs(25),
       /**
        * Narrows the declared tool set down to what this turn's model may
-       * actually call. `explore` is excluded while `HARNESS_PHASES` is off
-       * (still the case here), which is what keeps unit 2a/2b's runner inert
-       * on every real turn until unit 8 flips the flag — the declaration
-       * above never changes.
+       * actually call. Every phase tool (`explore`, `plan`, `run_tasks`,
+       * `verify`, `load_skill`) is active now that `HARNESS_PHASES` defaults
+       * to on (unit 8); setting it to `"false"` excludes them again, falling
+       * back to the single-loop path this turn ran on before unit 8 — the
+       * declaration above never changes either way.
        */
       activeTools: activeToolNames(tools),
     }),

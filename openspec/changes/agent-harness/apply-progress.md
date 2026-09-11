@@ -1850,3 +1850,197 @@ and structurally unavoidable given the 7a/7b split) and the
 call, not a design.md-dictated list) to the user/maintainer before merge.
 Per the interactive pace instruction, this batch stops here; unit 7b
 (`loadSkill` tool + wiring) is a separate apply.
+
+## Unit 8 — Size routing + phase flow (PR 12)
+
+Branch: `agent-harness/8-phase-flow` (stacked on
+`agent-harness/7b-load-skill`).
+
+- [x] 8.1 Create `apps/web/lib/games/harness/tools/plan.ts` + `plan-store.ts`
+- [x] 8.2 Create `apps/web/lib/games/instructions/roles/planner.ts`
+- [x] 8.3 Modify `apps/web/lib/games/instructions/workflow.ts`
+- [x] 8.4 Modify `apps/web/lib/games/harness/flags.ts`
+- [x] 8.5 Modify `apps/web/lib/games/instructions/index.ts`
+
+5/5 tasks in unit 8 complete. Units 9–10b remain (`[ ]`), unassigned to this
+apply batch.
+
+### Files Changed
+
+| File | Action |
+|---|---|
+| `apps/web/lib/games/harness/task-spec.ts` | Created |
+| `apps/web/lib/games/harness/plan-validation.ts` | Created |
+| `apps/web/lib/games/harness/plan-store.ts` | Created |
+| `apps/web/lib/games/harness/tools/plan.ts` | Created |
+| `apps/web/lib/games/instructions/roles/planner.ts` | Created |
+| `apps/web/lib/games/harness/tools/run-tasks.ts` | Modified |
+| `apps/web/lib/games/harness/run-subagent.ts` | Modified |
+| `apps/web/lib/games/harness/flags.ts` | Modified |
+| `apps/web/lib/games/skills/registry.ts` | Modified |
+| `apps/web/lib/games/instructions/index.ts` | Modified |
+| `apps/web/lib/games/instructions/workflow.ts` | Modified |
+| `apps/web/trigger/chat.ts` | Modified |
+| `apps/web/lib/games/tool-parts.ts` | Modified |
+
+### Deviations from Design
+
+1. **`taskSpecSchema`/`TaskSpec` moved out of `run-tasks.ts` into a new,
+   dependency-light `harness/task-spec.ts`, rather than duplicated.** The
+   apply prompt explicitly asked to reuse `run_tasks`' own schema for the
+   plan's task list. Importing it directly from `run-tasks.ts` would have
+   pulled in that file's own import chain — `harness/ownership.ts` →
+   `lib/games/tools.ts` → `lib/daytona/utils.ts` → `@workspace/db`, whose
+   `client.ts` calls `parseEnv(...)` at module-import time and throws when
+   `DATABASE_URL` is absent — into a validator meant to be a pure structural
+   check with no sandbox or database in the loop (needed for this unit's own
+   standalone-validator verification requirement). `task-spec.ts` has none of
+   that: zod plus the skills registry's own plain data. `run-tasks.ts` now
+   imports `taskSpecSchema`/`TaskSpec`/`rejectDuplicateTaskIds` from it
+   instead of declaring them itself; nothing else imported them from
+   `run-tasks.ts` before this change (confirmed by search), so this is a pure
+   move, not a breaking rename.
+2. **The duplicate-task-id check (`rejectDuplicateTaskIds`) also moved to
+   `task-spec.ts`**, shared by `run_tasks`' own `tasksArraySchema` (max 4)
+   and `submit_plan`'s `planTasksSchema` (max 6, `plan-validation.ts`) —
+   both key their own bookkeeping by task id and need the identical check,
+   rather than two copies that could drift.
+3. **`dependsOn` cycle detection did not already exist as a reusable
+   function**, despite the apply prompt's "may already exist there — reuse
+   it" hedge. `run_tasks`' own scheduler (unit 3/4) discovers an
+   unsatisfiable dependency — cycle included — only as a side effect of
+   never being able to start it, which is sufficient for a runtime scheduler
+   but never names the cycle for a pre-dispatch validator to explain to the
+   model. A standalone three-color DFS (`findDependencyCycle`) was written
+   in `plan-validation.ts` for `submit_plan` specifically, alongside
+   `findUnknownDependency` (an id with no matching task in the same
+   submission — a fresh plan has no earlier `run_tasks` call this turn to
+   reference, unlike `run_tasks`' own cross-call `dependsOn`) and
+   `findUnresolvedOwnershipOverlap` (transitive-dependency-aware pairwise
+   ownership check, design.md's "disjoint ownership outside dependency
+   chains").
+4. **`ownershipOverlaps`/`entriesConflict` and the protected-prefix name list
+   are duplicated in `plan-validation.ts` rather than imported from
+   `harness/ownership.ts`/`lib/games/tools.ts`**, for the identical reason as
+   Deviation 1: both of those modules transitively import the Daytona/DB
+   client chain through `lib/games/tools.ts`. The duplicated logic is three
+   short, pure string-comparison functions with no independent behavior of
+   their own to drift — the same category of duplication `run-tasks.ts` and
+   `tool-parts.ts` already document for `WRITE_TOOL_NAMES`/`MUTATING_TOOLS`.
+5. **`submit_plan`'s validation is split across two layers**, not entirely
+   inside `execute` as task 8.1's single sentence might suggest: task count,
+   known roles/skills and duplicate ids are enforced by `planTasksSchema`
+   itself (zod, reusing `taskSpecSchema` — the same layer `run_tasks`' own
+   duplicate-id check already uses, unit 3); the cross-task graph checks
+   (acyclic `dependsOn`, protected ownership, disjoint ownership outside
+   dependency chains) cannot be expressed as a static schema and are checked
+   explicitly inside `execute` via `validatePlanTasks`, returning `{ error }`
+   per design.md's own wording. Both layers reach the planner as a
+   correctable tool-input problem inside its own loop either way.
+6. **`stopWhen` is now an optional override on `RunSubagentInput`
+   (`run-subagent.ts`)**, not a file task 8's own list names, because the
+   SDK's own `hasToolCall` — the literal function design.md's role catalogue
+   names ("12, or `hasToolCall(\"submit_plan\")`") — stops the loop on ANY
+   call to the named tool, success or failure alike (confirmed against the
+   installed `ai@7.0.93`'s implementation: it checks only `steps[-1].toolCalls`,
+   never their results). Using it verbatim would have ended the planner's run
+   on its very first rejected `submit_plan` attempt, before the model ever
+   saw its own `{ error }` to react to — directly defeating design.md's own
+   "so the planner corrects itself in its own loop" for `submit_plan`. Fixed
+   by giving `run-subagent.ts` an optional `stopWhen` parameter (default
+   unchanged: `stepCountIs(role.maxSteps)` alone, so every other role and
+   every existing caller is unaffected) and having `plan.ts` pass
+   `[stepCountIs(role.maxSteps), planSubmitted()]`, where `planSubmitted()`
+   checks the last step's `submit_plan` tool RESULT rather than merely its
+   call. This is a corrected reading of the design's own intent, not a
+   deviation from it: the behavior it names (stop once the plan is genuinely
+   accepted, not merely attempted) is preserved; only the literal function
+   reference is not, because using it as named would have shipped a bug.
+7. **The plan's task list is carried inside the envelope's `summary` as
+   JSON**, not a new field on `SubagentEnvelope`. Design.md's Data Flow
+   diagram shows `envelope{tasks:[id,role,title,owns,dependsOn,skills]}` for
+   `plan`, but the Interfaces section's own `SubagentEnvelope` type is fixed
+   (`agent`, `status`, `summary`, `edits?`, `artifacts?`, `findings?`) with no
+   `tasks` field, and no task in this unit's own list asks to widen it. This
+   mirrors `run-tasks.ts`'s own `renderOutcomes`, which already serializes a
+   batch's outcomes into `summary` the same way; `artifacts` names the two
+   files `.numa/design.md`/`tasks.json` a successful plan wrote.
+8. **`run_tasks` was not modified to cross-check a task's `owns` against
+   `.numa/tasks.json`** (design.md's Data Flow: "check disjoint + deps + owns
+   ⊆ tasks.json"). This unit's own five tasks (8.1–8.5) do not list
+   `run-tasks.ts` for this check, and the apply prompt's scope section did
+   not extend it there either — flagged here as a real gap between the
+   design's data-flow diagram and tasks.md's own unit 8 task list, worth
+   resolving explicitly (either as a `run_tasks` task in a later unit, or a
+   documented decision that `run_tasks` remains callable independently of
+   `plan`, matching decision 8's own "Calling plan is the route" wording,
+   which reads as advisory rather than code-enforced).
+9. **The "Question Behavior Based on Message Specificity" half of task 8.3
+   needed no new text.** `instructions/workflow.ts`'s existing `ask_player`
+   section (predating this unit) already covers both of the spec's own
+   scenarios verbatim in substance — building as soon as a message names a
+   kind of game, and capping clarifying questions at two for an undecided
+   one — so nothing was added or changed there; only the new "Sizing a
+   change: tweak or build" section is new text for this unit.
+
+None of these change what `agent-orchestration`'s Size Routing, Fixed Phase
+Order or Question Behavior requirements ask for, or what `file-ownership`'s
+Engine/Vendor Protections Preserved (plan half) asks for; all are
+implementation-level consequences of building `submit_plan`'s validator to
+be both correct and standalone-testable, and of a literal reading of
+`hasToolCall` that would have shipped a real bug.
+
+### Work Unit Evidence
+
+| Evidence | Value |
+|---|---|
+| Focused command | `pnpm turbo typecheck --filter=web` → exit 0 (`web` fresh; `@workspace/ui`/`@workspace/db` cache-hit, unchanged by this unit). `pnpm lint` run directly inside `apps/web` → 0 errors, the same 13 pre-existing warnings established as the baseline since unit 7a/7b (including `HARNESS_PHASES`'s own `turbo/no-undeclared-env-vars`, pre-existing since unit 2a). No new warning from any file this unit touched or created. |
+| Standalone validator check | `node --experimental-strip-types` (Node v26.7.0) against the real `plan-validation.ts`/`task-spec.ts`/`skills/registry.ts` (copied into a temporary `apps/web/.scratch-plan-validation/` directory — deleted before this commit, confirmed absent from `git status` — with only import specifiers rewritten to relative `.ts` paths so Node's ESM resolver could find them; no logic was changed). All 8 required cases behaved as expected: `>6 tasks` (schema-rejected), `unknown role` (schema-rejected), `unknown skill` (schema-rejected), `a cycle` (`validatePlanTasks`-rejected, reporting the exact cyclic chain `t1 -> t2 -> t1`), `an engine/ owns entry` (`validatePlanTasks`-rejected), `overlapping owns without a dependency` (`validatePlanTasks`-rejected), `overlapping owns with a dependency chain` (accepted), and `a valid plan` (accepted). 8/8. |
+| Runtime harness | N/A in this apply session (no `trigger dev` run by the executor). Manual scenario for the user, per tasks.md's own row for this unit: with `HARNESS_PHASES` on (now the default — no env var needed), send an undecided message like "make me a game" and confirm the orchestrator asks at most 2 questions before building; then send a message naming a specific, substantial game (e.g. "a tower-defense game with three enemy types and upgradable towers") and confirm the orchestrator calls `plan`, then `run_tasks` against the tasks `plan` returned, then `verify`, before replying — and confirm a small follow-up tweak in the same thread (e.g. "make the player faster") is handled directly, with no `plan` call at all. |
+| Rollback boundary | Set `HARNESS_PHASES=false` to fall back to the single-loop path — the exact rollback tasks.md's own unit 8 row names. Every dispatch tool, `plan` included, stays declared on `chat.agent({ tools })` regardless (decision 6), so a stored `plan`/`submit_plan` tool-call part from a turn that ran with the flag on still re-converts correctly on a later turn with the flag off. Reverting the 13 files above independently restores unit 7b's exact end state: `ORCHESTRATOR_DEFAULT_SKILLS` back to `ALL_SKILL_NAMES`, `run-tasks.ts`'s schema back to its own local declaration, `run-subagent.ts`'s `stopWhen` back to unconditional, and `workflow.ts`/`index.ts`/`chat.ts`/`tool-parts.ts` back to their unit-7b wiring. |
+
+### Issues Found
+
+None.
+
+### Workload / PR Boundary
+
+- Mode: stacked-to-main chained PR slice (PR 12 of 15)
+- Current work unit: 8 — Size routing + phase flow
+- Boundary: starts from `agent-harness/7b-load-skill`, ends with `plan`
+  dispatching a validated design + task list, `HARNESS_PHASES` on by
+  default, and the orchestrator's own prompt routing a turn to either a
+  direct tweak or the full phased flow; units 9 (run records) and 10a/10b
+  (sub-agent view) are unaffected — neither reads anything this unit added
+- **Authored changed lines: 998** (878 insertions + 120 deletions across 13
+  files — 5 new plus 8 modified — per `git diff --stat` against
+  `agent-harness/7b-load-skill`, excluding `openspec/**` and the pre-existing
+  unrelated `apps/web/next.config.ts` diff, which was never staged this
+  session). This is **over the 400-line budget**, and the largest overage in
+  this change so far (1a: 712, 1b: 523, 1c: 569, 2a: 509, 7a: 476, 7b: 473).
+  It was implemented honestly rather than trimmed: this unit is the single
+  largest structural addition in the whole change — a new validated dispatch
+  tool with its own sub-agent, a real DFS cycle detector and a
+  transitive-dependency-aware ownership-overlap checker (both genuinely new
+  logic, not boilerplate), a schema extraction that touches two files to
+  avoid a database-import problem in a validator that also had to stay
+  standalone-testable, and prompt/wiring changes across five more files
+  (`flags.ts`, `registry.ts`, `instructions/index.ts`, `instructions/workflow.ts`,
+  `trigger/chat.ts`, `tool-parts.ts`). The codebase's existing block-comment
+  density was preserved and extended throughout, including the load-bearing
+  reasoning behind Deviation 6 above (a real bug a literal reading of the
+  design would have shipped) and the standalone-validator evidence a
+  reviewer needs to trust `submit_plan`'s own correctness without running a
+  live sandbox. **Recommendation: `size:exception` for this slice**,
+  consistent with every other unit shipped in this change so far.
+
+### Status
+
+5/5 tasks in unit 8 complete. Ready for `sdd-verify`. Report the
+`size:exception` line-count risk (the largest in this change so far),
+Deviation 6 (the `hasToolCall` bug a literal reading of design.md's role
+catalogue would have shipped) and Deviation 8 (the `run_tasks`/`tasks.json`
+cross-check gap between design.md's Data Flow diagram and tasks.md's own
+unit 8 task list) to the user/maintainer before merge. Per the interactive
+pace instruction, this batch stops here; unit 9 (sub-agent run records) is a
+separate apply.

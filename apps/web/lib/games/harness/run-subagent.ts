@@ -5,6 +5,7 @@ import {
   stepCountIs,
   type FinishReason,
   type ModelMessage,
+  type StopCondition,
   type ToolSet,
 } from "ai"
 
@@ -38,6 +39,21 @@ export type RunSubagentInput = {
   tools: ToolSet
   prompt: string | ModelMessage[]
   abortSignal?: AbortSignal
+  /**
+   * Overrides the role's own step-count-only stop condition
+   * (`stepCountIs(role.maxSteps)`, the default below). design.md's role
+   * catalogue gives the planner a second condition — "12, or
+   * hasToolCall(\"submit_plan\")" — but a stop condition that fires on any
+   * CALL to `submit_plan`, success or failure, would end the run on the
+   * planner's very first rejected attempt: the model would never see its
+   * own `{ error }` to react to, defeating "so the planner corrects itself
+   * in its own loop" (design.md's `submit_plan` paragraph). Its own dispatch
+   * tool (`tools/plan.ts`, unit 8) therefore passes a condition that checks
+   * the last step's `submit_plan` RESULT, not merely its call, alongside the
+   * same step-count ceiling every other role gets. Every other role keeps
+   * the plain default.
+   */
+  stopWhen?: StopCondition<ToolSet> | StopCondition<ToolSet>[]
 }
 
 /**
@@ -140,7 +156,7 @@ function buildRunHooks(): { hooks: FallbackHooks; takeServed: () => ServedCall |
 export async function* runSubagent(
   input: RunSubagentInput
 ): AsyncGenerator<SubagentProgress, RunSubagentResult, void> {
-  const { role, instructions, tools, prompt, abortSignal } = input
+  const { role, instructions, tools, prompt, abortSignal, stopWhen } = input
   const agentId = input.agentId ?? randomUUID()
 
   const { hooks, takeServed } = buildRunHooks()
@@ -155,7 +171,7 @@ export async function* runSubagent(
     model,
     instructions,
     tools,
-    stopWhen: stepCountIs(role.maxSteps),
+    stopWhen: stopWhen ?? stepCountIs(role.maxSteps),
     /**
      * `resolveModel`'s composite already owns retrying a candidate's own
      * retryable failures (`fallback-model.ts`); leaving `ai`'s default

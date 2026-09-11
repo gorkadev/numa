@@ -57,15 +57,26 @@ export const TOOL_LABELS: Record<
     failed: "Couldn't delete",
   },
   /**
-   * Behind `HARNESS_PHASES` (off by default) — see `harness/tools/explore.ts`
-   * and `trigger/chat.ts`. Declared here unconditionally, like the tool
-   * itself, so a thread that ran with the flag on still renders correctly
-   * for every reader, flag state included.
+   * Behind `HARNESS_PHASES` (on by default since unit 8) — see
+   * `harness/tools/explore.ts` and `trigger/chat.ts`. Declared here
+   * unconditionally, like the tool itself, so a thread that ran with the
+   * flag off still renders correctly for every reader, flag state included.
    */
   explore: {
     active: "Investigating",
     done: "Investigated",
     failed: "Couldn't investigate",
+  },
+  /**
+   * Also behind `HARNESS_PHASES` (on by default since unit 8) — see
+   * `harness/tools/plan.ts` and `trigger/chat.ts`. `plan` never appears in
+   * `MUTATING_TOOLS` below: it only writes to `.numa/`, not the game's own
+   * files, so it never triggers a preview reload.
+   */
+  plan: {
+    active: "Planning",
+    done: "Planned",
+    failed: "Couldn't plan",
   },
   run_tasks: {
     active: "Building",

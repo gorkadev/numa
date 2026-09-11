@@ -113,13 +113,16 @@ export const ROLE_DEFAULT_SKILLS: Record<RoleId, SkillName[]> = {
 /**
  * The orchestrator is not a `RoleId` (it never goes through
  * `run-subagent.ts`, `harness/roles.ts`'s own header comment), so its
- * default lives separately. Per design.md's File Changes table for unit 7
- * ("orchestrator keeps all engine skills pushed until unit 8, so the
- * prompt is identical"), it starts as every skill and is only cut down to
- * `engine-core` alone in unit 8 (task 8.5) once routing moves into the
- * workflow prompt.
+ * default lives separately. Per design.md's File Changes table for unit 7,
+ * it kept every skill pushed through unit 7b, so the prompt stayed
+ * identical while routing still lived in `instructions/engine.ts`'s
+ * replacement. Unit 8 (task 8.5) cuts it down to `engine-core` alone, now
+ * that routing lives in `instructions/workflow.ts`'s own prompt instead: the
+ * orchestrator relies on `load_skill` and the skill index
+ * (`instructions/index.ts`) for the other 7 skills from here on, the same
+ * way the planner does (`harness/tools/plan.ts`).
  */
-export const ORCHESTRATOR_DEFAULT_SKILLS: SkillName[] = ALL_SKILL_NAMES
+export const ORCHESTRATOR_DEFAULT_SKILLS: SkillName[] = ["engine-core"]
 
 /**
  * Joins a list of skills' `body` text in the order given, with the same
@@ -153,4 +156,31 @@ export function mergeSkills(
   }
 
   return merged
+}
+
+/**
+ * A short index of every skill NOT already pushed into a role's own
+ * instructions — what `load_skill` (unit 7b) can still load for it by name,
+ * beyond what it already carries. A role whose prompt does not name a skill
+ * has no way to know it exists to ask for; this is what makes `load_skill`
+ * a usable fallback rather than a tool nothing ever calls.
+ *
+ * Shared by the orchestrator's instructions (`instructions/index.ts`, unit
+ * 8: pushed skills cut to `engine-core` alone) and the planner's
+ * (`harness/tools/plan.ts`, unit 8: same single pushed skill) — both need
+ * the same "what else is there" list, differing only in which names to
+ * exclude.
+ */
+export function skillIndex(pushed: readonly SkillName[]): string {
+  const remaining = ALL_SKILL_NAMES.filter((name) => !pushed.includes(name))
+
+  if (remaining.length === 0) return ""
+
+  return [
+    "## Other engine skills",
+    "load_skill can load any of these by name when work genuinely needs it, beyond what your instructions already carry:",
+    ...remaining.map(
+      (name) => `- \`${name}\` — ${SKILLS[name].description} Use when: ${SKILLS[name].trigger}`
+    ),
+  ].join("\n")
 }
