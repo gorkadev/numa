@@ -181,14 +181,14 @@ Envelope.
 Satisfies `agent-orchestration`: Role dispatch carries fixed parameters
 (explorer scenario); wires 2a into `chat.agent` for the first time.
 
-- [ ] 2b.1 Create `apps/web/lib/games/harness/tools/explore.ts`: dispatch
+- [x] 2b.1 Create `apps/web/lib/games/harness/tools/explore.ts`: dispatch
       tool running the explorer role (`read_file`, `list_files`, 8 steps,
       120 s), returns `toModelOutput({ output: envelope })`.
-- [ ] 2b.2 Create `apps/web/lib/games/instructions/roles/explorer.ts`.
-- [ ] 2b.3 Modify `apps/web/trigger/chat.ts`: declare the `explore` tool on
+- [x] 2b.2 Create `apps/web/lib/games/instructions/roles/explorer.ts`.
+- [x] 2b.3 Modify `apps/web/trigger/chat.ts`: declare the `explore` tool on
       `chat.agent({ tools })`, narrowed by `activeTools` behind
       `HARNESS_PHASES` (still off).
-- [ ] 2b.4 Modify `apps/web/lib/games/tool-parts.ts`: add the `explore` tool
+- [x] 2b.4 Modify `apps/web/lib/games/tool-parts.ts`: add the `explore` tool
       part label/shape for existing tool-group rendering.
 
 ## Unit 3 — File ownership + sequential worker

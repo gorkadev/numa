@@ -56,6 +56,17 @@ export const TOOL_LABELS: Record<
     done: "Deleted",
     failed: "Couldn't delete",
   },
+  /**
+   * Behind `HARNESS_PHASES` (off by default) — see `harness/tools/explore.ts`
+   * and `trigger/chat.ts`. Declared here unconditionally, like the tool
+   * itself, so a thread that ran with the flag on still renders correctly
+   * for every reader, flag state included.
+   */
+  explore: {
+    active: "Investigating",
+    done: "Investigated",
+    failed: "Couldn't investigate",
+  },
 }
 
 /**

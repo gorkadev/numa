@@ -730,3 +730,126 @@ None.
 `EnvelopeStatus` placement gap (from unit 1b) to the user/maintainer before
 merge. Per the interactive pace instruction, this batch stops here; unit 2b
 (wiring the explorer to `chat.agent`) is a separate apply.
+
+## Unit 2b — Explorer sub-agent (PR 5)
+
+Branch: `agent-harness/2b-explorer` (stacked on `agent-harness/2a-harness-core`).
+
+- [x] 2b.1 Create `apps/web/lib/games/harness/tools/explore.ts`
+- [x] 2b.2 Create `apps/web/lib/games/instructions/roles/explorer.ts`
+- [x] 2b.3 Modify `apps/web/trigger/chat.ts`
+- [x] 2b.4 Modify `apps/web/lib/games/tool-parts.ts`
+
+4/4 tasks in unit 2b complete. Units 3–10b remain (`[ ]`), unassigned to this
+apply batch.
+
+### Files Changed
+
+| File | Action |
+|---|---|
+| `apps/web/lib/games/harness/tools/explore.ts` | Created |
+| `apps/web/lib/games/instructions/roles/explorer.ts` | Created |
+| `apps/web/trigger/chat.ts` | Modified |
+| `apps/web/lib/games/tool-parts.ts` | Modified |
+
+### Work Unit Evidence
+
+| Evidence | Value |
+|---|---|
+| Focused command | `pnpm turbo typecheck --filter=web` → exit 0 (all three packages, `@workspace/ui` and `@workspace/db` cache-hit unchanged). `pnpm lint` run directly inside `apps/web` (`pnpm turbo lint --filter=web` still pulls in the pre-existing broken `@workspace/db#lint` task — confirmed unrelated to this unit, same as units 1b/1c/2a) → 0 errors, the same 12 warnings established as the baseline in unit 2a (11 pre-existing plus `HARNESS_PHASES`'s `turbo/no-undeclared-env-vars`). No new warning from any file this unit touched. |
+| Runtime harness | N/A in this apply session (no `trigger dev` run by the executor). `HARNESS_PHASES` stays off, so `explore` is declared on `chat.agent({ tools })` but excluded from every real turn's `activeTools` — the manual scenario per tasks.md's own row for this unit: set `HARNESS_PHASES=true` in dev, prompt the orchestrator in a way that makes it call `explore` with a question about the current game files, and confirm (a) the reply's tool-call renders under the new "Investigating"/"Investigated" label from `tool-parts.ts`, (b) `turn_usage.usage_breakdown.entries` gains one `role: "explorer", slot: "light"` entry priced at the tier's `light` model, distinct from the orchestrator's own `strong` entry, and (c) the orchestrator's reply reflects the explorer's summary rather than a raw file dump — confirming `toModelOutput` actually truncated the envelope to text rather than passing the full `records` transcript through. |
+| Rollback boundary | Revert `harness/tools/explore.ts`, `instructions/roles/explorer.ts`, and the `trigger/chat.ts`/`tool-parts.ts` diff. Nothing outside this unit imports either new file, and reverting `trigger/chat.ts`'s three additions (the `tools` factory's merge, `activeToolNames`/`PHASE_TOOLS`, and the `activeTools` line on `streamText`) restores the exact unit 2a tool set (`createGameTools(chatId)` alone, no `activeTools` narrowing at all) with no other behavior change — `HARNESS_PHASES` already gated this unit's only effect to zero on every real turn, so the revert changes nothing a live turn could observe either way. |
+
+### Deviations from Design
+
+1. **`run-subagent.ts`'s generator `return` value is never read by the AI
+   SDK — confirmed against the installed `ai@7.0.93`'s tool executor
+   (`@ai-sdk/provider-utils`'s `executeTool`), which drives a generator
+   `execute` with a plain `for await...of` loop and uses only the LAST
+   YIELDED value as the tool's final result. A generator's own `return`
+   statement is invisible to a `for await...of` consumer — only its `yield`s
+   are. `runSubagent` (unit 2a) both yields `SubagentProgress` snapshots AND
+   returns `RunSubagentResult` via `return`, which was correct for that
+   unit's own scope (nothing consumed the generator yet), but `explore.ts`'s
+   `execute` cannot use `yield* runSubagent(...)` naively — that delegation
+   pattern only helps a caller using `for await...of` on the OUTER
+   generator too, and the same rule applies one level up: the SDK's own
+   loop over the tool's `execute` generator would still only see `yield*`'s
+   *yielded* values, not its expression value. `explore.ts`'s `execute`
+   therefore drives `runSubagent`'s iterator manually
+   (`run.next()` in a loop) and explicitly `yield`s the final
+   `RunSubagentResult` as the last value, once the delegated generator's
+   `done: true` is reached — making it the one non-preliminary value the SDK
+   sees. **This is worth flagging for whoever authors unit 3's `run_tasks`
+   dispatch tool**: the same manual-drive pattern applies to whatever other
+   dispatch tool consumes `runSubagent`, not just `explore.ts`.
+2. **`toModelOutput`'s `output` parameter types as `SubagentProgress |
+   RunSubagentResult`**, the union of everything `execute` yields, rather
+   than `RunSubagentResult` alone — a direct consequence of Deviation 1: the
+   tool's inferred result type is the yield type of the generator, and this
+   generator yields both shapes (preliminary progress, then the final
+   result). A runtime type guard (`"envelope" in output`) narrows it; this
+   is safe rather than merely convenient, because the installed SDK's own
+   conversion path (traced in `dist/index.js`) filters preliminary
+   `output-available` parts out before `toModelOutput` is ever called — the
+   guard's "else" branch is unreachable in practice and exists only because
+   the type checker cannot see that runtime guarantee. Documented inline at
+   the guard itself.
+3. **`createExploreTool` carries an explicit `Tool` return-type
+   annotation**, not present in any task or design text. Without it,
+   `tsc --noEmit` (this project's `declaration: true` requires every
+   exported function's type to be nameable) fails with "the inferred type
+   ... cannot be named without a reference to `@ai-sdk/provider-utils`" —
+   this app depends on `ai`, not `@ai-sdk/provider-utils` directly, so the
+   fully-inferred generic instantiation of `tool(...)` is not a type this
+   project can spell. `Tool`'s own defaulted generic parameters (`any` for
+   input/output/context) are sufficient: the specific types are still fully
+   checked inside the `tool({...})` call itself, this annotation only
+   affects what the exported function's own signature can be named as.
+4. **`explorerTools` filters `createGameTools`'s entries rather than
+   destructuring `read_file`/`list_files` by name.** A direct destructure
+   (`const { read_file, list_files } = createGameTools(gameId)`) fails
+   `tsc --noEmit` under this project's `noUncheckedIndexedAccess`: `ToolSet`
+   is a `Record<string, Tool>`, so a named property read on it types as
+   possibly `undefined`, correctly in general (nothing statically
+   guarantees a string-keyed record holds a given key) even though this
+   codebase already knows `createGameTools` always includes both.
+   `Object.entries(...).filter(...)` sidesteps the indexed-access check
+   entirely rather than asserting the invariant away with a non-null
+   assertion at each use, keeping the "both tools always exist" knowledge in
+   one named constant (`EXPLORER_TOOL_NAMES`) instead.
+
+None of these change what `agent-orchestration`'s Role dispatch carries
+fixed parameters requirement, or the explorer scenario it names, ask for —
+all are TypeScript- and installed-SDK-version mechanics of wiring unit 2a's
+runner to its first real caller.
+
+### Issues Found
+
+None.
+
+### Workload / PR Boundary
+
+- Mode: stacked-to-main chained PR slice (PR 5 of 15)
+- Current work unit: 2b — Explorer sub-agent
+- Boundary: starts from `agent-harness/2a-harness-core`, ends with a working
+  `explore` dispatch tool declared on `chat.agent({ tools })` and narrowed
+  out of every real turn by `activeTools` while `HARNESS_PHASES` stays off;
+  no later unit's code depends on anything in this slice yet
+- **Authored changed lines: 230** (228 insertions + 2 deletions across 4
+  files — 2 new plus `trigger/chat.ts` and `tool-parts.ts` — per
+  `git diff --stat` against `agent-harness/2a-harness-core`, excluding
+  `openspec/**` and the pre-existing unrelated `apps/web/next.config.ts`
+  diff). Well **under the 400-line budget** — the first unit in this change
+  to land under it — because this unit adds one dispatch tool and its role
+  instructions rather than a new runner or registry, and the flag keeps its
+  only wiring point (`trigger/chat.ts`) to a handful of lines.
+
+### Status
+
+4/4 tasks in unit 2b complete. Ready for `sdd-verify`. Report the
+generator-return-value gap (Deviation 1) to whoever authors unit 3's
+`run_tasks` dispatch tool, and the manual dev-verification scenario (set
+`HARNESS_PHASES=true` and dispatch `explore`) to the user/maintainer. Per the
+interactive pace instruction, this batch stops here; unit 3 (file ownership +
+sequential worker) is a separate apply.

@@ -5,6 +5,7 @@ import {
   isToolUIPart,
   stepCountIs,
   streamText,
+  type ToolSet,
   type UIMessage,
 } from "ai"
 import { z } from "zod"
@@ -21,6 +22,8 @@ import {
 } from "@/lib/ai/model-registry"
 import { priceTurn } from "@/lib/ai/pricing"
 import { createGameSandbox } from "@/lib/daytona/utils"
+import { HARNESS_PHASES } from "@/lib/games/harness/flags"
+import { createExploreTool } from "@/lib/games/harness/tools/explore"
 import { turnState } from "@/lib/games/harness/turn-state"
 import { gameInstructions } from "@/lib/games/instructions"
 import { gameRevisionChunk } from "@/lib/games/revision"
@@ -69,6 +72,31 @@ function changedGameFiles(message: UIMessage | undefined): boolean {
 
     return typeof output !== "object" || output === null || !("error" in output)
   })
+}
+
+/**
+ * Dispatch tools gated behind `HARNESS_PHASES` (unit 2a/2b's `flags.ts`).
+ *
+ * Decision 6 in design.md: every tool, dispatch tools included, stays
+ * declared on `chat.agent({ tools })` regardless of the flag, so a stored
+ * `explore` tool-call part keeps re-converting correctly even on a turn that
+ * ran with the flag off. Only `activeTools` — which candidate this turn's
+ * model may actually call — changes with the flag. `explore` is the only
+ * entry today; later phase tools (`plan`, `run_tasks`, `verify`, `load_skill`)
+ * add themselves here as their own units wire them in.
+ */
+const PHASE_TOOLS = new Set(["explore"])
+
+/**
+ * Every declared tool name, minus the phase tools, unless `HARNESS_PHASES` is
+ * on. Reads the tool set's own keys rather than a hand-maintained allow-list,
+ * so a tool that is not a phase tool never has to be added here to stay
+ * callable.
+ */
+function activeToolNames<T extends ToolSet>(tools: T): (keyof T & string)[] {
+  return Object.keys(tools).filter(
+    (name) => HARNESS_PHASES || !PHASE_TOOLS.has(name)
+  ) as (keyof T & string)[]
 }
 
 /**
@@ -203,14 +231,20 @@ export const gameChat = chat.agent({
   },
 
   /**
-   * The file tools, resolved per turn so they close over this chat's game.
+   * The file tools plus every dispatch tool, resolved per turn so they close
+   * over this chat's game. `explore` (unit 2b) is the first dispatch tool;
+   * `activeTools` in `run` below is what actually keeps it out of a turn
+   * while `HARNESS_PHASES` is off, not this declaration.
    *
    * Declared here and not only on `streamText`, because this is the set the
    * SDK re-converts stored history against on every later turn. A tool known
    * only to `streamText` would work on the turn that called it and then lose
    * its result formatting the moment the thread was replayed.
    */
-  tools: ({ chatId }) => createGameTools(chatId),
+  tools: ({ chatId }) => ({
+    ...createGameTools(chatId),
+    explore: createExploreTool(chatId),
+  }),
 
   /**
    * Refuses a turn the organization has no credits for.
@@ -580,5 +614,13 @@ export const gameChat = chat.agent({
        * turn.
        */
       stopWhen: stepCountIs(25),
+      /**
+       * Narrows the declared tool set down to what this turn's model may
+       * actually call. `explore` is excluded while `HARNESS_PHASES` is off
+       * (still the case here), which is what keeps unit 2a/2b's runner inert
+       * on every real turn until unit 8 flips the flag — the declaration
+       * above never changes.
+       */
+      activeTools: activeToolNames(tools),
     }),
 })
