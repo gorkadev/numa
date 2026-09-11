@@ -853,3 +853,150 @@ generator-return-value gap (Deviation 1) to whoever authors unit 3's
 `HARNESS_PHASES=true` and dispatch `explore`) to the user/maintainer. Per the
 interactive pace instruction, this batch stops here; unit 3 (file ownership +
 sequential worker) is a separate apply.
+
+## Unit 3 — File ownership + sequential worker (PR 6)
+
+Branch: `agent-harness/3-file-ownership` (stacked on
+`agent-harness/2b-explorer`).
+
+- [x] 3.1 Modify `apps/web/lib/games/tools.ts`: export the tool builders and
+      `resolveGamePath`; protected-prefix guard for `engine/`, `vendor/`,
+      `.numa/`
+- [x] 3.2 Create `apps/web/lib/games/harness/ownership.ts`:
+      `createScopedGameTools(gameId, owns)`
+- [x] 3.3 Create `apps/web/lib/games/harness/tools/run-tasks.ts` (sequential
+      only)
+- [x] 3.4 Create `apps/web/lib/games/instructions/roles/worker.ts` (shared) +
+      per-focus prompt sections
+- [x] 3.5 Modify `apps/web/trigger/chat.ts`: `changedGameFiles` counts
+      `run_tasks` edits
+
+5/5 tasks in unit 3 complete. Units 4–10b remain (`[ ]`), unassigned to this
+apply batch.
+
+### Files Changed
+
+| File | Action |
+|---|---|
+| `apps/web/lib/games/tools.ts` | Modified — split into exported per-tool builders, added the protected-prefix guard |
+| `apps/web/lib/games/harness/ownership.ts` | Created |
+| `apps/web/lib/games/harness/tools/run-tasks.ts` | Created |
+| `apps/web/lib/games/instructions/roles/worker.ts` | Created |
+| `apps/web/lib/games/harness/envelope.ts` | Modified — `renderEnvelope` moved here from `explore.ts` |
+| `apps/web/lib/games/harness/tools/explore.ts` | Modified — now imports `renderEnvelope` instead of defining it |
+| `apps/web/trigger/chat.ts` | Modified — `run_tasks` declared, gated, and counted for preview reload |
+
+### Work Unit Evidence
+
+| Evidence | Value |
+|---|---|
+| Focused command | `pnpm turbo typecheck --filter=web` → exit 0 (all three packages). `pnpm lint` run directly inside `apps/web` → 0 errors, the same 12 pre-existing warnings established as the baseline since unit 2a. No new warning from any file this unit touched. |
+| Runtime harness | N/A in this apply session (no `trigger dev` run by the executor). `HARNESS_PHASES` stays off, so `run_tasks` is declared on `chat.agent({ tools })` but excluded from every real turn's `activeTools`. Manual scenario for the user, per tasks.md's own row for this unit: set `HARNESS_PHASES=true` in dev, dispatch one worker task (e.g. a `gameplay` task owning `game.js`) and confirm it writes only within its declared `owns`, then dispatch a second task whose `owns` names a path the first task did not declare and confirm the write tool call returns `{ error }` naming the path and "outside this task's declared ownership" rather than silently succeeding; also confirm a task that declares ownership of a path under `engine/`, `vendor/` or `.numa/` is rejected by the protected-prefix guard regardless of that declared ownership, and that a `delete_file` call for `index.html` is still rejected even when a task's `owns` includes it. |
+| Rollback boundary | Revert `harness/ownership.ts`, `harness/tools/run-tasks.ts`, `instructions/roles/worker.ts`, and the diffs in `tools.ts`, `harness/envelope.ts`, `harness/tools/explore.ts` and `trigger/chat.ts`. `tools.ts`'s refactor is behavior-preserving for every existing caller — `createGameTools(gameId)` still returns the exact same `ToolSet` shape, and the protected-prefix guard is new, additive rejection logic that could only ever turn a previously-allowed write into a rejection (an `engine/`/`vendor/`/`.numa/` write was never something a turn should have been doing), never the reverse — so a revert restores unit 2b's exact behavior with no other unit depending on anything added here. |
+
+### Deviations from Design
+
+1. **`tools.ts`'s write tool builders (`createWriteFileTool`,
+   `createReplaceTextTool`, `createDeleteFileTool`) take an optional
+   `guard?: PathGuard` parameter, not named in design.md's Interfaces
+   section.** This is the mechanism decision 11's own "wraps the tool
+   builders exported from `tools.ts`" phrase leaves open: `harness/ownership.ts`
+   needed a way to layer an ownership check on top of the same builder the
+   orchestrator's own unscoped `createGameTools` uses, without a second
+   implementation of path resolution, protected-prefix checking or the
+   sandbox write itself. A `PathGuard` (`(relative: string) => ToolError |
+   undefined`), called after the protected-prefix guard and before the write,
+   is the smallest change that lets both callers share one implementation —
+   `createGameTools` passes none (only the protected-prefix guard applies),
+   `createScopedGameTools` passes one built from `task.owns`.
+2. **`run_tasks`' per-task result reports `wroteFiles: boolean`, not
+   `SubagentEnvelope.edits: string[]` (the file paths).** Design.md's Data
+   Flow section shows `run_tasks`' envelope carrying "edits" per task, but
+   `run-subagent.ts` (unit 2a) only records tool NAMES on each step
+   (`{ toolName, toolCallId, ok, error }`), not the paths a call touched —
+   unit 9's task (9.2) is what stamps richer fields, path included, onto a
+   `SubagentRunRecord`. `trigger/chat.ts`'s `changedGameFiles` only needs a
+   boolean ("did this turn write anything, so the preview should reload"),
+   so `wroteFiles` is exactly what unit 3 can honestly report today; unit 9's
+   own change is expected to let a later unit populate `edits` properly
+   without changing `wroteFiles`' own meaning.
+3. **Design inlining (decision 7, "the dispatch code inlines the design into
+   each worker's prompt") is not implemented in unit 3.** `.numa/design.md`
+   does not exist until unit 8's `submit_plan` ships. `task.goal`
+   (`taskSpecSchema`: "goal, procedure, constraints, done-when; ≤ 1200
+   chars") is the worker's complete brief in its place — matching `TaskSpec`'s
+   own field comment in design.md's Interfaces section, which already
+   describes `goal` as carrying all of that.
+4. **`TaskSpec.skills` is typed `string[]`, not `SkillName[]`.** `SkillName`
+   (`lib/games/skills/registry.ts`, unit 7a) does not exist yet. Documented
+   inline in `run-tasks.ts` as the same kind of forward-declaration gap unit
+   1b's `AgentUsageEntry.role` and unit 2a's `SubagentProgress` recorded for
+   their own not-yet-built dependencies; nothing in unit 3 reads `skills` at
+   all, so no call site needs to change when unit 7b widens what consumes it.
+5. **Worker instructions inline the FULL `engineInstructions.content`**
+   (`instructions/engine.ts`, pre-unit-7), not "defaults ∪ task skills"
+   (design.md's role catalogue Instructions column, and decision 14). The
+   skills registry does not exist until unit 7a/7b. This matches what the
+   orchestrator itself still does pre-unit-7 (`instructions/index.ts` pushes
+   the same full `engineInstructions`), so a worker and the orchestrator see
+   the same engine knowledge until unit 7 replaces both with the split-skill
+   version.
+6. **`run-tasks.ts` does not implement decision 12's pairwise ownership-overlap
+   or `dependsOn` checks.** `tasks.md`'s own unit 4 task (4.1) explicitly
+   assigns "pairwise ownership-overlap + `dependsOn` check before dispatch" to
+   that unit's change to this same file, alongside the concurrency pool —
+   unit 3 is sequential-only by its own task wording (3.3), so two tasks in
+   one batch can never actually run concurrently regardless of whether their
+   `owns` overlap, which is what `file-ownership`'s Parallel Dispatch
+   Requires Disjoint Ownership requirement is protecting against. Unit 4 adds
+   the check when it adds the thing the check is for.
+
+None of these change what `file-ownership`'s Declared Ownership Per Task,
+Out-of-Scope Writes Rejected, Engine/Vendor Protections Preserved,
+`index.html` Cannot Be Deleted requirements, or `agent-orchestration`'s
+Parallel Dispatch Only on Disjoint Ownership requirement (sequential half —
+trivially satisfied, since nothing in unit 3 ever dispatches concurrently)
+ask for; all are implementation-level consequences of building the sequential
+runner before the planner (unit 8) or skills registry (unit 7) exist to feed
+it design bodies or skill lists.
+
+### Issues Found
+
+None.
+
+### Workload / PR Boundary
+
+- Mode: stacked-to-main chained PR slice (PR 6 of 15)
+- Current work unit: 3 — File ownership + sequential worker
+- Boundary: starts from `agent-harness/2b-explorer`, ends with a working,
+  ownership-scoped, sequential `run_tasks` dispatch tool declared on
+  `chat.agent({ tools })` and narrowed out of every real turn by
+  `activeTools` while `HARNESS_PHASES` stays off; explorer's own path
+  (unit 2b) is unaffected — `renderEnvelope`'s move to `envelope.ts` is a
+  pure relocation, not a behavior change, confirmed by `explore.ts` importing
+  the exact same function body
+- **Authored changed lines: see the apply return envelope's exact
+  `git diff --stat 8e19805..HEAD` figure** (excluding `openspec/**` and the
+  pre-existing unrelated `apps/web/next.config.ts` diff, per every prior
+  unit's own methodology in this file). `tools.ts`'s own diff is large
+  relative to its actual logic change: every one of its six tool definitions
+  moved from an inline object-literal value inside one `createGameTools`
+  function into its own exported, independently-callable function
+  (`createReadFileTool`, `createWriteFileTool`, etc. — task 3.1's own
+  wording, "export the tool builders"), which re-indents essentially the
+  whole file even though the tool bodies themselves are close to verbatim
+  plus the new protected-prefix/ownership guard calls. This was implemented
+  honestly rather than trimmed or reformatted to minimize the diff: the
+  refactor is what `harness/ownership.ts` needs to reuse the exact same
+  path-resolution, protected-prefix and sandbox-write logic the orchestrator's
+  own tools use, rather than a second implementation of any of it.
+  **Recommendation: `size:exception` for this slice**, consistent with every
+  other unit shipped in this change so far.
+
+### Status
+
+5/5 tasks in unit 3 complete. Ready for `sdd-verify`. Report the
+`size:exception` line-count risk, the `wroteFiles`-vs-`edits` gap (Deviation
+2, for unit 9 to resolve), and the pending manual dev-verification scenario
+to the user/maintainer. Per the interactive pace instruction, this batch
+stops here; unit 4 (parallel dispatch) is a separate apply.

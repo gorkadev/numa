@@ -199,21 +199,21 @@ Parallel Dispatch Requires Disjoint Ownership (sequential half);
 `agent-orchestration`: Parallel Dispatch Only on Disjoint Ownership
 (sequential half).
 
-- [ ] 3.1 Modify `apps/web/lib/games/tools.ts`: export the tool builders and
+- [x] 3.1 Modify `apps/web/lib/games/tools.ts`: export the tool builders and
       `resolveGamePath`; reserve `.numa/` for writes (protected-prefix guard
       now covers `engine/`, `vendor/`, `.numa/` in code, for every write tool
       including the orchestrator's own, per design decision 11/Deviation 1&3).
-- [ ] 3.2 Create `apps/web/lib/games/harness/ownership.ts`:
+- [x] 3.2 Create `apps/web/lib/games/harness/ownership.ts`:
       `createScopedGameTools(gameId, owns)`; write/replace/delete tools check
       the protected-prefix guard, then `isOwned`; violation returns `{ error }`
       naming the failed check; `index.html` delete stays rejected regardless
       of ownership.
-- [ ] 3.3 Create `apps/web/lib/games/harness/tools/run-tasks.ts` (sequential
+- [x] 3.3 Create `apps/web/lib/games/harness/tools/run-tasks.ts` (sequential
       only): runs one `TaskSpec` at a time through a `gameplay`/`visuals`/
       `audio` worker with scoped tools.
-- [ ] 3.4 Create `apps/web/lib/games/instructions/roles/worker.ts`
+- [x] 3.4 Create `apps/web/lib/games/instructions/roles/worker.ts`
       (shared) + per-focus prompt sections.
-- [ ] 3.5 Modify `apps/web/trigger/chat.ts`: `changedGameFiles` counts
+- [x] 3.5 Modify `apps/web/trigger/chat.ts`: `changedGameFiles` counts
       `run_tasks` edits.
 
 ## Unit 4 — Parallel dispatch (gated)

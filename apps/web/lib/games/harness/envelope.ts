@@ -36,3 +36,37 @@ export type SubagentEnvelope = {
   artifacts?: string[]
   findings?: Finding[]
 }
+
+/**
+ * Ceiling on the envelope text the orchestrator's model actually sees
+ * (design.md decision 4: "toModelOutput renders the envelope as text
+ * (≤ 1.5k chars)"). The player-visible run — every tool call, the full
+ * summary — stays in the stored tool-output part; only this truncated form
+ * ever reaches a token budget.
+ */
+const MAX_ENVELOPE_CHARS = 1500
+
+const TRUNCATION_MARK = "…"
+
+/**
+ * Serializes an envelope within `MAX_ENVELOPE_CHARS` without ever cutting the
+ * JSON itself: only `summary`, the one free-text field that can grow, is
+ * shortened, so the model always receives a complete, parseable object with
+ * `agent` and `status` intact.
+ *
+ * Shared by every dispatch tool's `toModelOutput` — originally
+ * `harness/tools/explore.ts`'s own local helper (unit 2b), moved here so
+ * `harness/tools/run-tasks.ts` (unit 3) reuses the exact same truncation
+ * rule instead of a second copy of it.
+ */
+export function renderEnvelope(envelope: SubagentEnvelope): string {
+  const full = JSON.stringify(envelope)
+  if (full.length <= MAX_ENVELOPE_CHARS) return full
+
+  const overflow = full.length - MAX_ENVELOPE_CHARS + TRUNCATION_MARK.length
+  const summary =
+    envelope.summary.slice(0, Math.max(0, envelope.summary.length - overflow)) +
+    TRUNCATION_MARK
+
+  return JSON.stringify({ ...envelope, summary })
+}

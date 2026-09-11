@@ -67,6 +67,11 @@ export const TOOL_LABELS: Record<
     done: "Investigated",
     failed: "Couldn't investigate",
   },
+  run_tasks: {
+    active: "Building",
+    done: "Built",
+    failed: "Couldn't build",
+  },
 }
 
 /**

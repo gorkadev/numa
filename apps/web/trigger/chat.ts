@@ -24,6 +24,7 @@ import { priceTurn } from "@/lib/ai/pricing"
 import { createGameSandbox } from "@/lib/daytona/utils"
 import { HARNESS_PHASES } from "@/lib/games/harness/flags"
 import { createExploreTool } from "@/lib/games/harness/tools/explore"
+import { createRunTasksTool } from "@/lib/games/harness/tools/run-tasks"
 import { turnState } from "@/lib/games/harness/turn-state"
 import { gameInstructions } from "@/lib/games/instructions"
 import { gameRevisionChunk } from "@/lib/games/revision"
@@ -52,6 +53,22 @@ const TURN_DEADLINE_MS = 3300_000
 const MUTATING_TOOLS = new Set(["write_file", "replace_text", "delete_file"])
 
 /**
+ * The part of `run_tasks`' stored result this check reads. Read structurally
+ * rather than trusted as `RunTasksResult`: the output comes back from
+ * persisted history, so its shape is only as good as whatever wrote it.
+ */
+type RunTasksOutput = { outcomes?: { wroteFiles?: unknown }[] }
+
+/** Whether a finished `run_tasks` call wrote, edited or deleted a file. */
+function runTasksWroteFiles(output: unknown): boolean {
+  if (typeof output !== "object" || output === null) return false
+
+  const outcomes = (output as RunTasksOutput).outcomes
+
+  return Array.isArray(outcomes) && outcomes.some((outcome) => outcome.wroteFiles === true)
+}
+
+/**
  * Whether this turn actually wrote to the sandbox.
  *
  * The subtle half is what counts as success. The file tools report their
@@ -59,18 +76,33 @@ const MUTATING_TOOLS = new Set(["write_file", "replace_text", "delete_file"])
  * correct itself without the turn dying — which means a rejected path and a
  * completed write arrive in the same `output-available` state. Trusting the
  * state alone would reload the preview after a turn that changed nothing.
+ *
+ * `run_tasks` (unit 3) never appears as a raw `write_file`/`replace_text`/
+ * `delete_file` part on the orchestrator's own message — those calls happen
+ * inside a dispatched worker's own stream, not the orchestrator's — so its
+ * tool part is checked separately, through its own stored result shape
+ * (`RunTasksOutput` above) rather than `MUTATING_TOOLS`.
  */
 function changedGameFiles(message: UIMessage | undefined): boolean {
   if (!message) return false
 
   return message.parts.some((part) => {
     if (!isToolUIPart(part)) return false
-    if (!MUTATING_TOOLS.has(getToolName(part))) return false
     if (part.state !== "output-available") return false
 
-    const output = part.output
+    const name = getToolName(part)
 
-    return typeof output !== "object" || output === null || !("error" in output)
+    if (MUTATING_TOOLS.has(name)) {
+      const output = part.output
+
+      return typeof output !== "object" || output === null || !("error" in output)
+    }
+
+    if (name === "run_tasks") {
+      return runTasksWroteFiles(part.output)
+    }
+
+    return false
   })
 }
 
@@ -79,13 +111,14 @@ function changedGameFiles(message: UIMessage | undefined): boolean {
  *
  * Decision 6 in design.md: every tool, dispatch tools included, stays
  * declared on `chat.agent({ tools })` regardless of the flag, so a stored
- * `explore` tool-call part keeps re-converting correctly even on a turn that
- * ran with the flag off. Only `activeTools` — which candidate this turn's
- * model may actually call — changes with the flag. `explore` is the only
- * entry today; later phase tools (`plan`, `run_tasks`, `verify`, `load_skill`)
- * add themselves here as their own units wire them in.
+ * `explore`/`run_tasks` tool-call part keeps re-converting correctly even on
+ * a turn that ran with the flag off. Only `activeTools` — which candidate
+ * this turn's model may actually call — changes with the flag. `explore`
+ * (unit 2b) and `run_tasks` (unit 3) are wired in today; later phase tools
+ * (`plan`, `verify`, `load_skill`) add themselves here as their own units
+ * wire them in.
  */
-const PHASE_TOOLS = new Set(["explore"])
+const PHASE_TOOLS = new Set(["explore", "run_tasks"])
 
 /**
  * Every declared tool name, minus the phase tools, unless `HARNESS_PHASES` is
@@ -232,9 +265,10 @@ export const gameChat = chat.agent({
 
   /**
    * The file tools plus every dispatch tool, resolved per turn so they close
-   * over this chat's game. `explore` (unit 2b) is the first dispatch tool;
-   * `activeTools` in `run` below is what actually keeps it out of a turn
-   * while `HARNESS_PHASES` is off, not this declaration.
+   * over this chat's game. `explore` (unit 2b) and `run_tasks` (unit 3) are
+   * the dispatch tools declared so far; `activeTools` in `run` below is what
+   * actually keeps them out of a turn while `HARNESS_PHASES` is off, not
+   * this declaration.
    *
    * Declared here and not only on `streamText`, because this is the set the
    * SDK re-converts stored history against on every later turn. A tool known
@@ -244,6 +278,7 @@ export const gameChat = chat.agent({
   tools: ({ chatId }) => ({
     ...createGameTools(chatId),
     explore: createExploreTool(chatId),
+    run_tasks: createRunTasksTool(chatId),
   }),
 
   /**

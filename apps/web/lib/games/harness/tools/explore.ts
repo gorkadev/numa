@@ -5,38 +5,9 @@ import { runtimeInstructions } from "@/lib/games/instructions/runtime"
 import { explorerInstructions } from "@/lib/games/instructions/roles/explorer"
 import { createGameTools } from "@/lib/games/tools"
 
-import type { SubagentEnvelope } from "../envelope"
+import { renderEnvelope } from "../envelope"
 import { runSubagent, type RunSubagentResult, type SubagentProgress } from "../run-subagent"
 import { ROLES } from "../roles"
-
-/**
- * Ceiling on the envelope text the orchestrator's model actually sees
- * (design.md decision 4: "toModelOutput renders the envelope as text
- * (≤ 1.5k chars)"). The player-visible run — every tool call, the full
- * summary — stays in the stored tool-output part; only this truncated form
- * ever reaches a token budget.
- */
-const MAX_ENVELOPE_CHARS = 1500
-
-const TRUNCATION_MARK = "…"
-
-/**
- * Serializes an envelope within `MAX_ENVELOPE_CHARS` without ever cutting the
- * JSON itself: only `summary`, the one free-text field that can grow, is
- * shortened, so the model always receives a complete, parseable object with
- * `agent` and `status` intact.
- */
-function renderEnvelope(envelope: SubagentEnvelope): string {
-  const full = JSON.stringify(envelope)
-  if (full.length <= MAX_ENVELOPE_CHARS) return full
-
-  const overflow = full.length - MAX_ENVELOPE_CHARS + TRUNCATION_MARK.length
-  const summary =
-    envelope.summary.slice(0, Math.max(0, envelope.summary.length - overflow)) +
-    TRUNCATION_MARK
-
-  return JSON.stringify({ ...envelope, summary })
-}
 
 /** The only tools an explorer run may call — see `explorerTools` below. */
 const EXPLORER_TOOL_NAMES: readonly string[] = ["read_file", "list_files"]
