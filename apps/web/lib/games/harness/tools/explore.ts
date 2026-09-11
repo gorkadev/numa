@@ -5,6 +5,7 @@ import { runtimeInstructions } from "@/lib/games/instructions/runtime"
 import { explorerInstructions } from "@/lib/games/instructions/roles/explorer"
 import { createGameTools } from "@/lib/games/tools"
 
+import type { SubagentEnvelope } from "../envelope"
 import { runSubagent, type RunSubagentResult, type SubagentProgress } from "../run-subagent"
 import { ROLES } from "../roles"
 
@@ -16,6 +17,26 @@ import { ROLES } from "../roles"
  * ever reaches a token budget.
  */
 const MAX_ENVELOPE_CHARS = 1500
+
+const TRUNCATION_MARK = "…"
+
+/**
+ * Serializes an envelope within `MAX_ENVELOPE_CHARS` without ever cutting the
+ * JSON itself: only `summary`, the one free-text field that can grow, is
+ * shortened, so the model always receives a complete, parseable object with
+ * `agent` and `status` intact.
+ */
+function renderEnvelope(envelope: SubagentEnvelope): string {
+  const full = JSON.stringify(envelope)
+  if (full.length <= MAX_ENVELOPE_CHARS) return full
+
+  const overflow = full.length - MAX_ENVELOPE_CHARS + TRUNCATION_MARK.length
+  const summary =
+    envelope.summary.slice(0, Math.max(0, envelope.summary.length - overflow)) +
+    TRUNCATION_MARK
+
+  return JSON.stringify({ ...envelope, summary })
+}
 
 /** The only tools an explorer run may call — see `explorerTools` below. */
 const EXPLORER_TOOL_NAMES: readonly string[] = ["read_file", "list_files"]
@@ -136,7 +157,7 @@ export function createExploreTool(gameId: string): Tool {
       type: "text",
       value:
         "envelope" in output
-          ? JSON.stringify(output.envelope).slice(0, MAX_ENVELOPE_CHARS)
+          ? renderEnvelope(output.envelope)
           : "The explorer is still investigating.",
     }),
   })
