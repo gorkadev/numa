@@ -126,22 +126,22 @@ Gate: confirm against the installed `@ai-sdk/provider` types that per-call
 `providerOptions` reach the wrapped model's `doGenerate`/`doStream` options,
 before writing the composite model (Amendment 3).
 
-- [ ] 1c.0 (GATE) Trace `providerOptions` from `streamText`/`ToolLoopAgent`
+- [x] 1c.0 (GATE) Trace `providerOptions` from `streamText`/`ToolLoopAgent`
       through `LanguageModelV2.doGenerate`/`doStream` in the installed
       `@ai-sdk/provider`/`@ai-sdk/provider-utils` sources; record the finding
       as a one-paragraph note at the top of `fallback-model.ts`.
 
 Satisfies `model-tiers`: Slot Fallback on Availability Failure.
 
-- [ ] 1c.1 Create `apps/web/lib/ai/fallback-model.ts`: composite
+- [x] 1c.1 Create `apps/web/lib/ai/fallback-model.ts`: composite
       `LanguageModel` over `SlotCandidates`; classify availability errors
       (`APICallError.isRetryable`, 404/429/5xx, network/connect timeout);
       fall back only pre-output and only after the SDK's own `maxRetries`;
       never on content/validation errors or abort; `onServed` callback.
-- [ ] 1c.2 Modify `apps/web/lib/ai/model-registry.ts`: `resolveModel` returns
+- [x] 1c.2 Modify `apps/web/lib/ai/model-registry.ts`: `resolveModel` returns
       the composite; profiles keep one candidate per slot for now (fallback is
       exercised in dev by pointing a primary at an invalid model id).
-- [ ] 1c.3 Modify `apps/web/lib/games/harness/turn-state.ts`,
+- [x] 1c.3 Modify `apps/web/lib/games/harness/turn-state.ts`,
       `lib/ai/pricing.ts`: per-turn `unavailable` skip set; usage attributed
       to the serving entry; `fallbackFrom` carried into the breakdown.
 

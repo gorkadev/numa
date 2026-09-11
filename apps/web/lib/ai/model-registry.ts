@@ -1,11 +1,18 @@
 import type { LanguageModel, streamText } from "ai"
 
 import {
+  createFallbackModel,
+  type ConcreteLanguageModel,
+  type FallbackHooks,
+} from "./fallback-model"
+import {
   DEFAULT_TIER_ID,
   isTierId,
   type TierId,
 } from "./model-catalog"
 import { providerModel } from "./models"
+
+export type { FallbackHooks, ServedCall } from "./fallback-model"
 
 /**
  * Server-only: the model registry.
@@ -94,9 +101,10 @@ const REGISTRY: Record<ModelEntryId, ModelEntry> = {
 
 /**
  * A slot's candidates, primary first. In this change every list holds exactly
- * one entry — there are only three models to draw from — but the type already
- * allows peer fallbacks, so unit 1c (slot fallbacks) changes no shape here,
- * only the list lengths and `resolveModel`'s return value.
+ * one entry — there are only three models to draw from — but `resolveModel`
+ * already tries the whole list in order through `createFallbackModel`
+ * (decision 19, unit 1c): adding a peer only changes the list here, nothing
+ * in `resolveModel` or its callers.
  *
  * Authoring rule for whoever adds a second candidate: a fallback MUST be a
  * peer of the same tier and slot (similar capability and price class), never
@@ -162,20 +170,48 @@ export function resolveTier(id: TierId | undefined): TierId {
 }
 
 /**
+ * A caller that never needs cross-call fallback state — a one-off resolution
+ * with no turn to persist "already tried and failed" across — gets a
+ * composite that still tries every candidate in order this one call, but
+ * never remembers a failure past it and never reports who served. Every real
+ * caller in this codebase (currently only `orchestratorModelSettings`) passes
+ * its own hooks backed by `turnState`.
+ */
+const NOOP_HOOKS: FallbackHooks = {
+  isUnavailable: () => false,
+  markUnavailable: () => {},
+  onServed: () => {},
+}
+
+/**
  * The only path from a tier and a slot to a concrete model. Every role, the
  * orchestrator included, calls this rather than naming a model — see
  * decision 2 in `design.md`.
  *
- * In this change `model` is simply the primary candidate's provider instance:
- * there is no fallback logic yet, and one candidate per slot means the
- * primary is the whole list. Unit 1c replaces `model` with a composite
- * `LanguageModel` that tries every candidate in order; nothing that calls
- * `resolveModel` today has to change for that to land, because the shape of
- * `ResolvedModel` does not change.
+ * `model` is a composite `LanguageModel` (`createFallbackModel`, decision 19)
+ * that tries `candidates` in order, skipping any `hooks.isUnavailable` already
+ * ruled out this turn. `hooks` is optional so a caller with no turn to key
+ * state off can still call this — see `NOOP_HOOKS` above — but every call
+ * that runs inside a real turn should pass hooks wired to `turnState`, or a
+ * fallback that already happened this turn will not be remembered.
+ *
+ * Only `google-vertex` is installed, and it implements the v4 language model
+ * spec — confirmed in `fallback-model.ts`'s 1c.0 gate note. The cast below
+ * documents that assumption at its one call site; a future provider on a
+ * different spec version needs this file revisited.
  */
-export function resolveModel(tier: TierId, slot: Slot): ResolvedModel {
-  const candidates = TIER_PROFILES[tier][slot]
-  const primary = REGISTRY[candidates[0]]
+export function resolveModel(
+  tier: TierId,
+  slot: Slot,
+  hooks: FallbackHooks = NOOP_HOOKS
+): ResolvedModel {
+  const candidateIds = TIER_PROFILES[tier][slot]
+  const primary = REGISTRY[candidateIds[0]]
 
-  return { candidates, primary, model: providerModel(primary) }
+  const candidates = candidateIds.map((id) => ({
+    entry: REGISTRY[id],
+    model: providerModel(REGISTRY[id]) as ConcreteLanguageModel,
+  }))
+
+  return { candidates: candidateIds, primary, model: createFallbackModel(candidates, hooks) }
 }

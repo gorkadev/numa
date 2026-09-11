@@ -293,7 +293,10 @@ export type AgentUsageEntry = {
   slot: Slot
   /** The concrete registry entry that SERVED the call. */
   modelId: ModelEntryId
-  /** Set once unit 1c's slot fallbacks can serve a call from a peer entry. */
+  /**
+   * The slot's primary, when a peer served instead of it (unit 1c's slot
+   * fallbacks, decision 19) — `undefined` when the primary itself served.
+   */
   fallbackFrom?: ModelEntryId
   usage: LanguageModelUsage
   status: EnvelopeStatus

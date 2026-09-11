@@ -1,6 +1,7 @@
 import { chat } from "@trigger.dev/sdk/ai"
 
 import { DEFAULT_TIER_ID, type TierId } from "@/lib/ai/model-catalog"
+import type { ModelEntryId, ServedCall, Slot } from "@/lib/ai/model-registry"
 import type { AgentUsageEntry } from "@/lib/ai/pricing"
 
 /**
@@ -21,6 +22,12 @@ import type { AgentUsageEntry } from "@/lib/ai/pricing"
  * turn's tier" — the ledger, `run-subagent.ts`'s
  * `resolveModel(turnState.tier, role.slot)` in unit 2a — reads the same
  * single value rather than each re-deriving it from `clientData`.
+ *
+ * `unavailable` and `served` back `resolveModel`'s `FallbackHooks` (decision
+ * 19, unit 1c): `lib/ai` cannot import this module (the ban runs the other
+ * way — see `AgentUsageEntry`'s comment in `pricing.ts`), so `resolveModel`'s
+ * caller builds hooks that read/write these two fields instead, and the
+ * composite it returns never has to know `turnState` exists.
  */
 type TurnStateData = {
   turn: number
@@ -28,6 +35,10 @@ type TurnStateData = {
   tier: TierId
   ledger: AgentUsageEntry[]
   verifyCalls: number
+  /** Registry entries a slot fallback already ruled out this turn. */
+  unavailable: Set<ModelEntryId>
+  /** The entry that actually served the latest call on each slot. */
+  served: Partial<Record<Slot, ServedCall>>
 }
 
 const local = chat.local<TurnStateData>({ id: "turnState" })
@@ -71,6 +82,30 @@ export const turnState = {
     local.verifyCalls = value
   },
 
+  /** Whether a slot fallback already ruled this entry out this turn. */
+  isUnavailable(id: ModelEntryId): boolean {
+    return local.unavailable.has(id)
+  },
+
+  /**
+   * Records an availability failure so later calls on the same slot, this
+   * turn, skip straight past it (decision 19). A new `Set` rather than a
+   * mutating `.add`, for the same shallow-proxy reason as `addUsage` below.
+   */
+  markUnavailable(id: ModelEntryId): void {
+    local.unavailable = new Set(local.unavailable).add(id)
+  },
+
+  /** What actually served the latest call on `slot`, if any call succeeded. */
+  servedFor(slot: Slot): ServedCall | undefined {
+    return local.served[slot]
+  },
+
+  /** Called by a slot's `FallbackHooks.onServed` on every successful call. */
+  recordServed(slot: Slot, served: ServedCall): void {
+    local.served = { ...local.served, [slot]: served }
+  },
+
   /**
    * Called once from `onBoot`, which — unlike `onChatStart` — fires on every
    * fresh worker, continuation runs included. The values here are
@@ -84,12 +119,15 @@ export const turnState = {
       tier: DEFAULT_TIER_ID,
       ledger: [],
       verifyCalls: 0,
+      unavailable: new Set(),
+      served: {},
     })
   },
 
   /**
    * Called once from `onTurnStart`, so a turn never inherits the previous
-   * turn's ledger, verify count, tier or deadline.
+   * turn's ledger, verify count, tier, deadline, unavailable candidates or
+   * served entries.
    */
   reset(turn: number, deadline: number, tier: TierId): void {
     local.turn = turn
@@ -97,6 +135,8 @@ export const turnState = {
     local.tier = tier
     local.ledger = []
     local.verifyCalls = 0
+    local.unavailable = new Set()
+    local.served = {}
   },
 
   /**

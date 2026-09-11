@@ -1,5 +1,10 @@
 import type { TierId } from "./model-catalog"
-import { resolveModel, resolveTier, type ResolvedModel } from "./model-registry"
+import {
+  resolveModel,
+  resolveTier,
+  type FallbackHooks,
+  type ResolvedModel,
+} from "./model-registry"
 
 /**
  * Turns whatever the browser said the tier was into the `streamText` options
@@ -11,18 +16,37 @@ import { resolveModel, resolveTier, type ResolvedModel } from "./model-registry"
  * at all or named one this server does not recognise; `resolveModel` is then
  * the only path from that tier to a concrete model (decisions 2 and 18).
  *
- * `providerOptions` rides along from the resolved entry: a slot's primary can
- * declare reasoning effort or another per-call option, and it has to reach
- * every call made on it without this function — or its caller — knowing that
- * option exists.
+ * No `providerOptions` here, on purpose (corrected after a coordinator
+ * review — see `fallback-model.ts`'s GATE note): `resolveModel`'s composite
+ * is the sole owner of applying a candidate's own `providerOptions`, merged
+ * onto whichever entry actually serves a given call. Setting the slot's
+ * PRIMARY's options at this top level, the way an earlier version of this
+ * function did, would hand them to a PEER serving as a fallback too — a peer
+ * that rejects them (e.g. a reasoning-effort option it does not support) with
+ * a validation error, which never falls back, turning a resilience feature
+ * into a new way to break.
+ *
+ * `maxRetries: 0` for the same reason retries moved into the composite: the
+ * composite now retries a candidate's own retryable failures itself
+ * (`callCandidateWithRetry`), so leaving `ai`'s default `maxRetries` (2) would
+ * retry the WHOLE composite call on top of that — doubling backoff delay and,
+ * once every candidate is genuinely unavailable, doubling the number of
+ * already-pointless attempts.
+ *
+ * `hooks` is required rather than defaulted here: `agent.ts` cannot import
+ * `turnState` (see `resolveModel`'s note in `model-registry.ts`), so the one
+ * caller that can — `trigger/chat.ts` — must always pass hooks wired to it,
+ * or the `strong` slot's fallback state stops being remembered across the
+ * turn's steps.
  */
 export function orchestratorModelSettings(
-  tier: TierId | undefined
+  tier: TierId | undefined,
+  hooks: FallbackHooks
 ): {
   model: ResolvedModel["model"]
-  providerOptions: ResolvedModel["primary"]["providerOptions"]
+  maxRetries: 0
 } {
-  const { model, primary } = resolveModel(resolveTier(tier), "strong")
+  const { model } = resolveModel(resolveTier(tier), "strong", hooks)
 
-  return { model, providerOptions: primary.providerOptions }
+  return { model, maxRetries: 0 }
 }

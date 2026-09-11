@@ -16,6 +16,7 @@ import { tierIdSchema } from "@/lib/ai/model-catalog"
 import {
   resolveModel,
   resolveTier,
+  type FallbackHooks,
   type ModelEntryId,
 } from "@/lib/ai/model-registry"
 import { priceTurn } from "@/lib/ai/pricing"
@@ -71,11 +72,32 @@ function changedGameFiles(message: UIMessage | undefined): boolean {
 }
 
 /**
- * The concrete registry entry the orchestrator runs this turn on — the tier's
- * `strong` slot, resolved through the same two functions
- * `orchestratorModelSettings` itself calls (decision 18). The credits chunk,
- * the persisted message and the cost ledger all name this exact id, so the
- * entry that is billed can never drift from the entry that actually ran.
+ * Wires the orchestrator's `strong` slot to `turnState` (decision 19, unit
+ * 1c): `lib/ai` cannot import `turnState` itself (see `resolveModel`'s note
+ * in `model-registry.ts`), so this is the one object, built here, that lets
+ * the composite `orchestratorModelSettings` returns skip an entry a previous
+ * step already ruled out this turn, and report back which entry actually
+ * served the latest call.
+ */
+const orchestratorHooks: FallbackHooks = {
+  isUnavailable: (id) => turnState.isUnavailable(id),
+  markUnavailable: (id) => turnState.markUnavailable(id),
+  onServed: (served) => turnState.recordServed("strong", served),
+}
+
+/**
+ * The concrete registry entry the orchestrator ran this turn on — the tier's
+ * `strong` slot, resolved through the same functions `orchestratorModelSettings`
+ * itself calls (decision 18), but preferring whatever `orchestratorHooks`
+ * actually recorded as having served a call this turn (decision 19): a slot
+ * fallback can mean the entry that ran is a peer of the configured primary,
+ * not the primary itself. The credits chunk, the persisted message and the
+ * cost ledger all name this exact id, so the entry that is billed can never
+ * drift from the entry that actually ran.
+ *
+ * Falls back to `resolveModel(...).primary.id` only for a turn whose
+ * orchestrator never actually made a model call — nothing was ever recorded
+ * as served, so the tier's configured primary is the closest honest answer.
  *
  * Reads `turnState.tier` rather than re-deriving it from `clientData`: both
  * `onBeforeTurnComplete` and `onTurnComplete` fire after `onTurnStart` has
@@ -83,9 +105,26 @@ function changedGameFiles(message: UIMessage | undefined): boolean {
  * this is the same value `orchestratorModelSettings` used to pick the model
  * that actually ran — and the single value every dispatched sub-agent's
  * `resolveModel(turnState.tier, role.slot)` will read from unit 2a onward.
+ *
+ * KNOWN LIMITATION: `turnState.servedFor("strong")` keeps only the LAST
+ * entry that served a call on this slot, so a turn whose steps were split
+ * between the primary (steps 1-2, say) and a peer that took over after a
+ * mid-turn failure (steps 3+) prices the WHOLE turn's orchestrator usage at
+ * the last server's rate, not a per-step split. This cannot happen yet —
+ * every tier profile holds exactly one candidate per slot, so there is
+ * nothing to fail over to mid-turn — but it is a real gap the moment a
+ * second candidate is added. Per-call attribution is deferred to unit 2a's
+ * `run-subagent.ts`, which will record one `AgentUsageEntry` per step (or per
+ * dispatched run) rather than one per turn, making this limitation moot for
+ * every role that goes through it; fixing it for the orchestrator's own
+ * single whole-turn `usage` specifically would need `onStepEnd`-level
+ * granularity this file does not have today.
  */
 function orchestratorEntryId(): ModelEntryId {
-  return resolveModel(turnState.tier, "strong").primary.id
+  return (
+    turnState.servedFor("strong")?.entryId ??
+    resolveModel(turnState.tier, "strong").primary.id
+  )
 }
 
 /**
@@ -502,9 +541,18 @@ export const gameChat = chat.agent({
        * Resolved per turn, not per chat: the choice is read off the message
        * that arrived, so switching tiers continues the same thread rather
        * than starting a second one. `orchestratorModelSettings` always runs
-       * the tier's `strong` slot (decisions 2 and 18).
+       * the tier's `strong` slot (decisions 2 and 18); `orchestratorHooks`
+       * lets that call fall back to a peer entry and remember it for the
+       * rest of the turn (decision 19).
+       *
+       * Spread AFTER `chat.toStreamTextOptions()` (confirmed: that call sets
+       * no `maxRetries` of its own, so there is nothing for this to lose to),
+       * because `orchestratorModelSettings` also returns `maxRetries: 0` —
+       * `resolveModel`'s composite now owns retrying a candidate's own
+       * retryable failures itself, so `ai`'s own default retry must not also
+       * retry the whole composite call on top of that.
        */
-      ...orchestratorModelSettings(clientData?.tier),
+      ...orchestratorModelSettings(clientData?.tier, orchestratorHooks),
       /**
        * An array of system messages, not a joined string: the provider gets one
        * system block per concern, and each stays independently editable.

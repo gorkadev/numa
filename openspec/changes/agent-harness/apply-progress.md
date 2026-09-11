@@ -296,3 +296,223 @@ the user's Neon credentials — see Issues Found). Ready for `sdd-verify` once
 the maintainer either runs `pnpm db:push` or accepts deferring it, and after
 the user/maintainer is told about the `size:exception` line-count risk before
 merge.
+
+## Unit 1c — Slot fallbacks (PR 3)
+
+Branch: `agent-harness/1c-slot-fallbacks` (stacked on
+`agent-harness/1b-usage-accumulator`)
+
+- [x] 1c.0 (GATE) Trace `providerOptions` from `streamText`/`ToolLoopAgent`
+      through the installed model spec; record the finding at the top of
+      `fallback-model.ts`
+- [x] 1c.1 Create `apps/web/lib/ai/fallback-model.ts`
+- [x] 1c.2 Modify `apps/web/lib/ai/model-registry.ts`
+- [x] 1c.3 Modify `apps/web/lib/games/harness/turn-state.ts`, `lib/ai/pricing.ts`
+
+4/4 tasks in unit 1c complete. Units 2a–10b remain (`[ ]`), unassigned to
+this apply batch.
+
+### GATE finding (1c.0)
+
+Recorded in full at the top of `fallback-model.ts` (with exact `node_modules`
+paths and line numbers); summarized here:
+
+1. **`providerOptions` DOES reach `doGenerate`/`doStream`.** Traced in the
+   installed `ai@7.0.93`: the step loop builds `stepProviderOptions =
+   mergeObjects(providerOptions, prepareStepResult?.providerOptions)` and
+   calls `stepModel.doGenerate({ ..., providerOptions: stepProviderOptions,
+   ... })` — the exact value `streamText`'s top-level `providerOptions` option
+   receives, unmodified, on the call options object every model
+   implementation receives.
+2. **The interface version differs from design.md's Technical Approach
+   section**, which referenced `LanguageModelV2`. The only installed provider,
+   `@ai-sdk/google-vertex@5.0.76` (via `@ai-sdk/google@4.0.64`), implements
+   `specificationVersion: "v4"`. `ai` normalizes any of v2/v3/v4 to v4
+   internally, so a v2 implementation would have worked too, but since every
+   real candidate is already v4, the composite implements `specificationVersion:
+   "v4"` directly and forwards call options unchanged — no cross-version
+   translation needed. `@ai-sdk/provider` stays an undeclared (transitive-only)
+   dependency; the exact v4 call-option/result types are derived structurally
+   from `ai`'s own exported `LanguageModel` union, the same technique
+   `model-registry.ts` already used for `ProviderOptions`.
+3. **`ai`'s own retry wraps the WHOLE model call, not a per-candidate call.**
+   A custom `LanguageModel` cannot observe "this is retry attempt N of the
+   SDK's own maxRetries for candidate X" from inside `doGenerate`/`doStream`.
+   The composite owns retrying a candidate's own retryable failures itself
+   (`callCandidateWithRetry`: bounded exponential backoff — 2 retries, 2s
+   initial delay, factor 2, mirroring `ai`'s own default — honoring
+   `options.abortSignal` during the wait), and only marks a candidate
+   unavailable once ITS OWN retries are exhausted, or immediately for an
+   availability error that was never retryable (a 404, matching the primary
+   verification scenario). Because the composite now owns retries,
+   `agent.ts`/`trigger/chat.ts` set `maxRetries: 0` on the orchestrator's
+   `streamText` call so `ai`'s own outer retry never doubles up on top of it.
+   **This corrects a first-draft version that fell back on the FIRST error
+   instead — see "Fixed after coordinator review" below.** None of this
+   blocked implementation: the finding is mechanical (typing/retry-boundary
+   detail), not an architectural mismatch, so the apply continued rather than
+   stopping per the gate's own instructions.
+
+### Files Changed
+
+| File | Action |
+|---|---|
+| `apps/web/lib/ai/fallback-model.ts` | Created |
+| `apps/web/lib/ai/model-registry.ts` | Modified |
+| `apps/web/lib/ai/agent.ts` | Modified |
+| `apps/web/lib/ai/pricing.ts` | Modified |
+| `apps/web/lib/games/harness/turn-state.ts` | Modified |
+| `apps/web/trigger/chat.ts` | Modified |
+
+### Work Unit Evidence
+
+| Evidence | Value |
+|---|---|
+| Focused command | `pnpm turbo typecheck --filter=web --filter=@workspace/db` → exit 0, both packages. `pnpm lint` (apps/web) → 0 errors, the same 11 pre-existing warnings. |
+| Runtime harness | N/A in this apply session (no `trigger dev` run by the executor). Manual scenario for the user, per tasks.md: point a `fast` primary at an invalid provider model id in dev (e.g. temporarily set `gemini-3.5-flash-lite`'s `providerModelId` to a typo'd id in `REGISTRY`), run a turn on the `fast` tier, and confirm (a) the turn still completes, (b) `turn_usage.usage_breakdown`'s orchestrator entry names the fallback's own entry as `modelId` with `fallbackFrom` set to the invalid primary's id, and (c) a second turn in the same run goes straight to the fallback with no retry latency (the primary is remembered unavailable for the rest of the turn only — a fresh turn resets it, since `turn-usage-accounting`'s pricing follows the concrete entry that ran, not a permanent registry change). |
+| Rollback boundary | Revert the 6 files above (1 new + 5 modified). `TIER_PROFILES` still holds one candidate per slot, so `resolveModel`'s observable behavior for a working primary is unchanged; a revert restores the exact 1b `resolveModel(tier, slot): ResolvedModel` two-argument signature and drops `turnState.isUnavailable`/`markUnavailable`/`servedFor`/`recordServed`, which nothing outside this unit reads yet. |
+
+### Deviations from Design
+
+1. **`resolveModel`, `orchestratorModelSettings` gained a third/second
+   parameter (`hooks: FallbackHooks`) not shown in design.md's Interfaces
+   section**, and `trigger/chat.ts` — a file tasks.md's 1c file list does not
+   mention — was touched to build and pass those hooks. This was necessary,
+   not optional: `lib/ai` cannot import `lib/games/harness/turn-state.ts`
+   (the established, 1b-documented import direction — "every file in
+   `lib/games` already imports from `lib/ai`, never the reverse"), so the
+   per-turn `unavailable` set and the "who actually served" report that
+   decision 19 explicitly assigns to `turnState.unavailable` cannot be read or
+   written from inside the composite itself. The only caller today that can
+   see both `lib/ai` and `turnState` is `trigger/chat.ts`, so it now builds
+   `orchestratorHooks` (three closures over `turnState`) and passes them
+   through `orchestratorModelSettings`. Without this, the fallback composite
+   would work in isolation but the orchestrator's billing (`orchestratorEntryId()`)
+   would keep reporting the tier's static primary even when a fallback served
+   — failing 1c's own listed spec requirement (`model-tiers`' Slot Fallback
+   scenario: "the usage breakdown names the serving entry ... with the primary
+   recorded as the entry it replaced") and its own manual verification
+   scenario ("confirm the peer serves and is billed"). `agent.ts`'s
+   `orchestratorModelSettings` also gained a required (non-optional) `hooks`
+   parameter for the same reason. **This is a real gap in tasks.md's file
+   scope for 1c**, parallel to 1b's own documented `AgentUsageEntry`
+   placement gap — worth folding into 1c's task list wording, or explicitly
+   calling out `agent.ts`/`trigger/chat.ts` as touched files, before future
+   units are drafted in this level of detail.
+2. **`resolveModel`'s existing 2-arg call sites keep working via a
+   `NOOP_HOOKS` default** (permissive `isUnavailable`, no-op
+   `markUnavailable`/`onServed`), so nothing outside `trigger/chat.ts` had to
+   change to keep compiling.
+3. **`ResolvedModel.model`'s `provider`/`modelId` fields always name the
+   slot's configured primary**, even when a fallback is actively serving —
+   documented in `fallback-model.ts` as intentional: those two fields are
+   `ai`'s own logging/telemetry identity, not the billing path (`hooks.onServed`
+   is the billing path, and it always names whichever entry actually ran).
+4. **`pricing.ts`'s only change is a comment update** on `AgentUsageEntry.fallbackFrom`
+   (removing its "set once unit 1c ships" forward-declaration framing, since
+   unit 1c has now shipped). `priceTurn`'s breakdown already carried
+   `fallbackFrom` through since 1b (via `Omit<AgentUsageEntry, "usage"> & ...`),
+   so no runtime pricing logic needed to change for 1c.3's "fallbackFrom
+   carried into the breakdown" — it already was.
+
+None of these change what `model-tiers`' Slot Fallback on Availability
+Failure requirement, or `turn-usage-accounting`'s Per-Sub-Agent Usage
+Breakdown Retained requirement, ask for; all are implementation-level
+consequences of `lib/ai` needing a way to reach turn-scoped state it is not
+allowed to import directly.
+
+### Fixed after coordinator review: eager fallback broke the spec and regressed resilience
+
+The coordinator caught two problems in the first version of `fallback-model.ts`
+before it landed:
+
+1. **Spec violation + resilience regression.** `specs/model-tiers/spec.md:37`
+   requires falling back "after the SDK's own retries for that candidate are
+   exhausted." The first version instead fell back to the next candidate on
+   the FIRST error. With today's single-candidate-per-slot profiles, this was
+   worse than non-compliant: a transient 429/5xx marked the ONLY candidate
+   unavailable and rethrew; `ai`'s own outer retry called the composite again,
+   found zero viable candidates, and threw a plain non-retryable `Error` —
+   so a turn that used to survive a transient provider hiccup via `ai`'s own
+   backoff now failed outright. Fix: retries moved INSIDE the composite, per
+   candidate (`callCandidateWithRetry`) — a retryable availability error
+   retries the SAME candidate with bounded backoff (2 retries, 2s initial
+   delay, factor 2, honoring `abortSignal` during the wait; an abort during
+   the wait rethrows immediately and never falls back) before the candidate is
+   marked unavailable; a non-retryable availability error (404) still falls
+   back immediately, since retrying an identical request against a
+   permanently-missing model would never succeed. On exhaustion, the
+   composite now throws the LAST REAL PROVIDER ERROR (tracked in a
+   closure-scoped `lastFailure`, since `ai`'s own retries call the same
+   composite instance repeatedly) instead of a synthetic `Error`. To stop
+   `ai`'s own outer retry from doubling up on top of the composite's own,
+   `orchestratorModelSettings` (`agent.ts`) now returns `maxRetries: 0`,
+   confirmed to survive `chat.toStreamTextOptions()`'s spread (that call sets
+   no `maxRetries` of its own).
+2. **`providerOptions` ownership bug.** `agent.ts` was returning the slot's
+   PRIMARY's `providerOptions` at the top level of `streamText`'s options; the
+   composite then shallow-merged each serving candidate's own options on top
+   per OUTER provider key (replacing the whole inner object), so a peer with
+   no `providerOptions` of its own would still inherit the primary's (e.g. a
+   reasoning-effort config it might reject with a 400 — a validation error,
+   which never falls back, turning the fallback feature into a new way to
+   break). Fix: the composite is now the SOLE owner of `providerOptions`.
+   `agent.ts` no longer passes any `providerOptions` at the top level, and
+   `withEntryProviderOptions`/`mergeProviderOptions` merge the SERVING
+   candidate's own options over the caller-supplied ones per PROVIDER KEY
+   (merging the inner object for a shared key, not replacing it), so a peer
+   with no matching options never inherits ones that were never meant for it.
+
+Both fixes are folded into the single 1c commit (the branch was unpushed, so
+this was a soft-reset + recommit, not an amend — consistent with 1b's own
+history note).
+
+### Known limitation (documented, not fixed): last-server pricing on the orchestrator's single ledger entry
+
+`turnState.servedFor("strong")` keeps only the LAST entry that served a call
+on the slot, so a turn whose steps split between the primary and a peer that
+took over mid-turn would price the orchestrator's WHOLE-TURN usage at the
+last server's rate, not a per-step split — documented as a comment at
+`orchestratorEntryId` in `trigger/chat.ts`. This cannot happen today: every
+tier profile holds exactly one candidate per slot, so there is nothing to
+fail over to mid-turn. Per-call attribution is deferred to unit 2a's
+`run-subagent.ts`, which will record one `AgentUsageEntry` per dispatched run
+rather than one per turn, making this limitation moot for every role that
+goes through it.
+
+### Issues Found
+
+None beyond the scope-gap documented in Deviation 1 above.
+
+### Workload / PR Boundary
+
+- Mode: stacked-to-main chained PR slice (PR 3 of 15)
+- Current work unit: 1c — Slot fallbacks
+- Boundary: starts from `agent-harness/1b-usage-accumulator`, ends with a
+  working, billing-correct slot fallback for a single-candidate-per-slot
+  registry population; no other unit's code depends on anything in this slice
+  yet
+- **Authored changed lines: 569** (537 insertions + 32 deletions across 6
+  files — 5 modified plus the new `fallback-model.ts` — per
+  `git diff --stat agent-harness/1b-usage-accumulator...HEAD -- . ':!openspec'`,
+  excluding the pre-existing unrelated `apps/web/next.config.ts` diff;
+  includes the coordinator-review fixes above). This is **over the 400-line
+  budget** (the pre-fix version was 390, under budget; the correction added
+  ~179 lines, mostly the per-candidate retry loop, the per-provider-key
+  `providerOptions` merge, and the GATE note's documentation of both fixes
+  with exact evidence). It was implemented honestly rather than trimmed: the
+  retry-with-backoff logic, the abort-aware delay helper, and the deep
+  provider-options merge are all genuinely new logic the correction requires,
+  and the GATE note's citations (file paths, line numbers, the exact failure
+  mode the coordinator caught) are load-bearing evidence, not padding — the
+  apply contract forbids shrinking a diff by deleting comments or compressing
+  code to fit the budget. **Recommendation: `size:exception` for this slice**,
+  consistent with 1a (712) and 1b (523) both already shipping over budget in
+  this same change.
+
+### Status
+
+4/4 tasks in unit 1c complete. Ready for `sdd-verify`. Report Deviation 1
+(the `agent.ts`/`trigger/chat.ts` scope gap in tasks.md's 1c file list), the
+corrected `size:exception` line-count risk, and the pending manual
+dev-verification scenario to the user/maintainer.
