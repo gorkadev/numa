@@ -147,6 +147,20 @@ const TIER_PROFILES: Record<TierId, TierProfile> = {
   },
 }
 
+/**
+ * Small, self-contained jobs that are not a role of any turn — naming a game,
+ * for instance. They get their own candidates instead of a tier's slot on
+ * purpose: which tier the player picked says how hard the model should think
+ * about their game, not how a sidebar label is produced, so a pro player and
+ * a fast player get the same title model. Swapping it means editing only the
+ * list here, like `TIER_PROFILES`.
+ */
+export type UtilityTask = "title"
+
+const UTILITY_MODELS: Record<UtilityTask, SlotCandidates> = {
+  title: ["gemini-3.5-flash-lite"],
+}
+
 export type ResolvedModel = {
   candidates: SlotCandidates
   primary: ModelEntry
@@ -173,9 +187,10 @@ export function resolveTier(id: TierId | undefined): TierId {
  * A caller that never needs cross-call fallback state — a one-off resolution
  * with no turn to persist "already tried and failed" across — gets a
  * composite that still tries every candidate in order this one call, but
- * never remembers a failure past it and never reports who served. Every real
- * caller in this codebase (currently only `orchestratorModelSettings`) passes
- * its own hooks backed by `turnState`.
+ * never remembers a failure past it and never reports who served. Every
+ * caller inside a turn (`orchestratorModelSettings`, the sub-agent runner)
+ * passes its own hooks backed by `turnState`; title generation, which runs
+ * outside any turn, is the one that relies on this default.
  */
 const NOOP_HOOKS: FallbackHooks = {
   isUnavailable: () => false,
@@ -205,7 +220,25 @@ export function resolveModel(
   slot: Slot,
   hooks: FallbackHooks = NOOP_HOOKS
 ): ResolvedModel {
-  const candidateIds = TIER_PROFILES[tier][slot]
+  return resolveCandidates(TIER_PROFILES[tier][slot], hooks)
+}
+
+/**
+ * The path from a utility task to a concrete model, bypassing tiers — see
+ * `UTILITY_MODELS`. Same composite as `resolveModel`, so a second candidate
+ * added there falls back exactly the way a slot's does.
+ */
+export function resolveUtilityModel(
+  task: UtilityTask,
+  hooks: FallbackHooks = NOOP_HOOKS
+): ResolvedModel {
+  return resolveCandidates(UTILITY_MODELS[task], hooks)
+}
+
+function resolveCandidates(
+  candidateIds: SlotCandidates,
+  hooks: FallbackHooks
+): ResolvedModel {
   const primary = REGISTRY[candidateIds[0]]
 
   const candidates = candidateIds.map((id) => ({

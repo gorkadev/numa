@@ -2,7 +2,6 @@
 
 import { refresh } from "next/cache"
 import { redirect } from "next/navigation"
-import { googleVertex } from "@ai-sdk/google-vertex"
 import { auth } from "@clerk/nextjs/server"
 import { db } from "@workspace/db"
 import { games } from "@workspace/db/schema"
@@ -10,17 +9,11 @@ import { generateText } from "ai"
 import { and, eq } from "drizzle-orm"
 
 import { DEFAULT_TIER_ID, isTierId } from "@/lib/ai/model-catalog"
+import { resolveUtilityModel } from "@/lib/ai/model-registry"
 import { deleteGameSandboxes } from "@/lib/daytona/utils"
 import { ensureBillingCustomer } from "@/lib/polar/customers"
 
 export type CreateGameState = { error: string } | null
-
-/**
- * Titles are short, disposable labels for the sidebar — no reasoning required —
- * so the cheapest, fastest model in the family handles them rather than the one
- * that answers the chat.
- */
-const TITLE_MODEL = "gemini-3.5-flash-lite"
 
 const TITLE_MAX_LENGTH = 60
 
@@ -32,9 +25,17 @@ const TITLE_MAX_LENGTH = 60
 async function generateTitle(prompt: string): Promise<string> {
   const fallback = prompt.slice(0, TITLE_MAX_LENGTH).trim()
 
+  /**
+   * Titles are short, disposable labels for the sidebar — no reasoning
+   * required — so they come from the registry's `title` utility model, the
+   * same for every tier, rather than from the model that answers the chat.
+   */
+  const { model, primary } = resolveUtilityModel("title")
+
   try {
     const { text } = await generateText({
-      model: googleVertex(TITLE_MODEL),
+      model,
+      providerOptions: primary.providerOptions,
       instructions:
         "You name games from the prompt that created them. Reply with the " +
         "title alone: 2 to 5 words, title case, no quotes, no punctuation at " +
