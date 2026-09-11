@@ -280,9 +280,9 @@ Verifier Is Unavailable.
 Satisfies `agent-skills`: Registry Entry Shape, Deterministic Role Defaults
 (data half).
 
-- [ ] 7a.1 Create `apps/web/lib/games/skills/registry.ts`: `SkillName` union,
+- [x] 7a.1 Create `apps/web/lib/games/skills/registry.ts`: `SkillName` union,
       `Skill { name, description, trigger, body }`, role-default map.
-- [ ] 7a.2 Create `apps/web/lib/games/skills/engine-*.ts` (8 files): split
+- [x] 7a.2 Create `apps/web/lib/games/skills/engine-*.ts` (8 files): split
       the body of `apps/web/lib/games/instructions/engine.ts` into 8 typed
       skills with no content loss (move, not rewrite).
 

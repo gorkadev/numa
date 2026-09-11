@@ -1536,3 +1536,167 @@ prompt's own instruction — it requires an interactive dev session with
 `HARNESS_PHASES` on, not available to this headless apply run. Per the
 interactive pace instruction, this batch stops here; unit 7a (skills
 registry) is a separate apply.
+
+## Unit 7a — Skills registry + skill files (PR 10)
+
+Branch: `agent-harness/7a-skills-registry` (stacked on
+`agent-harness/6-verify-role`).
+
+- [x] 7a.1 Create `apps/web/lib/games/skills/registry.ts`
+- [x] 7a.2 Create `apps/web/lib/games/skills/engine-*.ts` (8 files)
+
+2/2 tasks in unit 7a complete. Units 7b–10b remain (`[ ]`), unassigned to
+this apply batch.
+
+### Files Changed
+
+| File | Action |
+|---|---|
+| `apps/web/lib/games/skills/registry.ts` | Created |
+| `apps/web/lib/games/skills/engine-core.ts` | Created |
+| `apps/web/lib/games/skills/engine-utils.ts` | Created |
+| `apps/web/lib/games/skills/engine-movement.ts` | Created |
+| `apps/web/lib/games/skills/engine-scene.ts` | Created |
+| `apps/web/lib/games/skills/engine-feedback.ts` | Created |
+| `apps/web/lib/games/skills/engine-audio.ts` | Created |
+| `apps/web/lib/games/skills/engine-systems.ts` | Created |
+| `apps/web/lib/games/skills/engine-reference.ts` | Created |
+
+### The 8-way split and its lossless verification
+
+`instructions/engine.ts`'s body has 4 explicit `###` sections but 13 named
+toolkit modules (`engine.js` through `index.js`) inside the biggest one, so
+the 8 split points were chosen by grouping those modules along the
+document's own existing order — never reordered — into 8 contiguous,
+role-shaped chunks:
+
+| Skill | Source content (in original order) | Source lines |
+|---|---|---|
+| `engine-core` | Intro, "Loading it", `engine.js` | 21–84 |
+| `engine-utils` | `math.js`, `input.js` | 86–99 |
+| `engine-movement` | `controls.js`, `physics.js` | 101–118 |
+| `engine-scene` | `lighting.js`, `models.js` | 120–133 |
+| `engine-feedback` | `anim.js`, `hud.js` | 135–149 |
+| `engine-audio` | `sound.js` | 151–157 |
+| `engine-systems` | `fx.js`, `state.js`, `index.js` | 159–175 |
+| `engine-reference` | "The shape of a game", "Making it look good" | 177–245 |
+
+`engine-core` is named to match design.md's own role-catalogue reference
+("roles/planner, runtime, **engine-core**, skill index") and its unit-8
+File Changes row ("orchestrator skills cut down to **engine-core**").
+
+**Lossless-move verification method**: before writing any `.ts` file, a
+script read `engine.ts`'s raw lines, sliced the exact 8 line ranges above
+(special-casing line 21's `  content: \`` prefix and line 245's trailing
+`` `, `` suffix, the two lines where the template literal's delimiters
+share a physical line with content), and reconstructed the full body by
+joining the 8 slices with `"\n\n"` — the same single blank line that
+separates every section in the original (confirmed blank at source lines
+85, 100, 119, 134, 150, 158, 176, one each, no doubles). The reconstruction
+was then diffed byte-for-byte against the original body extracted the same
+way: `diff original.txt reconstructed.txt` reported no differences, and a
+direct Python string-equality check (`reconstructed == orig_body`) was
+`True` at 10,397 characters in both. Only after this passed did the
+extracted per-group text get pasted, unedited, into each `engine-*.ts`
+file's `body` template literal — the moved text (all escaped backticks and
+code fences) is identical to what `engine.ts` already had; only the
+wrapping `Skill` object literal, `name`, `description`, and `trigger`
+fields are new.
+
+`description` and `trigger` are new text this task added (the spec
+requires both to be non-empty; `engine.ts` had neither, since it was one
+undifferentiated always-loaded block) — not moved, and not claimed as such
+in each file's own header comment.
+
+### Deviations from Design
+
+1. **`ROLE_DEFAULT_SKILLS`'s exact per-role skill lists are this unit's own
+   choice, not dictated verbatim by design.md or tasks.md.** Design.md's
+   role catalogue explicitly names only one skill by name — `planner` gets
+   `engine-core` — and otherwise says workers get "defaults ∪ task skills"
+   without enumerating the defaults themselves; `agent-skills`'s
+   Deterministic Role Defaults requirement only asks that a role's defaults
+   be fixed and reproducible, not what they contain. `registry.ts` assigns
+   `gameplay` → core+utils+movement+systems, `visuals` →
+   core+scene+feedback+systems+reference, `audio` → core+audio, and
+   `explorer`/`verifier` → none (neither writes engine code: the explorer is
+   read-only and the verifier has no tools at all). This is documented
+   in-line in `registry.ts`'s own comment above `ROLE_DEFAULT_SKILLS` with
+   the reasoning per role, precisely so the maintainer can adjust the
+   mapping before unit 7b wires it into worker instructions without
+   needing to re-derive the reasoning from scratch.
+2. **`ORCHESTRATOR_DEFAULT_SKILLS` (all 8 skill names) is defined here**,
+   even though no task in 7a asks for it, because design.md's File Changes
+   table for unit 7 states the orchestrator "keeps all engine skills pushed
+   until unit 8" and unit 7b's own task list (7b.3) is the wiring step that
+   will read this constant. Defining it now, next to the skills it
+   enumerates, avoids a second unit needing to know which constant name
+   `ALL_SKILL_NAMES` maps to for that purpose. Nothing imports this file
+   yet (no wiring happens until 7b), so it has no runtime effect in this
+   PR.
+3. **`isSkillName` (a registry-owned type guard) is new**, not named in any
+   task, added because 7b.1's `load_skill` tool (unit 7b, not this unit)
+   will need exactly this check to satisfy `agent-skills`'s Unknown Skill
+   Name Returns an Error requirement, and the registry — not the tool file
+   — is the natural owner of "what counts as a known skill name." It has no
+   caller yet.
+
+None of these change what `agent-skills`'s Registry Entry Shape or
+Deterministic Role Defaults requirements ask for; both are
+implementation-level scaffolding this unit's own two tasks needed to
+produce a registry that compiles and that unit 7b can wire in without
+redesigning it.
+
+### Work Unit Evidence
+
+| Evidence | Value |
+|---|---|
+| Focused command | `pnpm turbo typecheck --filter=web` → exit 0 (`web`, `@workspace/ui` cache-hit, `@workspace/db` cache-hit, all unchanged). `pnpm lint` run directly inside `apps/web` → 0 errors, the same 13 pre-existing warnings (11 from before unit 2a plus `HARNESS_PHASES`'s and `DAYTONA_GAME_SNAPSHOT`'s `turbo/no-undeclared-env-vars`, both introduced by earlier units, none by this one). No new warning from any of the 9 new files. |
+| Runtime harness | N/A, per tasks.md's own row for this unit: no role instructions import `registry.ts` or any `engine-*.ts` file yet — `instructions/index.ts` and `instructions/engine.ts` are both untouched, so every existing turn's system prompt is byte-identical to before this unit. There is nothing a dev session could exercise differently. |
+| Rollback boundary | Revert the entire new `apps/web/lib/games/skills/` directory (9 files). Nothing outside this directory imports any of them — `instructions/engine.ts` still exists unmodified and `instructions/index.ts` still builds the prompt the same way it did before unit 7a — so the revert is fully self-contained and changes no other unit's behavior. |
+
+### Issues Found
+
+None.
+
+### Workload / PR Boundary
+
+- Mode: stacked-to-main chained PR slice (PR 10 of 15)
+- Current work unit: 7a — Skills registry + skill files
+- Boundary: starts from `agent-harness/6-verify-role`, ends with a
+  compiling, typed skills registry and 8 lossless skill files that nothing
+  yet imports; `instructions/engine.ts` still exists and is still the
+  prompt's only engine reference (unit 7b deletes it and wires the
+  registry in)
+- **Authored changed lines: 476** (476 insertions, 0 deletions, across 9
+  new files, per `git diff --cached --stat`; excludes `openspec/**` and the
+  pre-existing unrelated `apps/web/next.config.ts` diff, which was never
+  staged this session). This is **over the 400-line budget**, by the
+  smallest margin of any unit in this change so far (the next-closest was
+  2b, which stayed under). The overage is a direct, documented consequence
+  of tasks.md's own 7a/7b split: 7a only *creates* the 8 skill files and the
+  registry, and 7b (a separate PR) is the one that *deletes*
+  `instructions/engine.ts`, so this slice necessarily carries the full
+  moved-text weight as pure addition with no offsetting deletion — the
+  duplication is temporary and by design, not a sign the split should have
+  gone the other way (creating without wiring, then wiring-and-deleting
+  together, is what keeps each of the two PRs independently revertible,
+  per tasks.md's own rollback-boundary column for 7a and 7b). No line was
+  trimmed to chase the budget: the moved bodies are byte-identical to
+  `engine.ts`'s text (see the lossless-verification method above), and the
+  per-file header comments and `registry.ts`'s role-mapping rationale are
+  load-bearing documentation a reviewer needs to check the split was done
+  correctly and to adjust `ROLE_DEFAULT_SKILLS` before 7b wires it in.
+  **Recommendation: `size:exception` for this slice**, consistent with
+  every over-budget unit already shipped in this change (1a, 1b, 1c, 2a,
+  6).
+
+### Status
+
+2/2 tasks in unit 7a complete. Ready for `sdd-verify`. Report the
+`size:exception` line-count risk (smallest overage in the change so far,
+and structurally unavoidable given the 7a/7b split) and the
+`ROLE_DEFAULT_SKILLS` per-role mapping (Deviation 1 — an executor judgment
+call, not a design.md-dictated list) to the user/maintainer before merge.
+Per the interactive pace instruction, this batch stops here; unit 7b
+(`loadSkill` tool + wiring) is a separate apply.
