@@ -22,6 +22,31 @@ function isOwned(relative: string, owns: readonly string[]): boolean {
 }
 
 /**
+ * Whether two declared ownership entries conflict, by the same rule as
+ * `isOwned` above but between two entries rather than a path and a list:
+ * they conflict when they are equal, or when one is a directory prefix
+ * ("ends in `/`") of the other — a directory owns everything nested under
+ * it, files and other directories alike (design.md decision 12).
+ */
+function entriesConflict(a: string, b: string): boolean {
+  if (a === b) return true
+  if (a.endsWith("/") && b.startsWith(a)) return true
+  if (b.endsWith("/") && a.startsWith(b)) return true
+  return false
+}
+
+/**
+ * Whether two tasks' declared ownership sets share any path — the pairwise
+ * check `run_tasks` (unit 4) runs before letting two tasks dispatch
+ * concurrently. `file-ownership`'s Parallel Dispatch Requires Disjoint
+ * Ownership requirement, and `agent-orchestration`'s concurrent half of the
+ * same rule, both name this exact check.
+ */
+export function ownershipOverlaps(a: readonly string[], b: readonly string[]): boolean {
+  return a.some((entryA) => b.some((entryB) => entriesConflict(entryA, entryB)))
+}
+
+/**
  * The ownership guard a scoped worker's write tools apply on top of
  * `tools.ts`'s own protected-prefix guard (design.md decision 11: checks run
  * "in order", protected prefix first, then ownership). Named in the error so

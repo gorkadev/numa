@@ -1000,3 +1000,148 @@ None.
 2, for unit 9 to resolve), and the pending manual dev-verification scenario
 to the user/maintainer. Per the interactive pace instruction, this batch
 stops here; unit 4 (parallel dispatch) is a separate apply.
+
+## Unit 4 — Parallel dispatch (gated) (PR 7)
+
+Branch: `agent-harness/4-parallel` (stacked on `agent-harness/3-file-ownership`).
+
+- [x] 4.0 (GATE) Spike: concurrent Gemini-on-Vertex calls from `ToolLoopAgent`s
+      — recorded in `docs/research/spikes/gemini-parallel.md` (landed and
+      committed separately from this batch, `01650af`'s parent)
+- [x] 4.1 Modify `apps/web/lib/games/harness/tools/run-tasks.ts`: concurrency
+      pool (cap 3, batch ≤ 4), pairwise ownership-overlap + `dependsOn` check
+      before dispatch, `Promise.all`-style wait
+
+2/2 tasks in unit 4 complete. Units 5–10b remain (`[ ]`), unassigned to this
+apply batch.
+
+### GATE finding (4.0)
+
+Recorded in full in `docs/research/spikes/gemini-parallel.md`; summarized
+here since it directly shaped 4.1's implementation:
+
+- **Verdict: works, no serialization fallback needed, keep the cap at 3.**
+  3 concurrent `ToolLoopAgent` runs on `gemini-3.5-flash-lite` (Vertex) via
+  `Promise.all` completed with zero errors, ~3x faster than sequential (1.6 s
+  vs 4.3 s for the same 3 runs).
+- At 2× the cap (6 concurrent runs), still zero errors, but one run per batch
+  stalled 27–35 s in its second step (the call after the tool result) across
+  both 6-run trials. The spike could not isolate the cause (server-side
+  queueing is plausible) but confirmed a stalled call still finishes — it
+  only costs wall time.
+- Consequence for 4.1: no code change to fall back to sequential dispatch on
+  overload; the pool simply never exceeds `POOL_CAP = 3`, and every worker
+  stays bounded by `run-subagent.ts`'s existing per-role timeout (already
+  shipped in unit 2a), so a stalled worker can delay but never indefinitely
+  hold its batch.
+
+### Files Changed
+
+| File | Action |
+|---|---|
+| `apps/web/lib/games/harness/tools/run-tasks.ts` | Modified — sequential per-task loop replaced by a concurrency-pool scheduler |
+| `apps/web/lib/games/harness/ownership.ts` | Modified — added `ownershipOverlaps`, the pairwise entry-conflict check the scheduler needs |
+
+### Work Unit Evidence
+
+| Evidence | Value |
+|---|---|
+| Focused command | `pnpm --filter web typecheck` → exit 0. `pnpm --filter web lint` → 0 errors, the same 12 pre-existing warnings established as the baseline since unit 2a; no new warning from either file this unit touched. |
+| Runtime harness | N/A in this apply session (no `trigger dev` run by the executor). `HARNESS_PHASES` stays off, so `run_tasks` is still excluded from every real turn's `activeTools` — this unit only changes what already-inert tool does internally. Manual scenario for the user, per tasks.md's own row for this unit: set `HARNESS_PHASES=true` in dev, dispatch a batch of two tasks with disjoint `owns` and confirm both workers' preliminary progress interleaves in the stored tool output (rather than one fully finishing before the other starts) and both `turn_usage.usage_breakdown` entries bill correctly; then dispatch a batch where task `t2` has `dependsOn: ["t1"]` and `owns` overlapping `t1`'s, and confirm `t2` does not start until `t1`'s envelope settles; then dispatch a batch where one task's `dependsOn` names an id not in the batch and confirm that task comes back `status: "blocked"` without ever being dispatched, while its unrelated sibling tasks still complete normally. |
+| Rollback boundary | Revert the two files above. The sequential unit-3 behavior (`git show 01650af:apps/web/lib/games/harness/tools/run-tasks.ts`) is fully restored by reverting `run-tasks.ts` alone; `ownershipOverlaps` is new, additive, and unused by any other file, so removing it alongside is safe and self-contained. No other unit's code imports anything this unit added. |
+
+### Deviations from Design
+
+1. **An "unmet `dependsOn`" outcome uses `status: "blocked"`, not a thrown
+   error or a silently-dropped task.** Neither tasks.md's task 4.1 wording
+   nor design.md's decision 12 names the exact envelope shape a rejected task
+   gets back — decision 12 only says `run_tasks` "rejects" it. `blocked` is
+   the one `EnvelopeStatus` value (design.md's Interfaces section) that
+   already means "the run could not proceed" without claiming an execution
+   failure (`error`) or a cancellation (`aborted`) that did not happen — the
+   task simply never started. One message covers three distinct causes
+   (unknown id, self-dependency, a `dependsOn` cycle among the batch's own
+   tasks) rather than a bespoke message per cause: from the scheduler's own
+   point of view they are identical — a task whose dependency will never
+   read as finished — and tasks.md's own wording ("rejects any task whose
+   `dependsOn` has not finished this turn") does not distinguish them either.
+2. **No explicit graph algorithm for cycle detection.** The scheduler instead
+   detects a stall generically: if a pass finds nothing startable and nothing
+   currently running, whatever tasks remain are unsatisfiable, for any
+   reason. This correctly and uniformly catches an unknown id, a
+   self-dependency, and a multi-task cycle without a separate topological
+   check, and keeps the scheduler's only "reject" path in one place rather
+   than validating the batch's dependency graph twice (once up front, once
+   during scheduling).
+3. **Progress preliminaries are tagged with `taskId`, not `agentId`.**
+   `run-subagent.ts`'s `SubagentProgress` (unit 2a) carries neither field —
+   it was written when only one worker was ever in flight, so nothing
+   identified which run a snapshot belonged to. The apply prompt's own
+   parenthetical ("stays attributable (agentId)") is satisfied by `taskId`:
+   it is the same attribution *purpose*, and `taskId` is the key this file's
+   own `TaskOutcome` already reports outcomes by, so a caller correlating a
+   preliminary snapshot with its final outcome uses one consistent id rather
+   than two (a `taskId` here, an `agentId` there that happens to equal a
+   random UUID `runSubagent` generated internally, per unit 2a's own
+   documented default). `SubagentEnvelope.agent` (the final envelope's own
+   identity field) is unaffected — it still comes from `runSubagent`
+   unchanged.
+4. **A generic event queue (`pushEvent`/`settle`/`wake`), not a `for await`
+   merge over several async iterators.** Neither tasks.md nor design.md
+   specifies the interleaving mechanism — only that progress must interleave
+   and the final wait must be `Promise.all`-style. A small single-consumer
+   push queue was the smallest correct way to let `execute`'s single
+   generator body observe events pushed by however many `runOneTask` calls
+   are concurrently in flight (JS has no native `Promise.race`-over-async-
+   generators primitive), without adding a dependency or a separate module.
+5. **A defensive `.catch` around the whole scheduler**, settling every
+   not-yet-settled task with an `error` outcome if `scheduleAndRun` itself
+   ever rejects. Not required by any task — `runSubagent` already catches
+   its own failures into an envelope, so nothing in the normal path should
+   throw — but its absence would have meant an unexpected scheduler bug left
+   the tool call permanently unresolved instead of reporting a result,
+   which is exactly the failure mode `agent-orchestration`'s Sub-Agent
+   Failures Return as a Result requirement (and its Abort Propagation
+   sibling) both exist to prevent.
+
+None of these change what `agent-orchestration`'s Parallel Dispatch Only on
+Disjoint Ownership requirement or `file-ownership`'s Parallel Dispatch
+Requires Disjoint Ownership requirement (both concurrent halves) ask for —
+every dispatch this scheduler makes still only runs two tasks concurrently
+when their `owns` are disjoint, and it never launches more than `POOL_CAP`
+workers regardless of what the model's tool call looked like. All five points
+above are implementation-level consequences of interleaving several
+concurrent generator-driven runs inside one tool call, a mechanism neither
+document specifies past "concurrency pool" and "`Promise.all`-style wait."
+
+### Issues Found
+
+None.
+
+### Workload / PR Boundary
+
+- Mode: stacked-to-main chained PR slice (PR 7 of 15)
+- Current work unit: 4 — Parallel dispatch (gated)
+- Boundary: starts from `agent-harness/3-file-ownership`, ends with
+  `run_tasks` dispatching disjoint-ownership tasks concurrently (cap 3) while
+  respecting `dependsOn` and ownership overlap, still narrowed out of every
+  real turn by `activeTools` while `HARNESS_PHASES` stays off; unit 3's
+  sequential-only behavior for a single-task batch, or a batch whose tasks
+  all conflict pairwise, is unchanged (the scheduler degrades to running one
+  task at a time in that case, by construction)
+- **Authored changed lines: 320** (273 insertions + 47 deletions across 2
+  files, `git diff --stat -- . ':!openspec' ':!apps/web/next.config.ts'`
+  against `agent-harness/3-file-ownership`, excluding the pre-existing
+  unrelated `apps/web/next.config.ts` diff). **Under the 400-line budget** —
+  the second unit in this change to land under it (after unit 2b's 230), a
+  consequence of this unit's scope being genuinely narrow: one file's
+  dispatch loop plus one small pairwise-overlap helper, no new registry,
+  runner or instructions module.
+
+### Status
+
+2/2 tasks in unit 4 complete. Ready for `sdd-verify`. Report the manual
+dev-verification scenario (interleaved progress, a `dependsOn`-gated task,
+and a rejected-unmet-dependency task) to the user/maintainer. Per the
+interactive pace instruction, this batch stops here; unit 5 (Chromium
+snapshot) is a separate apply and depends on its own gate spike (5.0) first.

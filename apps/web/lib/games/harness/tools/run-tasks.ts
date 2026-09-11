@@ -1,7 +1,10 @@
 import { tool, type Tool } from "ai"
 import { z } from "zod"
 
-import { createScopedGameTools } from "@/lib/games/harness/ownership"
+import {
+  createScopedGameTools,
+  ownershipOverlaps,
+} from "@/lib/games/harness/ownership"
 import { engineInstructions } from "@/lib/games/instructions/engine"
 import { runtimeInstructions } from "@/lib/games/instructions/runtime"
 import {
@@ -17,13 +20,20 @@ import {
   type SubagentProgress,
 } from "../run-subagent"
 
-/**
- * At most 4 tasks in one call (design.md decision 3). Unit 3 runs them
- * strictly one at a time, in the order given: a concurrency pool (cap 3 at
- * once) and the pairwise ownership-overlap / `dependsOn` checks decision 12
- * describes are unit 4's own gated change to this same file, not this one.
- */
+/** At most 4 tasks in one call (design.md decision 3). */
 const MAX_TASKS_PER_BATCH = 4
+
+/**
+ * At most 3 workers running at once, whatever the batch size (design.md
+ * decision 3). Confirmed safe by the unit 4 gate spike
+ * (`docs/research/spikes/gemini-parallel.md`): 3 concurrent Vertex calls ran
+ * clean and ~3x faster than sequential; 6 still produced no errors, but one
+ * run stalled 27–35 s in its second step. The spike's own conclusion is to
+ * keep the cap at 3 with no serialization fallback, and to lean on each
+ * worker's own per-role timeout (`run-subagent.ts`) so a stalled worker can
+ * never hold the whole batch open.
+ */
+const POOL_CAP = 3
 
 /**
  * One task handed to `run_tasks`, matching design.md's Interfaces section.
@@ -85,6 +95,17 @@ type TaskOutcome = {
 export type RunTasksResult = { outcomes: TaskOutcome[] }
 
 /**
+ * A preliminary progress snapshot tagged with the task it came from.
+ * `run-subagent.ts`'s own `SubagentProgress` carries no id — unit 2a/2b never
+ * needed one, since only one worker was ever in flight at a time. Now that a
+ * batch can run several workers at once, every streamed snapshot needs an
+ * attribution key so a caller can tell them apart; `taskId` is that key
+ * (the same id `TaskOutcome` reports back by), added here rather than in
+ * `run-subagent.ts` itself, which has no notion of a "task" at all.
+ */
+type TaskProgress = SubagentProgress & { taskId: string }
+
+/**
  * The three write tool names a task's worker may have called, duplicated
  * from `trigger/chat.ts`'s own `MUTATING_TOOLS` rather than imported: that
  * module already imports `createRunTasksTool` from this one, so importing
@@ -97,6 +118,43 @@ function wroteAnyFile(records: SubagentProgress[]): boolean {
   return records.some((record) =>
     record.toolCalls.some((call) => call.ok && WRITE_TOOL_NAMES.has(call.toolName))
   )
+}
+
+/** Reported when the turn's abort signal already fired before a task got its turn to start. */
+function abortedBeforeStartOutcome(task: TaskSpec): TaskOutcome {
+  return {
+    taskId: task.id,
+    envelope: {
+      agent: task.id,
+      status: "aborted",
+      summary: "The turn ended before this task started.",
+    },
+    wroteFiles: false,
+  }
+}
+
+/**
+ * Reported when a task's `dependsOn` can never be satisfied within this
+ * batch: an id naming a task outside the batch, a task depending on itself,
+ * or a cycle among the batch's own `dependsOn` edges all look identical from
+ * the scheduler's point of view — none of them ever reaches "finished this
+ * turn" (design.md decision 12) — so one message covers all three rather
+ * than diagnosing which one applies.
+ */
+function unmetDependencyOutcome(task: TaskSpec): TaskOutcome {
+  return {
+    taskId: task.id,
+    envelope: {
+      agent: task.id,
+      status: "blocked",
+      summary: `dependsOn (${task.dependsOn.join(", ") || "none"}) could not be satisfied within this batch — a missing task id, a self-dependency, or a dependency cycle. Fix the ids or split the batch.`,
+    },
+    wroteFiles: false,
+  }
+}
+
+function describeSchedulerError(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
 }
 
 /**
@@ -147,60 +205,82 @@ function renderOutcomes(outcomes: TaskOutcome[]): string {
 }
 
 /**
- * Builds the `run_tasks` dispatch tool for one game — sequential only, per
- * design.md's unit 3 scope: a batch of up to `MAX_TASKS_PER_BATCH` tasks
- * runs one worker at a time, in the order given, before the next starts. A
- * concurrency pool over disjoint-ownership tasks is unit 4's own gated
- * change to this file.
+ * Builds the `run_tasks` dispatch tool for one game.
+ *
+ * A batch of up to `MAX_TASKS_PER_BATCH` tasks runs through a scheduler that
+ * starts up to `POOL_CAP` workers at once, only once a task's `dependsOn`
+ * has finished this batch and no already-running task's `owns` overlaps its
+ * own (`file-ownership`'s Parallel Dispatch Requires Disjoint Ownership
+ * requirement; `agent-orchestration`'s concurrent half of the same rule).
+ * Two tasks whose ownership overlaps never run concurrently — the scheduler
+ * simply never starts the second until the first (or whichever running task
+ * it conflicts with) finishes — so correctness never depends on the model
+ * calling this tool once per task or emitting parallel tool calls; one call
+ * with a batch is enough.
  */
 export function createRunTasksTool(gameId: string): Tool {
   return tool({
     description: [
       "Dispatch one or more workers to make changes to the game's files, each against a declared task.",
-      "Each task gets its own worker, scoped so it can only write the files it declares owning — give every task everything it needs to work alone: a clear goal, the exact files it owns, and nothing that depends on another task's output arriving first.",
-      "Tasks in one call run one after another, in the order given. Keep a batch to tasks that genuinely belong together; a task whose files nothing else touches can go in its own call.",
+      "Each task gets its own worker, scoped so it can only write the files it declares owning — give every task everything it needs to work alone: a clear goal, the exact files it owns, and nothing that depends on another task's output arriving first, unless you list that dependency in dependsOn.",
+      "Tasks whose owns do not overlap run concurrently, up to 3 at once; tasks that share a file, or that depend on another task in the same batch via dependsOn, run only after what they depend on or conflict with has finished. Keep a batch to tasks that genuinely belong together; a task whose files nothing else touches can go in its own call.",
     ].join(" "),
     inputSchema: z.object({
       tasks: z.array(taskSpecSchema).min(1).max(MAX_TASKS_PER_BATCH),
     }),
     /**
-     * Same manual-drive pattern `explore.ts` uses (unit 2b's Deviation 1),
-     * extended across a batch: the AI SDK's own tool executor only observes
-     * the LAST value this generator yields, so every task's own
-     * `runSubagent` progress is relayed as it streams, and the running
-     * `outcomes` array is yielded again after each task finishes — making
-     * the final `{ outcomes }`, yielded after the last task, the one
-     * non-preliminary value the SDK sees. Each yield is a copy: a streamed
-     * preliminary result must not change after it was handed over.
+     * Concurrency is built entirely inside this generator, not left to the
+     * model emitting several tool calls: every task in the batch is
+     * scheduled here, and the generator only finishes after every dispatched
+     * worker's promise has settled (the `Promise.all` at the end of
+     * `scheduleAndRun`) — a literal "Promise.all-style wait" over the whole
+     * batch.
+     *
+     * Progress and completion from every concurrently running worker are
+     * relayed through one small event queue (`pushEvent`/`settle`) so they
+     * interleave in the order they actually happen, each snapshot tagged
+     * with its `taskId` for attribution. The AI SDK's own tool executor only
+     * observes the LAST value this generator yields (the same guarantee
+     * `explore.ts` documents), so the final `{ outcomes }` — yielded once
+     * more after the scheduler resolves — is what the model actually sees;
+     * every earlier yield is a live preliminary snapshot for the stored tool
+     * output and the thread's own rendering.
      */
     execute: async function* (
       { tasks },
       { abortSignal }
-    ): AsyncGenerator<SubagentProgress | RunTasksResult, void, void> {
-      const outcomes: TaskOutcome[] = []
+    ): AsyncGenerator<TaskProgress | RunTasksResult, void, void> {
+      const indexById = new Map(tasks.map((task, index) => [task.id, index]))
+      const outcomes: (TaskOutcome | undefined)[] = new Array(tasks.length)
 
-      for (const task of tasks) {
-        /**
-         * The turn's own abort signal already fired before this task's turn
-         * came up — report it aborted without spending a model call on a run
-         * that would abort immediately anyway. `agent-orchestration`'s Abort
-         * Propagation requirement covers in-flight runs; a task that never
-         * started is reported the same way rather than silently dropped.
-         */
-        if (abortSignal?.aborted) {
-          outcomes.push({
-            taskId: task.id,
-            envelope: {
-              agent: task.id,
-              status: "aborted",
-              summary: "The turn ended before this task started.",
-            },
-            wroteFiles: false,
-          })
-          yield { outcomes: [...outcomes] }
-          continue
-        }
+      const events: (TaskProgress | "settled")[] = []
+      let wake: (() => void) | undefined
 
+      function pushEvent(event: TaskProgress | "settled"): void {
+        events.push(event)
+        wake?.()
+        wake = undefined
+      }
+
+      /**
+       * Records one task's final outcome at its original batch position (so
+       * the outcomes this generator reports are always in the batch's task
+       * order, whatever order the tasks actually finished in — the ordering
+       * this batch's own callers rely on), then wakes the consumer loop
+       * below.
+       */
+      function settle(task: TaskSpec, outcome: TaskOutcome): void {
+        const index = indexById.get(task.id)
+        if (index !== undefined) outcomes[index] = outcome
+        pushEvent("settled")
+      }
+
+      function settledOutcomes(): TaskOutcome[] {
+        return outcomes.filter((outcome): outcome is TaskOutcome => outcome !== undefined)
+      }
+
+      /** Drives one task's `runSubagent` run to completion — the same manual-drive pattern `explore.ts` uses (unit 2b's Deviation 1), one call per concurrently running task. */
+      async function runOneTask(task: TaskSpec): Promise<void> {
         const role = ROLES[task.role]
 
         const run = runSubagent({
@@ -214,20 +294,141 @@ export function createRunTasksTool(gameId: string): Tool {
         let next = await run.next()
 
         while (!next.done) {
-          yield next.value
+          pushEvent({ ...next.value, taskId: task.id })
           next = await run.next()
         }
 
         const result: RunSubagentResult = next.value
 
-        outcomes.push({
+        settle(task, {
           taskId: task.id,
           envelope: result.envelope,
           wroteFiles: wroteAnyFile(result.records),
         })
-
-        yield { outcomes: [...outcomes] }
       }
+
+      /**
+       * The pool: starts as many ready tasks as `POOL_CAP` allows, waits for
+       * one to finish when the pool is full or nothing else is ready, and
+       * rejects whatever is left once neither is true — every task still
+       * pending at that point has a `dependsOn` this batch can never satisfy
+       * (design.md decision 12).
+       */
+      async function scheduleAndRun(): Promise<void> {
+        const ids = new Set(tasks.map((task) => task.id))
+        const remaining = new Map(tasks.map((task) => [task.id, task]))
+        const done = new Set<string>()
+        const running = new Map<string, { task: TaskSpec; promise: Promise<void> }>()
+        const allPromises: Promise<void>[] = []
+
+        function canStart(task: TaskSpec): boolean {
+          const depsReady = task.dependsOn.every((dep) => ids.has(dep) && done.has(dep))
+          if (!depsReady) return false
+          return [...running.values()].every((r) => !ownershipOverlaps(task.owns, r.task.owns))
+        }
+
+        while (remaining.size > 0 || running.size > 0) {
+          /**
+           * A task that never started is reported the same way a mid-run
+           * abort is (`agent-orchestration`'s Abort Propagation requirement)
+           * rather than silently dropped — but a task already running is
+           * left alone: `runSubagent` already forwards `abortSignal` and
+           * resolves with its own `aborted` envelope, so this only stops the
+           * scheduler from starting anything new.
+           */
+          if (abortSignal?.aborted) {
+            for (const task of remaining.values()) settle(task, abortedBeforeStartOutcome(task))
+            remaining.clear()
+            break
+          }
+
+          let started = false
+
+          for (const task of remaining.values()) {
+            if (running.size >= POOL_CAP) break
+            if (!canStart(task)) continue
+
+            remaining.delete(task.id)
+            started = true
+
+            const promise = runOneTask(task).finally(() => {
+              running.delete(task.id)
+              done.add(task.id)
+            })
+
+            running.set(task.id, { task, promise })
+            allPromises.push(promise)
+          }
+
+          if (started) continue
+
+          if (running.size > 0) {
+            await Promise.race([...running.values()].map((r) => r.promise))
+            continue
+          }
+
+          for (const task of remaining.values()) settle(task, unmetDependencyOutcome(task))
+          remaining.clear()
+        }
+
+        /**
+         * The correctness guarantee this unit exists to add: wait for every
+         * dispatched worker, `Promise.all`-style, before this scheduler
+         * itself resolves. Without this, a worker still running when the
+         * `while` loop above exits (an abort mid-batch, for instance) would
+         * keep settling in the background after `execute` below had already
+         * returned, and its result would never reach the model.
+         */
+        await Promise.all(allPromises)
+      }
+
+      const scheduling = scheduleAndRun().catch((error: unknown) => {
+        /**
+         * Defensive only: nothing above should actually reject —
+         * `runSubagent` catches its own failures into an `error` envelope,
+         * so `runOneTask` never rejects either. If the scheduler itself
+         * still throws for an unforeseen reason, every task that has not
+         * settled yet gets an `error` outcome rather than leaving this tool
+         * call hanging with no result at all.
+         */
+        for (const task of tasks) {
+          if (outcomes[indexById.get(task.id) ?? -1] === undefined) {
+            settle(task, {
+              taskId: task.id,
+              envelope: { agent: task.id, status: "error", summary: describeSchedulerError(error) },
+              wroteFiles: false,
+            })
+          }
+        }
+      })
+
+      let schedulingDone = false
+      void scheduling.then(() => {
+        schedulingDone = true
+        wake?.()
+        wake = undefined
+      })
+
+      while (true) {
+        const event = events.shift()
+
+        if (event !== undefined) {
+          if (event === "settled") {
+            yield { outcomes: settledOutcomes() }
+          } else {
+            yield event
+          }
+          continue
+        }
+
+        if (schedulingDone) break
+
+        await new Promise<void>((resolve) => {
+          wake = resolve
+        })
+      }
+
+      yield { outcomes: settledOutcomes() }
     },
     /**
      * The orchestrator's model sees a compact per-task summary — status and

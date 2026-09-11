@@ -226,7 +226,7 @@ Satisfies `agent-orchestration`: Parallel Dispatch Only on Disjoint Ownership
 (concurrent half); `file-ownership`: Parallel Dispatch Requires Disjoint
 Ownership (concurrent half).
 
-- [ ] 4.1 Modify `apps/web/lib/games/harness/tools/run-tasks.ts`: concurrency
+- [x] 4.1 Modify `apps/web/lib/games/harness/tools/run-tasks.ts`: concurrency
       pool (cap 3, batch ≤ 4), pairwise ownership-overlap + `dependsOn`
       check before dispatch, `Promise.all`-style wait so correctness never
       depends on the model emitting parallel calls.
