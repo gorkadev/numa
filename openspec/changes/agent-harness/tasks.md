@@ -105,18 +105,18 @@ Failed/Aborted Usage Still Counts, Credits Chunk Reflects Full Turn, Persisted
 Metadata Reflects Full Turn, Ledger and Polar Reflect Full Turn, Exactly One
 Polar Event, Per-Sub-Agent Breakdown Retained.
 
-- [ ] 1b.1 Create `apps/web/lib/games/harness/turn-state.ts`: `chat.local`
+- [x] 1b.1 Create `apps/web/lib/games/harness/turn-state.ts`: `chat.local`
       shape `{ turn, deadline, tier, ledger: AgentUsageEntry[], verifyCalls }`
       and `addUsage(entry)`.
-- [ ] 1b.2 Modify `apps/web/lib/ai/pricing.ts`: add `priceTurn(tier, entries)
+- [x] 1b.2 Modify `apps/web/lib/ai/pricing.ts`: add `priceTurn(tier, entries)
       → TurnCost` summing all priced entries into one total.
-- [ ] 1b.3 Modify `apps/web/lib/ai/message-meta.ts`, `lib/games/usage.ts`,
+- [x] 1b.3 Modify `apps/web/lib/ai/message-meta.ts`, `lib/games/usage.ts`,
       `lib/games/turn-credits.ts`: accept `TurnCost`, write the breakdown
       (`data-turn-credits` payload shape unchanged, one Polar event per turn).
-- [ ] 1b.4 Modify `packages/db/src/schema.ts`: add nullable `usageBreakdown
+- [x] 1b.4 Modify `packages/db/src/schema.ts`: add nullable `usageBreakdown
       jsonb` to `turnUsage` (next to `costMicroUsd` at :188); run `pnpm
       db:push` (never `drizzle-kit generate`/`migrate`).
-- [ ] 1b.5 Modify `apps/web/trigger/chat.ts`: `onBoot` inits `chat.local`,
+- [x] 1b.5 Modify `apps/web/trigger/chat.ts`: `onBoot` inits `chat.local`,
       `onTurnStart` resets it with `(turn, deadline, tier)`; completion hooks
       call `priceTurn` instead of pricing the orchestrator's usage alone.
 

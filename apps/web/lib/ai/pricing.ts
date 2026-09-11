@@ -1,6 +1,7 @@
 import type { LanguageModelUsage } from "ai"
 
-import type { ModelEntryId } from "./model-registry"
+import type { TierId } from "./model-catalog"
+import type { ModelEntryId, Slot } from "./model-registry"
 
 /**
  * Server-only: what a turn is estimated to have cost.
@@ -116,16 +117,24 @@ const RATES: Record<ModelEntryId, ModelRate> = {
 }
 
 /**
- * Every field of `LanguageModelUsage` is `number | undefined`, including the
- * nested detail objects' fields — a provider reports what it reports. Missing
- * is read as zero, which under-counts rather than inventing tokens.
+ * The four token counts every ledger row and every priced entry carries.
+ * Named once so `TurnCost` and its per-agent breakdown share the same shape
+ * `turnUsageTokens` already produces, rather than re-declaring it inline at
+ * every call site.
  */
-export function turnUsageTokens(usage: LanguageModelUsage): {
+export type Tokens = {
   inputTokens: number
   outputTokens: number
   cachedInputTokens: number
   reasoningTokens: number
-} {
+}
+
+/**
+ * Every field of `LanguageModelUsage` is `number | undefined`, including the
+ * nested detail objects' fields — a provider reports what it reports. Missing
+ * is read as zero, which under-counts rather than inventing tokens.
+ */
+export function turnUsageTokens(usage: LanguageModelUsage): Tokens {
   return {
     inputTokens: usage.inputTokens ?? 0,
     outputTokens: usage.outputTokens ?? 0,
@@ -214,6 +223,20 @@ export const MICRO_USD_PER_CREDIT = 10_000
 export const CREDIT_MARKUP = 3
 
 /**
+ * The one place micro-dollars become credits, shared by `turnCreditCost`
+ * (one model, one call) and `priceTurn` (every priced call in a turn, summed
+ * first). Kept as its own function so the two never apply the markup with a
+ * formula that has quietly drifted apart.
+ *
+ * Rounded up, so a turn that cost anything at all cannot be free. A turn that
+ * genuinely cost nothing consumes nothing, and callers use that zero to skip
+ * metering entirely.
+ */
+function creditsFromMicroUsd(costMicroUsd: number): number {
+  return Math.ceil((costMicroUsd * CREDIT_MARKUP) / MICRO_USD_PER_CREDIT)
+}
+
+/**
  * What one turn costs the customer, in credits.
  *
  * A credit is a unit of PRICE, and this function is the one place cost becomes
@@ -230,10 +253,6 @@ export const CREDIT_MARKUP = 3
  * margin, a discount would give it away, and neither would appear anywhere as a
  * pricing decision because nobody made one. Cost has to be allowed to move
  * without the price list moving with it.
- *
- * Rounded up, so a turn that cost anything at all cannot be free. A turn that
- * genuinely cost nothing consumes nothing, and callers use that zero to skip
- * metering entirely.
  */
 export function turnCreditCost({
   modelId,
@@ -242,7 +261,106 @@ export function turnCreditCost({
   modelId: ModelEntryId
   usage: LanguageModelUsage
 }): number {
-  const costMicroUsd = turnCostMicroUsd({ modelId, usage })
+  return creditsFromMicroUsd(turnCostMicroUsd({ modelId, usage }))
+}
 
-  return Math.ceil((costMicroUsd * CREDIT_MARKUP) / MICRO_USD_PER_CREDIT)
+/**
+ * What a dispatched sub-agent run, or the orchestrator's own run, reported —
+ * one row of the per-turn ledger `chat.local` accumulates.
+ *
+ * Forward-declared here rather than in a `harness/envelope.ts` module because
+ * unit 2a (which introduces roles, `RoleDef` and `SubagentEnvelope`) has not
+ * shipped yet — this change ships in `1b`, before dispatch exists, and the
+ * only role that can appear in a ledger today is the orchestrator itself.
+ * `lib/games/harness/turn-state.ts` imports this type rather than the reverse
+ * so `lib/ai` never depends on `lib/games`, matching every other import in
+ * this file. When unit 2a's `envelope.ts` lands, `role` widens from the
+ * literal `"orchestrator"` to `RoleId | "orchestrator"` — a safe widening,
+ * since every value written against this narrower type already satisfies it.
+ */
+export type EnvelopeStatus =
+  | "done"
+  | "partial"
+  | "blocked"
+  | "error"
+  | "aborted"
+  | "skipped"
+  | "unavailable"
+
+export type AgentUsageEntry = {
+  agentId: string
+  role: "orchestrator"
+  slot: Slot
+  /** The concrete registry entry that SERVED the call. */
+  modelId: ModelEntryId
+  /** Set once unit 1c's slot fallbacks can serve a call from a peer entry. */
+  fallbackFrom?: ModelEntryId
+  usage: LanguageModelUsage
+  status: EnvelopeStatus
+}
+
+/**
+ * What a whole turn is estimated to have cost — the orchestrator plus every
+ * dispatched sub-agent, priced at each entry's own rate and summed once. See
+ * `priceTurn` below and `turn-usage-accounting`'s Full-Turn Summation
+ * requirement.
+ */
+export type TurnCost = {
+  tier: TierId
+  tokens: Tokens
+  costMicroUsd: number
+  credits: number
+  breakdown: (Omit<AgentUsageEntry, "usage"> & Tokens & { costMicroUsd: number })[]
+}
+
+const ZERO_TOKENS: Tokens = {
+  inputTokens: 0,
+  outputTokens: 0,
+  cachedInputTokens: 0,
+  reasoningTokens: 0,
+}
+
+/**
+ * Prices every entry of a turn's ledger — the orchestrator's own run and
+ * every sub-agent it dispatched, including ones that failed or were aborted,
+ * per `turn-usage-accounting`'s Failed/Aborted Usage Still Counts requirement
+ * — at each entry's own model's rate, then sums the results into one total.
+ *
+ * Each entry is priced independently through `turnCostMicroUsd` (ceiling per
+ * call, decision 9 in `design.md`), and only the SUM of those micro-dollar
+ * amounts is converted to credits — once, here — rather than converting each
+ * entry to credits and adding those up. Rounding N times before summing loses
+ * less than a cent each time but never gains it back; converting once after
+ * the sum is the only order that cannot overcharge by accumulated rounding.
+ */
+export function priceTurn(tier: TierId, entries: AgentUsageEntry[]): TurnCost {
+  const breakdown = entries.map((entry) => {
+    const { usage, ...rest } = entry
+
+    return {
+      ...rest,
+      ...turnUsageTokens(usage),
+      costMicroUsd: turnCostMicroUsd({ modelId: entry.modelId, usage }),
+    }
+  })
+
+  const tokens = breakdown.reduce<Tokens>(
+    (total, entry) => ({
+      inputTokens: total.inputTokens + entry.inputTokens,
+      outputTokens: total.outputTokens + entry.outputTokens,
+      cachedInputTokens: total.cachedInputTokens + entry.cachedInputTokens,
+      reasoningTokens: total.reasoningTokens + entry.reasoningTokens,
+    }),
+    ZERO_TOKENS
+  )
+
+  const costMicroUsd = breakdown.reduce((total, entry) => total + entry.costMicroUsd, 0)
+
+  return {
+    tier,
+    tokens,
+    costMicroUsd,
+    credits: creditsFromMicroUsd(costMicroUsd),
+    breakdown,
+  }
 }

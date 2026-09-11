@@ -1,8 +1,7 @@
-import type { LanguageModelUsage, UIMessage } from "ai"
+import type { UIMessage } from "ai"
 import { z } from "zod"
 
-import { turnCreditCost, turnUsageTokens } from "./pricing"
-import type { ModelEntryId } from "./model-registry"
+import type { TurnCost } from "./pricing"
 
 /**
  * What a turn is worth reporting about itself, recorded on the message that
@@ -87,35 +86,33 @@ export function readMessageMeta(message: UIMessage): MessageMeta {
  * `sentAt` does the opposite and keeps the first stamp for the same reason: a
  * message that was written across a question should not jump forward in the
  * thread's clock when the answer comes back.
+ *
+ * `cost` is the FULL turn's price — the orchestrator plus every dispatched
+ * sub-agent, already summed by `priceTurn` — never the orchestrator's usage
+ * alone. A turn that priced nothing (no ledger entries at all) carries zeros,
+ * which the accumulation below adds as a no-op, so a message this function
+ * never really priced anything for is left exactly as it was.
  */
 export function withTurnMeta(
   messages: UIMessage[],
-  {
-    modelId,
-    usage,
-  }: { modelId: ModelEntryId; usage: LanguageModelUsage | undefined }
+  cost: TurnCost
 ): UIMessage[] {
   const last = messages.at(-1)
 
   if (!last || last.role !== "assistant") return messages
 
   const existing = readMessageMeta(last)
-  const tokens = usage ? turnUsageTokens(usage) : undefined
 
   const meta: MessageMeta = {
     sentAt: existing.sentAt ?? Date.now(),
-    tokens: tokens
-      ? {
-          input: (existing.tokens?.input ?? 0) + tokens.inputTokens,
-          output: (existing.tokens?.output ?? 0) + tokens.outputTokens,
-          cached: (existing.tokens?.cached ?? 0) + tokens.cachedInputTokens,
-          reasoning:
-            (existing.tokens?.reasoning ?? 0) + tokens.reasoningTokens,
-        }
-      : existing.tokens,
-    credits: usage
-      ? (existing.credits ?? 0) + turnCreditCost({ modelId, usage })
-      : existing.credits,
+    tokens: {
+      input: (existing.tokens?.input ?? 0) + cost.tokens.inputTokens,
+      output: (existing.tokens?.output ?? 0) + cost.tokens.outputTokens,
+      cached: (existing.tokens?.cached ?? 0) + cost.tokens.cachedInputTokens,
+      reasoning:
+        (existing.tokens?.reasoning ?? 0) + cost.tokens.reasoningTokens,
+    },
+    credits: (existing.credits ?? 0) + cost.credits,
   }
 
   /**

@@ -1,5 +1,7 @@
 import type { UIMessageChunk } from "ai"
 
+import type { TurnCost } from "@/lib/ai/pricing"
+
 /**
  * The custom stream part the agent writes when a turn is over, carrying what
  * that turn cost in credits.
@@ -33,14 +35,22 @@ const PART_TYPE = "data-turn-credits"
 /**
  * The stream part, ready to hand to a `ChatWriter`.
  *
+ * Takes the FULL-turn `TurnCost` — the orchestrator plus every dispatched
+ * sub-agent, already summed by `priceTurn` — rather than a bare number, so
+ * every caller reads the same one credits figure `withTurnMeta` and
+ * `recordTurnUsage` also derive from. Only `cost.credits` crosses the wire:
+ * the payload shape is unchanged, `{ credits }`, because the browser has no
+ * use for a per-agent breakdown and the rate card behind it must stay
+ * server-only.
+ *
  * `transient` for the same reason `gameRevisionChunk` is: this is a
  * notification about the account, not a piece of the conversation. Persisting
  * it would replay the deduction on every reload of the game — the sidebar
  * would subtract the same turn again — and would feed a cost report back into
  * the model's own history on the next turn.
  */
-export function turnCreditsChunk(credits: number): UIMessageChunk {
-  return { type: PART_TYPE, data: { credits }, transient: true }
+export function turnCreditsChunk(cost: TurnCost): UIMessageChunk {
+  return { type: PART_TYPE, data: { credits: cost.credits }, transient: true }
 }
 
 /**

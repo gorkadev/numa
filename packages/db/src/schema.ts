@@ -11,6 +11,35 @@ import {
 import type { UIMessage } from "ai"
 
 /**
+ * The shape stored in `turn_usage.usage_breakdown` — see the column's own
+ * comment below. Declared locally, as loosely-typed strings, rather than
+ * imported from the app's model registry (`apps/web/lib/ai/model-registry.ts`,
+ * `lib/ai/pricing.ts`): this package is a dependency of the app, not the other
+ * way around, and `$type` is a compile-time assertion only — Postgres
+ * validates nothing beyond "this is JSON" either way.
+ */
+type UsageBreakdownEntry = {
+  agentId: string
+  role: string
+  slot: string
+  /** The concrete registry entry that served this call. */
+  modelId: string
+  /** Present only when a fallback candidate served instead of the primary. */
+  fallbackFrom?: string
+  status: string
+  inputTokens: number
+  outputTokens: number
+  cachedInputTokens: number
+  reasoningTokens: number
+  costMicroUsd: number
+}
+
+type UsageBreakdown = {
+  tier: string
+  entries: UsageBreakdownEntry[]
+}
+
+/**
  * Drizzle owns the schema for this database. Change a table here, then run
  * `pnpm db:push` to reconcile the branch against this file. Migration files are
  * not used while the project is in development — see AGENTS.md. Never issue ad
@@ -186,6 +215,23 @@ export const turnUsage = pgTable(
      * column's own type.
      */
     costMicroUsd: integer("cost_micro_usd").notNull(),
+
+    /**
+     * The per-agent detail behind the totals on this row: which tier the turn
+     * ran on, and, per run, its role, concrete registry entry and priced
+     * cost — the orchestrator today, every dispatched sub-agent from unit 2a
+     * onward. Nullable because a row written before this column existed has
+     * none, and because a turn that never dispatched anything still writes a
+     * one-entry breakdown rather than an empty one.
+     *
+     * Kept alongside the aggregate columns rather than instead of them: the
+     * aggregates answer "what did this turn cost" with an index-friendly
+     * scalar, and this answers "which model, in what proportion" without
+     * requiring every reader to parse jsonb just to sum a number the row
+     * already has. See `turn-usage-accounting`'s Per-Sub-Agent Usage
+     * Breakdown Retained requirement and decision 10 in `design.md`.
+     */
+    usageBreakdown: jsonb("usage_breakdown").$type<UsageBreakdown>(),
 
     /**
      * Which version of the in-repo rate table produced `costMicroUsd`.

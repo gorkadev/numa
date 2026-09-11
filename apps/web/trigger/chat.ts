@@ -12,14 +12,15 @@ import { z } from "zod"
 import { orchestratorModelSettings } from "@/lib/ai/agent"
 import { withTurnMeta } from "@/lib/ai/message-meta"
 import { withThreadTier } from "@/lib/ai/message-model"
-import { tierIdSchema, type TierId } from "@/lib/ai/model-catalog"
+import { tierIdSchema } from "@/lib/ai/model-catalog"
 import {
   resolveModel,
   resolveTier,
   type ModelEntryId,
 } from "@/lib/ai/model-registry"
-import { turnCreditCost } from "@/lib/ai/pricing"
+import { priceTurn } from "@/lib/ai/pricing"
 import { createGameSandbox } from "@/lib/daytona/utils"
+import { turnState } from "@/lib/games/harness/turn-state"
 import { gameInstructions } from "@/lib/games/instructions"
 import { gameRevisionChunk } from "@/lib/games/revision"
 import { loadGameThread, saveGameThread } from "@/lib/games/thread"
@@ -27,6 +28,14 @@ import { createGameTools } from "@/lib/games/tools"
 import { turnCreditsChunk } from "@/lib/games/turn-credits"
 import { getGameOrgId, recordTurnUsage } from "@/lib/games/usage"
 import { getCreditBalance } from "@/lib/polar/balance"
+
+/**
+ * How long past a turn's start `chat.local`'s `deadline` gives every dispatch
+ * tool (unit 2a onward) before it must wrap up — under `trigger.config.ts`'s
+ * `maxDuration: 3600`, so the run itself is never the thing that cuts a phase
+ * short.
+ */
+const TURN_DEADLINE_MS = 3300_000
 
 /**
  * The tools that change what the player would see.
@@ -67,9 +76,16 @@ function changedGameFiles(message: UIMessage | undefined): boolean {
  * `orchestratorModelSettings` itself calls (decision 18). The credits chunk,
  * the persisted message and the cost ledger all name this exact id, so the
  * entry that is billed can never drift from the entry that actually ran.
+ *
+ * Reads `turnState.tier` rather than re-deriving it from `clientData`: both
+ * `onBeforeTurnComplete` and `onTurnComplete` fire after `onTurnStart` has
+ * already called `turnState.reset` with `resolveTier(clientData?.tier)`, so
+ * this is the same value `orchestratorModelSettings` used to pick the model
+ * that actually ran — and the single value every dispatched sub-agent's
+ * `resolveModel(turnState.tier, role.slot)` will read from unit 2a onward.
  */
-function orchestratorEntryId(tier: TierId | undefined): ModelEntryId {
-  return resolveModel(resolveTier(tier), "strong").primary.id
+function orchestratorEntryId(): ModelEntryId {
+  return resolveModel(turnState.tier, "strong").primary.id
 }
 
 /**
@@ -129,6 +145,23 @@ export const gameChat = chat.agent({
   clientDataSchema: z
     .object({ tier: tierIdSchema.optional() })
     .default({}),
+
+  /**
+   * Initializes `chat.local`'s per-turn usage ledger.
+   *
+   * `onBoot` rather than `onChatStart`, on purpose: it fires on every fresh
+   * worker — including a continuation run after a cancel, crash or upgrade —
+   * while `onChatStart` fires only once, on the chat's very first message.
+   * Initializing here only would leave every continuation run's first access
+   * to `turnState` throwing "can only be modified after initialization".
+   *
+   * The values written here never survive to be read: `onTurnStart` below
+   * calls `turnState.reset` before `run()` or either completion hook can see
+   * them, on every turn including the first.
+   */
+  onBoot: async () => {
+    turnState.init()
+  },
 
   /**
    * The file tools, resolved per turn so they close over this chat's game.
@@ -280,7 +313,15 @@ export const gameChat = chat.agent({
    * finds the question unanswered — putting the same choice to the player a
    * second time, on top of a game already being built from their first answer.
    */
-  onTurnStart: async ({ chatId, uiMessages, clientData }) => {
+  onTurnStart: async ({ chatId, uiMessages, clientData, turn }) => {
+    /**
+     * Resets the ledger for this turn, so it never inherits a prior turn's
+     * usage — and resolves the tier once, through the same `resolveTier` the
+     * provider and the ledger both key off, so every later read of
+     * `turnState.tier` this turn agrees with what actually ran.
+     */
+    turnState.reset(turn, Date.now() + TURN_DEADLINE_MS, resolveTier(clientData?.tier))
+
     await saveGameThread({
       gameId: chatId,
       messages: withThreadTier(uiMessages, clientData?.tier),
@@ -306,17 +347,29 @@ export const gameChat = chat.agent({
     responseMessage,
     writer,
     usage,
-    clientData,
+    turn,
+    stopped,
+    error,
   }) => {
     /**
      * What the turn cost, sent before the balance in Polar has moved.
      *
      * This is the only hook that has both the numbers and a way out: `usage`
-     * is the whole turn's token total, and `writer` is a stream that
-     * `onTurnComplete` no longer has. Computing it with the same
-     * `turnCreditCost` the ledger uses is what guarantees the number the user
-     * watches leave their balance is the number they are actually charged —
-     * a second formula here would drift from the invoice within a month.
+     * is the orchestrator's own whole-turn token total, and `writer` is a
+     * stream that `onTurnComplete` no longer has. The entry is appended to
+     * `turnState`'s ledger here, once, so `onTurnComplete` below reads the
+     * same ledger back rather than adding a second entry for the same run.
+     *
+     * `priceTurn` is what both this chunk and the ledger price from — see
+     * `turn-usage-accounting`'s Credits Chunk Reflects the Full Turn
+     * requirement — so the number the user watches leave their balance can
+     * never drift from the number they are actually charged.
+     *
+     * `ledgerFor(turn)` rather than the bare ledger: this hook never actually
+     * fires on the stale-ledger path `ledgerFor` guards against — the SDK
+     * only calls `onTurnComplete` when a turn fails before `onTurnStart` —
+     * but reading it the same way both completion hooks do means neither can
+     * silently start trusting an unscoped ledger later.
      *
      * Ahead of the reload signal, and outside its early return: a turn that
      * only answered a question changed no files but still spent credits.
@@ -324,13 +377,17 @@ export const gameChat = chat.agent({
      * the preview starts remounting an iframe.
      */
     if (usage) {
+      turnState.addUsage({
+        agentId: "orchestrator",
+        role: "orchestrator",
+        slot: "strong",
+        modelId: orchestratorEntryId(),
+        usage,
+        status: error ? "error" : stopped ? "aborted" : "done",
+      })
+
       writer.write(
-        turnCreditsChunk(
-          turnCreditCost({
-            modelId: orchestratorEntryId(clientData?.tier),
-            usage,
-          })
-        )
+        turnCreditsChunk(priceTurn(turnState.tier, turnState.ledgerFor(turn)))
       )
     }
 
@@ -364,13 +421,33 @@ export const gameChat = chat.agent({
     chatAccessToken,
     lastEventId,
     clientData,
-    usage,
     turn,
     runId,
     finishReason,
     stopped,
   }) => {
-    const modelId = orchestratorEntryId(clientData?.tier)
+    const modelId = orchestratorEntryId()
+
+    /**
+     * The FULL turn's price — the orchestrator's entry `onBeforeTurnComplete`
+     * already appended, plus every sub-agent entry a dispatch tool added
+     * during the turn (none yet; unit 2a is what starts populating this) —
+     * summed once by `priceTurn`. Recomputing it here rather than threading a
+     * value between the two hooks is safe and cheap: `priceTurn` is a pure
+     * function of the ledger, and that ledger does not change between
+     * `onBeforeTurnComplete` and here — nothing runs in between.
+     *
+     * `ledgerFor(turn)` rather than the bare ledger, and this is the hook
+     * where it matters: `onValidateMessages` and `hydrateMessages` run BEFORE
+     * `onTurnStart`, inside the same try the SDK wraps the whole turn in — if
+     * either throws (the credit gate in `onValidateMessages`, for one),
+     * `onTurnStart` never resets `turnState` for this turn, `onBeforeTurnComplete`
+     * never fires, but `onTurnComplete` still does, with `usage: undefined`
+     * and this same `turn` number. Without the turn check, `turnState` would
+     * still hold the PREVIOUS turn's ledger, and this call would re-price and
+     * re-bill it a second time.
+     */
+    const cost = priceTurn(turnState.tier, turnState.ledgerFor(turn))
 
     /**
      * The reply is stored carrying what it cost. `withTurnMeta` is the durable
@@ -381,10 +458,7 @@ export const gameChat = chat.agent({
      */
     await saveGameThread({
       gameId: chatId,
-      messages: withTurnMeta(withThreadTier(uiMessages, clientData?.tier), {
-        modelId,
-        usage,
-      }),
+      messages: withTurnMeta(withThreadTier(uiMessages, clientData?.tier), cost),
       chatAccessToken,
       lastEventId,
     })
@@ -399,13 +473,17 @@ export const gameChat = chat.agent({
      * answered on the default tier's `strong` entry; recording that entry
      * rather than `undefined` keeps the cheapest question ("which model is
      * this costing us?") answerable for exactly those turns.
+     *
+     * `cost` carries the full-turn total AND the per-agent breakdown — see
+     * `turn-usage-accounting`'s Ledger and Polar Reflect the Full Turn, and
+     * Per-Sub-Agent Usage Breakdown Retained, requirements.
      */
     await recordTurnUsage({
       gameId: chatId,
       modelId,
       turn,
       runId,
-      usage,
+      cost,
       finishReason,
       stopped,
     })

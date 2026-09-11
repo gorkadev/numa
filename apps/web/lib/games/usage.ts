@@ -1,16 +1,10 @@
 import { logger } from "@trigger.dev/sdk"
 import { db } from "@workspace/db"
 import { turnUsage } from "@workspace/db/schema"
-import type { LanguageModelUsage } from "ai"
 import { eq } from "drizzle-orm"
 
 import type { ModelEntryId } from "@/lib/ai/model-registry"
-import {
-  RATE_TABLE_VERSION,
-  turnCostMicroUsd,
-  turnCreditCost,
-  turnUsageTokens,
-} from "@/lib/ai/pricing"
+import { RATE_TABLE_VERSION, type TurnCost } from "@/lib/ai/pricing"
 import { ingestTurnCredits } from "@/lib/polar/events"
 
 /**
@@ -73,13 +67,21 @@ export async function getGameOrgId(
  * `credits_ingested_at` is the column that makes the backlog findable, and
  * replaying it is safe because the events deduplicate. What must not happen is
  * that day arriving with nobody replaying anything.
+ *
+ * `cost` is the FULL turn's price, already summed by `priceTurn` across the
+ * orchestrator and every dispatched sub-agent — see `turn-usage-accounting`'s
+ * Ledger and Polar Reflect the Full Turn requirement. `modelId` stays a
+ * separate parameter: it is the orchestrator's own concrete entry, stamped on
+ * the row's `model_id` column for the "which model ran this turn" question
+ * (decision 10 in `design.md`), distinct from the per-agent detail that lives
+ * in `usage_breakdown`.
  */
 export async function recordTurnUsage({
   gameId,
   modelId,
   turn,
   runId,
-  usage,
+  cost,
   finishReason,
   stopped,
 }: {
@@ -87,17 +89,18 @@ export async function recordTurnUsage({
   modelId: ModelEntryId
   turn: number
   runId: string
-  usage: LanguageModelUsage | undefined
+  cost: TurnCost
   finishReason?: string
   stopped?: boolean
 }): Promise<void> {
   try {
     /**
-     * No usage means the provider never reported any — a turn that failed
-     * before the model answered. There is nothing to record and a row of zeros
-     * would be indistinguishable from a free turn, so nothing is written.
+     * An empty breakdown means nothing in the turn ever produced usage — a
+     * turn that failed before any model answered. There is nothing to record
+     * and a row of zeros would be indistinguishable from a free turn, so
+     * nothing is written.
      */
-    if (!usage) return
+    if (cost.breakdown.length === 0) return
 
     /**
      * `org_id` is denormalized onto the ledger, so it has to be read here
@@ -112,7 +115,7 @@ export async function recordTurnUsage({
 
     if (!orgId) return
 
-    const credits = turnCreditCost({ modelId, usage })
+    const { credits } = cost
 
     /**
      * Three writes in a fixed order, and the order is the whole design.
@@ -143,8 +146,11 @@ export async function recordTurnUsage({
         modelId,
         turn,
         runId,
-        ...turnUsageTokens(usage),
-        costMicroUsd: turnCostMicroUsd({ modelId, usage }),
+        inputTokens: cost.tokens.inputTokens,
+        outputTokens: cost.tokens.outputTokens,
+        cachedInputTokens: cost.tokens.cachedInputTokens,
+        reasoningTokens: cost.tokens.reasoningTokens,
+        costMicroUsd: cost.costMicroUsd,
         credits,
         /**
          * Stamped from the rate table that just produced the numbers above, so
@@ -152,6 +158,16 @@ export async function recordTurnUsage({
          * markup — explain it.
          */
         rateVersion: RATE_TABLE_VERSION,
+        /**
+         * The per-agent detail behind the totals above: which tier the turn
+         * ran on, and, per run, its role, concrete model entry and priced
+         * cost — see `turn-usage-accounting`'s Per-Sub-Agent Usage Breakdown
+         * Retained requirement and decision 10 in `design.md`. `entries`
+         * rather than reusing `TurnCost`'s own `breakdown` key: the column is
+         * a stored fact, `{ tier, entries }`, independent of the in-memory
+         * type's field name.
+         */
+        usageBreakdown: { tier: cost.tier, entries: cost.breakdown },
         finishReason,
         stopped: stopped ?? false,
       })
