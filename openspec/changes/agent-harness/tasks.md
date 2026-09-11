@@ -147,26 +147,29 @@ Satisfies `model-tiers`: Slot Fallback on Availability Failure.
 
 ## Unit 2a — Harness core (runner, roles, envelope, flags)
 
-- [ ] 2a.0 (GATE) Confirm the real `gemini-3.5-flash-lite` rate (Vertex
-      pricing page or a bill), fix `apps/web/lib/ai/pricing.ts:111-115` so
-      `cachedInput` (currently 0.20) never exceeds `input` (currently 0.10),
-      and bump `RATE_TABLE_VERSION`. Must land before any unit-2 task ships,
-      per the pre-existing-issue note in design.md; unit 1a explicitly leaves
-      rates unchanged, so this fix is not folded into 1a/1b.
+- [x] 2a.0 (GATE) Confirmed the real Vertex Standard/Global rates for all
+      three registry entries against the Vertex AI pricing page (user
+      confirmed 2026-09-11): `gemini-3.5-flash-lite` (0.30/2.50/0.03),
+      `gemini-3.8-flash`'s `cachedInput` (0.075, doubling to 0.15 on
+      2027-01-01 alongside its already-documented 1.50/7.50), and
+      `gemini-3.1-pro-preview`'s tiered `cachedInput` (0.20 up to 200K input
+      tokens, 0.40 above — added `ModelRate.longContext.cachedInput` and made
+      `turnCostMicroUsd` use it above the threshold). Bumped
+      `RATE_TABLE_VERSION` to `2026-09-11`. Landed first in the unit 2a commit.
 
 Satisfies `agent-orchestration`: Fixed Roles Per Phase, Named Bot Identity Per
 Role, Workers Never Delegate, `ask_player` Stays With the Orchestrator,
 Sub-Agent Failures Return as a Result, Abort Propagation, Compact Result
 Envelope.
 
-- [ ] 2a.1 Create `apps/web/lib/games/harness/roles.ts`: `RoleDef` (`id`,
+- [x] 2a.1 Create `apps/web/lib/games/harness/roles.ts`: `RoleDef` (`id`,
       `displayName`, `slot`, `maxSteps`, `timeoutMs`) for every role in the
       catalogue; no role names a model/provider.
-- [ ] 2a.2 Create `apps/web/lib/games/harness/envelope.ts`:
+- [x] 2a.2 Create `apps/web/lib/games/harness/envelope.ts`:
       `EnvelopeStatus`, `SubagentEnvelope`, `AgentUsageEntry`.
-- [ ] 2a.3 Create `apps/web/lib/games/harness/flags.ts`: `HARNESS_PHASES`
+- [x] 2a.3 Create `apps/web/lib/games/harness/flags.ts`: `HARNESS_PHASES`
       (default off).
-- [ ] 2a.4 Create `apps/web/lib/games/harness/run-subagent.ts`: resolves
+- [x] 2a.4 Create `apps/web/lib/games/harness/run-subagent.ts`: resolves
       `resolveModel(turnState.tier, role.slot)`, forwards the abort signal,
       applies `min(role.timeoutMs, deadline − now − 60s)`, consumes
       `fullStream` throttled to 500 ms into compact preliminary records, calls

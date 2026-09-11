@@ -516,3 +516,217 @@ None beyond the scope-gap documented in Deviation 1 above.
 (the `agent.ts`/`trigger/chat.ts` scope gap in tasks.md's 1c file list), the
 corrected `size:exception` line-count risk, and the pending manual
 dev-verification scenario to the user/maintainer.
+
+## Unit 2a — Harness core: roles, envelope, flags, `run-subagent` (PR 4)
+
+Branch: `agent-harness/2a-harness-core` (stacked on
+`agent-harness/1c-slot-fallbacks`)
+
+- [x] 2a.0 (GATE) Confirmed Vertex Standard/Global rates for all three
+      registry entries against the Vertex AI pricing page (user confirmed
+      2026-09-11) and fixed `apps/web/lib/ai/pricing.ts`
+- [x] 2a.1 Create `apps/web/lib/games/harness/roles.ts`
+- [x] 2a.2 Create `apps/web/lib/games/harness/envelope.ts`
+- [x] 2a.3 Create `apps/web/lib/games/harness/flags.ts`
+- [x] 2a.4 Create `apps/web/lib/games/harness/run-subagent.ts`
+
+5/5 tasks in unit 2a complete. Units 2b–10b remain (`[ ]`), unassigned to
+this apply batch.
+
+### GATE finding (2a.0)
+
+The orchestrator supplied the exact confirmed rates directly (Vertex AI
+pricing page, Standard table, Global region, confirmed by the user
+2026-09-11), superseding tasks.md's own more general 2a.0 wording ("confirm
+the real rate... fix so cachedInput never exceeds input"). Applied exactly as
+given:
+
+- `gemini-3.5-flash-lite`: input 0.30, output 2.50, cachedInput 0.03 —
+  replaces the previous UNVERIFIED placeholder (0.10 / 0.40 / 0.20) that had
+  priced a cached read above a fresh one.
+- `gemini-3.8-flash`: input/output unchanged (0.75 / 3.75, introductory
+  through 2026-12-31); `cachedInput` corrected from 0.2 to 0.075, with the
+  same 2027-01-01 doubling documented (0.15, alongside the already-known
+  1.50 / 7.50).
+- `gemini-3.1-pro-preview`: `cachedInput` is tiered like `input`/`output` —
+  0.20 up to 200K input tokens (was a flat 0.4, over-billing every
+  standard-tier cached read), 0.40 above. `ModelRate.longContext` gained an
+  optional `cachedInput` field, and `turnCostMicroUsd` now reads
+  `tier.cachedInput ?? rate.cachedInput` instead of always `rate.cachedInput`
+  — a minimal, backward-compatible change: any future `longContext` entry
+  with no `cachedInput` of its own still falls back to the base rate exactly
+  as before.
+- `RATE_TABLE_VERSION` bumped to `2026-09-11`.
+
+Landed as the first change in this single unit-2a commit, ahead of every
+other 2a file, per the gate's own ordering requirement.
+
+### The `AgentUsageEntry`/`EnvelopeStatus` placement gap (flagged in unit 1b) — resolved
+
+Unit 1b's apply-progress flagged that `AgentUsageEntry`/`EnvelopeStatus` had
+to be defined in `lib/ai/pricing.ts` ahead of schedule, since design.md
+assigns their creation to unit 2a's `envelope.ts`, but 1b's own ledger needed
+the type before dispatch existed. Resolution, as anticipated by 1b's own
+comment:
+
+- Both types **stay defined in `pricing.ts`** — `priceTurn`/`turnCostMicroUsd`
+  are what actually build and read one, and moving them to
+  `harness/envelope.ts` would make `lib/ai` import from `lib/games`,
+  inverting the codebase's established import direction for the first time.
+- `apps/web/lib/games/harness/envelope.ts` (new, task 2a.2) re-exports both
+  (`export type { AgentUsageEntry, EnvelopeStatus }`) rather than
+  redeclaring them, and additionally defines `SubagentEnvelope` and a minimal
+  `Finding` type (referenced by `SubagentEnvelope.findings` in design.md's
+  Interfaces section, but not itself listed as a 2a.2 deliverable — unit 6's
+  verifier owns its full shape; a placeholder was needed here only so
+  `SubagentEnvelope` compiles).
+- `AgentUsageEntry.role` widened from the literal `"orchestrator"` to
+  `string` — not `RoleId | "orchestrator"` as 1b's comment had guessed —
+  because `RoleId` (`lib/games/harness/roles.ts`, new in 2a) is a
+  `lib/games` type, and `lib/ai` must never import from `lib/games`. Every
+  value written against this field (`trigger/chat.ts`'s `role:
+  "orchestrator"`, and `run-subagent.ts`'s `role: role.id` where `role.id:
+  RoleId`) already satisfies the field structurally; no call site needed a
+  cast or any other change. No type definitions are duplicated anywhere in
+  this resolution.
+
+### Files Changed
+
+| File | Action |
+|---|---|
+| `apps/web/lib/ai/pricing.ts` | Modified (2a.0 gate) |
+| `apps/web/lib/games/harness/roles.ts` | Created |
+| `apps/web/lib/games/harness/envelope.ts` | Created |
+| `apps/web/lib/games/harness/flags.ts` | Created |
+| `apps/web/lib/games/harness/run-subagent.ts` | Created |
+
+### Work Unit Evidence
+
+| Evidence | Value |
+|---|---|
+| Focused command | `pnpm turbo typecheck --filter=web --filter=@workspace/db` (`--force`, no cache) → exit 0, both packages. `pnpm lint` (apps/web) → 0 errors, 12 warnings (11 pre-existing plus one new `turbo/no-undeclared-env-vars` on `HARNESS_PHASES`, same category as 6 of the 11 pre-existing warnings — `apps/web/lib/games/harness/flags.ts` is not declared in `turbo.json`'s `lint` task, which has no `env` list at all and never has for any of the app's existing env-gated files). 0 errors matches the required baseline exactly. |
+| Runtime harness | N/A, per tasks.md's own row for this unit: no dispatch tool calls `run-subagent.ts` yet (that starts in unit 2b), and `HARNESS_PHASES` stays off — this unit's code is inert on every existing code path. Manual scenario for the user once unit 2b lands: `run-subagent.ts`'s per-step ledger attribution is exercised together with unit 2b's `explore` tool. |
+| Rollback boundary | Revert the 4 new `harness/{roles,envelope,flags,run-subagent}.ts` files and the `pricing.ts` diff. Nothing outside this unit imports any of the 4 new files yet (2b is the first consumer), so the 4-file revert is fully self-contained. The `pricing.ts` diff is also independently revertible: reverting only the rate numbers would restore the previous (in one case incorrect) values without touching the `AgentUsageEntry`/`EnvelopeStatus` comment or type changes, and vice versa — the two are documented separately above so a partial revert stays legible. |
+
+### Deviations from Design
+
+1. **`SubagentProgress` (a new, 2a-local type), not `SubagentRunRecord`, is
+   `run-subagent.ts`'s yielded/returned "compact preliminary record".**
+   Design.md's Architecture diagram and Interfaces section both use the name
+   `SubagentRunRecord` for this shape, but that type's actual creation is
+   unit 9's task (`harness/records.ts`, stamping `agentId`, role,
+   `displayName`, tier, slot, `modelId`, `modelName`, edits, tokens, skills —
+   fields no caller can populate yet, since no dispatch tool or task exists
+   before unit 2b/3). Task 2a.4 itself only asks for "compact preliminary
+   records," not the named type. `SubagentProgress` carries only what
+   `run-subagent.ts` can honestly know today from `fullStream`/`stream`:
+   an `activity` one-liner and a list of resolved tool calls. Unit 9's own
+   task (9.2) already describes modifying `run-subagent.ts` to add the
+   richer stamped fields — this local type is exactly the seam that change
+   is expected to widen or replace, not a permanent parallel type.
+2. **`fullStream` consumed as `result.stream`.** The installed `ai@7.0.93`
+   marks `StreamTextResult.fullStream` as `@deprecated` in favor of the
+   identically-typed `stream` property (confirmed against
+   `node_modules/ai/dist/index.d.ts`). Design.md decision 5 and the tasks
+   artifact both say "fullStream" — the concept, not literally the
+   deprecated property name — so `run-subagent.ts` reads `result.stream`
+   and documents the substitution inline, the same way unit 1c's GATE note
+   documents other installed-version mismatches against design.md's
+   Technical Approach section.
+3. **`onServed` is captured through a run-local closure, not
+   `turnState.recordServed`.** `turnState.servedFor(slot)` keeps only the
+   LAST call's server per slot — correct for the orchestrator's single
+   `strong`-slot ledger entry per turn (unit 1c), but wrong the moment a
+   batch of concurrent or sequential workers ever shares a slot (unit 3/4):
+   the SECOND worker's `onServed` would silently overwrite the first's
+   attribution before the first's `onStepEnd` could read it back.
+   `run-subagent.ts`'s own `buildRunHooks()` keeps `isUnavailable`/
+   `markUnavailable` wired to `turnState` (an availability failure must
+   still rule a candidate out turn-wide, for every role on that slot), but
+   captures `onServed` in a variable local to this one call, read back by
+   this run's own `onStepEnd` before the next step can overwrite it. This is
+   the "run-subagent must build its own FallbackHooks" resolution named in
+   the apply prompt's known-gaps list, applied because 1c's own "last-server
+   only" limitation (documented in `trigger/chat.ts`) was explicitly not to
+   be copied into a runner that unit 3/4 will call concurrently.
+4. **`agentId` is optional on `RunSubagentInput`, defaulting to
+   `randomUUID()`.** No task or design text mandates this, but nothing in
+   2a-through-2b generates a stable id for a run yet (that is unit 9's
+   `records.ts` concern), and `AgentUsageEntry.agentId` is a required
+   `string` today (unit 1b). A random id keeps every ledger entry
+   attributable to a distinct run without inventing a naming scheme unit 9
+   will likely replace.
+5. **Status mapping only covers `done`/`partial`/`error`/`aborted`.**
+   `EnvelopeStatus` also has `blocked`, `skipped` and `unavailable`, but none
+   of those are decidable from a generic view of a finished
+   `ToolLoopAgent.stream()` call — `blocked` is a role reporting itself
+   unable to proceed (a per-role prompt/tool convention, not yet defined
+   anywhere), and `skipped`/`unavailable` are dispatch-tool-level budget and
+   verifier-sandbox decisions (units 2b/3 and 6). Documented in
+   `statusFromFinishReason`'s own comment rather than guessed at.
+
+None of these change what `agent-orchestration`'s Fixed Roles Per Phase,
+Named Bot Identity Per Role, Workers Never Delegate, `ask_player` Stays With
+the Orchestrator, Sub-Agent Failures Return as a Result, Abort Propagation,
+or Compact Result Envelope requirements ask for; all are implementation-level
+consequences of building the shared runner before any dispatch tool exists to
+call it.
+
+### Fixed after coordinator review: abort/timeout never reported as `aborted`
+
+The coordinator caught a spec violation before this landed: `streamText`
+does NOT throw on abort (`node_modules/ai@7.0.93`, ~lines 9928-9960) — a
+merged signal (the caller's `abortSignal`, or `timeout` firing) closes the
+stream with an `{ type: "abort" }` part instead of rejecting it. The
+original code's `default: continue` skipped that part silently, so `status`
+fell through to `statusFromFinishReason(await result.finishReason)` (usually
+"partial") or a rejection from that same await ("error") — never "aborted",
+violating `agent-orchestration`'s Abort Propagation requirement.
+
+Fix: `case "abort"` is now handled in the stream loop, setting a local
+`aborted` flag. After the loop, `aborted || abortSignal?.aborted` decides
+`status = "aborted"` directly, without awaiting `finishReason`/`text` at
+all. The summary text distinguishes "Cancelled." (the caller's own signal
+fired) from "Timed out." (it didn't, so the role's or turn's own timeout
+did) — the status is `"aborted"` either way. The real-throw `catch` block is
+unchanged. Also fixed in the same pass: the 500 ms throttle could drop the
+run's true final state (e.g. the last tool-result never got its own emit);
+a `dirty` flag now flushes one last snapshot after the loop when the latest
+update was never emitted, so `records` always ends with the run's actual
+final state.
+
+### Issues Found
+
+None.
+
+### Workload / PR Boundary
+
+- Mode: stacked-to-main chained PR slice (PR 4 of 15)
+- Current work unit: 2a — Harness core (roles, envelope, flags, `run-subagent`)
+- Boundary: starts from `agent-harness/1c-slot-fallbacks`, ends with a
+  correctly-priced rate table and an inert, typechecked sub-agent runner; no
+  dispatch tool calls it yet (unit 2b is the first caller)
+- **Authored changed lines: 509** (467 insertions + 42 deletions across 5
+  files — 4 new plus the `pricing.ts` rate/type fix, including the
+  coordinator-review abort/timeout fix above — per
+  `git diff --stat agent-harness/1c-slot-fallbacks...HEAD -- . ':!openspec'`,
+  excluding the pre-existing unrelated `apps/web/next.config.ts` diff). This
+  is **over the 400-line budget**, though still the smallest overage of the
+  four PRs in this change so far (1a: 712, 1b: 523, 1c: 569). It was
+  implemented honestly rather than trimmed: `run-subagent.ts` (286 lines) is
+  a genuinely new streaming runner with real per-step billing-attribution
+  and abort-classification logic the spec requires, and the codebase's
+  existing block-comment density was preserved/extended — including the
+  GATE note's rate citations and the deviation/fix notes above, which are
+  load-bearing evidence for a reviewer checking real money amounts and a
+  spec-correctness fix, not padding. **Recommendation: `size:exception` for
+  this slice**, consistent with every other unit shipped in this change so
+  far.
+
+### Status
+
+5/5 tasks in unit 2a complete. Ready for `sdd-verify`. Report the
+`size:exception` line-count risk and the resolved `AgentUsageEntry`/
+`EnvelopeStatus` placement gap (from unit 1b) to the user/maintainer before
+merge. Per the interactive pace instruction, this batch stops here; unit 2b
+(wiring the explorer to `chat.agent`) is a separate apply.

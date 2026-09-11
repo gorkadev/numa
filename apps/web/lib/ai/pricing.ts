@@ -30,17 +30,17 @@ import type { ModelEntryId, Slot } from "./model-registry"
  * stored `cost_micro_usd` re-derivable later: without it, a row is a number
  * nobody can reproduce, and the whole ledger becomes anecdote.
  */
-export const RATE_TABLE_VERSION = "2026-09-10"
+export const RATE_TABLE_VERSION = "2026-09-11"
 
 /**
  * USD per 1M tokens. `cachedInput` is what a cache *read* costs; cache writes
  * and storage are not modelled at all, so a caching-heavy workload will be
  * under-estimated rather than over-estimated.
  *
- * The `cachedInput` figures — 0.20 for the flash tier, 0.40 for pro — are the
- * published Vertex Standard cached-input rates and are APPROXIMATE here: they
- * were not confirmed per-model, so they are applied as a tier-wide assumption
- * rather than a looked-up fact for each row.
+ * Every rate below, `cachedInput` included, is VERIFIED per model against the
+ * Vertex AI pricing page (Standard table, Global region — confirmed by the
+ * user as the pricing region — https://cloud.google.com/vertex-ai/generative-ai/pricing),
+ * confirmed 2026-09-11. None of these are a tier-wide approximation anymore.
  */
 type ModelRate = {
   input: number
@@ -49,35 +49,43 @@ type ModelRate = {
   /**
    * Set only for models whose rate changes with the size of the request. When
    * present, a prompt strictly larger than `threshold` input tokens is billed
-   * at `input`/`output` from here instead.
+   * at `input`/`output` from here instead. `cachedInput` here is optional and
+   * falls back to the base rate's `cachedInput` when a model has no distinct
+   * long-context cached rate.
    */
   longContext?: {
     threshold: number
     input: number
     output: number
+    cachedInput?: number
   }
 }
 
 const RATES: Record<ModelEntryId, ModelRate> = {
   /**
-   * VERIFIED against Google's published pricing.
+   * VERIFIED against the Vertex AI pricing page (Standard table, Global
+   * region), confirmed 2026-09-11.
    *
-   * These are INTRODUCTORY rates and they expire: 0.75 / 3.75 holds through
-   * 2026-12-31, and on 2027-01-01 the standard rates of 1.50 / 7.50 take
-   * effect — a doubling, already scheduled, already known. This is not a risk
-   * to monitor but a date to act on: on 2027-01-01 these two numbers change and
+   * `input`/`output` are INTRODUCTORY rates and they expire: 0.75 / 3.75 holds
+   * through 2026-12-31, and on 2027-01-01 the standard rates of 1.50 / 7.50
+   * take effect — a doubling, already scheduled, already known. `cachedInput`
+   * expires on the same date: 0.075 while the introductory rate holds, then
+   * 0.15 from 2027-01-01 alongside the 1.50 / 7.50 pair. This is not a risk to
+   * monitor but a date to act on: on 2027-01-01 these numbers change and
    * `RATE_TABLE_VERSION` is bumped with them, or every row written afterwards
    * records half of what the turn actually cost.
    */
   "gemini-3.8-flash": {
     input: 0.75,
     output: 3.75,
-    cachedInput: 0.2,
+    cachedInput: 0.075,
   },
 
   /**
-   * VERIFIED, and tiered by prompt size: 2.00 / 12.00 for a request up to 200K
-   * input tokens, 4.00 / 18.00 above it.
+   * VERIFIED against the Vertex AI pricing page (Standard table, Global
+   * region), confirmed 2026-09-11, and tiered by prompt size: 2.00 / 12.00 for
+   * a request up to 200K input tokens, 4.00 / 18.00 above it. `cachedInput` is
+   * tiered too — 0.20 up to 200K, 0.40 above (`longContext.cachedInput`).
    *
    * The tier is chosen by the size of the *request*, not by the length of the
    * reply — which is the trap. A long thread crosses 200K on its own, without
@@ -89,30 +97,25 @@ const RATES: Record<ModelEntryId, ModelRate> = {
   "gemini-3.1-pro-preview": {
     input: 2.0,
     output: 12.0,
-    cachedInput: 0.4,
+    cachedInput: 0.2,
     longContext: {
       threshold: 200_000,
       input: 4.0,
       output: 18.0,
+      cachedInput: 0.4,
     },
   },
 
   /**
-   * UNVERIFIED. These are placeholders, not facts.
-   *
-   * 0.10 / 0.40 were NOT confirmed against Google's pricing page for this
-   * model. The closest published figures found were for Gemini *2.5* Flash
-   * Lite, which is a different model and cannot be assumed to price the same.
-   *
-   * Every row this produces is therefore a guess wearing the same shape as a
-   * measurement, which is exactly what this table is supposed to prevent. This
-   * entry must be confirmed against the real pricing page — or against a bill —
-   * before any price is set from a number it produced.
+   * VERIFIED against the Vertex AI pricing page (Standard table, Global
+   * region), confirmed 2026-09-11 — replacing the previous UNVERIFIED
+   * placeholder that had priced a cached read (0.20) higher than a fresh one
+   * (0.10).
    */
   "gemini-3.5-flash-lite": {
-    input: 0.1,
-    output: 0.4,
-    cachedInput: 0.2,
+    input: 0.3,
+    output: 2.5,
+    cachedInput: 0.03,
   },
 }
 
@@ -197,7 +200,7 @@ export function turnCostMicroUsd({
    */
   const microUsd =
     uncachedInputTokens * tier.input +
-    cachedInputTokens * rate.cachedInput +
+    cachedInputTokens * (tier.cachedInput ?? rate.cachedInput) +
     outputTokens * tier.output
 
   return Math.ceil(microUsd)
@@ -265,18 +268,18 @@ export function turnCreditCost({
 }
 
 /**
- * What a dispatched sub-agent run, or the orchestrator's own run, reported —
- * one row of the per-turn ledger `chat.local` accumulates.
- *
- * Forward-declared here rather than in a `harness/envelope.ts` module because
- * unit 2a (which introduces roles, `RoleDef` and `SubagentEnvelope`) has not
- * shipped yet — this change ships in `1b`, before dispatch exists, and the
- * only role that can appear in a ledger today is the orchestrator itself.
- * `lib/games/harness/turn-state.ts` imports this type rather than the reverse
- * so `lib/ai` never depends on `lib/games`, matching every other import in
- * this file. When unit 2a's `envelope.ts` lands, `role` widens from the
- * literal `"orchestrator"` to `RoleId | "orchestrator"` — a safe widening,
- * since every value written against this narrower type already satisfies it.
+ * `EnvelopeStatus` and `AgentUsageEntry` live here rather than in
+ * `harness/envelope.ts` (unit 2a) because `priceTurn`/`turnCostMicroUsd` in
+ * this same file are what actually build and read one; `envelope.ts`
+ * re-exports both instead of redeclaring them. `lib/games/harness/turn-state.ts`
+ * imports these types rather than the reverse, so `lib/ai` never depends on
+ * `lib/games`, matching every other import in this file. `AgentUsageEntry.role`
+ * is `string`, not `RoleId | "orchestrator"` (unit 2a's
+ * `lib/games/harness/roles.ts`): `RoleId` is a `lib/games` type, and `lib/ai`
+ * must never import from `lib/games`. Every value written against this field,
+ * in `run-subagent.ts` and `trigger/chat.ts`, already satisfies
+ * `RoleId | "orchestrator"` structurally, so nothing loses type safety at its
+ * actual call sites.
  */
 export type EnvelopeStatus =
   | "done"
@@ -289,7 +292,7 @@ export type EnvelopeStatus =
 
 export type AgentUsageEntry = {
   agentId: string
-  role: "orchestrator"
+  role: string
   slot: Slot
   /** The concrete registry entry that SERVED the call. */
   modelId: ModelEntryId
