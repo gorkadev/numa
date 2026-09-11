@@ -1214,3 +1214,153 @@ call this turn, a rejected-unmet-dependency task, and a rejected-duplicate-id
 batch) to the user/maintainer. Per the interactive pace instruction, this
 batch stops here; unit 5 (Chromium snapshot) is a separate apply and depends
 on its own gate spike (5.0) first.
+
+## Unit 5 — Chromium snapshot (gated) (PR 8)
+
+Branch: `agent-harness/5-chromium-snapshot` (stacked on
+`agent-harness/4-parallel`). Task 5.0 (the gate spike) already passed before
+this apply started — recorded in
+`docs/research/spikes/chromium-snapshot.md`, GO on all 6 criteria.
+
+- [x] 5.1 Create `apps/web/lib/daytona/game-image.ts`
+- [x] 5.2 Create `apps/web/scripts/build-game-snapshot.ts`
+- [x] 5.3 Modify `apps/web/lib/daytona/utils.ts`
+
+3/3 tasks in unit 5 complete. Units 6–10b remain (`[ ]`), unassigned to this
+apply batch.
+
+### Files Changed
+
+| File | Action |
+|---|---|
+| `apps/web/lib/daytona/game-image.ts` | Created |
+| `apps/web/scripts/build-game-snapshot.ts` | Created |
+| `apps/web/lib/daytona/utils.ts` | Modified — `createSandboxForGame` helper, `CHROMIUM_LABEL` |
+| `apps/web/package.json` | Modified — `snapshot:build` script |
+| `apps/web/tsconfig.json` | Modified — `allowImportingTsExtensions` |
+
+### Work Unit Evidence
+
+| Evidence | Value |
+|---|---|
+| Focused command | `pnpm --filter web typecheck` → exit 0. `pnpm --filter web lint` → 0 errors, 13 warnings (the 12 pre-existing baseline since unit 2a, plus one new `turbo/no-undeclared-env-vars` on `DAYTONA_GAME_SNAPSHOT` in `utils.ts` — same category as 6 of the pre-existing warnings, `turbo.json`'s `lint` task declares no `env` list for any env-gated file in this app). |
+| Runtime harness | A read-only smoke check (throwaway script, deleted after use — see below) confirmed `DAYTONA_GAME_SNAPSHOT` (already set by the user in `.env.local` and in Trigger.dev's environment variables, per the apply prompt) resolves against the real Daytona API: `daytona.snapshot.get(name)` returned `{"name":"numa-chromium-game-2026-09-11T17-55","state":"active","size":1.4090952454134822}` — name matches exactly, state `active`, size ~1.41 GiB matching the spike report. No sandbox or snapshot was created by this apply session. Manual scenario for the user, per tasks.md's own row for this unit: with `DAYTONA_GAME_SNAPSHOT` on, create a new game in dev and confirm `createGameSandbox` provisions from the snapshot (the sandbox carries `hasChromium: "true"`) with no meaningful start-time regression versus before, per the spike's own criterion 2 (delta was within noise, snapshot sandboxes even started slightly faster in the spike's run). |
+| Rollback boundary | Revert `lib/daytona/game-image.ts`, `scripts/build-game-snapshot.ts`, and the diffs in `lib/daytona/utils.ts`, `package.json`, `tsconfig.json`; unset `DAYTONA_GAME_SNAPSHOT`. `createGameSandbox`'s fallback path (`daytona.create({ labels: { [GAME_LABEL]: gameId } })`, no `snapshot`) is byte-identical to what it called unconditionally before this unit, so a revert — or simply unsetting the env var without reverting the code — restores today's exact sandbox-creation behavior. No other unit's code imports `game-image.ts`, `CHROMIUM_LABEL`, or `createSandboxForGame` yet (unit 6's verifier is the first planned reader of `CHROMIUM_LABEL`). |
+
+### Deviations from Design
+
+1. **`CHROMIUM_LABEL` (`hasChromium`), a new sandbox label not named in any
+   task or design text, was added and justified from design.md's own
+   requirement.** Decision 13 / line 97 says a sandbox with no Chromium must
+   report `verify`'s result as `status: "unavailable"`; Deviation 2 says
+   "verification only covers sandboxes created from the new snapshot; older
+   games report unavailable." Neither says how unit 6's verifier is meant to
+   tell an old sandbox apart from a new one before running anything. The
+   apply prompt for this unit explicitly invited this: "If unit 6 needs a
+   way to know whether a sandbox has Chromium ... add that small hook here
+   and justify it from the design text." Probing every `verify` call by
+   trying to launch Chromium and seeing whether it exists would burn a full
+   sandbox round trip just to learn a fact that never changes for a
+   sandbox's lifetime, and would conflate "no Chromium installed" with any
+   other Chromium-launch failure the check might legitimately need to
+   report as a normal `fail`. A label stamped once, at creation, lets unit
+   6 read `sandbox.labels?.[CHROMIUM_LABEL] === "true"` for free — it is
+   already fetching the sandbox for every other reason `verify` needs it.
+   Only `createSandboxForGame`'s snapshot-create branch sets it; the
+   env-unset path and the post-failure fallback both omit it, so an old
+   sandbox (or a sandbox from a failed snapshot create) reads as falsy by
+   construction, with no separate "false" value ever needing to be written.
+2. **`tsconfig.json` gained `allowImportingTsExtensions: true`, not named in
+   any task.** Task 5.2 asked to "check how `apps/web` package.json
+   `type`/module settings affect running a `.ts` file with `node
+   --env-file=.env.local`" and to keep `tsc --noEmit` passing. Verified
+   directly (see Issues Found for the exact commands run): Node 26's native
+   type-stripping resolves a relative TypeScript import only when the
+   specifier carries the literal `.ts` extension — an extension-less
+   specifier (the convention every other file in this app already uses,
+   resolved by Next.js's bundler) fails with `ERR_MODULE_NOT_FOUND` under
+   plain `node`, and a `.js`-referring-to-`.ts` specifier (the common
+   `tsx`/`ts-node` convention) fails the same way, because nothing in this
+   project performs that remapping at runtime. `tsc`'s default `moduleResolution:
+   "Bundler"` (inherited from `@workspace/typescript-config/nextjs.json`)
+   rejects a literal `.ts` import specifier with `TS5097` unless this flag
+   is set; the flag requires `noEmit`, already `true` project-wide. Scoped
+   to `apps/web/tsconfig.json` (not the shared `typescript-config` package),
+   so it affects only this app, only permits an explicit `.ts` extension
+   where one is written, and forces no other file in the app to change how
+   it imports.
+3. **`build-game-snapshot.ts` is not itself included in unit 5's spike
+   image or its own resource spec beyond what the spike already
+   validated** — it is a thin CLI wrapper around
+   `daytona.snapshot.create({ image, resources })`, deliberately kept free
+   of any logic the spike did not already exercise (the image definition,
+   the exact resource shape). This is not a deviation from any task wording,
+   but is worth stating: nothing in this script was run against the real
+   Daytona API during this apply (per the apply prompt's explicit
+   instruction not to rebuild the snapshot or run the build script against
+   the real account) — only its `tsc`/`eslint` checks and the separate,
+   read-only smoke script were run.
+
+None of these change what `game-verification`'s Behavior When the Verifier
+Is Unavailable requirement (sandbox-provisioning half) asks for; all are
+implementation-level consequences of running a build script under plain
+`node` in a project with no TS runner, and of unit 6 needing a cheap way to
+answer a question this unit's own sandboxes already have the answer to at
+creation time.
+
+### Issues Found
+
+1. **Confirmed by direct experiment, not assumption: Node 26's relative-TS-import
+   resolution is stricter than this project's existing import convention.**
+   Three things were tried and recorded before settling on the shipped
+   approach: (a) `import ... from "../lib/daytona/client"` (this app's usual
+   extension-less style) → `ERR_MODULE_NOT_FOUND` under plain `node`,
+   despite `tsc --noEmit` accepting it silently; (b) `import ... from
+   "../lib/daytona/client.ts"` → runs correctly under `node`, but `tsc
+   --noEmit` rejects it with `TS5097` under this project's default
+   `moduleResolution: "Bundler"`; (c) `import ... from
+   "../lib/daytona/client.js"` (referring to a `.ts` file, the `tsx`/`ts-node`
+   convention) → `tsc --noEmit` accepts it, but `node` still fails with
+   `ERR_MODULE_NOT_FOUND`, because nothing in this project (no `tsx`, no
+   compiled output) performs that `.js`→`.ts` remap at runtime. Option (b)
+   plus `allowImportingTsExtensions` (Deviation 2) is the only one of the
+   three that both runs and typechecks; it was verified working end to end
+   by running the read-only smoke script through the actual `pnpm
+   --env-file` invocation shape task 5.2 specifies.
+2. **`Image.d.ts`/`Snapshot.d.ts` (installed `@daytona/sdk` 0.211.2) were
+   read directly to confirm the spike's own claim** — `CreateSnapshotParams`
+   does carry an optional `resources?: Resources` field (used by
+   `build-game-snapshot.ts`), and `CreateSandboxFromSnapshotParams` (used by
+   `createGameSandbox`, via `CreateSandboxBaseParams & { snapshot?: string
+   }`) does not, confirming the spike's "sandboxes inherit the snapshot's
+   resources" note rather than assuming it.
+
+### Workload / PR Boundary
+
+- Mode: stacked-to-main chained PR slice (PR 8 of 15)
+- Current work unit: 5 — Chromium snapshot (gated)
+- Boundary: starts from `agent-harness/4-parallel`, ends with
+  `createGameSandbox` able to provision from the pre-built Chromium
+  snapshot when `DAYTONA_GAME_SNAPSHOT` is set (already true in this repo's
+  `.env.local` and Trigger.dev environment, per the apply prompt), falling
+  back to today's default sandbox both when the env var is unset and when a
+  configured snapshot fails to resolve; no other unit's code depends on
+  anything in this slice yet (unit 6 is the first planned reader of
+  `CHROMIUM_LABEL`)
+- **Authored changed lines: 190** (187 insertions + 3 deletions across 5
+  files — 2 new plus `utils.ts`, `package.json`, `tsconfig.json` — per `git
+  diff --cached --stat`, excluding `openspec/**` and the pre-existing
+  unrelated `apps/web/next.config.ts` diff, which was never staged this
+  session). Well **under the 400-line budget** — consistent with unit 2b
+  (230), the other unit in this change that shipped under budget — because
+  this unit wires one image definition, one thin CLI script, and one
+  fallback branch in an already-small function, rather than a new subsystem.
+
+### Status
+
+3/3 tasks in unit 5 complete. Ready for `sdd-verify`. Report the new
+`CHROMIUM_LABEL` hook (Deviation 1, for unit 6 to consume) and the
+`allowImportingTsExtensions` tsconfig change (Deviation 2) to the
+user/maintainer. Per the interactive pace instruction, this batch stops
+here; unit 6 (verify role) is a separate apply and depends on this unit's
+`CHROMIUM_LABEL` and the confirmed-resolving `DAYTONA_GAME_SNAPSHOT`.

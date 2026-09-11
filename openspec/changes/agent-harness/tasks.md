@@ -244,11 +244,11 @@ Ownership (concurrent half).
 Satisfies `game-verification`: Behavior When the Verifier Is Unavailable
 (sandbox-provisioning half).
 
-- [ ] 5.1 Create `apps/web/lib/daytona/game-image.ts`: Playwright image
+- [x] 5.1 Create `apps/web/lib/daytona/game-image.ts`: Playwright image
       definition (`Image.base().runCommands()`).
-- [ ] 5.2 Create `apps/web/scripts/build-game-snapshot.ts`:
+- [x] 5.2 Create `apps/web/scripts/build-game-snapshot.ts`:
       `snapshot.create({ image })` build script.
-- [ ] 5.3 Modify `apps/web/lib/daytona/utils.ts`: `createGameSandbox` uses
+- [x] 5.3 Modify `apps/web/lib/daytona/utils.ts`: `createGameSandbox` uses
       `DAYTONA_GAME_SNAPSHOT` when the spike passed and the env var is set;
       falls back to today's sandbox otherwise.
 

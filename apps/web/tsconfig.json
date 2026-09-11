@@ -9,7 +9,17 @@
       {
         "name": "next"
       }
-    ]
+    ],
+    /**
+     * `scripts/build-game-snapshot.ts` runs under plain `node`, not Next.js's
+     * bundler — this project has no `tsx`/`ts-node`, and Node 26's native
+     * type-stripping needs a literal `.ts` extension on a relative import
+     * specifier (Node resolves modules by exact path, unlike a bundler).
+     * `noEmit` is already `true` (inherited from the Next.js base config),
+     * which this flag requires; it only permits an explicit `.ts` extension
+     * where one is written, it does not require one anywhere else in the app.
+     */
+    "allowImportingTsExtensions": true
   },
   "include": [
     "next-env.d.ts",

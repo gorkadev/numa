@@ -11,7 +11,8 @@
     "trigger:deploy": "trigger deploy",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "snapshot:build": "node --env-file=.env.local scripts/build-game-snapshot.ts"
   },
   "dependencies": {
     "@ai-sdk/google-vertex": "^5.0.76",
