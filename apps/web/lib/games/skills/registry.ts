@@ -113,14 +113,18 @@ export const ROLE_DEFAULT_SKILLS: Record<RoleId, SkillName[]> = {
 /**
  * The orchestrator is not a `RoleId` (it never goes through
  * `run-subagent.ts`, `harness/roles.ts`'s own header comment), so its
- * default lives separately. Per design.md's File Changes table for unit 7,
- * it kept every skill pushed through unit 7b, so the prompt stayed
- * identical while routing still lived in `instructions/engine.ts`'s
- * replacement. Unit 8 (task 8.5) cuts it down to `engine-core` alone, now
- * that routing lives in `instructions/workflow.ts`'s own prompt instead: the
- * orchestrator relies on `load_skill` and the skill index
- * (`instructions/index.ts`) for the other 7 skills from here on, the same
- * way the planner does (`harness/tools/plan.ts`).
+ * default lives separately. This is the phased-flow default only: unit 8
+ * (task 8.5) cuts it to `engine-core` alone, now that routing lives in
+ * `instructions/workflow.ts`'s own prompt instead — the orchestrator relies
+ * on `load_skill` and the skill index (`instructions/index.ts`) for the
+ * other 7 skills, the same way the planner does (`harness/tools/plan.ts`).
+ *
+ * `instructions/index.ts` only reads this constant when `HARNESS_PHASES` is
+ * on (unit 8 correction, after the parent review of the first version of
+ * this unit found the flag-off prompt still pointed at an inactive
+ * `load_skill` tool with no way to reach the other 7 skills). With the flag
+ * off, the orchestrator's prompt pushes `ALL_SKILL_NAMES` instead — the
+ * exact prompt from before this unit existed, unaffected by this constant.
  */
 export const ORCHESTRATOR_DEFAULT_SKILLS: SkillName[] = ["engine-core"]
 
@@ -129,9 +133,11 @@ export const ORCHESTRATOR_DEFAULT_SKILLS: SkillName[] = ["engine-core"]
  * single blank-line separator `instructions/engine.ts`'s own sections used
  * (unit 7a's lossless-move verification confirmed this reconstructs the
  * original document byte-for-byte for the full 8-skill list). Shared by the
- * orchestrator's instructions (`instructions/index.ts`, all 8 skills) and a
- * dispatched worker's (`harness/tools/run-tasks.ts`, `mergeSkills` below),
- * so both build a role's pushed skill text the exact same way.
+ * orchestrator's instructions (`instructions/index.ts`, either
+ * `ORCHESTRATOR_DEFAULT_SKILLS` or `ALL_SKILL_NAMES` depending on
+ * `HARNESS_PHASES`) and a dispatched worker's (`harness/tools/run-tasks.ts`,
+ * `mergeSkills` below), so both build a role's pushed skill text the exact
+ * same way.
  */
 export function skillBodies(names: readonly SkillName[]): string {
   return names.map((name) => SKILLS[name].body).join("\n\n")

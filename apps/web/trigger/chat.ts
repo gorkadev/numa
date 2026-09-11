@@ -274,10 +274,12 @@ export const gameChat = chat.agent({
    * `HARNESS_PHASES` is off (an explicit opt-out since unit 8; on by
    * default), not this declaration.
    *
-   * `load_skill` no longer overlaps with the orchestrator's own pushed
-   * skills the way it did through unit 7b: unit 8 cuts `instructions/index.ts`
-   * down to `engine-core` alone, so `load_skill` is this turn's real path to
-   * the other 7 skills, not a redundant fallback.
+   * Whether `load_skill` overlaps with the orchestrator's own pushed skills
+   * depends on this same flag: `instructions/index.ts` reads `HARNESS_PHASES`
+   * too (unit 8 correction), pushing every skill when it is off — the exact
+   * prompt from before this unit, where `load_skill` was a redundant
+   * fallback — and only `engine-core` when it is on, where `load_skill`
+   * becomes this turn's real path to the other 7.
    *
    * Declared here and not only on `streamText`, because this is the set the
    * SDK re-converts stored history against on every later turn. A tool known

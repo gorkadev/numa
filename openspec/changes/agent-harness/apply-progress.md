@@ -2044,3 +2044,79 @@ cross-check gap between design.md's Data Flow diagram and tasks.md's own
 unit 8 task list) to the user/maintainer before merge. Per the interactive
 pace instruction, this batch stops here; unit 9 (sub-agent run records) is a
 separate apply.
+
+### Fixed after parent review: `HARNESS_PHASES=false` no longer restored the single-loop prompt
+
+The parent's review of commit `257b310` caught a real regression in the
+first version of this unit's rollback path: `instructions/index.ts` built
+`gameInstructions` unconditionally — `ORCHESTRATOR_DEFAULT_SKILLS` (cut to
+`engine-core` alone) and the new skill-index message were both always
+included, and `workflow.ts`'s own routing section ("call `plan`, then
+`run_tasks`, then `verify`") was baked directly into `workflowInstructions`
+itself. Setting `HARNESS_PHASES=false` correctly narrowed `activeTools` in
+`trigger/chat.ts` (dropping `explore`, `plan`, `run_tasks`, `verify` and
+`load_skill`), but the orchestrator's own prompt never noticed: it still
+told the model to call three tools that were no longer active, still
+pointed at `load_skill` as the way to reach 7 skills it could no longer
+call, and never fell back to pushing every skill the way the pre-unit-8
+prompt did. This broke tasks.md's own unit 8 rollback boundary ("Set
+`HARNESS_PHASES` back to off; single-loop path is unchanged code") — the
+code path was not, in fact, unchanged.
+
+Fix, scoped to exactly the files the regression touched:
+
+1. **`instructions/workflow.ts`**: the "Sizing a change: tweak or build"
+   section moved out of `workflowInstructions` into its own exported
+   `routingInstructions: SystemModelMessage`. `workflowInstructions` itself
+   is now byte-for-byte identical to its `agent-harness/7b-load-skill`
+   version (confirmed by `diff` against a `git show` extraction — no
+   remaining difference at all, not even a comment).
+2. **`instructions/index.ts`**: `gameInstructions` now reads `HARNESS_PHASES`
+   directly. Flag off: `[workflowInstructions, runtimeInstructions,
+   { role: "system", content: skillBodies(ALL_SKILL_NAMES) }]` — the exact
+   three-message array, in the exact order, the prompt carried before unit 8
+   existed. Flag on: `routingInstructions` and a skill-index message are
+   inserted, and the skills block pushes `ORCHESTRATOR_DEFAULT_SKILLS`
+   (`engine-core` alone) instead of every skill.
+3. **`lib/games/skills/registry.ts`**, **`harness/flags.ts`**,
+   **`trigger/chat.ts`**: updated comments that had claimed the flag-off
+   path was already the unchanged single-loop path, or that `load_skill`
+   unconditionally became the real path to the other 7 skills — both were
+   only true when the flag is on, and now say so explicitly.
+
+**Verification of the fix**: built `gameInstructions` from three sources —
+(a) `agent-harness/7b-load-skill`'s own `instructions/index.ts` and its
+dependencies, extracted via `git show` into a scratch directory; (b) this
+branch's `instructions/index.ts` with `HARNESS_PHASES=false`; (c) this
+branch's `instructions/index.ts` with the flag unset (on by default) — each
+evaluated with `node --experimental-strip-types` (Node v26.7.0), with only
+import specifiers rewritten to relative `.ts` paths (workflow.ts and
+registry.ts needed no logic changes to run standalone; `runtime.ts`'s
+`GAME_DIR`/`GAME_PORT` import from `lib/daytona/utils` — which pulls in
+`@workspace/db`'s client, fatal without `DATABASE_URL` — was pointed at a
+two-line stub carrying the same two literal values, so the real
+`runtime.ts` template literal still ran unmodified). The scratch directory
+was deleted before this commit; confirmed absent from `git status`.
+
+| Build | Blocks | Length | sha256 |
+|---|---|---|---|
+| `agent-harness/7b-load-skill` (`gameInstructions`) | 3 | 21,321 | `ecae91f55ccc719a650afc6619dae3b1af60c286c5fc371ca2f347fe9ef98e3e` |
+| HEAD, `HARNESS_PHASES=false` | 3 | 21,321 | `ecae91f55ccc719a650afc6619dae3b1af60c286c5fc371ca2f347fe9ef98e3e` |
+| HEAD, `HARNESS_PHASES` unset (on) | 5 | 17,251 | `29e70a25a09b383bcec4da064f582ac095c4723a9896581d3032779ab1838670` |
+
+The flag-off build is byte-identical to the pre-unit-8 prompt (identical
+block count, length and hash). The flag-on build differs, as expected
+(fewer total characters despite two more blocks, since only one skill's
+body is pushed instead of eight).
+
+`pnpm turbo typecheck --filter=web` → exit 0. `pnpm lint` (run directly
+inside `apps/web`, since `pnpm turbo lint --filter=web` still pulls in the
+pre-existing broken `@workspace/db#lint` task) → 0 errors, the same 13
+pre-existing warnings.
+
+**Corrected changed lines**: 187 (124 insertions + 63 deletions across 5
+files — `flags.ts`, `instructions/index.ts`, `instructions/workflow.ts`,
+`skills/registry.ts`, `trigger/chat.ts`; per `git diff --stat` against the
+pre-fix commit, excluding `openspec/**` and `next.config.ts`), well under
+the 400-line budget on its own. Committed separately from the original unit
+8 commit, per the coordinator's instruction to scope this to the one fix.
