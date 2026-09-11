@@ -1,8 +1,26 @@
 import type { SystemModelMessage } from "ai"
 
-import { engineInstructions } from "./engine"
+import { ORCHESTRATOR_DEFAULT_SKILLS, skillBodies } from "@/lib/games/skills/registry"
+
 import { runtimeInstructions } from "./runtime"
 import { workflowInstructions } from "./workflow"
+
+/**
+ * The orchestrator's engine-reference block, built from the skills registry
+ * (design.md decision 14, unit 7) rather than the deleted
+ * `instructions/engine.ts`. Until unit 8 cuts the orchestrator's own skills
+ * down to `engine-core` alone (task 8.5, once routing moves into
+ * `workflow.ts`), it keeps every skill pushed
+ * (`ORCHESTRATOR_DEFAULT_SKILLS` is `ALL_SKILL_NAMES`), so the prompt this
+ * block produces is identical to `engine.ts`'s own content: unit 7a's
+ * lossless-move verification confirmed that joining the 8 skills' bodies,
+ * in this exact order, with a single blank line between each, reconstructs
+ * that original document byte-for-byte.
+ */
+const engineSkillsInstructions: SystemModelMessage = {
+  role: "system",
+  content: skillBodies(ORCHESTRATOR_DEFAULT_SKILLS),
+}
 
 /**
  * The system prompt, as separate blocks rather than one string.
@@ -19,5 +37,5 @@ import { workflowInstructions } from "./workflow"
 export const gameInstructions: SystemModelMessage[] = [
   workflowInstructions,
   runtimeInstructions,
-  engineInstructions,
+  engineSkillsInstructions,
 ]

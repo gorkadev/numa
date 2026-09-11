@@ -120,3 +120,37 @@ export const ROLE_DEFAULT_SKILLS: Record<RoleId, SkillName[]> = {
  * workflow prompt.
  */
 export const ORCHESTRATOR_DEFAULT_SKILLS: SkillName[] = ALL_SKILL_NAMES
+
+/**
+ * Joins a list of skills' `body` text in the order given, with the same
+ * single blank-line separator `instructions/engine.ts`'s own sections used
+ * (unit 7a's lossless-move verification confirmed this reconstructs the
+ * original document byte-for-byte for the full 8-skill list). Shared by the
+ * orchestrator's instructions (`instructions/index.ts`, all 8 skills) and a
+ * dispatched worker's (`harness/tools/run-tasks.ts`, `mergeSkills` below),
+ * so both build a role's pushed skill text the exact same way.
+ */
+export function skillBodies(names: readonly SkillName[]): string {
+  return names.map((name) => SKILLS[name].body).join("\n\n")
+}
+
+/**
+ * A role's default skills, plus any extra skills the dispatching agent
+ * added for one task, deduplicated and in a stable order (`agent-skills`'s
+ * Orchestrator-Selected Extra Skills requirement: "the extra skill's
+ * content is included ... in addition to the role's defaults"). Defaults
+ * come first, in the registry's own order; an extra already present in the
+ * defaults is not pushed twice.
+ */
+export function mergeSkills(
+  defaults: readonly SkillName[],
+  extra: readonly SkillName[]
+): SkillName[] {
+  const merged = [...defaults]
+
+  for (const name of extra) {
+    if (!merged.includes(name)) merged.push(name)
+  }
+
+  return merged
+}

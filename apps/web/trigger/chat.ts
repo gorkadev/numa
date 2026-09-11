@@ -24,6 +24,7 @@ import { priceTurn } from "@/lib/ai/pricing"
 import { createGameSandbox } from "@/lib/daytona/utils"
 import { HARNESS_PHASES } from "@/lib/games/harness/flags"
 import { createExploreTool } from "@/lib/games/harness/tools/explore"
+import { createLoadSkillTool } from "@/lib/games/harness/tools/load-skill"
 import { createRunTasksTool } from "@/lib/games/harness/tools/run-tasks"
 import { createVerifyTool } from "@/lib/games/harness/tools/verify"
 import { turnState } from "@/lib/games/harness/turn-state"
@@ -112,14 +113,14 @@ function changedGameFiles(message: UIMessage | undefined): boolean {
  *
  * Decision 6 in design.md: every tool, dispatch tools included, stays
  * declared on `chat.agent({ tools })` regardless of the flag, so a stored
- * `explore`/`run_tasks`/`verify` tool-call part keeps re-converting
- * correctly even on a turn that ran with the flag off. Only `activeTools` —
- * which candidate this turn's model may actually call — changes with the
- * flag. `explore` (unit 2b), `run_tasks` (unit 3) and `verify` (unit 6) are
- * wired in today; `plan`/`load_skill` add themselves here as their own
- * units wire them in.
+ * `explore`/`run_tasks`/`verify`/`load_skill` tool-call part keeps
+ * re-converting correctly even on a turn that ran with the flag off. Only
+ * `activeTools` — which candidate this turn's model may actually call —
+ * changes with the flag. `explore` (unit 2b), `run_tasks` (unit 3),
+ * `verify` (unit 6) and `load_skill` (unit 7b) are wired in today; `plan`
+ * adds itself here once its own unit (8) wires it in.
  */
-const PHASE_TOOLS = new Set(["explore", "run_tasks", "verify"])
+const PHASE_TOOLS = new Set(["explore", "run_tasks", "verify", "load_skill"])
 
 /**
  * Every declared tool name, minus the phase tools, unless `HARNESS_PHASES` is
@@ -271,6 +272,13 @@ export const gameChat = chat.agent({
    * in `run` below is what actually keeps them out of a turn while
    * `HARNESS_PHASES` is off, not this declaration.
    *
+   * `load_skill` (unit 7b) joins them here too: today it is a redundant
+   * fallback for the orchestrator, since `instructions/index.ts` still pushes
+   * every skill's full body (unit 7b keeps that prompt identical until unit 8
+   * cuts it down to `engine-core` alone), but it is declared and gated the
+   * same way as every dispatch tool so it needs no separate wiring once that
+   * cut lands.
+   *
    * Declared here and not only on `streamText`, because this is the set the
    * SDK re-converts stored history against on every later turn. A tool known
    * only to `streamText` would work on the turn that called it and then lose
@@ -281,6 +289,7 @@ export const gameChat = chat.agent({
     explore: createExploreTool(chatId),
     run_tasks: createRunTasksTool(chatId),
     verify: createVerifyTool(chatId),
+    load_skill: createLoadSkillTool(),
   }),
 
   /**

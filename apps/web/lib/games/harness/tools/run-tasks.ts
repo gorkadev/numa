@@ -5,12 +5,18 @@ import {
   createScopedGameTools,
   ownershipOverlaps,
 } from "@/lib/games/harness/ownership"
-import { engineInstructions } from "@/lib/games/instructions/engine"
 import { runtimeInstructions } from "@/lib/games/instructions/runtime"
 import {
   workerInstructions,
   type WorkerFocus,
 } from "@/lib/games/instructions/roles/worker"
+import {
+  ALL_SKILL_NAMES,
+  mergeSkills,
+  ROLE_DEFAULT_SKILLS,
+  skillBodies,
+  type SkillName,
+} from "@/lib/games/skills/registry"
 
 import { renderEnvelope, type SubagentEnvelope } from "../envelope"
 import { ROLES } from "../roles"
@@ -20,6 +26,7 @@ import {
   type SubagentProgress,
 } from "../run-subagent"
 import { turnState } from "../turn-state"
+import { createLoadSkillTool } from "./load-skill"
 
 /** At most 4 tasks in one call (design.md decision 3). */
 const MAX_TASKS_PER_BATCH = 4
@@ -37,14 +44,11 @@ const MAX_TASKS_PER_BATCH = 4
 const POOL_CAP = 3
 
 /**
- * One task handed to `run_tasks`, matching design.md's Interfaces section.
- * `skills: SkillName[]` there names a type from `lib/games/skills/registry.ts`
- * (unit 7a), which does not exist yet — typed `string[]` here for now, the
- * same kind of forward-declaration gap unit 1b's `AgentUsageEntry.role` and
- * unit 2a's `SubagentProgress` documented for their own not-yet-built
- * dependencies. Nothing here reads `skills` today; unit 7b's own task list
- * already plans to widen a worker's pushed instructions with it, and nothing
- * about this field's shape needs to change for that.
+ * One task handed to `run_tasks`, matching design.md's Interfaces section:
+ * `skills: SkillName[]` (`lib/games/skills/registry.ts`, unit 7a) is the
+ * orchestrator's per-task extra skills, pushed into the worker's instructions
+ * on top of its role's defaults (`buildInstructions` below,
+ * `agent-skills`'s Orchestrator-Selected Extra Skills requirement).
  */
 export const taskSpecSchema = z.object({
   id: z
@@ -72,7 +76,12 @@ export const taskSpecSchema = z.object({
     .describe(
       "Ids of other tasks that must finish before this one starts — from this same batch, or from an earlier run_tasks call in this same turn. A dependency this call cannot resolve (an unknown id, a self-dependency, or a dependency cycle) blocks the task instead of running it."
     ),
-  skills: z.array(z.string()).default([]),
+  skills: z
+    .array(z.enum(ALL_SKILL_NAMES))
+    .default([])
+    .describe(
+      `Extra skills to push into this worker's instructions on top of its role's defaults, when this task needs one its role does not already carry. One or more of: ${ALL_SKILL_NAMES.join(", ")}.`
+    ),
 })
 
 export type TaskSpec = z.infer<typeof taskSpecSchema>
@@ -194,24 +203,30 @@ function describeSchedulerError(error: unknown): string {
 /**
  * A worker's whole system prompt: the shared worker body plus its focus
  * section (`instructions/roles/worker.ts`), the sandbox environment
- * (`instructions/runtime.ts`), then the full engine instructions
- * (`instructions/engine.ts`) — matching design.md's role catalogue
- * Instructions column ("roles/worker + focus, runtime, ...").
+ * (`instructions/runtime.ts`), then its skills — matching design.md's role
+ * catalogue Instructions column ("roles/worker + focus, runtime, defaults ∪
+ * task skills, inlined design, task").
  *
- * Design.md's own column continues "..., defaults ∪ task skills, inlined
- * design, task": the skills registry (unit 7a/7b) and `.numa/design.md`
- * (unit 8's `submit_plan`) do not exist yet, so neither is available to
- * inline here. Until then every worker gets the FULL engine instructions —
- * the same ones the orchestrator itself still gets in full pre-unit-7 — and
+ * `focus` doubles as the `RoleId` key into `ROLE_DEFAULT_SKILLS` (`WorkerFocus`
+ * is exactly `"gameplay" | "visuals" | "audio"`, the same three roles
+ * `run_tasks` ever dispatches), merged with this task's own `skills` extras
+ * (`mergeSkills`: defaults first, in registry order, then any extra not
+ * already among them). `.numa/design.md` (unit 8's `submit_plan`) does not
+ * exist yet, so there is no separately inlined design body to add here —
  * `task.goal` (`taskSpecSchema` above: "goal, procedure, constraints,
- * done-when") is the worker's complete, self-contained brief in place of a
- * separately inlined design body.
+ * done-when") is still the worker's complete, self-contained brief.
  */
-function buildInstructions(displayName: string, focus: WorkerFocus): string {
+function buildInstructions(
+  displayName: string,
+  focus: WorkerFocus,
+  extraSkills: SkillName[]
+): string {
+  const skills = mergeSkills(ROLE_DEFAULT_SKILLS[focus], extraSkills)
+
   return [
     workerInstructions(displayName, focus),
     runtimeInstructions.content,
-    engineInstructions.content,
+    skillBodies(skills),
   ].join("\n\n")
 }
 
@@ -318,8 +333,14 @@ export function createRunTasksTool(gameId: string): Tool {
 
         const run = runSubagent({
           role,
-          instructions: buildInstructions(role.displayName, task.role),
-          tools: createScopedGameTools(gameId, task.owns),
+          instructions: buildInstructions(role.displayName, task.role, task.skills),
+          /**
+           * Scoped file tools plus `load_skill` (design.md's role catalogue:
+           * "gameplay / visuals / audio ... scoped tools, load_skill") — the
+           * fallback for a skill neither the role's defaults nor this task's
+           * own `skills` extra covers.
+           */
+          tools: { ...createScopedGameTools(gameId, task.owns), load_skill: createLoadSkillTool() },
           prompt: buildPrompt(task),
           abortSignal,
         })

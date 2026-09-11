@@ -819,6 +819,156 @@ apply batch.
    assertion at each use, keeping the "both tools always exist" knowledge in
    one named constant (`EXPLORER_TOOL_NAMES`) instead.
 
+## Unit 7b — `loadSkill` tool + role defaults wiring (PR 11)
+
+Branch: `agent-harness/7b-load-skill` (stacked on
+`agent-harness/7a-skills-registry`).
+
+- [x] 7b.1 Create `apps/web/lib/games/harness/tools/load-skill.ts`
+- [x] 7b.2 Delete `apps/web/lib/games/instructions/engine.ts`
+- [x] 7b.3 Modify `apps/web/lib/games/instructions/index.ts` (+
+      `apps/web/lib/games/harness/tools/run-tasks.ts`, `trigger/chat.ts`,
+      `lib/games/skills/registry.ts` — see Deviation 1 below)
+
+3/3 tasks in unit 7b complete. Units 8–10b remain (`[ ]`), unassigned to this
+apply batch.
+
+### Files Changed
+
+| File | Action |
+|---|---|
+| `apps/web/lib/games/harness/tools/load-skill.ts` | Created |
+| `apps/web/lib/games/instructions/engine.ts` | Deleted |
+| `apps/web/lib/games/instructions/index.ts` | Modified |
+| `apps/web/lib/games/skills/registry.ts` | Modified |
+| `apps/web/lib/games/harness/tools/run-tasks.ts` | Modified |
+| `apps/web/trigger/chat.ts` | Modified |
+
+### Deviations from Design
+
+1. **Task 7b.3's own wording ("Modify `instructions/index.ts`") undersells
+   this task's real scope, which the apply prompt's own "Read first" section
+   flagged in advance.** `instructions/index.ts` only ever built the
+   ORCHESTRATOR's system prompt; a worker's instructions are assembled
+   entirely in `harness/tools/run-tasks.ts`'s own `buildInstructions`
+   (unit 3), which is where "workers get role defaults ∪ `TaskSpec.skills`"
+   actually had to land. `trigger/chat.ts` also needed the `load_skill`
+   tool declared and gated (design.md's role catalogue: orchestrator gets
+   `load_skill`, matching every other dispatch tool's `PHASE_TOOLS`/
+   `activeTools` treatment) — a wiring point design.md's own File Changes
+   table for unit 7 does not list, the same kind of gap 1b/1c/2a each
+   documented for their own units. `lib/games/skills/registry.ts` gained two
+   new exports (`skillBodies`, `mergeSkills`) rather than duplicating the
+   join/dedupe logic at both call sites (the orchestrator's and a worker's).
+2. **`skillBodies`/`mergeSkills` live in `registry.ts`, not a new module.**
+   Both are small, pure functions over the registry's own data
+   (`SKILLS`, `SkillName`), and `registry.ts` already owns "what counts as a
+   known skill" (`isSkillName`, unit 7a) — adding "how a role's skill list is
+   composed" to the same file keeps one owner for both concerns, rather than
+   splitting registry data from registry composition logic across two files
+   nothing else needed split.
+3. **`taskSpecSchema.skills` is now `z.array(z.enum(ALL_SKILL_NAMES))`**, not
+   `z.array(z.string())` as unit 3's original placeholder had it (documented
+   there as a forward-declaration gap, per this apply prompt's own
+   instruction to tighten it). A task naming an unknown skill now fails
+   `run_tasks`' own input validation before dispatch, the same channel every
+   other schema violation on this tool already uses, rather than silently
+   reaching a worker whose `load_skill` call for that name would return
+   `{ error }` anyway — catching it earlier is strictly better feedback to
+   the orchestrator's own model.
+4. **`load_skill` is NOT added to `tool-parts.ts`'s `TOOL_LABELS`.** Neither
+   task 7b.1 nor design.md's File Changes table for unit 7 names
+   `tool-parts.ts` (unlike unit 2b's explicit `tool-parts.ts` task for
+   `explore`), and the apply prompt scoped this batch to tasks 7b.1–7b.3
+   only. A `load_skill` call still renders correctly — `toolLabel`'s own
+   generic fallback (`labels ?? { active: name, done: name, failed: ...}`)
+   shows the raw tool name rather than a crafted verb — which is acceptable
+   for a tool design.md itself calls a rare fallback, not a primary player-
+   visible action. Flagged here for whoever picks up a UI polish pass later,
+   the same way unit 7a flagged its own `ROLE_DEFAULT_SKILLS` judgment call.
+
+None of these change what `agent-skills`'s Orchestrator-Selected Extra
+Skills, `loadSkill` Fallback With Capped/Truncated Output, Unknown Skill
+Name Returns an Error, or No Shell Execution Exposed requirements ask for;
+all are implementation-level consequences of wiring a tool and a skill
+composition rule into the two places (`trigger/chat.ts`'s tool set,
+`run-tasks.ts`'s prompt assembly) that tasks.md's own wording under-scoped.
+
+### Orchestrator prompt identity check (task 7b.3's own requirement)
+
+Verified the orchestrator's system prompt is byte-identical to before this
+unit, per the apply prompt's explicit instruction:
+
+1. Extracted the pre-this-unit `engineInstructions.content` string by
+   running `git show agent-harness/6-verify-role:apps/web/lib/games/instructions/engine.ts`
+   into a standalone file and evaluating it with
+   `node --experimental-strip-types` (Node 26; `import type` erased,
+   confirmed no runtime import needed beyond the file's own literal —
+   `agent-harness/6-verify-role` and 7a's tip both hold the exact same
+   `engine.ts`, since 7a never touched it, so this is the same content the
+   orchestrator has always received). Length: 10,010 characters.
+2. Extracted the new `skillBodies(ORCHESTRATOR_DEFAULT_SKILLS)` output by
+   copying `lib/games/skills/*.ts` to a scratch directory, rewriting each
+   relative import to carry an explicit `.ts` extension (required for
+   Node's ESM resolver, not for `tsc`), dropping the one type-only `RoleId`
+   import (erased by stripping either way, and its module lives behind a
+   `@/` path alias Node cannot resolve on its own), and evaluating the
+   result the same way. Length: 10,010 characters, in the expected order
+   (`engine-core, engine-utils, engine-movement, engine-scene,
+   engine-feedback, engine-audio, engine-systems, engine-reference`).
+3. `diff` on the two extracted text files reported no differences, and
+   `shasum -a 256` on both files produced the identical digest
+   (`f611bd22b2b443a3dbdf332dddbf5beab4cfe9f5d5e69f3d726478f045289d1d`).
+   The orchestrator's `gameInstructions` array is therefore byte-identical
+   to before this unit: same `workflowInstructions`/`runtimeInstructions`
+   entries (untouched), and the third entry's `{ role: "system", content }`
+   is the exact same `role` and now-proven-identical `content`.
+
+### Work Unit Evidence
+
+| Evidence | Value |
+|---|---|
+| Focused command | `pnpm turbo typecheck --filter=web` → exit 0 (`web` fresh, `@workspace/ui`/`@workspace/db` cache-hit, both unchanged by this unit). `pnpm lint` run directly inside `apps/web` → 0 errors, the same 13 pre-existing warnings established as the baseline in unit 7a. No new warning from any file this unit touched or created. |
+| Runtime harness | N/A in this apply session (no `trigger dev` run by the executor; `HARNESS_PHASES` stays off, so `load_skill` is declared but not in `activeTools` on any real turn). Manual scenario for the user, per tasks.md's own row for this unit: set `HARNESS_PHASES=true` in dev, dispatch a worker via `run_tasks` naming a task-only skill outside its role's defaults (e.g. an `audio` task with `skills: ["engine-reference"]`), and confirm that skill's body appears in the worker's system prompt alongside its defaults; separately, have the orchestrator or a worker call `load_skill` with an unknown name and confirm it gets back `{ error }` listing the 8 valid skill names, never an empty or fabricated result. |
+| Rollback boundary | Revert `harness/tools/load-skill.ts` (new), the `instructions/index.ts`/`run-tasks.ts`/`trigger/chat.ts` diffs, the `registry.ts` addition, and restore `instructions/engine.ts` from `agent-harness/7a-skills-registry`. Restoring `engine.ts` and reverting `instructions/index.ts`'s import back to it, and `run-tasks.ts`'s `buildInstructions` back to `engineInstructions.content`, fully restores unit 7a's own end state — nothing outside this unit's own 6 files reads `skillBodies`/`mergeSkills`/`createLoadSkillTool` yet. |
+
+### Issues Found
+
+None.
+
+### Workload / PR Boundary
+
+- Mode: stacked-to-main chained PR slice (PR 11 of 15)
+- Current work unit: 7b — `loadSkill` tool + role defaults wiring
+- Boundary: starts from `agent-harness/7a-skills-registry`, ends with
+  `instructions/engine.ts` gone, the orchestrator's prompt proven
+  byte-identical to before, and every worker's instructions built from
+  `ROLE_DEFAULT_SKILLS[role] ∪ TaskSpec.skills` instead of the full engine
+  reference; unit 8's planner and routing are untouched
+- **Authored changed lines: 473** (194 insertions + 279 deletions across 6
+  files — 1 new, 1 deleted, 4 modified — per `git diff --cached --stat`,
+  excluding `openspec/**` and the pre-existing unrelated
+  `apps/web/next.config.ts` diff). This is **over the 400-line budget**,
+  consistent with every other unit shipped in this change so far (1a: 712,
+  1b: 523, 1c: 569, 2a: 509, 7a: 476). Most of the deletion count is
+  `engine.ts`'s own 246 lines going away in one commit with the file that
+  replaces its content already having landed in 7a — task 7b.2 cannot
+  delete less of it and task 7b.3 cannot wire workers/orchestrator to the
+  registry with less code without skipping the identity-check documentation
+  or the deviation notes above, which the apply contract forbids trimming
+  for budget. **Recommendation: `size:exception` for this slice**,
+  consistent with every over-budget unit already shipped in this change.
+
+### Status
+
+3/3 tasks in unit 7b complete. Ready for `sdd-verify`. Report the
+`size:exception` line-count risk, the `tasks.md` scope gap this unit's
+Deviation 1 documents (`trigger/chat.ts` and `run-tasks.ts` needed changes
+task 7b.3's own wording did not name), and the deliberate non-change to
+`tool-parts.ts` (Deviation 4) to the user/maintainer before merge. Per the
+interactive pace instruction, this batch stops here; unit 8 (size routing +
+phase flow) is a separate apply.
+
 None of these change what `agent-orchestration`'s Role dispatch carries
 fixed parameters requirement, or the explorer scenario it names, ask for —
 all are TypeScript- and installed-SDK-version mechanics of wiring unit 2a's

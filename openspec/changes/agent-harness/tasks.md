@@ -292,11 +292,11 @@ Satisfies `agent-skills`: Orchestrator-Selected Extra Skills, `loadSkill`
 Fallback With Capped/Truncated Output, Unknown Skill Name Returns an Error, No
 Shell Execution Exposed.
 
-- [ ] 7b.1 Create `apps/web/lib/games/harness/tools/load-skill.ts`: ≤ 6k-char
+- [x] 7b.1 Create `apps/web/lib/games/harness/tools/load-skill.ts`: ≤ 6k-char
       cap with truncation marker; unknown name → `{ error }` listing valid
       names; no fs, no `bash` or shell-execution tool anywhere in this path.
-- [ ] 7b.2 Delete `apps/web/lib/games/instructions/engine.ts`.
-- [ ] 7b.3 Modify `apps/web/lib/games/instructions/index.ts`: orchestrator
+- [x] 7b.2 Delete `apps/web/lib/games/instructions/engine.ts`.
+- [x] 7b.3 Modify `apps/web/lib/games/instructions/index.ts`: orchestrator
       keeps **all** engine skills pushed (prompt stays identical) until unit
       8; workers get role defaults ∪ `TaskSpec.skills`.
 
