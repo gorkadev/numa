@@ -218,7 +218,7 @@ Parallel Dispatch Requires Disjoint Ownership (sequential half);
 
 ## Unit 4 — Parallel dispatch (gated)
 
-- [ ] 4.0 (GATE) Spike: run concurrent Gemini-on-Vertex calls from
+- [x] 4.0 (GATE) Spike: run concurrent Gemini-on-Vertex calls from
       `ToolLoopAgent`s in dev; record findings (works / needs serialization)
       in `docs/research/spikes/gemini-parallel.md`.
 
