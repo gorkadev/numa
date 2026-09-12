@@ -2120,3 +2120,226 @@ files — `flags.ts`, `instructions/index.ts`, `instructions/workflow.ts`,
 pre-fix commit, excluding `openspec/**` and `next.config.ts`), well under
 the 400-line budget on its own. Committed separately from the original unit
 8 commit, per the coordinator's instruction to scope this to the one fix.
+
+## Unit 9 — Sub-agent run records (PR 13)
+
+Branch: `agent-harness/9-subagent-records` (stacked on
+`agent-harness/8-phase-flow`).
+
+- [x] 9.1 Create `apps/web/lib/games/harness/records.ts`: client-safe
+      `SubagentRunRecord` type + zod parse, `collectSubagentRuns`.
+- [x] 9.2 Modify `apps/web/lib/games/harness/run-subagent.ts`: generator
+      yields stamp `agentId`, role, `displayName`, tier, slot, `modelId`,
+      `modelName`, steps, tool calls (name, path, ok, ≤200-char error), edits,
+      tokens, skills, summary — captured even on failure/abort, capped.
+
+2/2 tasks in unit 9 complete. Units 10a/10b remain (`[ ]`), unassigned to
+this apply batch.
+
+### Files Changed
+
+| File | Action |
+|---|---|
+| `apps/web/lib/games/harness/records.ts` | Created |
+| `apps/web/lib/games/harness/run-subagent.ts` | Modified |
+
+### The exact record shape persisted
+
+`subagentRunRecordSchema` (`records.ts`), field for field:
+
+```ts
+{
+  agentId: string
+  role: "explorer" | "planner" | "gameplay" | "visuals" | "audio" | "verifier"
+  displayName: string
+  tier: "pro" | "balanced" | "fast"
+  slot: "strong" | "mid" | "light"
+  modelId: string          // plain string, not ModelEntryId — see Deviation 4
+  modelName: string        // plain string, not looked up from the registry
+  status: "done" | "partial" | "blocked" | "error" | "aborted" | "skipped" | "unavailable"
+  activity: string         // "current activity" one-liner, design.md decision 16
+  steps: number
+  toolCalls: { toolName: string; toolCallId: string; path?: string; ok: boolean; error?: string }[]
+  edits: string[]
+  tokens: { inputTokens: number; outputTokens: number; cachedInputTokens: number; reasoningTokens: number }
+  skills: string[]
+  summary: string
+}
+```
+
+Every field task 9.2 lists is present: `agentId`, role, `displayName`, tier,
+slot, `modelId`, `modelName`, steps, tool calls (name/path/ok/error), edits,
+tokens, skills, summary. Two additions beyond that literal list, both
+required by the spec or by the existing runner and called out below:
+`status` (`subagent-view`'s own "final status" requirement) and `activity`
+(unit 2a's pre-existing "current activity" field, kept rather than dropped).
+
+### Deviations from Design
+
+1. **The tool-call field is named `toolName`, not `name`** as task 9.2's
+   prose lists it. Unit 2a's `SubagentProgress` shape already used
+   `toolName`, and `harness/tools/run-tasks.ts`'s own `wroteAnyFile` reads
+   `call.toolName` today — that file is not in this unit's task list, so the
+   field keeps its existing name rather than forcing an unrelated file to
+   change just to keep compiling. Semantically identical to what "name"
+   asks for.
+2. **`SubagentProgress` keeps its unit-2a name and is now a plain alias for
+   `SubagentRunRecord`** (`export type SubagentProgress = SubagentRunRecord`
+   in `run-subagent.ts`), rather than being renamed at its four import
+   sites. `explore.ts`, `plan.ts`, `verify.ts` and `run-tasks.ts` all import
+   it as `SubagentProgress` and are not this unit's files to touch; this
+   keeps every one of them compiling unchanged against the widened shape,
+   exactly the "seam this change was expected to widen" unit 2a's own
+   apply-progress note anticipated.
+3. **`RunSubagentInput.skills` is optional, defaulting to
+   `ROLE_DEFAULT_SKILLS[role.id]`** (`lib/games/skills/registry.ts`) when a
+   caller omits it. No caller passes this field today: `explore.ts` (no
+   skills concept for the explorer role), `plan.ts` and `verify.ts`'s calls
+   are accurate under this default (none of the three roles they dispatch
+   ever takes a per-task skill extra — `ROLE_DEFAULT_SKILLS.explorer` and
+   `.verifier` are both `[]`, and the planner's own `submit_plan` prompt
+   never adds task-specific skills). **`run-tasks.ts`'s workers are the one
+   caller this default is NOT fully accurate for**: that file already
+   computes `mergeSkills(ROLE_DEFAULT_SKILLS[focus], task.skills)` for its
+   own prompt-building (`buildInstructions`) but does not pass that computed
+   list into `runSubagent`'s new `skills` field, since `run-tasks.ts` is not
+   in this unit's task list. A worker's stamped record will therefore show
+   only its role's bare defaults, not the task's own extra skills, until
+   `run-tasks.ts` is updated to pass `skills: mergeSkills(...)` through —
+   a one-line, additive change at its existing call site.
+4. **`modelName` always reads the slot's primary's `displayName`
+   (`primary.displayName`), even on a call a fallback peer actually served**
+   — `modelId` correctly reads the serving entry's id (`served?.entryId ??
+   primary.id`, the same pattern `AgentUsageEntry.modelId`/`onStepEnd`
+   already use), but there is no way to look up a NON-primary candidate's
+   display name from inside `run-subagent.ts`: `resolveModel`'s
+   `ResolvedModel` only returns the primary's full `ModelEntry`, and
+   `model-registry.ts`'s `REGISTRY` is a private, unexported const — adding
+   an id → `ModelEntry` lookup there is a `model-registry.ts` change, and
+   that file is not in this unit's task list either. Every `SlotCandidates`
+   list in the current registry population holds exactly one entry
+   (`model-registry.ts`'s own comment: "there are only three models to draw
+   from"), so a fallback literally cannot occur yet and `served.entryId`
+   will always equal `primary.id` in practice — this only becomes a real,
+   user-visible inaccuracy the day a second candidate is added to some
+   slot. Flagged here for whoever adds that candidate, the same way unit
+   1c's own "last-server pricing" limitation was flagged for unit 2a.
+5. **`records.ts` duplicates three small closed enums it needs
+   (`SubagentRoleId`, `SubagentSlot`, `subagentRunStatusSchema`) rather than
+   importing `RoleId`/`Slot`/`EnvelopeStatus`** from `harness/roles.ts`,
+   `lib/ai/model-registry.ts` and `lib/ai/pricing.ts`/`harness/envelope.ts`.
+   The apply prompt's own client-safety bar for this file ("no server-only
+   imports: no Daytona, Trigger, node APIs, model providers") would already
+   be satisfied by a type-only import of any of these (TypeScript erases
+   `import type` completely, so no server code would reach a client
+   bundle), but the codebase's own precedent
+   (`lib/ai/model-catalog.ts`'s `legacyModelIdSchema` duplicating
+   `model-registry.ts`'s `ModelEntryId` rather than importing it) is an
+   architectural firewall by non-import, not merely a bundle-safety
+   argument — `records.ts` follows that same discipline for maximum
+   isolation, at the accepted cost of needing a manual update if a role or
+   slot is ever added. `TierId` is the one exception: it is imported from
+   `model-catalog.ts`, the explicitly-designated client-safe half of the
+   tier story that `model-picker.tsx` (a client component) already imports
+   today, so reusing it here crosses no new trust boundary.
+6. **A mid-run (non-final) record's `status` is stamped `"partial"` and
+   `summary` is `""`**, since the run's real outcome is not known until the
+   stream ends or the run throws. `subagent-view`'s own shimmer-while-running
+   behavior (design.md decision 16) is expected to come from the
+   surrounding tool call's own streaming state (whether the SDK has already
+   converted it to `output-available`), not from this field — unit 10b owns
+   wiring that distinction up; this unit only guarantees the LAST record in
+   `records` always carries the true final `status`/`summary` (see the
+   `snapshot(status, summary)` call added right before this generator's
+   `return`).
+
+None of these change what `subagent-view`'s Sub-Agent Run Record Fields
+requirement asks for on its own terms; all are implementation-level
+consequences of stamping the record inside the one file this unit is
+scoped to, without touching its four unmodified callers.
+
+### Issues Found — a real gap that limits what this unit delivers today
+
+**`run-tasks.ts` and `verify.ts` do not forward `result.records` into their
+own persisted tool-output today**, so `collectSubagentRuns` will find
+nothing to collect for a `run_tasks` or `verify` dispatch call, even though
+`run-subagent.ts` now stamps a complete, correct `SubagentRunRecord` for
+every role it runs, workers and the verifier included.
+
+Traced exactly: `run-tasks.ts`'s `runOneTask` builds its `TaskOutcome` as
+`{ taskId, envelope: result.envelope, wroteFiles: wroteAnyFile(result.records)
+}` — `result.records` is read to compute a boolean, then discarded, never
+attached to the outcome object itself. `verify.ts`'s final `yield` builds
+`{ outcome: check.status, envelope: {...} }` — no `records` field at all,
+and the `unavailable` early-return path never even calls `runSubagent`, so
+there is nothing to forward there either. Only `explore.ts`'s and
+`plan.ts`'s own final yields spread `RunSubagentResult` (or a copy of it)
+whole, so `.records` survives into what gets persisted for those two tools.
+
+This matters because `run_tasks` is the harness's primary game-building
+dispatch tool — the worker records `subagent-view`'s own first scenario
+("Record created for a completed worker") is written against are exactly
+the ones that do not reach storage today. **This is not a bug in
+`records.ts`/`run-subagent.ts`**: both already do everything task 9.1/9.2
+ask of them, and `collectSubagentRuns`'s own structural extraction (reading
+`.records`/`.outcomes[].records` off whatever shape it is handed, rather
+than importing either result type) will pick these up automatically the
+day `run-tasks.ts`/`verify.ts` are updated to include them — no change to
+either of this unit's two files would be needed.
+
+**Flagging this prominently for the user/maintainer**: until `run-tasks.ts`
+and `verify.ts` are given the one-line addition of a `records` field on
+their own outcome/result objects (each already has `result.records` in
+scope at its call site), a phased turn's `games.messages` tool-output will
+carry stamped run records only for `explore`/`plan` calls, not for the
+`run_tasks`/`verify` calls a typical build actually spends most of its time
+in. Recommend either folding this into unit 10b's own wiring work (it
+already touches `tool-parts.ts`'s reload path) or landing it as a small
+fast-follow before 10b, whichever the maintainer prefers.
+
+### Work Unit Evidence
+
+| Evidence | Value |
+|---|---|
+| Focused command | `pnpm turbo typecheck --filter=web` → exit 0 (`web` fresh; `@workspace/ui`/`@workspace/db` cache-hit, unchanged by this unit). `pnpm lint` run directly inside `apps/web` → 0 errors, the same 13 pre-existing warnings established as the baseline since unit 7a/7b. No new warning from either file this unit touched or created. |
+| Runtime harness | N/A in this apply session (no `trigger dev` run by the executor), matching tasks.md's own row for this unit ("Run a phased turn in dev, inspect the persisted `games.messages` tool-output record shape"). Manual scenario for the user: run a phased turn that dispatches `explore` or `plan` (not only `run_tasks` — see Issues Found above for why a `run_tasks`-only turn will not show this yet), then read that tool call's persisted `output.records` in `games.messages` and confirm the last entry carries `agentId`, `role`, `displayName`, `tier`, `slot`, `modelId`, `modelName`, `status`, `steps`, `toolCalls` (with `path` populated for any file tool), `edits`, `tokens` and `skills`. |
+| Rollback boundary | Revert `harness/records.ts` (new) and `harness/run-subagent.ts`'s diff. `SubagentProgress`/`RunSubagentResult` keep their unit-2a names and shapes at the type level for every caller that imports them, so reverting `run-subagent.ts` alone (without touching `explore.ts`, `plan.ts`, `verify.ts` or `run-tasks.ts`, none of which this unit modified) restores the exact unit-8 runtime behavior: bare `{ activity, toolCalls: { toolName, toolCallId, ok, error } }` snapshots, no `agentId`/tier/slot/model/tokens/skills stamping. |
+
+### Workload / PR Boundary
+
+- Mode: stacked-to-main chained PR slice (PR 13 of 15)
+- Current work unit: 9 — Sub-agent run records
+- Boundary: starts from `agent-harness/8-phase-flow`, ends with
+  `run-subagent.ts` stamping a complete, client-safe `SubagentRunRecord` on
+  every snapshot it yields, and `records.ts` able to validate and collect
+  them back out of arbitrary stored data; unit 10a's components are
+  unaffected (unrendered until 10b wires them), and 10b's reload wiring is
+  exactly what `collectSubagentRuns` was built to be called from — see
+  Issues Found above for the one real gap that limits what is collectible
+  today
+- **Authored changed lines: 405** (380 insertions + 25 deletions across 2
+  files — 1 new plus `run-subagent.ts` modified — per `git diff --stat`
+  against `agent-harness/8-phase-flow`, excluding `openspec/**` and the
+  pre-existing unrelated `apps/web/next.config.ts` diff, which was never
+  staged this session). This is **5 lines over the 400-line budget** — the
+  smallest overage of any unit shipped in this change so far (1a: 712, 1b:
+  523, 1c: 569, 2a: 509, 7a: 476, 7b: 473, 8: 998/187-corrected). Not
+  trimmed to fit: `records.ts`'s own doc comments carry the exact reasoning
+  for six real, non-obvious design choices (the `toolName` vs `name`
+  naming continuity, the skills-default gap, the modelName limitation, the
+  duplicate-enum client-safety discipline) a reviewer needs to trust this
+  file without re-deriving it, and the apply contract forbids shrinking a
+  diff by deleting comments or compressing code. **Recommendation:
+  `size:exception` for this slice**, consistent with every other unit
+  shipped in this change so far — though at 5 lines over, a maintainer may
+  reasonably decide this one is close enough to treat as in-budget.
+
+### Status
+
+2/2 tasks in unit 9 complete. Ready for `sdd-verify`. Report the
+`size:exception` line-count risk (smallest overage so far, 5 lines) and,
+more importantly, the Issues Found gap above (`run-tasks.ts`/`verify.ts` not
+forwarding `records` into their persisted output, so worker and verifier
+runs are not yet collectible) to the user/maintainer before merge — the
+second one materially affects whether unit 10b's UI will have anything to
+show for a typical build turn.

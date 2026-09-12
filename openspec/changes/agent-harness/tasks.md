@@ -324,9 +324,9 @@ Protections Preserved (plan half, decision 12).
 
 Satisfies `subagent-view`: Sub-Agent Run Record Fields.
 
-- [ ] 9.1 Create `apps/web/lib/games/harness/records.ts`: client-safe
+- [x] 9.1 Create `apps/web/lib/games/harness/records.ts`: client-safe
       `SubagentRunRecord` type + zod parse, `collectSubagentRuns`.
-- [ ] 9.2 Modify `apps/web/lib/games/harness/run-subagent.ts`: generator
+- [x] 9.2 Modify `apps/web/lib/games/harness/run-subagent.ts`: generator
       yields stamp `agentId`, role, `displayName`, tier, slot, `modelId`,
       `modelName`, steps, tool calls (name, path, ok, ≤200-char error), edits,
       tokens, skills, summary — captured even on failure/abort, capped.
