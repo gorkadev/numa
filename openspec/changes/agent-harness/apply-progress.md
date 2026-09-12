@@ -2715,7 +2715,7 @@ is the container for run-record derivation and renders the actual
 |---|---|
 | Focused command | `cd apps/web && npx tsc --noEmit -p .` (fresh) → exit 0, no output. `cd apps/web && pnpm lint` → 0 errors, the same 13 pre-existing warnings established since unit 7a/7b — no delta, no new warning from any of the 5 touched files. |
 | Runtime harness | N/A in this apply session (no `trigger dev` run by the executor). Manual scenario for the user: with `HARNESS_PHASES` on (default since unit 8), run a phased turn that dispatches `run_tasks` with 2+ tasks; confirm (a) one shimmering `SubagentEntry` per worker appears inline in the assistant message instead of a generic "Building" tool row, each labelled `displayName · current activity`; (b) the thread-header bot-icon button appears once the first run exists and opens a right `Sheet` listing every run so far; (c) clicking an inline entry (running or finished) opens the same Sheet focused on that run's detail (model, tier, slot, tool calls, edits, tokens); (d) reload the page mid-thread after the turn completes and confirm the same inline entries and Sheet detail render identically from the persisted `games.messages` output. |
-| Rollback boundary | Revert `chat-message.tsx`, `chat-thread.tsx`, `game-chat.tsx` and the `tool-parts.ts`/`records.ts` diff (one commit, `c032787`). No other unit's code imports the new `DISPATCH_TOOL_NAMES`/`collectThreadSubagentRuns`/`subagentRunsForPart` exports, so the revert is fully self-contained: dispatch tool parts fall back to the pre-10b generic `ToolGroup` rendering, the header button and inline entries disappear, and `records.ts`'s `candidateRecords` reverts to only matching the two wrapped shapes (no data loss — unit 9's persisted records are untouched either way). |
+| Rollback boundary | Revert both commits (`c032787`, `11f3372`): `chat-message.tsx`, `chat-thread.tsx`, `game-chat.tsx`, `tool-parts.ts`, `records.ts`, `run-tasks.ts`. No other unit's code imports the new `DISPATCH_TOOL_NAMES`/`collectThreadSubagentRuns`/`subagentRunsForPart`/`RunTasksProgress` exports, so the revert is fully self-contained: dispatch tool parts fall back to the pre-10b generic `ToolGroup` rendering, the header button and inline entries disappear, `run_tasks` reverts to its pre-fix one-progress-per-event yields, and `records.ts`'s `candidateRecords` reverts to matching only the wrapped shapes (no data loss — unit 9's persisted records are untouched either way). |
 
 ### Workload / PR Boundary
 
@@ -2724,13 +2724,41 @@ is the container for run-record derivation and renders the actual
 - Boundary: starts from `agent-harness/10a-subagent-view`, ends with the
   full `subagent-view` capability wired end to end (inline entries, header
   button, reload parity); no further unit depends on this one
-- **Authored changed lines: 233** (220 insertions + 13 deletions across 5
-  files, per `git diff --stat 311d0e4..HEAD -- . ':!openspec' ':!apps/web/next.config.ts'`).
-  **Well under the 400-line budget** — no `size:exception` needed, the
-  second unit in this change (after 10a) to land in budget.
+- **Authored changed lines (whole unit, both commits): 307** (264
+  insertions + 43 deletions across 6 files, per
+  `git diff --stat 311d0e4..HEAD -- . ':!openspec'`). **Well under the
+  400-line budget** — no `size:exception` needed.
+
+### Correction (parent-review, second commit `11f3372`)
+
+Parent review of the first commit found a real concurrency bug:
+`run_tasks`' preliminary yields carried one task's raw progress per event,
+and its "settled" event yielded only `{ outcomes: settledOutcomes() }` —
+settled tasks alone. With 2+ concurrent workers, any still-running worker's
+inline entry vanished the instant a DIFFERENT task in the batch settled,
+since the next yielded snapshot never mentioned it. Fixed by replacing the
+per-event payload with `RunTasksProgress = { runs: SubagentProgress[] }`: a
+`latestByTaskId` map holds each running task's latest snapshot, and every
+wake recomputes one full-batch array in dispatch order — a task's settled
+`record` once finished, else its latest live snapshot, absent while still
+waiting on `dependsOn`. The final `{ outcomes }` yield is untouched.
+`records.ts`'s `candidateRecords` gained a `value.runs` branch (each entry
+is already a bare record, pushed directly, symmetric with the existing
+`outcomes[].record` branch); the now-unused `TaskProgress` type was
+dropped. Order is preserved live (single-call `collectSubagentRuns` reads
+`runs` in the same `tasks`-array order `buildRunsSnapshot` built it) and
+after reload (`outcomes` is written at each task's original batch index, so
+`settledOutcomes()` is already dispatch-ordered — unchanged by this fix).
+
+Verification: `cd apps/web && npx tsc --noEmit -p .` → exit 0. `pnpm lint`
+→ 0 errors, same 13 pre-existing warnings, no delta.
+
+Final shapes: preliminary `{ runs: SubagentRunRecord[] }`; final
+`{ outcomes: { taskId, envelope, record?, wroteFiles }[] }` (unchanged).
 
 ### Status
 
-3/3 tasks in unit 10b complete. This is the final work unit in the
-`agent-harness` change — all 15 PR slices (1a through 10b) are now
-implemented. Ready for `sdd-verify` across the whole change.
+3/3 tasks in unit 10b complete, correction applied and verified. This is
+the final work unit in the `agent-harness` change — all 15 PR slices (1a
+through 10b) are now implemented. Ready for `sdd-verify` across the whole
+change.
