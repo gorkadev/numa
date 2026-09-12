@@ -2638,3 +2638,99 @@ unit in the change to land inside the 400-line budget with no
 `size:exception` needed. Unit 10b (wiring: header button, inline entry in
 `chat-message.tsx`, lifted `{ open, selectedRunId }` state, reload parsing in
 `tool-parts.ts`) is the final unit and a separate apply.
+
+## Unit 10b — Sub-agent view wiring (PR 15, final unit)
+
+Branch: `agent-harness/10b-subagent-wiring` (stacked on
+`agent-harness/10a-subagent-view`, at `311d0e4`). Commit `c032787`.
+
+- [x] 10b.1 Modify `apps/web/components/chat/chat-message.tsx`
+- [x] 10b.2 Modify `apps/web/components/chat/chat-thread.tsx`,
+      `components/game-chat.tsx`
+- [x] 10b.3 Modify `apps/web/lib/games/tool-parts.ts`
+
+3/3 tasks complete. This is the last unit in the change.
+
+### Files Changed
+
+| File | Action |
+|---|---|
+| `apps/web/lib/games/harness/records.ts` | Modified |
+| `apps/web/lib/games/tool-parts.ts` | Modified |
+| `apps/web/components/chat/chat-message.tsx` | Modified |
+| `apps/web/components/chat/chat-thread.tsx` | Modified |
+| `apps/web/components/game-chat.tsx` | Modified |
+
+### How live and persisted records merge
+
+`records.ts`'s `candidateRecords` (task 10b.3) now also treats the raw
+output value ITSELF as a candidate — `records.ts:174` (`const found:
+unknown[] = [value]`) — because a dispatch call's preliminary output
+(`explore`/`plan`/`verify`'s bare `SubagentProgress`, `run_tasks`' own
+`TaskProgress`) has no `record`/`outcomes` wrapper at all; `TaskProgress`'s
+extra `taskId` field parses away since zod's default object mode strips
+unknown keys. `tool-parts.ts:117-120` (`dispatchOutput`) reads a dispatch
+tool part's CURRENT `output` when `state === "output-available"` — the same
+field and state whether that output just streamed in live (`preliminary:
+true`) or was read back after a reload (the final, non-preliminary value) —
+so `subagentRunsForPart`/`collectThreadSubagentRuns` and `groupParts`'s new
+`"agent"` block all read identically before and after reload with no
+reload-specific code path. `collectSubagentRuns` (unit 9, unchanged logic)
+still dedupes by `agentId`, latest wins.
+
+### How the generic tool row is suppressed for dispatch tools
+
+`groupParts` (`tool-parts.ts`) now extracts `subagentRunsForPart(part)`
+before falling into the existing "tools" grouping branch. When a dispatch
+tool part (`explore`/`plan`/`run_tasks`/`verify`) has at least one
+extractable record, it opens (or extends) an `"agent"` block instead of a
+`"tools"` block — the same part can never be classified as both, so the
+generic `ToolMarker`/`ToolGroup` never renders for it. Only while a dispatch
+call has not produced its first snapshot yet (`records.length === 0`,
+before the sub-agent's first throttled yield) does it fall through to the
+generic tools branch, which is the brief "call started, no run entry to
+show yet" gap; it flips to an `"agent"` block automatically once the first
+record appears, on the same render. `load_skill` is a phase tool but not in
+`DISPATCH_TOOL_NAMES` (it never dispatches a sub-agent), so it is unaffected
+and keeps rendering as a plain tool marker.
+
+### Deviations from Design
+
+None from `design.md` decision 16 or the task list's literal file scope.
+One implementation choice worth flagging: the thread-header button's
+`{ open, selectedRunId }` state is lifted to `game-chat.tsx` (the file that
+already owns the header `<header>` element and its preview toggle), not to
+`chat-thread.tsx` itself — `chat-thread.tsx` owns the *records* (derived
+from its own `messages`) and reports back only a boolean
+(`onSubagentRunsChange`), mirroring the existing `onRevision` up-reporting
+shape already used for the preview pane. This keeps the container/
+presentational split task 10b.2 asked for: `game-chat.tsx` is the container
+for panel-open state and the presentational header button; `chat-thread.tsx`
+is the container for run-record derivation and renders the actual
+`SubagentSheet`, since only it has the `messages` the records come from.
+
+### Work Unit Evidence
+
+| Evidence | Value |
+|---|---|
+| Focused command | `cd apps/web && npx tsc --noEmit -p .` (fresh) → exit 0, no output. `cd apps/web && pnpm lint` → 0 errors, the same 13 pre-existing warnings established since unit 7a/7b — no delta, no new warning from any of the 5 touched files. |
+| Runtime harness | N/A in this apply session (no `trigger dev` run by the executor). Manual scenario for the user: with `HARNESS_PHASES` on (default since unit 8), run a phased turn that dispatches `run_tasks` with 2+ tasks; confirm (a) one shimmering `SubagentEntry` per worker appears inline in the assistant message instead of a generic "Building" tool row, each labelled `displayName · current activity`; (b) the thread-header bot-icon button appears once the first run exists and opens a right `Sheet` listing every run so far; (c) clicking an inline entry (running or finished) opens the same Sheet focused on that run's detail (model, tier, slot, tool calls, edits, tokens); (d) reload the page mid-thread after the turn completes and confirm the same inline entries and Sheet detail render identically from the persisted `games.messages` output. |
+| Rollback boundary | Revert `chat-message.tsx`, `chat-thread.tsx`, `game-chat.tsx` and the `tool-parts.ts`/`records.ts` diff (one commit, `c032787`). No other unit's code imports the new `DISPATCH_TOOL_NAMES`/`collectThreadSubagentRuns`/`subagentRunsForPart` exports, so the revert is fully self-contained: dispatch tool parts fall back to the pre-10b generic `ToolGroup` rendering, the header button and inline entries disappear, and `records.ts`'s `candidateRecords` reverts to only matching the two wrapped shapes (no data loss — unit 9's persisted records are untouched either way). |
+
+### Workload / PR Boundary
+
+- Mode: stacked-to-main chained PR slice (PR 15 of 15, final)
+- Current work unit: 10b — Sub-agent view wiring
+- Boundary: starts from `agent-harness/10a-subagent-view`, ends with the
+  full `subagent-view` capability wired end to end (inline entries, header
+  button, reload parity); no further unit depends on this one
+- **Authored changed lines: 233** (220 insertions + 13 deletions across 5
+  files, per `git diff --stat 311d0e4..HEAD -- . ':!openspec' ':!apps/web/next.config.ts'`).
+  **Well under the 400-line budget** — no `size:exception` needed, the
+  second unit in this change (after 10a) to land in budget.
+
+### Status
+
+3/3 tasks in unit 10b complete. This is the final work unit in the
+`agent-harness` change — all 15 PR slices (1a through 10b) are now
+implemented. Ready for `sdd-verify` across the whole change.
