@@ -1,6 +1,10 @@
 "use client"
 
-import { Alert01Icon, Tick02Icon } from "@hugeicons/core-free-icons"
+import {
+  Alert01Icon,
+  MinusSignCircleIcon,
+  Tick02Icon,
+} from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Marker,
@@ -40,6 +44,13 @@ export function subagentStatusLabel(status: SubagentRunStatus): string {
     case "running":
       return "Running"
   }
+}
+
+/** A tick only for `"done"`: a cancelled, partial or blocked run must not read as a success. */
+function statusIcon(status: SubagentRunStatus) {
+  if (status === "done") return Tick02Icon
+  if (status === "error") return Alert01Icon
+  return MinusSignCircleIcon
 }
 
 export type SubagentEntryProps = {
@@ -82,10 +93,8 @@ export function SubagentEntry({ record, onSelect }: SubagentEntryProps) {
       <MarkerIcon>
         {running ? (
           <Spinner />
-        ) : errored ? (
-          <HugeiconsIcon icon={Alert01Icon} strokeWidth={2} />
         ) : (
-          <HugeiconsIcon icon={Tick02Icon} strokeWidth={2} />
+          <HugeiconsIcon icon={statusIcon(record.status)} strokeWidth={2} />
         )}
       </MarkerIcon>
       <MarkerContent className={running ? "shimmer" : undefined}>
