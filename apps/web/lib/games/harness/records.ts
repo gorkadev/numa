@@ -163,16 +163,15 @@ export type SubagentRunRecord = z.infer<typeof subagentRunRecordSchema>
  * `SubagentRunRecord` inside one dispatch tool's output — live or persisted
  * — without importing any dispatch tool's exact result shape: `explore`,
  * `plan` and `verify`'s own final yield carries one `record` alongside
- * `envelope` (`run-subagent.ts`'s `RunSubagentResult`), and `run_tasks`' own
- * `{ outcomes: [...] }` batches one `record` per task. Reading structurally
- * means this keeps working unchanged if a dispatch tool's own result shape
- * changes shape around these two field names.
+ * `envelope` (`run-subagent.ts`'s `RunSubagentResult`), `run_tasks`' own
+ * final `{ outcomes: [...] }` batches one `record` per task, and its
+ * PRELIMINARY `{ runs: [...] }` (unit 10b's correction) already holds one
+ * bare record per still-dispatched task directly. Reading structurally means
+ * this keeps working unchanged if a dispatch tool's own result shape changes
+ * around these field names.
  *
- * `value` itself is also a candidate (unit 10b): a dispatch call's
- * PRELIMINARY output, before its final wrapped shape lands, is a bare
- * `SubagentProgress`/`TaskProgress` — no `record`/`outcomes` wrapper at all.
- * `TaskProgress`'s own extra `taskId` field parses away harmlessly, since
- * zod's default object parsing strips unknown keys.
+ * `value` itself is also a candidate: `explore`/`plan`/`verify`'s own
+ * preliminary output is a bare `SubagentProgress`, no wrapper at all.
  */
 function candidateRecords(raw: unknown): unknown[] {
   if (typeof raw !== "object" || raw === null) return []
@@ -190,6 +189,8 @@ function candidateRecords(raw: unknown): unknown[] {
       if (record !== undefined) found.push(record)
     }
   }
+
+  if (Array.isArray(value.runs)) found.push(...value.runs)
 
   return found
 }

@@ -83,15 +83,15 @@ type TaskOutcome = {
 export type RunTasksResult = { outcomes: TaskOutcome[] }
 
 /**
- * A preliminary progress snapshot tagged with the task it came from.
- * `run-subagent.ts`'s own `SubagentProgress` carries no id — unit 2a/2b never
- * needed one, since only one worker was ever in flight at a time. Now that a
- * batch can run several workers at once, every streamed snapshot needs an
- * attribution key so a caller can tell them apart; `taskId` is that key
- * (the same id `TaskOutcome` reports back by), added here rather than in
- * `run-subagent.ts` itself, which has no notion of a "task" at all.
+ * The preliminary shape: one full-batch snapshot, in dispatch order, of
+ * every task that has started — its settled `record` once finished, its
+ * latest live snapshot while still running. A task still waiting on
+ * `dependsOn` is simply absent. Replaces a first version that yielded one
+ * task's raw progress (or only the settled tasks) per event, which made a
+ * concurrent batch's inline entries flicker: a still-running worker vanished
+ * from the thread the moment any OTHER worker in the batch settled.
  */
-type TaskProgress = SubagentProgress & { taskId: string }
+type RunTasksProgress = { runs: SubagentProgress[] }
 
 /** Reported when the turn's abort signal already fired before a task got its turn to start. */
 function abortedBeforeStartOutcome(task: TaskSpec): TaskOutcome {
@@ -208,27 +208,30 @@ export function createRunTasksTool(gameId: string): Tool {
      * batch.
      *
      * Progress and completion from every concurrently running worker are
-     * relayed through one small event queue (`pushEvent`/`settle`) so they
-     * interleave in the order they actually happen, each snapshot tagged
-     * with its `taskId` for attribution. The AI SDK's own tool executor only
-     * observes the LAST value this generator yields (the same guarantee
-     * `explore.ts` documents), so the final `{ outcomes }` — yielded once
-     * more after the scheduler resolves — is what the model actually sees;
-     * every earlier yield is a live preliminary snapshot for the stored tool
-     * output and the thread's own rendering.
+     * relayed through one small wake queue (`pushEvent`/`settle`); every
+     * wake re-derives the full-batch `RunTasksProgress` from `outcomes` and
+     * `latestByTaskId` below, so it never matters which task changed. The AI
+     * SDK's own tool executor only observes the LAST value this generator
+     * yields (the same guarantee `explore.ts` documents), so the final
+     * `{ outcomes }` — yielded once more after the scheduler resolves — is
+     * what the model actually sees; every earlier yield is a live
+     * preliminary snapshot for the stored tool output and the thread's own
+     * rendering.
      */
     execute: async function* (
       { tasks },
       { abortSignal }
-    ): AsyncGenerator<TaskProgress | RunTasksResult, void, void> {
+    ): AsyncGenerator<RunTasksProgress | RunTasksResult, void, void> {
       const indexById = new Map(tasks.map((task, index) => [task.id, index]))
       const outcomes: (TaskOutcome | undefined)[] = new Array(tasks.length)
+      /** A running task's latest snapshot, kept only until it settles — `buildRunsSnapshot` below prefers the settled `record` once one exists. */
+      const latestByTaskId = new Map<string, SubagentProgress>()
 
-      const events: (TaskProgress | "settled")[] = []
+      const events: true[] = []
       let wake: (() => void) | undefined
 
-      function pushEvent(event: TaskProgress | "settled"): void {
-        events.push(event)
+      function pushEvent(): void {
+        events.push(true)
         wake?.()
         wake = undefined
       }
@@ -243,11 +246,24 @@ export function createRunTasksTool(gameId: string): Tool {
       function settle(task: TaskSpec, outcome: TaskOutcome): void {
         const index = indexById.get(task.id)
         if (index !== undefined) outcomes[index] = outcome
-        pushEvent("settled")
+        pushEvent()
       }
 
       function settledOutcomes(): TaskOutcome[] {
         return outcomes.filter((outcome): outcome is TaskOutcome => outcome !== undefined)
+      }
+
+      /** One entry per dispatched task, in batch order: its settled record once finished, else its latest live snapshot. A task never dispatched (still waiting on `dependsOn`) is absent. */
+      function buildRunsSnapshot(): RunTasksProgress {
+        const runs: SubagentProgress[] = []
+
+        for (const task of tasks) {
+          const index = indexById.get(task.id)
+          const record = (index !== undefined ? outcomes[index]?.record : undefined) ?? latestByTaskId.get(task.id)
+          if (record) runs.push(record)
+        }
+
+        return { runs }
       }
 
       /** Drives one task's `runSubagent` run to completion — the same manual-drive pattern `explore.ts` uses (unit 2b's Deviation 1), one call per concurrently running task. */
@@ -283,7 +299,8 @@ export function createRunTasksTool(gameId: string): Tool {
         let next = await run.next()
 
         while (!next.done) {
-          pushEvent({ ...next.value, taskId: task.id })
+          latestByTaskId.set(task.id, next.value)
+          pushEvent()
           next = await run.next()
         }
 
@@ -428,11 +445,7 @@ export function createRunTasksTool(gameId: string): Tool {
         const event = events.shift()
 
         if (event !== undefined) {
-          if (event === "settled") {
-            yield { outcomes: settledOutcomes() }
-          } else {
-            yield event
-          }
+          yield buildRunsSnapshot()
           continue
         }
 
