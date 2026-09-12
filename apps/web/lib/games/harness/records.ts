@@ -43,19 +43,17 @@ export const subagentSlotSchema = z.enum(["strong", "mid", "light"])
 export type SubagentSlot = z.infer<typeof subagentSlotSchema>
 
 /**
- * Duplicated from `lib/ai/pricing.ts`'s `EnvelopeStatus` (re-exported by
- * `harness/envelope.ts`), for the same reason as the two enums above — this
- * file stays free of any import that could pull `pricing.ts`'s `RATES` rate
- * card toward a client bundle (design.md decision 15: "It carries no cost,
- * because the rate card stays server-only").
- *
- * A record not yet finished (still streaming) is stamped `"partial"` — the
- * same value `run-subagent.ts` already uses for "the step or output budget
- * ran out before a final answer" — until the run's own real outcome is
- * known. The thread's running/finished distinction (design.md decision 16:
- * shimmer while running, plain status text once it ends) is expected to come
- * from the surrounding tool call's own streaming state, not from this field;
- * unit 10b owns wiring that up.
+ * `lib/ai/pricing.ts`'s `EnvelopeStatus` values (re-exported by
+ * `harness/envelope.ts`), duplicated for the same reason as the two enums
+ * above, plus one value `EnvelopeStatus` does not have: `"running"`, stamped
+ * on a record that has not finished yet. A correction to this unit's first
+ * version, which reused `"partial"` as that placeholder — ambiguous with the
+ * genuine terminal `"partial"` a role gets from actually exhausting its step
+ * budget. `"running"` cannot collide with any real `EnvelopeStatus`, so a
+ * live snapshot is never confused with a finished one. The running/finished
+ * distinction the UI itself draws (design.md decision 16: shimmer vs. plain
+ * status text) is still expected to come from the surrounding tool call's
+ * own streaming state, not from this field; unit 10b owns wiring that up.
  */
 export const subagentRunStatusSchema = z.enum([
   "done",
@@ -65,6 +63,7 @@ export const subagentRunStatusSchema = z.enum([
   "aborted",
   "skipped",
   "unavailable",
+  "running",
 ])
 
 export type SubagentRunStatus = z.infer<typeof subagentRunStatusSchema>
@@ -148,7 +147,7 @@ export const subagentRunRecordSchema = z.object({
   /** Completed steps so far, out of the role's own `maxSteps` ceiling. */
   steps: z.number().int().min(0),
   toolCalls: z.array(subagentToolCallSchema).max(MAX_TOOL_CALLS_PER_RECORD),
-  /** Paths this run has successfully written, replaced or deleted so far, in the order they settled. */
+  /** Deduplicated paths this run has successfully written, replaced or deleted, first-seen order (a repeat write to the same path does not re-add or reorder it). */
   edits: z.array(z.string()).max(MAX_EDITS_PER_RECORD),
   tokens: subagentRunTokensSchema,
   /** The skills pushed into this run's own instructions — a role's defaults, plus any per-task extras a dispatch tool added. */
@@ -160,32 +159,29 @@ export const subagentRunRecordSchema = z.object({
 export type SubagentRunRecord = z.infer<typeof subagentRunRecordSchema>
 
 /**
- * Finds every array of raw, untrusted values that LOOKS like it could hold
- * `SubagentRunRecord`s inside one dispatch tool's persisted output, without
- * assuming any one dispatch tool's exact result shape: `explore`'s and
- * `plan`'s own final yield is `{ envelope, records }` (`run-subagent.ts`'s
- * `RunSubagentResult`, unchanged by this unit), and `run_tasks`' own
- * `{ outcomes: [...] }` batches one run per task — a shape this file has no
- * import-based way to name, since `run-tasks.ts` is not this unit's file to
- * touch. Reading structurally, rather than importing either result type,
- * means this function keeps working unchanged if `run-tasks.ts` or
- * `verify.ts` are later updated to also forward their own `records` (they do
- * not today — see this unit's own apply-progress note on that gap).
+ * Finds every raw, untrusted value that LOOKS like it could be a
+ * `SubagentRunRecord` inside one dispatch tool's persisted output, without
+ * importing any dispatch tool's exact result shape: `explore`, `plan` and
+ * `verify`'s own final yield carries one `record` alongside `envelope`
+ * (`run-subagent.ts`'s `RunSubagentResult`), and `run_tasks`' own
+ * `{ outcomes: [...] }` batches one `record` per task. Reading structurally
+ * means this keeps working unchanged if a dispatch tool's own result shape
+ * changes shape around these two field names.
  */
-function candidateRecordArrays(raw: unknown): unknown[][] {
+function candidateRecords(raw: unknown): unknown[] {
   if (typeof raw !== "object" || raw === null) return []
 
   const value = raw as Record<string, unknown>
-  const found: unknown[][] = []
+  const found: unknown[] = []
 
-  if (Array.isArray(value.records)) found.push(value.records)
+  if (value.record !== undefined) found.push(value.record)
 
   if (Array.isArray(value.outcomes)) {
     for (const outcome of value.outcomes) {
       if (typeof outcome !== "object" || outcome === null) continue
 
-      const records = (outcome as Record<string, unknown>).records
-      if (Array.isArray(records)) found.push(records)
+      const record = (outcome as Record<string, unknown>).record
+      if (record !== undefined) found.push(record)
     }
   }
 
@@ -196,31 +192,28 @@ function candidateRecordArrays(raw: unknown): unknown[][] {
  * Extracts every valid `SubagentRunRecord` out of a thread's raw, untrusted
  * dispatch-tool outputs — the final tool-output value each `explore`, `plan`,
  * `run_tasks` or `verify` call persisted onto a `games.messages` tool part.
+ * A value that fails to parse (an older run recorded before this shape
+ * existed, a task/call that was rejected before ever dispatching a
+ * sub-agent, or genuinely malformed data) is dropped rather than thrown on.
  *
- * A value that fails to parse (an older run recorded before this field
- * shape existed, a dispatch tool whose call never reached a sub-agent at
- * all, or genuinely malformed data) is dropped rather than thrown on, so one
- * bad record never breaks reading the rest of a thread. `run-subagent.ts`'s
- * own progress snapshots for one run are a chronological, cumulative
- * time-series sharing one `agentId` (oldest first — see that file's own
- * comment on `records`); only the LAST valid one for each `agentId` is kept,
- * since it is the most complete snapshot taken of that run so far.
+ * Keyed by `agentId` so a duplicate never appears twice; in practice each
+ * dispatched run now persists exactly one final record (unit 9's
+ * correction: no more per-run time-series), so this is a safety net against
+ * a reused id, not the primary case it was written for.
  *
  * Takes an array of raw outputs, not a single one, so a caller (unit 10b's
  * `tool-parts.ts` wiring) can pass every dispatch-tool tool-output value
  * found across a whole thread's parts in one call.
  */
 export function collectSubagentRuns(rawOutputs: readonly unknown[]): SubagentRunRecord[] {
-  const latestById = new Map<string, SubagentRunRecord>()
+  const byId = new Map<string, SubagentRunRecord>()
 
   for (const raw of rawOutputs) {
-    for (const candidate of candidateRecordArrays(raw)) {
-      for (const entry of candidate) {
-        const parsed = subagentRunRecordSchema.safeParse(entry)
-        if (parsed.success) latestById.set(parsed.data.agentId, parsed.data)
-      }
+    for (const candidate of candidateRecords(raw)) {
+      const parsed = subagentRunRecordSchema.safeParse(candidate)
+      if (parsed.success) byId.set(parsed.data.agentId, parsed.data)
     }
   }
 
-  return [...latestById.values()]
+  return [...byId.values()]
 }

@@ -37,12 +37,9 @@ const PROGRESS_THROTTLE_MS = 500
 
 export type RunSubagentInput = {
   /**
-   * A stable id for this dispatched run, stamped onto every persisted
-   * `SubagentRunRecord` this run yields (unit 9, task 9.2). No caller passes
-   * one today — `explore.ts`, `plan.ts`, `verify.ts` and `run-tasks.ts` all
-   * predate this field — so a random id is generated when omitted; a future
-   * caller that wants a stable, meaningful id (`run-tasks.ts` naming a
-   * worker's run after its `task.id`, for instance) can pass one.
+   * A stable id for this dispatched run. `run-tasks.ts` derives one from its
+   * `task.id`; every other caller (`explore.ts`, `plan.ts`, `verify.ts`)
+   * relies on the default: a fresh `randomUUID()`.
    */
   agentId?: string
   role: RoleDef
@@ -51,17 +48,11 @@ export type RunSubagentInput = {
   prompt: string | ModelMessage[]
   abortSignal?: AbortSignal
   /**
-   * The skills pushed into this run's own instructions — a role's defaults
-   * plus any per-task extras (`lib/games/skills/registry.ts`'s `mergeSkills`)
-   * — stamped onto every record this run yields (design.md decision 15, task
-   * 9.2). Optional: no caller before unit 9 computed this to pass in, so it
-   * defaults to `role.id`'s bare defaults (`ROLE_DEFAULT_SKILLS[role.id]`)
-   * when omitted — accurate for `explore.ts`/`plan.ts`/`verify.ts`'s calls
-   * (none of the three roles they dispatch takes a per-task skill extra), but
-   * NOT the full defaults-plus-task-extras list `run-tasks.ts`'s own workers
-   * actually run with, since that file is not this unit's to touch. Whoever
-   * wires `run-tasks.ts` to pass its already-computed `mergeSkills(...)`
-   * result through this field gets the exact list for free.
+   * The skills pushed into this run's own instructions, stamped onto the
+   * record. `run-tasks.ts` passes its own `mergeSkills(defaults, task.skills)`
+   * result; other callers rely on the default, `ROLE_DEFAULT_SKILLS[role.id]`
+   * — accurate for `explore.ts`/`plan.ts`/`verify.ts`, since none of those
+   * three roles ever takes a per-task skill extra.
    */
   skills?: SkillName[]
   /**
@@ -85,21 +76,23 @@ export type RunSubagentInput = {
  * A from-the-stream progress snapshot, replaced — not appended to — on every
  * throttled tick: the "compact preliminary record" of design.md decision 5.
  *
- * Kept as its own name — `explore.ts`, `run-tasks.ts`, `verify.ts` and
- * `plan.ts` all import it as `SubagentProgress`, and none of them are this
- * unit's files to touch — but it is now a plain alias for the client-safe
- * `SubagentRunRecord` (`./records.ts`, unit 9's task 9.1): every value this
- * generator yields is the full stamped record design.md decision 15
- * describes (agentId, role, displayName, tier, slot, modelId, modelName,
- * steps, tool calls, edits, tokens, skills, summary, status), not the bare
- * `{ activity, toolCalls }` shape unit 2a shipped.
+ * Kept under its unit-2a name — `explore.ts`, `plan.ts`, `verify.ts` and
+ * `run-tasks.ts` all import it this way — but now a plain alias for the
+ * client-safe `SubagentRunRecord` (`./records.ts`), the full stamped shape
+ * design.md decision 15 describes.
  */
 export type SubagentProgress = SubagentRunRecord
 
+/**
+ * Correction to this unit's first version: `records` no longer accumulates
+ * every throttled snapshot taken over the run — an ever-growing array a long
+ * run would keep in memory for nothing, since only the last one was ever
+ * read. Preliminary yields still stream live snapshots for the UI; only the
+ * final, returned one is kept.
+ */
 export type RunSubagentResult = {
   envelope: SubagentEnvelope
-  /** Every progress snapshot taken over the run, oldest first — the last one is the run's most complete state. */
-  records: SubagentProgress[]
+  record: SubagentRunRecord
 }
 
 /** The three write tool names whose successful call counts as an edit — duplicated from `run-tasks.ts`'s/`trigger/chat.ts`'s own copies for the same reason those two already duplicate each other's: importing across those modules is not this file's direction to take on. */
@@ -208,7 +201,7 @@ function buildRunHooks(): { hooks: FallbackHooks; takeServed: () => ServedCall |
  *
  * A generator, not a plain async function: it yields a `SubagentProgress`
  * snapshot on a 500 ms throttle while the run is in flight, and returns
- * `{ envelope, records }` once it finishes — including on failure, timeout or
+ * `{ envelope, record }` once it finishes — including on failure, timeout or
  * abort, since a sub-agent failure MUST come back as a result, never a thrown
  * error that crashes the orchestrator's turn (`agent-orchestration`'s
  * Sub-Agent Failures Return as a Result and Abort Propagation requirements).
@@ -247,17 +240,15 @@ export async function* runSubagent(
   let steps = 0
   let tokens: SubagentRunTokens = ZERO_RUN_TOKENS
   let activity = "starting"
-  const records: SubagentProgress[] = []
   let lastEmittedAt = 0
 
   /**
-   * Every snapshot carries the full stamped shape (design.md decision 15,
-   * task 9.2) — not just the fields that change tick to tick — so a stored
-   * or live-rendered record is always one complete, self-sufficient object.
-   * `modelId`/`modelName` read the LATEST known server for this run
-   * (`takeServed()`, never cleared by reading it — see `buildRunHooks`'s own
-   * comment): the primary until the first call resolves, and whichever entry
-   * actually served after that.
+   * Every snapshot carries the full stamped shape, not just the fields that
+   * change tick to tick, so a live or persisted record is always complete on
+   * its own. `modelId`/`modelName` read the latest known server for this run
+   * (`takeServed()`, never cleared by reading it). No `finalStatus`/
+   * `finalSummary` means the run has not ended yet: `"running"`, a value no
+   * genuine `EnvelopeStatus` can produce, so it can never be mistaken for one.
    */
   function snapshot(finalStatus?: EnvelopeStatus, finalSummary?: string): SubagentProgress {
     const served = takeServed()
@@ -270,7 +261,7 @@ export async function* runSubagent(
       slot: role.slot,
       modelId: served?.entryId ?? primary.id,
       modelName: primary.displayName,
-      status: finalStatus ?? "partial",
+      status: finalStatus ?? "running",
       activity,
       steps,
       toolCalls: [...toolCalls],
@@ -352,7 +343,8 @@ export async function* runSubagent(
             MAX_TOOL_CALLS_PER_RECORD
           )
 
-          if (path && WRITE_TOOL_NAMES.has(part.toolName)) {
+          // First-seen order: a repeat write to an already-recorded path does not re-add or reorder it.
+          if (path && WRITE_TOOL_NAMES.has(part.toolName) && !edits.includes(path)) {
             edits = pushCapped(edits, path, MAX_EDITS_PER_RECORD)
           }
 
@@ -389,17 +381,11 @@ export async function* runSubagent(
       if (now - lastEmittedAt < PROGRESS_THROTTLE_MS) continue
       lastEmittedAt = now
       dirty = false
-      const next = snapshot()
-      records.push(next)
-      yield next
+      yield snapshot()
     }
 
-    // The throttle can drop the run's final state; flush it if so.
-    if (dirty) {
-      const next = snapshot()
-      records.push(next)
-      yield next
-    }
+    // The throttle can drop the run's last in-progress state; flush it if so.
+    if (dirty) yield snapshot()
 
     if (aborted || abortSignal?.aborted) {
       status = "aborted"
@@ -415,17 +401,10 @@ export async function* runSubagent(
   }
 
   /**
-   * The final record, appended to `records` (not yielded — this generator's
-   * own `return` value, `RunSubagentResult`, is what carries it back; see
-   * `explore.ts`'s own note on why a `return` value needs no separate
-   * `yield` here). Computed even when the loop above never ran at all — an
-   * immediate throw before the stream started — so a run that fails or
-   * aborts before its first tool call still leaves a complete,
-   * correctly-stamped record behind (`subagent-view`'s "Record created for a
-   * failed worker" scenario; task 9.2's "captured even on failure/abort").
+   * Computed even when the loop above never ran at all — an immediate throw
+   * before the stream started — so a run that fails or aborts before its
+   * first tool call still returns a complete, correctly-stamped record
+   * (`subagent-view`'s "Record created for a failed worker" scenario).
    */
-  const finalRecord = snapshot(status, summary)
-  records.push(finalRecord)
-
-  return { envelope: { agent: agentId, status, summary }, records }
+  return { envelope: { agent: agentId, status, summary }, record: snapshot(status, summary) }
 }

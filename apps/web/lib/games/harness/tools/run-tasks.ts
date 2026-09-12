@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto"
+
 import { tool, type Tool } from "ai"
 import { z } from "zod"
 
@@ -63,19 +65,18 @@ const tasksArraySchema = z
   .max(MAX_TASKS_PER_BATCH)
   .superRefine(rejectDuplicateTaskIds)
 
-/** One task's outcome, reported back to the orchestrator's model. */
+/**
+ * One task's outcome, reported back to the orchestrator's model — plus its
+ * `record`, which is NOT part of what the model sees (`renderOutcomes` below
+ * only ever reads `taskId`/`envelope`). `undefined` for a task that never
+ * actually dispatched a worker (rejected before it started: an unmet
+ * dependency, or the turn ending first).
+ */
 type TaskOutcome = {
   taskId: string
   envelope: SubagentEnvelope
-  /**
-   * Whether this task's worker successfully wrote, edited or deleted a
-   * file — not the file paths themselves (`SubagentEnvelope.edits`).
-   * `run-subagent.ts` only captures tool NAMES today
-   * (`{ toolName, toolCallId, ok, error }`), not paths; unit 9's stamped
-   * `SubagentRunRecord` is what adds that. A boolean is enough for
-   * `trigger/chat.ts`'s `changedGameFiles`, which only needs to know
-   * whether to tell the browser to reload the preview.
-   */
+  record?: SubagentProgress
+  /** Whether this task's worker successfully wrote, edited or deleted a file — `trigger/chat.ts`'s `changedGameFiles` only needs to know whether to reload the preview. */
   wroteFiles: boolean
 }
 
@@ -91,21 +92,6 @@ export type RunTasksResult = { outcomes: TaskOutcome[] }
  * `run-subagent.ts` itself, which has no notion of a "task" at all.
  */
 type TaskProgress = SubagentProgress & { taskId: string }
-
-/**
- * The three write tool names a task's worker may have called, duplicated
- * from `trigger/chat.ts`'s own `MUTATING_TOOLS` rather than imported: that
- * module already imports `createRunTasksTool` from this one, so importing
- * back would be circular. `tool-parts.ts` keeps its own copy of the same set
- * for an analogous reason.
- */
-const WRITE_TOOL_NAMES = new Set(["write_file", "replace_text", "delete_file"])
-
-function wroteAnyFile(records: SubagentProgress[]): boolean {
-  return records.some((record) =>
-    record.toolCalls.some((call) => call.ok && WRITE_TOOL_NAMES.has(call.toolName))
-  )
-}
 
 /** Reported when the turn's abort signal already fired before a task got its turn to start. */
 function abortedBeforeStartOutcome(task: TaskSpec): TaskOutcome {
@@ -150,24 +136,16 @@ function describeSchedulerError(error: unknown): string {
  * section (`instructions/roles/worker.ts`), the sandbox environment
  * (`instructions/runtime.ts`), then its skills — matching design.md's role
  * catalogue Instructions column ("roles/worker + focus, runtime, defaults ∪
- * task skills, inlined design, task").
+ * task skills, inlined design, task"). `.numa/design.md` (unit 8's
+ * `submit_plan`) does not exist yet, so `task.goal` is still the worker's
+ * complete brief.
  *
- * `focus` doubles as the `RoleId` key into `ROLE_DEFAULT_SKILLS` (`WorkerFocus`
- * is exactly `"gameplay" | "visuals" | "audio"`, the same three roles
- * `run_tasks` ever dispatches), merged with this task's own `skills` extras
- * (`mergeSkills`: defaults first, in registry order, then any extra not
- * already among them). `.numa/design.md` (unit 8's `submit_plan`) does not
- * exist yet, so there is no separately inlined design body to add here —
- * `task.goal` (`taskSpecSchema` above: "goal, procedure, constraints,
- * done-when") is still the worker's complete, self-contained brief.
+ * Takes the already-merged skill list rather than merging it itself:
+ * `runOneTask` computes `mergeSkills(...)` once and passes the result both
+ * here and to `runSubagent`'s own `skills` input, so the record it stamps
+ * and the prompt it actually ran with never drift apart.
  */
-function buildInstructions(
-  displayName: string,
-  focus: WorkerFocus,
-  extraSkills: SkillName[]
-): string {
-  const skills = mergeSkills(ROLE_DEFAULT_SKILLS[focus], extraSkills)
-
+function buildInstructions(displayName: string, focus: WorkerFocus, skills: SkillName[]): string {
   return [
     workerInstructions(displayName, focus),
     runtimeInstructions.content,
@@ -275,10 +253,22 @@ export function createRunTasksTool(gameId: string): Tool {
       /** Drives one task's `runSubagent` run to completion — the same manual-drive pattern `explore.ts` uses (unit 2b's Deviation 1), one call per concurrently running task. */
       async function runOneTask(task: TaskSpec): Promise<void> {
         const role = ROLES[task.role]
+        const skills = mergeSkills(ROLE_DEFAULT_SKILLS[task.role], task.skills)
 
         const run = runSubagent({
           role,
-          instructions: buildInstructions(role.displayName, task.role, task.skills),
+          /**
+           * `task.id` alone is not enough: nothing stops a LATER `run_tasks`
+           * call this same turn (a corrective fix pass, say) from reusing an
+           * earlier task's id — `run-tasks.ts` only rejects a duplicate id
+           * WITHIN one batch (`rejectDuplicateTaskIds`), not across calls,
+           * and `run-subagent.ts` itself runs no retry loop of its own (each
+           * task here dispatches exactly once). The random suffix makes a
+           * same-turn id reuse impossible to collide on.
+           */
+          agentId: `${task.id}:${randomUUID().slice(0, 8)}`,
+          instructions: buildInstructions(role.displayName, task.role, skills),
+          skills,
           /**
            * Scoped file tools plus `load_skill` (design.md's role catalogue:
            * "gameplay / visuals / audio ... scoped tools, load_skill") — the
@@ -313,7 +303,8 @@ export function createRunTasksTool(gameId: string): Tool {
         settle(task, {
           taskId: task.id,
           envelope: result.envelope,
-          wroteFiles: wroteAnyFile(result.records),
+          record: result.record,
+          wroteFiles: result.record.edits.length > 0,
         })
       }
 

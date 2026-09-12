@@ -2343,3 +2343,119 @@ forwarding `records` into their persisted output, so worker and verifier
 runs are not yet collectible) to the user/maintainer before merge — the
 second one materially affects whether unit 10b's UI will have anything to
 show for a typical build turn.
+
+### Correction (parent-approved, second commit on this branch)
+
+Scope widened by explicit user approval to include
+`harness/tools/run-tasks.ts` and `harness/tools/verify.ts`, on top of the
+same branch and the same native attempt. Fixes the Issues Found gap above
+and four smaller follow-ups the parent's review caught.
+
+1. **Worker and verifier records now actually persist.** `run-tasks.ts`'s
+   `TaskOutcome` gained `record?: SubagentProgress`; `verify.ts`'s
+   `RunVerifyResult` gained the same. Both are `undefined` only for an
+   outcome that never dispatched a real sub-agent (`abortedBeforeStartOutcome`/
+   `unmetDependencyOutcome` in `run-tasks.ts`; `refused`/`unavailable` in
+   `verify.ts`). Neither `toModelOutput` (verify) nor `renderOutcomes`
+   (run-tasks) reads `record` — confirmed by re-reading both: `renderOutcomes`
+   destructures only `{ taskId, envelope }`, and `verify.ts`'s
+   `toModelOutput` renders only `output.envelope` — so the orchestrator's
+   model context is byte-for-byte unchanged.
+2. **`run-tasks.ts` now passes real `skills` and a collision-safe
+   `agentId` into `runSubagent`.** `runOneTask` computes
+   `mergeSkills(ROLE_DEFAULT_SKILLS[task.role], task.skills)` ONCE and
+   passes the same list to both `buildInstructions` (which no longer merges
+   internally — its `extraSkills` param became a plain `skills` param) and
+   `runSubagent`'s `skills` input, so the stamped record and the prompt the
+   worker actually ran on can never drift apart. `agentId` is
+   `` `${task.id}:${randomUUID().slice(0, 8)}` ``: traced `run-tasks.ts`'s
+   own scheduler (`scheduleAndRun`/`runOneTask`) and confirmed it dispatches
+   each task exactly once — no in-call retry — but nothing stops a LATER
+   `run_tasks` call in the SAME turn (a corrective fix pass) from reusing an
+   earlier batch's task id (`rejectDuplicateTaskIds` only checks uniqueness
+   WITHIN one batch). The random 8-char suffix makes that reuse unable to
+   collide on `agentId`, without needing `run-subagent.ts` or `records.ts`
+   to know anything about tasks or retries.
+3. **`RunSubagentResult`/`SubagentProgress`'s return no longer accumulates
+   history.** `records: SubagentProgress[]` (every throttled snapshot,
+   oldest first) became `record: SubagentRunRecord` (the final one only).
+   `run-subagent.ts` no longer keeps a `records` array at all — each
+   throttled tick now just `yield snapshot()` directly, live streaming for
+   the UI, nothing retained in memory. Updated all four dispatch tools'
+   generator type annotations implicitly (none touch `.records` by name
+   except the two fixed in point 1) and `records.ts`'s `collectSubagentRuns`,
+   which now looks for a `record` field (singular) at the top level and
+   inside each `outcomes[]` entry, instead of `records` arrays — renamed
+   `candidateRecordArrays` to `candidateRecords` accordingly.
+4. **A new `"running"` value on `subagentRunStatusSchema`** replaces the
+   first version's reuse of `"partial"` as the mid-run placeholder — a real
+   bug the correction fixes, not just a naming nit: a role that legitimately
+   exhausts its step budget (`statusFromFinishReason`'s own `"partial"`
+   terminal case) was indistinguishable from a run that simply had not
+   finished yet. `"running"` cannot collide with any genuine `EnvelopeStatus`
+   value. `EnvelopeStatus` itself (`lib/ai/pricing.ts`) is unchanged — this
+   is purely an addition to the record's own, wider `SubagentRunStatus`.
+5. **`edits` is now deduplicated, first-seen order**: a path already
+   recorded is never re-added or reordered on a second successful write to
+   the same path (`!edits.includes(path)` before pushing). Chosen over
+   move-to-end because a record's `edits` list reads as "which files this
+   run touched," not "most recently touched first" — the UI's own per-call
+   `toolCalls` list (unaffected by this change) is where call order and
+   repeats are still fully visible.
+
+Left as-is, per the correction's own scope: the `modelName`-always-primary
+limitation (Deviation 4 above) — still dormant, still flagged.
+
+#### Final persisted shapes (after this correction)
+
+- `explore`, `plan`: `{ envelope: SubagentEnvelope, record: SubagentRunRecord }`
+  (`RunSubagentResult`, persisted whole).
+- `run_tasks`: `{ outcomes: { taskId: string, envelope: SubagentEnvelope,
+  record?: SubagentRunRecord, wroteFiles: boolean }[] }`.
+- `verify`: `{ outcome: "pass" | "fail" | "unavailable" | "refused",
+  envelope: SubagentEnvelope, record?: SubagentRunRecord }`.
+
+`collectSubagentRuns` reads `record`/`outcomes[].record` off any of these
+structurally, without importing any of the four result types.
+
+#### Verification (this correction)
+
+- `cd apps/web && npx tsc --noEmit -p .` → clean, no output, exit 0 (direct
+  `tsc`, not the turbo cache).
+- `cd apps/web && pnpm lint` → 0 errors, the same 13 pre-existing warnings
+  as before this correction — no delta.
+
+#### Corrected line count
+
+**Authored changed lines for the whole unit: 483** (402 insertions + 81
+deletions across 4 files — `records.ts`, `run-subagent.ts`, `run-tasks.ts`,
+`verify.ts` — per `git diff --stat b81a31b -- . ':!openspec'
+':!apps/web/next.config.ts'`, i.e. the original commit plus this
+correction, excluding `openspec/**` and the pre-existing unrelated
+`next.config.ts` diff, which stayed untouched and unstaged throughout). This
+is now **83 lines over the 400-line budget** — the second-smallest overage
+in this change (after 7b's 473, ahead of 2a's 509) — grown from the
+original 405 because fixing the Issues Found gap genuinely requires new,
+non-trivial logic in two more files (the `agentId` collision analysis and
+the `skills`/`buildInstructions` refactor in `run-tasks.ts`, the `record`
+threading in `verify.ts`), not padding. **Recommendation: `size:exception`
+for this slice, as corrected** — the user already approved this exact
+widened scope, so the line-count risk is reported for visibility, not as an
+open decision.
+
+#### Residual risk
+
+None from the correction itself — the gap it was written to close is
+closed, and both new verification commands (foreground `tsc`, `pnpm lint`)
+pass clean. The only carried-over risk is Deviation 4 (`modelName` always
+reads the primary's display name), explicitly left as-is per the
+correction's own scope, and already dormant since every `SlotCandidates`
+list in the current registry holds exactly one entry.
+
+### Status (updated)
+
+2/2 tasks in unit 9 complete, correction applied and verified. Ready for
+`sdd-verify`. Report the corrected `size:exception` line-count risk (483
+lines, 83 over budget) to the user/maintainer before merge; the
+`run-tasks.ts`/`verify.ts` persistence gap from the first version is now
+resolved.

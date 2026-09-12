@@ -29,9 +29,11 @@ const MAX_VERIFY_CALLS_PER_TURN = 2
  */
 export type VerifyOutcome = "pass" | "fail" | "unavailable" | "refused"
 
+/** `record` is `undefined` for a call that never actually ran the verifier sub-agent: `refused` (budget spent) or `unavailable` (no sandbox check to hand it a screenshot). Not part of what the model sees — `toModelOutput` below only ever reads `envelope`. */
 export type RunVerifyResult = {
   outcome: VerifyOutcome
   envelope: SubagentEnvelope
+  record?: SubagentProgress
 }
 
 /** `VerifyFinding` (`lib/daytona/verify.ts`, no `taskId`) widened into the harness's own `Finding` shape. */
@@ -188,6 +190,7 @@ export function createVerifyTool(gameId: string): Tool {
           }`,
           findings,
         },
+        record: result.record,
       }
     },
     /**
