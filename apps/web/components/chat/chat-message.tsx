@@ -1,6 +1,6 @@
 "use client"
 
-import { memo, useMemo } from "react"
+import { Fragment, memo, useMemo } from "react"
 
 import type { UIMessage } from "ai"
 import { Bubble, BubbleContent } from "@workspace/ui/components/bubble"
@@ -10,6 +10,7 @@ import { AskPlayer, AskPlayerAnswer } from "@/components/chat/ask-player"
 import { AssistantAvatar } from "@/components/chat/assistant-avatar"
 import { Markdown } from "@/components/chat/markdown"
 import { MessageActions } from "@/components/chat/message-actions"
+import { SubagentEntry } from "@/components/chat/subagent-entry"
 import { Thinking } from "@/components/chat/thinking"
 import { ToolGroup } from "@/components/chat/tool-group"
 import { askPlayerAnswer } from "@/lib/games/ask-player"
@@ -33,6 +34,13 @@ type ChatMessageProps = {
    */
   streaming: boolean
   onAnswer: (toolCallId: string, output: AskPlayerOutput) => void
+  /**
+   * Opens the sub-agent panel on one run, whether it is still going or
+   * already finished (`subagent-view`'s Sub-Agent Runs Are Openable From the
+   * Thread requirement). Lifted to `chat-thread.tsx`/`game-chat.tsx`, which
+   * also drive the thread-header button onto the same panel state.
+   */
+  onSelectRun: (agentId: string) => void
 }
 
 function ChatMessageImpl({
@@ -40,6 +48,7 @@ function ChatMessageImpl({
   messages,
   streaming,
   onAnswer,
+  onSelectRun,
 }: ChatMessageProps) {
   /**
    * Recomputed only when the messages making up this row actually change —
@@ -80,6 +89,26 @@ function ChatMessageImpl({
         {blocks.map((block) => {
           if (block.kind === "tools") {
             return <ToolGroup key={block.key} parts={block.parts} />
+          }
+
+          /**
+           * One `<SubagentEntry>` per run this dispatch call reported, in
+           * dispatch order — a `run_tasks` batch of three workers renders
+           * three entries here, not one summarising line, since each is its
+           * own named bot the player can open on its own.
+           */
+          if (block.kind === "agent") {
+            return (
+              <Fragment key={block.key}>
+                {block.records.map((record) => (
+                  <SubagentEntry
+                    key={record.agentId}
+                    record={record}
+                    onSelect={onSelectRun}
+                  />
+                ))}
+              </Fragment>
+            )
           }
 
           if (block.kind === "ask") {
@@ -174,6 +203,8 @@ function isProducing(block: PartBlock | undefined): boolean {
   }
   if (block.kind === "tools")
     return block.parts.some((part) => !isSettled(part))
+  if (block.kind === "agent")
+    return block.records.some((record) => record.status === "running")
 
   return askPlayerAnswer(block.part, block.question) === null
 }
@@ -219,6 +250,7 @@ export const ChatMessage = memo(ChatMessageImpl, (prev, next) => {
     prev.role === next.role &&
     prev.streaming === next.streaming &&
     prev.onAnswer === next.onAnswer &&
+    prev.onSelectRun === next.onSelectRun &&
     messagesEqual(prev.messages, next.messages)
   )
 })

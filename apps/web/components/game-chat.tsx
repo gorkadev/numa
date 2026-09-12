@@ -3,7 +3,7 @@
 import { useState } from "react"
 
 import type { UIMessage } from "ai"
-import { PanelRightIcon } from "@hugeicons/core-free-icons"
+import { BotIcon, PanelRightIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
@@ -86,6 +86,18 @@ export function GameChat({
    */
   const showPreview = previewOpen && Boolean(previewToken)
 
+  /**
+   * The sub-agent panel's state, lifted here so this header's button and any
+   * inline `SubagentEntry` inside `ChatThread` drive the exact same
+   * `SubagentSheet` (design.md decision 16). `ChatThread` owns the records
+   * themselves — they come from its own `messages` — and reports back
+   * whether the thread has any yet, the same up-reporting shape `onRevision`
+   * already uses for the preview's revision.
+   */
+  const [subagentSheetOpen, setSubagentSheetOpen] = useState(false)
+  const [selectedRunId, setSelectedRunId] = useState<string | null>(null)
+  const [hasSubagentRuns, setHasSubagentRuns] = useState(false)
+
   function openPreview() {
     setPreviewMounted(true)
     setPreviewOpen(true)
@@ -138,6 +150,28 @@ export function GameChat({
               </span>
             </Button>
           ) : null}
+          {hasSubagentRuns ? (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="aria-pressed:bg-muted aria-pressed:text-foreground"
+              /**
+               * Always opens on the run list, not wherever the panel was
+               * left: a reader pressing the header button wants an overview
+               * (`subagent-view`'s "Player opens the panel from the header"
+               * scenario), while an inline `SubagentEntry` is the one path
+               * that opens straight onto a single run's detail.
+               */
+              onClick={() => {
+                setSelectedRunId(null)
+                setSubagentSheetOpen(true)
+              }}
+              aria-pressed={subagentSheetOpen}
+            >
+              <HugeiconsIcon icon={BotIcon} strokeWidth={2} />
+              <span className="sr-only">Sub-agent runs</span>
+            </Button>
+          ) : null}
           <GameMenu gameId={gameId} title={title} />
         </header>
         <ChatThread
@@ -147,6 +181,11 @@ export function GameChat({
           initialPrompt={initialPrompt}
           initialTierId={initialTierId}
           onRevision={setRevision}
+          subagentSheetOpen={subagentSheetOpen}
+          onSubagentSheetOpenChange={setSubagentSheetOpen}
+          selectedRunId={selectedRunId}
+          onSelectedRunIdChange={setSelectedRunId}
+          onSubagentRunsChange={setHasSubagentRuns}
         />
       </div>
 

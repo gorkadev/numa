@@ -351,13 +351,13 @@ Satisfies `subagent-view`: Inline Entry Shimmers While Running, Sub-Agent Runs
 Are Openable From the Thread, Sub-Agents Are Presented as Named Bots (wiring
 half), Sub-Agent Records Survive Reload.
 
-- [ ] 10b.1 Modify `apps/web/components/chat/chat-message.tsx`: render a new
+- [x] 10b.1 Modify `apps/web/components/chat/chat-message.tsx`: render a new
       `agent` tool-part block using `subagent-entry.tsx` per run.
-- [ ] 10b.2 Modify `apps/web/components/chat/chat-thread.tsx`,
+- [x] 10b.2 Modify `apps/web/components/chat/chat-thread.tsx`,
       `components/game-chat.tsx`: thread-header button; lift `{ open,
       selectedRunId }` state so both the header button and an inline entry can
       open the same Sheet.
-- [ ] 10b.3 Modify `apps/web/lib/games/tool-parts.ts`: parse persisted
+- [x] 10b.3 Modify `apps/web/lib/games/tool-parts.ts`: parse persisted
       `agent` tool-output parts back into `SubagentRunRecord[]` on reload, so
       inline entries and the Sheet show identical detail before and after a
       reload.

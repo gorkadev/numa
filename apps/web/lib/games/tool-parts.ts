@@ -7,6 +7,10 @@ import {
 } from "ai"
 
 import { askPlayerQuestion, type AskQuestion } from "@/lib/games/ask-player"
+import {
+  collectSubagentRuns,
+  type SubagentRunRecord,
+} from "@/lib/games/harness/records"
 
 /**
  * The two shapes a tool call ever arrives as. A statically declared tool
@@ -175,6 +179,63 @@ export function toolError(part: ToolPart): string | null {
   return null
 }
 
+/**
+ * The tools whose result is one or more sub-agent run records rather than a
+ * plain file operation — these get an inline `SubagentEntry` per run instead
+ * of the generic tool marker/group (design.md decision 16; `subagent-view`'s
+ * Inline Entry Shimmers While Running requirement). `load_skill` is also a
+ * phase tool but never dispatches a sub-agent, so it stays a plain marker.
+ */
+export const DISPATCH_TOOL_NAMES = new Set([
+  "explore",
+  "plan",
+  "run_tasks",
+  "verify",
+])
+
+/** A dispatch tool call's current `output`, or `undefined` for any other tool or a call still streaming its input. */
+function dispatchOutput(part: ToolPart): unknown {
+  if (!DISPATCH_TOOL_NAMES.has(getToolName(part))) return undefined
+
+  return part.state === "output-available" ? part.output : undefined
+}
+
+/**
+ * The sub-agent run record(s) one dispatch tool call's current output
+ * carries — one for `explore`/`plan`/`verify`, up to `MAX_TASKS_PER_BATCH`
+ * for a `run_tasks` batch, in dispatch order. Empty before the call's first
+ * snapshot lands, in which case the caller falls back to the generic tool
+ * marker until it does. Reads the exact same shape whether `output` just
+ * streamed in live or was read back from a reloaded thread — `run-subagent`'s
+ * own preliminary snapshot and its final persisted shape are both valid
+ * input to `collectSubagentRuns` (task 10b.3).
+ */
+function subagentRunsForPart(part: ToolPart): SubagentRunRecord[] {
+  const output = dispatchOutput(part)
+
+  return output === undefined ? [] : collectSubagentRuns([output])
+}
+
+/**
+ * Every sub-agent run recorded anywhere across a set of messages — the
+ * source for `SubagentSheet`'s thread-wide list (`chat-thread.tsx`). Live and
+ * reloaded runs read identically, since it is built from the same
+ * current-output extraction `subagentRunsForPart` uses for one message's
+ * inline entries below (`subagent-view`'s Sub-Agent Records Survive Reload
+ * requirement).
+ */
+export function collectThreadSubagentRuns(
+  messages: UIMessage[]
+): SubagentRunRecord[] {
+  const outputs = messages
+    .flatMap((message) => message.parts)
+    .filter((part): part is ToolPart => isToolUIPart(part))
+    .map(dispatchOutput)
+    .filter((output) => output !== undefined)
+
+  return collectSubagentRuns(outputs)
+}
+
 /** What this call reads as right now: a verb, and the file it is about. */
 export function toolLabel(part: ToolPart): string {
   const name = getToolName(part)
@@ -211,10 +272,17 @@ export function toolLabel(part: ToolPart): string {
  * step to summarise. A call still streaming its arguments has no question yet
  * and stays with the tools, where it reads as "thinking it over" until the
  * question is whole.
+ *
+ * A dispatch tool call (`DISPATCH_TOOL_NAMES`) with at least one extracted
+ * sub-agent run never joins a "tools" block either, for the same reason: it
+ * gets its own `SubagentEntry` per run, not a generic marker, and consecutive
+ * dispatch calls fold into one "agent" block the same way consecutive plain
+ * tool calls fold into one "tools" block.
  */
 export type PartBlock =
   | { kind: "text"; key: string; text: string; state?: "streaming" | "done" }
   | { kind: "tools"; key: string; parts: ToolPart[] }
+  | { kind: "agent"; key: string; records: SubagentRunRecord[] }
   | {
       kind: "ask"
       key: string
@@ -231,6 +299,20 @@ export function groupParts(parts: UIMessage["parts"]): PartBlock[] {
 
       if (question) {
         blocks.push({ kind: "ask", key: part.toolCallId, part, question })
+        return
+      }
+
+      const records = subagentRunsForPart(part)
+
+      if (records.length > 0) {
+        const openAgent = blocks.at(-1)
+
+        if (openAgent?.kind === "agent") {
+          openAgent.records.push(...records)
+          return
+        }
+
+        blocks.push({ kind: "agent", key: part.toolCallId, records })
         return
       }
 

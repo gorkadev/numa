@@ -160,19 +160,25 @@ export type SubagentRunRecord = z.infer<typeof subagentRunRecordSchema>
 
 /**
  * Finds every raw, untrusted value that LOOKS like it could be a
- * `SubagentRunRecord` inside one dispatch tool's persisted output, without
- * importing any dispatch tool's exact result shape: `explore`, `plan` and
- * `verify`'s own final yield carries one `record` alongside `envelope`
- * (`run-subagent.ts`'s `RunSubagentResult`), and `run_tasks`' own
+ * `SubagentRunRecord` inside one dispatch tool's output — live or persisted
+ * — without importing any dispatch tool's exact result shape: `explore`,
+ * `plan` and `verify`'s own final yield carries one `record` alongside
+ * `envelope` (`run-subagent.ts`'s `RunSubagentResult`), and `run_tasks`' own
  * `{ outcomes: [...] }` batches one `record` per task. Reading structurally
  * means this keeps working unchanged if a dispatch tool's own result shape
  * changes shape around these two field names.
+ *
+ * `value` itself is also a candidate (unit 10b): a dispatch call's
+ * PRELIMINARY output, before its final wrapped shape lands, is a bare
+ * `SubagentProgress`/`TaskProgress` — no `record`/`outcomes` wrapper at all.
+ * `TaskProgress`'s own extra `taskId` field parses away harmlessly, since
+ * zod's default object parsing strips unknown keys.
  */
 function candidateRecords(raw: unknown): unknown[] {
   if (typeof raw !== "object" || raw === null) return []
 
   const value = raw as Record<string, unknown>
-  const found: unknown[] = []
+  const found: unknown[] = [value]
 
   if (value.record !== undefined) found.push(value.record)
 
@@ -190,11 +196,13 @@ function candidateRecords(raw: unknown): unknown[] {
 
 /**
  * Extracts every valid `SubagentRunRecord` out of a thread's raw, untrusted
- * dispatch-tool outputs — the final tool-output value each `explore`, `plan`,
- * `run_tasks` or `verify` call persisted onto a `games.messages` tool part.
- * A value that fails to parse (an older run recorded before this shape
- * existed, a task/call that was rejected before ever dispatching a
- * sub-agent, or genuinely malformed data) is dropped rather than thrown on.
+ * dispatch-tool outputs — the CURRENT tool-output value each `explore`,
+ * `plan`, `run_tasks` or `verify` call carries, live (a bare, still-running
+ * `SubagentProgress`) or persisted after reload (the final `record`/
+ * `outcomes[].record` wrapper). A value that fails to parse (an older run
+ * recorded before this shape existed, a task/call that was rejected before
+ * ever dispatching a sub-agent, or genuinely malformed data) is dropped
+ * rather than thrown on.
  *
  * Keyed by `agentId` so a duplicate never appears twice; in practice each
  * dispatched run now persists exactly one final record (unit 9's

@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useCallback, useEffect, useMemo } from "react"
 
 import type { UIMessage } from "ai"
 import { Alert01Icon } from "@hugeicons/core-free-icons"
@@ -23,9 +23,11 @@ import {
 import { ChatComposer } from "@/components/chat-composer"
 import { AssistantAvatar } from "@/components/chat/assistant-avatar"
 import { ChatMessage } from "@/components/chat/chat-message"
+import { SubagentSheet } from "@/components/chat/subagent-sheet"
 import { Thinking } from "@/components/chat/thinking"
 import { useGameChat } from "@/components/chat/use-game-chat"
 import type { TierId } from "@/lib/ai/model-catalog"
+import { collectThreadSubagentRuns } from "@/lib/games/tool-parts"
 
 export function ChatThread({
   gameId,
@@ -34,6 +36,11 @@ export function ChatThread({
   initialPrompt,
   initialTierId,
   onRevision,
+  subagentSheetOpen,
+  onSubagentSheetOpenChange,
+  selectedRunId,
+  onSelectedRunIdChange,
+  onSubagentRunsChange,
 }: {
   gameId: string
   initialMessages: UIMessage[]
@@ -66,6 +73,20 @@ export function ChatThread({
    * signal is handed up rather than acted on here.
    */
   onRevision?: (revision: number) => void
+  /**
+   * The sub-agent panel's state, lifted to `game-chat.tsx` so its own
+   * thread-header button opens the exact same `SubagentSheet` an inline
+   * `SubagentEntry` opens from inside this thread (design.md decision 16;
+   * `subagent-view`'s Sub-Agent Runs Are Openable From the Thread
+   * requirement). `null` shows the run list; an `agentId` shows that run's
+   * detail.
+   */
+  subagentSheetOpen: boolean
+  onSubagentSheetOpenChange: (open: boolean) => void
+  selectedRunId: string | null
+  onSelectedRunIdChange: (agentId: string | null) => void
+  /** Reported upward so the header button can hide itself on a thread with no runs yet — the same up-reporting shape `onRevision` above already uses. */
+  onSubagentRunsChange: (hasRuns: boolean) => void
 }) {
   const {
     messages,
@@ -89,6 +110,23 @@ export function ChatThread({
 
   const runs = useMemo(() => groupRuns(messages), [messages])
   const trailing = runs.at(-1)
+
+  const subagentRuns = useMemo(
+    () => collectThreadSubagentRuns(messages),
+    [messages]
+  )
+
+  useEffect(() => {
+    onSubagentRunsChange(subagentRuns.length > 0)
+  }, [subagentRuns.length, onSubagentRunsChange])
+
+  const onSelectRun = useCallback(
+    (agentId: string) => {
+      onSelectedRunIdChange(agentId)
+      onSubagentSheetOpenChange(true)
+    },
+    [onSelectedRunIdChange, onSubagentSheetOpenChange]
+  )
 
   /**
    * A trailing user message with no assistant run after it yet is the one
@@ -128,6 +166,7 @@ export function ChatThread({
                     messages={run.messages}
                     streaming={pending && index === runs.length - 1}
                     onAnswer={onAnswer}
+                    onSelectRun={onSelectRun}
                   />
                 </MessageScrollerItem>
               ))}
@@ -179,6 +218,13 @@ export function ChatThread({
           placeholder="Ask for a change…"
         />
       </div>
+      <SubagentSheet
+        records={subagentRuns}
+        open={subagentSheetOpen}
+        onOpenChange={onSubagentSheetOpenChange}
+        selectedRunId={selectedRunId}
+        onSelectRun={onSelectedRunIdChange}
+      />
     </div>
   )
 }
