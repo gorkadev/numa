@@ -335,13 +335,13 @@ Satisfies `subagent-view`: Sub-Agent Run Record Fields.
 
 Satisfies `subagent-view`: Named Bots (component half).
 
-- [ ] 10a.1 Create `apps/web/components/chat/subagent-entry.tsx`: inline
+- [x] 10a.1 Create `apps/web/components/chat/subagent-entry.tsx`: inline
       `displayName · current activity`, shimmer class while running, plain
       status text when finished, `onClick` opens the Sheet on this run.
-- [ ] 10a.2 Create `apps/web/components/chat/subagent-sheet.tsx`: right
+- [x] 10a.2 Create `apps/web/components/chat/subagent-sheet.tsx`: right
       `Sheet` (`@workspace/ui/components/sheet`) listing thread runs by
       `displayName` (role secondary), `selectedRunId` prop.
-- [ ] 10a.3 Create `apps/web/components/chat/subagent-run-detail.tsx`: full
+- [x] 10a.3 Create `apps/web/components/chat/subagent-run-detail.tsx`: full
       detail (role, `displayName`, `modelName`, tier, slot, tool calls, edits,
       tokens, status); live-updates while the run is in progress.
 

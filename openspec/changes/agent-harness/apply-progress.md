@@ -2459,3 +2459,182 @@ list in the current registry holds exactly one entry.
 lines, 83 over budget) to the user/maintainer before merge; the
 `run-tasks.ts`/`verify.ts` persistence gap from the first version is now
 resolved.
+
+## Unit 10a — Sub-agent view components (PR 14)
+
+Branch: `agent-harness/10a-subagent-view` (stacked on
+`agent-harness/9-subagent-records`, at `807a562`).
+
+- [x] 10a.1 Create `apps/web/components/chat/subagent-entry.tsx`
+- [x] 10a.2 Create `apps/web/components/chat/subagent-sheet.tsx`
+- [x] 10a.3 Create `apps/web/components/chat/subagent-run-detail.tsx`
+
+3/3 tasks in unit 10a complete. Unit 10b remains (`[ ]`), unassigned to this
+apply batch.
+
+### Files Changed
+
+| File | Action |
+|---|---|
+| `apps/web/components/chat/subagent-entry.tsx` | Created |
+| `apps/web/components/chat/subagent-sheet.tsx` | Created |
+| `apps/web/components/chat/subagent-run-detail.tsx` | Created |
+
+### Props signatures
+
+```ts
+// subagent-entry.tsx
+export function subagentStatusLabel(status: SubagentRunStatus): string
+type SubagentEntryProps = { record: SubagentRunRecord; onSelect: (agentId: string) => void }
+export function SubagentEntry(props: SubagentEntryProps): JSX.Element
+
+// subagent-sheet.tsx
+type SubagentSheetProps = {
+  records: SubagentRunRecord[]
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  selectedRunId: string | null
+  onSelectRun: (agentId: string | null) => void
+}
+export function SubagentSheet(props: SubagentSheetProps): JSX.Element
+
+// subagent-run-detail.tsx
+type SubagentRunDetailProps = { record: SubagentRunRecord }
+export function SubagentRunDetail(props: SubagentRunDetailProps): JSX.Element
+```
+
+All three take data in via props and report intent out via callbacks
+(`onSelect`/`onOpenChange`/`onSelectRun`); none fetches data, imports
+Trigger/chat wiring, or touches `chat-message.tsx`/`chat-thread.tsx`/
+`game-chat.tsx`/`tool-parts.ts` — those are unit 10b's task.
+
+### Design choices and how they map to design.md decision 16
+
+- **Shimmer reuse, not a new treatment.** `SubagentEntry` and
+  `SubagentRunDetail`'s status line both apply the existing `shimmer`
+  utility class to `MarkerContent`/a `span`, the exact mechanism
+  `apps/web/components/chat/tool-group.tsx:102` (`ToolGroup`'s
+  `MarkerContent className={active ? "shimmer" : undefined}`) and
+  `apps/web/components/chat/thinking.tsx:52` already use. The class itself
+  (`packages/ui/src/styles/globals.css`'s compiled `.shimmer` utility,
+  confirmed in the built CSS since the utility is not declared as literal
+  source in this repo — it comes from the Tailwind v4 plugin chain) already
+  disables its animation under `@media (prefers-reduced-motion: reduce)` at
+  the CSS layer, so no reduced-motion branching was needed in either
+  component.
+- **`status === "running"` decides shimmer-vs-plain directly**, per the
+  apply prompt's explicit instruction, rather than deriving it from a
+  wrapping tool-part's own streaming state as design.md decision 16's prose
+  first suggested and `records.ts`'s own `subagentRunStatusSchema` comment
+  anticipated ("the running/finished distinction ... is still expected to
+  come from the surrounding tool call's own streaming state ... unit 10b
+  owns wiring that up"). Unit 9's later correction *replaced* the ambiguous
+  ad hoc `"partial"`-as-placeholder with a real `"running"` enum value
+  specifically so a consumer would not need that external signal — reading
+  `record.status === "running"` here is a direct, simpler consequence of
+  that correction, not a deviation from it. Documented at
+  `subagentStatusLabel`'s own doc comment (`"running"` never reaches the
+  label function).
+- **`SubagentEntry`'s icon/tint states mirror `ToolMarker`'s three-state
+  read (in flight / ok / failed)** rather than inventing a seven-way status
+  icon set for `EnvelopeStatus`'s full range: `running` → `Spinner`,
+  `error` → the same `Alert01Icon` + `text-destructive` tint `ToolMarker`
+  uses for a failed tool call, everything else terminal → `Tick02Icon`
+  with the plain human label from `subagentStatusLabel` (`"Stopped
+  partway"`, `"Needs input"`, `"Cancelled"`, `"Skipped"`, `"Unavailable"`).
+  This keeps the inline entry legible at a glance rather than asking the
+  reader to learn seven icons; the full status text is still always
+  present as the marker's own label.
+- **`SubagentSheet` composes `Item`/`ItemGroup` (list) and delegates full
+  detail to `SubagentRunDetail`** rather than inlining either. The header
+  stays static ("Sub-agent runs" / "Every sub-agent this thread has
+  dispatched.") in both modes; a "back" button (ghost `Button` +
+  `ArrowLeft01Icon`, the same icon-object convention `tool-group.tsx`
+  already uses for `Alert01Icon`/`Tick02Icon`) calls `onSelectRun(null)` to
+  return to the list without closing the sheet. This is why `onSelectRun`'s
+  type is `(agentId: string | null) => void` rather than `(agentId: string)
+  => void`: the task text only asks for a `selectedRunId` prop, but a
+  controlled panel that can show detail also needs a controlled way back to
+  the list, and `null` reuses the same "nothing selected" value
+  `selectedRunId` itself already carries.
+- **`SubagentRunDetail` is self-contained**: it renders `displayName` and
+  `role` as its own heading rather than relying on `SubagentSheet`'s title,
+  so the component satisfies task 10a.3's full field list
+  (`role, displayName, modelName, tier, slot, tool calls, edits, tokens,
+  status`) on its own, independent of how 10b (or any other future caller)
+  composes it into a page.
+- **`Sheet`'s API is Base UI (`@base-ui/react/dialog`), not Radix**,
+  confirmed by reading `packages/ui/src/components/sheet.tsx` before use:
+  `open`/`onOpenChange` on the `Sheet` root match the prop names the task
+  asked for directly, `SheetContent` defaults to `side="right"` (no prop
+  needed), and `SheetTitle` is required for accessibility per the shadcn
+  skill's Dialog/Sheet/Drawer rule — both `SubagentSheet`'s header states
+  render one.
+
+### Deviations from Design
+
+None from `design.md` decision 16 or task 10a.1–10a.3's literal file/prop
+list. The one clarification worth flagging (`status === "running"` deciding
+shimmer directly, rather than deferring to a wrapping tool part) is
+documented above as a consequence of unit 9's own later correction, not a
+deviation from this unit's own scope — unit 9 had already resolved the
+ambiguity `records.ts`'s comment flagged before this unit started.
+
+### Work Unit Evidence
+
+| Evidence | Value |
+|---|---|
+| Focused command | `cd apps/web && npx tsc --noEmit -p .` (fresh, not turbo-cached) → exit 0. `cd apps/web && pnpm lint` → 0 errors, the same 13 pre-existing warnings established since unit 7a/7b (`trigger/example.ts`, `game-menu.tsx`, 11 `turbo/no-undeclared-env-vars` entries). No new warning from any of the three new files. |
+| Runtime harness | N/A per tasks.md's own row for this unit — the three components are not imported or rendered by anything yet (10b is the first caller). No manual dev scenario is possible until that wiring lands. |
+| Rollback boundary | Revert the three new `apps/web/components/chat/subagent-{entry,sheet,run-detail}.tsx` files. Nothing outside this unit imports any of them yet, so the revert is fully self-contained; no other file was modified. |
+
+### Workload / PR Boundary
+
+- Mode: stacked-to-main chained PR slice (PR 14 of 15)
+- Current work unit: 10a — Sub-agent view components
+- Boundary: starts from `agent-harness/9-subagent-records`, ends with three
+  typechecked, presentational, unrendered components ready for 10b's
+  wiring; no other file changed
+- **Authored changed lines: 357** (357 insertions, 0 deletions, across the 3
+  new files — per `git diff --stat 807a562..HEAD -- . ':!openspec'`,
+  excluding the pre-existing unrelated `apps/web/next.config.ts` diff, which
+  was not staged this session). **Under the 400-line budget** — the first
+  unit in this change to land under budget without needing a
+  `size:exception`.
+
+### Risks for 10b
+
+1. **The `status === "running"` vs. tool-part streaming-state question is
+   now settled**, per the Design Choices note above — 10b does not need to
+   invent its own "is this run still going" signal; it can pass whatever
+   `SubagentRunRecord.status` the persisted or live record carries straight
+   through, and `SubagentEntry`/`SubagentRunDetail` already key off it
+   correctly for every value, including a reloaded thread's terminal
+   records (`subagent-view`'s Sub-Agent Records Survive Reload requirement).
+2. **`onSelectRun` accepts `string | null`, not just `string`.** 10b.2's
+   lifted state (`chat-thread.tsx`/`game-chat.tsx`) must type
+   `selectedRunId` as `string | null` and pass a setter matching that
+   signature, or the back button inside `SubagentSheet` will not compile
+   against a narrower lifted type.
+3. **`collectSubagentRuns` (unit 9, unchanged by this unit) is the expected
+   source of `SubagentSheet`'s `records` prop** — 10b.3's `tool-parts.ts`
+   reload wiring needs to call it across every dispatch-tool output found in
+   a thread's persisted parts and feed the result to `SubagentSheet`/inline
+   `SubagentEntry`s built from the live stream, so the same run shows
+   identical detail before and after a reload, per that unit's own gap note
+   above (now resolved: `run-tasks.ts`/`verify.ts` both forward `records`
+   today).
+4. **No `avatar` field exists yet** (`RoleDef.avatar` is reserved,
+   design.md's role-catalogue footnote) — `SubagentEntry`'s `MarkerIcon` and
+   `SubagentSheet`'s list rows use only the status icon (spinner/tick/alert),
+   never a per-role avatar. If 10b or a later change adds `avatar` to
+   `RoleDef`/`SubagentRunRecord`, both components have an obvious slot
+   (`ItemMedia`/`MarkerIcon`) to extend into without a prop-shape break.
+
+### Status
+
+3/3 tasks in unit 10a complete. Ready for `sdd-verify`. This is the first
+unit in the change to land inside the 400-line budget with no
+`size:exception` needed. Unit 10b (wiring: header button, inline entry in
+`chat-message.tsx`, lifted `{ open, selectedRunId }` state, reload parsing in
+`tool-parts.ts`) is the final unit and a separate apply.
