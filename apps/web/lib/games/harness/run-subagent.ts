@@ -17,6 +17,7 @@ import { ROLE_DEFAULT_SKILLS, type SkillName } from "@/lib/games/skills/registry
 import type { EnvelopeStatus, SubagentEnvelope } from "./envelope"
 import {
   MAX_EDITS_PER_RECORD,
+  MAX_PROMPT_CHARS,
   MAX_TOOL_CALLS_PER_RECORD,
   MAX_TOOL_CALL_ERROR_CHARS,
   type SubagentRunRecord,
@@ -105,6 +106,43 @@ function toolCallPath(input: unknown): string | undefined {
   const path = (input as { path?: unknown }).path
 
   return typeof path === "string" && path.length > 0 ? path : undefined
+}
+
+/** One content part's text, when it has one — the duck-typed read `toolCallPath` above uses for a different field on a different shape. */
+function partText(part: unknown): string {
+  if (typeof part !== "object" || part === null) return ""
+
+  const candidate = part as { type?: unknown; text?: unknown }
+
+  return candidate.type === "text" && typeof candidate.text === "string" ? candidate.text : ""
+}
+
+/** A `ModelMessage`'s own text, joining every `{ type: "text" }` part when `content` is an array — an image or file part contributes nothing. */
+function messageText(content: ModelMessage["content"]): string {
+  if (typeof content === "string") return content
+  if (!Array.isArray(content)) return ""
+
+  return content.map(partText).filter(Boolean).join("\n\n")
+}
+
+/**
+ * Reduces a run's `prompt` input to the plain text `records.ts`'s own
+ * `prompt` field stores: the string as-is, or for a `ModelMessage[]` (what
+ * `verify.ts` sends — a user message whose content mixes a text part with an
+ * image/file part) every message's own text joined by a blank line.
+ * Truncated to `MAX_PROMPT_CHARS` — the same ceiling `records.ts` documents
+ * on the field itself — with a trailing "…" marking a cut.
+ */
+function promptToText(prompt: string | ModelMessage[]): string {
+  const text =
+    typeof prompt === "string"
+      ? prompt
+      : prompt
+          .map((message) => messageText(message.content))
+          .filter((part) => part.length > 0)
+          .join("\n\n")
+
+  return text.length > MAX_PROMPT_CHARS ? `${text.slice(0, MAX_PROMPT_CHARS)}…` : text
 }
 
 const ZERO_RUN_TOKENS: SubagentRunTokens = {
@@ -212,6 +250,7 @@ export async function* runSubagent(
   const { role, instructions, tools, prompt, abortSignal, stopWhen } = input
   const agentId = input.agentId ?? randomUUID()
   const skills = input.skills ?? ROLE_DEFAULT_SKILLS[role.id]
+  const promptText = promptToText(prompt)
 
   const { hooks, takeServed } = buildRunHooks()
   const { model, primary } = resolveModel(turnState.tier, role.slot, hooks)
@@ -268,6 +307,7 @@ export async function* runSubagent(
       edits: [...edits],
       tokens,
       skills,
+      prompt: promptText,
       summary: finalSummary ?? "",
     }
   }

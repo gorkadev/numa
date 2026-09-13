@@ -83,6 +83,15 @@ export const MAX_TOOL_CALLS_PER_RECORD = 100
 export const MAX_EDITS_PER_RECORD = 100
 
 /**
+ * A defensive ceiling on how long the recorded `prompt` stays — the same
+ * reasoning as `MAX_TOOL_CALL_ERROR_CHARS` above, sized for a whole prompt
+ * rather than a one-line tool error: long enough to keep real context, short
+ * enough that a single `games.messages` row stays bounded no matter how
+ * large a caller's own prompt gets.
+ */
+export const MAX_PROMPT_CHARS = 8_000
+
+/**
  * One tool call a sub-agent made, as far as the run record needs to know
  * about it (design.md decision 15 / task 9.2: "name, path, ok, ≤200-char
  * error"). Named `toolName`, not `name`: unit 2a's `SubagentProgress` shape
@@ -152,6 +161,16 @@ export const subagentRunRecordSchema = z.object({
   tokens: subagentRunTokensSchema,
   /** The skills pushed into this run's own instructions — a role's defaults, plus any per-task extras a dispatch tool added. */
   skills: z.array(z.string()),
+  /**
+   * The text the orchestrator handed this sub-agent — `run-subagent.ts`'s
+   * own `promptToText` reduction of its `prompt` input to plain text (text
+   * parts only; an image or file part carries nothing renderable here),
+   * truncated to `MAX_PROMPT_CHARS`. `.default("")` so a record persisted
+   * before this field existed still parses — `collectSubagentRuns` drops
+   * anything that fails to parse outright, and an old run's `summary` is
+   * still worth keeping even with no recorded input alongside it.
+   */
+  prompt: z.string().default(""),
   /** The run's own final text once it ends; empty while still in progress. */
   summary: z.string(),
 })
