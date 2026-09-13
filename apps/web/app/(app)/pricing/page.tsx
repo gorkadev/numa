@@ -30,6 +30,7 @@ import {
   ItemTitle,
 } from "@workspace/ui/components/item"
 
+import { MobileSidebarTrigger } from "@/components/mobile-sidebar-trigger"
 import { getBillingSummary } from "@/lib/polar/plan"
 import {
   POLAR_PRODUCT_FREE_ID,
@@ -88,7 +89,8 @@ export default async function PricingPage() {
   const { plan } = await getBillingSummary()
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 p-6">
+    <div className="relative mx-auto flex w-full max-w-5xl flex-col gap-8 p-6">
+      <MobileSidebarTrigger className="absolute top-2 left-2" />
       {/**
        * `flex-none` because `Empty` is built to fill the space it is given, and
        * here it is a heading with a page underneath it rather than the page.

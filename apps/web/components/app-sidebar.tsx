@@ -122,7 +122,7 @@ export function AppSidebar({
   const pathname = usePathname()
   const router = useRouter()
   const isMac = useIsMac()
-  const { state } = useSidebar()
+  const { state, setOpenMobile } = useSidebar()
   const [searchOpen, setSearchOpen] = useState(false)
 
   const newGameHint = isMac ? "⇧⌘O" : "Ctrl Shift O"
@@ -265,6 +265,14 @@ export function AppSidebar({
                       ),
                       sideOffset: 25,
                     }}
+                    /**
+                     * On a phone-width screen the sidebar is an off-canvas
+                     * drawer (`sidebar.tsx`'s `isMobile` branch): navigating
+                     * away is the reader's signal they are done with it, so
+                     * this closes it the same way `GameRow`'s own link does.
+                     * A no-op on desktop, where `openMobile` is never read.
+                     */
+                    onClick={() => setOpenMobile(false)}
                     render={<Link href="/" />}
                   >
                     <HugeiconsIcon icon={PencilEdit02Icon} />
@@ -345,9 +353,23 @@ export function AppSidebar({
            * inside it: an empty group still contributes its padding, which is
            * the other half of the gap the rail used to show.
            */}
-          <SidebarGroup className="group-data-[collapsible=icon]:hidden">
+          {/**
+           * The list scrolls on its own, below a label that stays put, rather
+           * than the whole `SidebarContent` scrolling "New game" and "Recents"
+           * away with it: `min-h-0 flex-1` lets the group take the leftover
+           * height and shrink below its content, and the list inside is the
+           * scroller. `scroll-fade` needs exactly that — it masks the element
+           * that carries the overflow, fading an edge only while there is more
+           * to scroll towards it.
+           *
+           * `overflow-x-hidden` is spelled out because `overflow-y: auto` on
+           * its own turns the other axis to `auto` as well, and a row a few
+           * pixels wider than the list (the mobile drawer measures 274 in 270)
+           * was enough to make it scroll sideways.
+           */}
+          <SidebarGroup className="min-h-0 flex-1 pb-0 group-data-[collapsible=icon]:hidden">
             <SidebarGroupLabel>Recents</SidebarGroupLabel>
-            <SidebarGroupContent>
+            <SidebarGroupContent className="no-scrollbar min-h-0 flex-1 scroll-fade overflow-x-hidden overflow-y-auto overscroll-contain pb-2">
               {games.length === 0 ? (
                 <Empty className="border p-3">
                   <EmptyDescription className="text-xs">

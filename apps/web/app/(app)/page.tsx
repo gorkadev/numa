@@ -10,13 +10,15 @@ import {
   EmptyTitle,
 } from "@workspace/ui/components/empty"
 
+import { MobileSidebarTrigger } from "@/components/mobile-sidebar-trigger"
 import { NewGameComposer } from "@/components/new-game-composer"
 
 export default async function Page() {
   await auth.protect()
 
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center gap-6">
+    <div className="relative flex min-h-svh flex-col items-center justify-center gap-6">
+      <MobileSidebarTrigger className="absolute top-2 left-2" />
       <Empty className="flex-none">
         <EmptyHeader>
           <EmptyMedia>

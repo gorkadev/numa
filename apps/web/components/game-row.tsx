@@ -9,6 +9,7 @@ import {
   SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@workspace/ui/components/sidebar"
 
 import { GameMenu } from "@/components/game-menu"
@@ -37,10 +38,17 @@ export function GameRow({
   closeOnSelect?: boolean
 }) {
   const pathname = usePathname()
+  const { setOpenMobile } = useSidebar()
 
   const row = (
     <SidebarMenuButton
       isActive={pathname === `/games/${game.id}`}
+      /**
+       * Closes the off-canvas mobile drawer on navigation — a no-op on
+       * desktop, where `openMobile` is never read (`app-sidebar.tsx`'s "New
+       * game" button does the same for the same reason).
+       */
+      onClick={() => setOpenMobile(false)}
       render={<Link href={`/games/${game.id}`} />}
     >
       <MarqueeText>{game.title}</MarqueeText>
