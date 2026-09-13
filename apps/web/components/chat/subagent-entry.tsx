@@ -23,7 +23,7 @@ import type {
  * Plain-text status for everywhere a finished (or not-yet-started) run's
  * status appears without the shimmer treatment (design.md decision 16).
  * `"running"` never reaches this: a running record shows its `activity`
- * one-liner instead, both here and in `SubagentSheet`'s run list.
+ * one-liner instead, both here and in `SubagentPanel`'s run list.
  */
 export function subagentStatusLabel(status: SubagentRunStatus): string {
   switch (status) {

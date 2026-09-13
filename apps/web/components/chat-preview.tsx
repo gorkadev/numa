@@ -2,13 +2,19 @@
 
 import { useState } from "react"
 
-import { Cancel01Icon, RefreshIcon } from "@hugeicons/core-free-icons"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { Button } from "@workspace/ui/components/button"
 import { Spinner } from "@workspace/ui/components/spinner"
+import { cn } from "@workspace/ui/lib/utils"
 
 /**
  * The running game, embedded from this origin.
+ *
+ * This used to be a full card with its own header — title, reload, close —
+ * because it was one of two mutually exclusive docked panes in
+ * `game-chat.tsx`. 10c folded both panes into one `SidePanel` (see that
+ * file) with a shared tab header, so the card, the title and both buttons
+ * moved there; what is left here is only the part `SidePanel` cannot own
+ * itself — the iframe and its loading state — rendered as a plain body that
+ * drops into whichever container `SidePanel` gives it.
  *
  * The iframe points at the app's own proxy rather than at the sandbox's preview
  * URL, so the sandbox's own token stays on the server.
@@ -27,11 +33,15 @@ import { Spinner } from "@workspace/ui/components/spinner"
  * the proxy entirely, and a 404. Naming the file keeps the directory in the base
  * without asking Next for a redirect.
  */
-export function ChatPreview({
+export function ChatPreviewBody({
   gameId,
   previewToken,
   revision,
-  onClose,
+  reloadKey,
+  hidden,
+  disablePointerEvents,
+  className,
+  ...props
 }: {
   gameId: string
   previewToken: string
@@ -43,20 +53,38 @@ export function ChatPreview({
    */
   revision: number
   /**
-   * Collapses the pane. One-way on purpose: the chat header's control toggles,
-   * this one only closes, so it is unambiguous from inside a pane that is
-   * already open.
+   * Bumped by `SidePanel`'s reload button, which now owns the counter this
+   * component used to keep for itself (`reloads` in the pre-10c version) —
+   * the button lives in the shared tab header, not in here, so the count it
+   * drives has to live wherever the button does.
    */
-  onClose: () => void
-}) {
+  reloadKey: number
+  /**
+   * Set by `SidePanel` while the Agents tab is active, so the frame — and
+   * the running game inside it — stays mounted across a tab switch instead
+   * of being torn down and rebuilt (see that file's comment on
+   * `previewMounted`). A native `hidden` attribute rather than an unmount:
+   * `display: none` costs the frame nothing, while removing it from the
+   * tree would restart the game exactly the same as closing the panel used
+   * to.
+   */
+  hidden?: boolean
+  /**
+   * Set by `SidePanel` for the duration of a resize drag. The iframe is a
+   * rectangle the browser routes pointer events to directly, so without
+   * this a drag that passes over the preview loses every subsequent
+   * `pointermove` to the iframe's own document instead of the window
+   * listener tracking the width.
+   */
+  disablePointerEvents?: boolean
+} & Omit<React.ComponentPropsWithoutRef<"div">, "hidden" | "children">) {
   /**
    * Remounting is the reload. `src` is identical across updates — the sandbox
    * keeps one preview URL for its whole life — so assigning it again would be a
    * no-op, and reaching into `contentWindow.location` is not available to a
    * frame deliberately kept out of this origin.
    */
-  const [reloads, setReloads] = useState(0)
-  const frameKey = `${revision}:${reloads}`
+  const frameKey = `${revision}:${reloadKey}`
 
   /**
    * Loading is derived from which frame has reported in, rather than tracked as
@@ -68,65 +96,34 @@ export function ChatPreview({
   const loading = loadedKey !== frameKey
 
   return (
-    /**
-     * A card rather than a full-bleed pane, matching the floating sidebar on the
-     * other edge of the screen: the same rounding, hairline and shadow, so the
-     * page reads as a conversation with two things floating either side of it.
-     *
-     * `overflow-hidden` is doing real work here and not just tidiness — the
-     * iframe is a rectangle that knows nothing about this container, so the
-     * rounded corners exist only because the parent clips them.
-     */
-    <div className="flex h-full flex-col overflow-hidden rounded-2xl bg-card shadow-sm ring-1 ring-border">
-      {/**
-       * The same height as the chat pane's header, stated rather than left to
-       * the card's contents: the two sit either side of the gap and read as one
-       * bar, so a few pixels of drift between them is visible.
-       */}
-      <header className="flex h-10 shrink-0 items-center justify-between gap-2 border-b px-3">
-        <h1 className="truncate text-sm font-medium">Preview</h1>
-        <div className="flex shrink-0 items-center gap-1">
-          <Button
-            aria-label="Reload preview"
-            onClick={() => setReloads((count) => count + 1)}
-            size="icon-sm"
-            variant="ghost"
-          >
-            <HugeiconsIcon icon={RefreshIcon} />
-          </Button>
-          <Button
-            aria-label="Close preview"
-            onClick={onClose}
-            size="icon-sm"
-            variant="ghost"
-          >
-            <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />
-          </Button>
+    <div
+      className={cn("relative size-full", className)}
+      hidden={hidden}
+      {...props}
+    >
+      {loading && (
+        <div className="absolute inset-0 grid place-items-center bg-background">
+          <Spinner />
         </div>
-      </header>
+      )}
 
-      <div className="relative flex-1">
-        {loading && (
-          <div className="absolute inset-0 grid place-items-center bg-background">
-            <Spinner />
-          </div>
+      <iframe
+        className={cn(
+          "size-full border-0",
+          disablePointerEvents && "pointer-events-none"
         )}
-
-        <iframe
-          className="size-full border-0"
-          key={frameKey}
-          onLoad={() => setLoadedKey(frameKey)}
-          /**
-           * The game is model-generated code. `allow-scripts` is what makes it
-           * playable, but it is deliberately not paired with `allow-same-origin`:
-           * together they would let the frame reach this app's origin — its
-           * cookies and storage — and take the sandbox down with it.
-           */
-          sandbox="allow-scripts allow-forms allow-pointer-lock"
-          src={`/api/games/${gameId}/preview/${previewToken}/index.html`}
-          title="Game preview"
-        />
-      </div>
+        key={frameKey}
+        onLoad={() => setLoadedKey(frameKey)}
+        /**
+         * The game is model-generated code. `allow-scripts` is what makes it
+         * playable, but it is deliberately not paired with `allow-same-origin`:
+         * together they would let the frame reach this app's origin — its
+         * cookies and storage — and take the sandbox down with it.
+         */
+        sandbox="allow-scripts allow-forms allow-pointer-lock"
+        src={`/api/games/${gameId}/preview/${previewToken}/index.html`}
+        title="Game preview"
+      />
     </div>
   )
 }

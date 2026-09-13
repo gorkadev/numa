@@ -218,9 +218,10 @@ function subagentRunsForPart(part: ToolPart): SubagentRunRecord[] {
 
 /**
  * Every sub-agent run recorded anywhere across a set of messages — the
- * source for `SubagentSheet`'s thread-wide list (`chat-thread.tsx`). Live and
- * reloaded runs read identically, since it is built from the same
- * current-output extraction `subagentRunsForPart` uses for one message's
+ * source for `SubagentPanel`'s thread-wide list, collected in
+ * `chat-thread.tsx` and reported up to `game-chat.tsx`, which renders the
+ * panel. Live and reloaded runs read identically, since it is built from the
+ * same current-output extraction `subagentRunsForPart` uses for one message's
  * inline entries below (`subagent-view`'s Sub-Agent Records Survive Reload
  * requirement).
  */
