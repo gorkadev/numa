@@ -83,10 +83,12 @@ export function isSkillName(value: string): value is SkillName {
  *   - `gameplay` (movement, physics, scoring): `engine-utils` (math/input),
  *     `engine-movement` (camera rigs/physics), `engine-systems`
  *     (state/phase machine, `createGame`).
- *   - `visuals` (look and feel): `engine-scene` (lighting/models),
- *     `engine-feedback` (tweening/HUD), `engine-systems` (fx/particles,
- *     shared with gameplay's state module), `engine-reference` (the style
- *     guidance section).
+ *   - `visuals` (look and feel, including the camera per
+ *     `instructions/roles/worker.ts`'s focus text): `engine-scene`
+ *     (lighting/models), `engine-movement` (camera rigs — shared with
+ *     gameplay's motor/physics module), `engine-feedback` (tweening/HUD),
+ *     `engine-systems` (fx/particles, shared with gameplay's state module),
+ *     `engine-reference` (the style guidance section).
  *   - `audio`: `engine-audio` only, beyond core.
  *
  * This mapping is this unit's own reasonable default, not dictated
@@ -102,6 +104,7 @@ export const ROLE_DEFAULT_SKILLS: Record<RoleId, SkillName[]> = {
   visuals: [
     "engine-core",
     "engine-scene",
+    "engine-movement",
     "engine-feedback",
     "engine-systems",
     "engine-reference",

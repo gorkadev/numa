@@ -15,11 +15,14 @@ export const engineUtilsSkill: Skill = {
   trigger:
     "A task needs frame-rate-independent easing/damping, seeded randomness or noise, or to read keyboard/mouse/gamepad/pointer state.",
   body: `**math.js** — \`clamp\`, \`lerp\`, \`mapLinear\`, \`degToRad\`, \`radToDeg\`,
-\`smoothstep\`, \`TAU\`; \`damp(current, target, halfLife, dt)\` and
-\`dampVec3\`/\`dampAngle\` (frame-rate independent — use these instead of
-\`lerp\` in the loop); \`rng(seed)\` and the shared \`random\` with
-\`.next/.range/.int/.chance/.pick/.shuffle/.onSphere\`; \`noise2D(seed)\`,
-\`fbm2D(seed, octaves)\`; \`createTimer(seconds).tick(dt)\`.
+\`smoothstep\`, \`smootherstep\`, \`pingpong\`, \`euclideanModulo\`, \`TAU\`;
+\`damp(current, target, halfLife, dt)\` and \`dampVec3\`/\`dampAngle\`
+(frame-rate independent — use these instead of \`lerp\` in the loop);
+\`wrapAngle(angle)\` (wraps into \`(-PI, PI]\`, what \`dampAngle\` uses
+internally to turn the short way round); \`rng(seed)\` and the shared
+\`random\` with \`.next/.range/.int/.chance/.pick/.shuffle/.onSphere\`;
+\`noise2D(seed)\`, \`fbm2D(seed, octaves)\`; \`createTimer(seconds).tick(dt)\`
+(returns how many intervals fired) / \`.reset()\`.
 
 **input.js** — \`createInput(engine)\` gives polled state:
 \`down(...codes)\`, \`pressed(...)\` (that frame only), \`released(...)\`,

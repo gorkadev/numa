@@ -16,17 +16,30 @@ export const engineFeedbackSkill: Skill = {
     "A task animates an object, adds camera shake, or shows score, health, prompts, or toasts to the player.",
   body: `**anim.js** — \`easing\` (\`outCubic\` is the safe default, \`outBack\` for
 arrivals), \`tween(engine, { duration, from, to, ease, onUpdate, onComplete,
-loop, yoyo })\`, \`spring(value, { stiffness })\`, \`createShake(engine).add(0..1)\`,
+loop, yoyo })\`, \`createShake(engine).add(0..1)\`,
 \`spin(engine, object, speed)\`, \`float(engine, object)\`, \`popIn\`/\`popOut\`,
 \`flash(engine, object)\` (hit feedback),
-\`walkCycle(rig, elapsed, speed)\` for a \`createCharacter\` rig,
-\`createMixer(engine, root, clips)\`.
+\`walkCycle(rig, elapsed, speed, { swing, cadence, bob })\` for a
+\`createCharacter\` rig, \`createMixer(engine, root, clips)\`.
 
-**hud.js** — \`createHud(engine)\`, a styled DOM overlay that never eats clicks:
-\`stat(label, value, position)\` → \`.set(v)\`, \`bar(label, position)\` → \`.set(0..1)\`,
+\`spring(value, { stiffness = 120, damping = 1 })\` — a handle, not a
+one-shot: \`.target\` (get/set the value it's chasing), \`.snap(next?)\`
+(jumps instantly, defaults to the current target), \`.value\` (current
+number), and \`.update(dt)\` which advances the simulation AND returns the
+new value — call it every frame or the spring never moves. Lower \`damping\`
+below 1 for overshoot/bounce.
+
+**hud.js** — \`createHud(engine, { theme })\`, a styled DOM overlay that never
+eats clicks:
+\`stat(label, value, position)\` → \`.set(v)\`,
+\`bar(label, position, { color, dangerBelow })\` → \`.set(0..1)\`
+(\`dangerBelow\`, default 0.3, switches the fill to the danger colour at or
+below that fraction),
 \`text(content, position)\`, \`keys([{ keys: ["W"], label: "Move" }])\`,
-\`crosshair()\`, \`toast(message)\`,
-\`panel({ title, body, actions: [{ label, onClick, ghost }] })\` (pauses while open),
+\`crosshair()\`, \`toast(message, duration)\` (seconds before it fades, default 1.8),
+\`panel({ title, body, actions: [{ label, onClick, ghost }], pause })\`
+(\`pause\`, default true, pauses \`engine\` while the panel is up and resumes
+it on close — pass \`false\` for a panel that shouldn't stop the game),
 \`follow(object, { offset, content })\` (nameplates), \`theme({ accent })\`, \`clear()\`.
 Positions are \`"top|middle|bottom"\`-\`"left|center|right"\`.`,
 }

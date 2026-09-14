@@ -16,10 +16,19 @@ export const engineReferenceSkill: Skill = {
     "A task starts a new game from scratch, or needs guidance on lighting, palette, ground texture, feedback, or choosing 2D vs 3D.",
   body: `### The shape of a game
 
+A game is a loop that runs through \`PHASES.MENU → PLAYING → OVER\`, and
+back to \`PLAYING\` on restart, never a page reload. The pattern below is the
+whole lifecycle: a menu panel that starts the run, per-frame logic gated on
+\`state.isPlaying\`, a game-over panel driven by \`state.on(PHASES.OVER, ...)\`,
+and a \`startRun()\` both the menu and the game-over panel call — it resets
+the score, the player's position, and every spawned entity, and disposes
+what it removes so restarting ten times doesn't leak ten runs' worth of
+meshes and update handlers.
+
 \`\`\`js
 import {
   createGame, createGround, createCharacter, createCoin, createFollowCamera,
-  createPlayerMotor, collect, spin, float, PHASES, PALETTE,
+  createPlayerMotor, collect, spin, float, disposeObject, PHASES, PALETTE,
 } from "./engine/index.js"
 
 const { engine, input, hud, audio, physics, state, shake } = createGame({
@@ -32,42 +41,97 @@ const ground = createGround({ size: 80 })
 engine.add(ground)
 physics.addStatic(ground)
 
+const SPAWN = { x: 0, y: 0, z: 0 }
 const player = createCharacter({ color: PALETTE.blue })
 engine.add(player)
 const body = physics.addBody(player, { size: [0.7, 1.8, 0.7] })
 createPlayerMotor(engine, input, player, { body })
-createFollowCamera(engine, player).snap()
+const camera = createFollowCamera(engine, player)
 
-const coins = []
-for (let i = 0; i < 12; i++) {
+const COIN_COUNT = 12
+let coins = []
+
+/** spin()/float() each return a stop function — kept so a collected or
+ *  restarted coin's update handler can be torn down, not just its mesh. */
+function spawnCoin(i) {
   const coin = createCoin()
   coin.position.set(Math.sin(i) * 12, 1, Math.cos(i) * 12)
   engine.add(coin)
-  spin(engine, coin, 2)
-  float(engine, coin)
-  coins.push(coin)
+  const stopSpin = spin(engine, coin, 2)
+  const stopFloat = float(engine, coin)
+  coin.userData.cleanup = () => {
+    stopSpin()
+    stopFloat()
+  }
+  return coin
+}
+
+function clearCoins() {
+  for (const coin of coins) {
+    coin.userData.cleanup()
+    disposeObject(coin)
+  }
+  coins = []
 }
 
 const score = hud.stat("Score", 0)
 state.watch("score", (value) => score.set(value))
-hud.keys([
-  { keys: ["W", "A", "S", "D"], label: "Move" },
-  { keys: ["Space"], label: "Jump" },
-])
+hud.keys([{ keys: ["W", "A", "S", "D"], label: "Move" }])
 
 engine.onUpdate(() => {
-  if (input.pressed("Space") && physics.jump(body)) audio.sfx.jump()
+  if (!state.isPlaying) return
   collect(coins, player, 1.4, (coin) => {
-    coin.removeFromParent()
+    coin.userData.cleanup()
+    disposeObject(coin)
     state.add("score", 1)
     audio.sfx.coin()
     shake.add(0.15)
+    if (coins.length === 0) state.to(PHASES.OVER)
   })
 })
 
-state.to(PHASES.PLAYING)
+/** Menu → Start and Over → Play again both land here: reset before playing,
+ *  never accumulate state from the previous run. */
+function startRun() {
+  clearCoins()
+  player.position.set(SPAWN.x, SPAWN.y, SPAWN.z)
+  body.velocity.set(0, 0, 0)
+  for (let i = 0; i < COIN_COUNT; i++) coins.push(spawnCoin(i))
+  camera.snap()
+  state.reset()
+  state.to(PHASES.PLAYING)
+}
+
+/** hud.panel() pauses the engine while it's up and focuses its first button,
+ *  so Enter/Space works as "press a key" without any extra wiring. */
+hud.panel({
+  title: "Coin Run",
+  body: "Collect every coin. WASD to move.",
+  actions: [{ label: "Start", onClick: startRun }],
+})
+
+state.on(PHASES.OVER, () => {
+  hud.panel({
+    title: "Game Over",
+    body: \`You collected \${state.get("score")} coins.\`,
+    actions: [{ label: "Play again", onClick: startRun }],
+  })
+})
+
 engine.start()
 \`\`\`
+
+### Pooling instead of spawn/dispose per entity
+
+The pattern above disposes and recreates coins because there are only a
+dozen. Past a few hundred short-lived objects (bullets, enemies, debris),
+creating and disposing a mesh per spawn is the stutter — keep a fixed array
+of meshes instead, toggle \`.visible\` and reposition instead of
+adding/removing, and reuse the oldest one when the pool is full (the same
+cursor-wraps trick \`createParticles\`'s \`burst()\` uses internally). Past a
+few hundred *identical* copies with no independent behaviour (grass, a
+crowd), skip the pool entirely and use \`createField\`/\`InstancedMesh\`
+instead — one draw call for all of them.
 
 ### Making it look good
 
