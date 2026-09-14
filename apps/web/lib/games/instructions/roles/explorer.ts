@@ -20,7 +20,10 @@ Investigate only as much as the question actually needs. Start with
 \`list_files\` when you are not sure what exists, then \`read_file\` the specific
 files whose contents the question depends on. Do not read every file in the
 game just because you can, and do not read a file twice unless something
-changed since your last look.
+changed since your last look. When the question needs more than one file,
+request them all in the same step (parallel \`read_file\` calls) rather than
+one per step — each step is a full round trip, and nothing about these files
+depends on reading them in sequence.
 
 Your final response is your whole result: a short, plain-language answer to
 the question, addressed to the agent that dispatched you rather than the

@@ -69,11 +69,21 @@ function planTasksFromOutput(output: unknown): PlanTaskSummary[] | undefined {
   return summaries.length > 0 ? summaries : undefined
 }
 
-/** A `run_tasks` call's own declared batch — its `input.tasks`, read for their ids only, duck-typed the same way `tool-parts.ts`'s own `toolPath` reads a tool call's input. */
+/**
+ * A `run_tasks` call's own declared batch, read for its ids only and
+ * duck-typed the same way `tool-parts.ts`'s own `toolPath` reads a tool
+ * call's input. The normal dispatch names plan tasks by `taskIds`; only the
+ * corrective pass after verify sends full `tasks` bodies.
+ */
 function runTasksDeclaredIds(input: unknown): string[] {
   if (typeof input !== "object" || input === null) return []
 
-  const tasks = (input as { tasks?: unknown }).tasks
+  const { taskIds, tasks } = input as { taskIds?: unknown; tasks?: unknown }
+
+  if (Array.isArray(taskIds)) {
+    return taskIds.filter((id): id is string => typeof id === "string")
+  }
+
   if (!Array.isArray(tasks)) return []
 
   return tasks

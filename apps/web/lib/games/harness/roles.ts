@@ -58,19 +58,26 @@ export const ROLES: Record<RoleId, RoleDef> = {
     maxSteps: 12,
     timeoutMs: 300 * SECOND_MS,
   },
+  /**
+   * `maxSteps`/`timeoutMs` raised from 20/600s: the planner now defaults to
+   * one task owning a whole game's gameplay or visuals work
+   * (`instructions/roles/planner.ts`), so the one worker that owns it needs
+   * the larger budget a build used to spend across several workers. Audio
+   * tasks stay small by design and keep their original budget.
+   */
   gameplay: {
     id: "gameplay",
     displayName: "Builder",
     slot: "mid",
-    maxSteps: 20,
-    timeoutMs: 600 * SECOND_MS,
+    maxSteps: 30,
+    timeoutMs: 900 * SECOND_MS,
   },
   visuals: {
     id: "visuals",
     displayName: "Artist",
     slot: "mid",
-    maxSteps: 20,
-    timeoutMs: 600 * SECOND_MS,
+    maxSteps: 30,
+    timeoutMs: 900 * SECOND_MS,
   },
   audio: {
     id: "audio",

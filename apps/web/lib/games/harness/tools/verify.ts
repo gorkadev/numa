@@ -47,6 +47,53 @@ function findingsSummary(findings: Finding[]): string {
 }
 
 /**
+ * Appended to verify's own model-facing summary whenever this turn has any
+ * `run_tasks` task that did not finish as `"done"` (`turnState.unfinishedTaskIds`,
+ * `harness/turn-state.ts`) — pass or fail, a verify result only speaks to
+ * whether the code currently on disk runs without console errors, never to
+ * whether a specific dispatched task is complete. Without this line,
+ * benchmark traces showed a passing verify read as "the build is done" even
+ * when a task's own outcome said otherwise (`tools/run-tasks.ts`'s own
+ * `renderOutcomes` carries the same warning from the other side).
+ */
+function unfinishedTasksNote(): string {
+  const ids = [...turnState.unfinishedTaskIds]
+  if (ids.length === 0) return ""
+
+  return `\nVerify passing does not mean these tasks finished: ${ids.join(", ")}. Say plainly they are still unfinished.`
+}
+
+/** The required first line of a verifier reply (`instructions/roles/verifier.ts`), case-insensitive since it costs nothing to accept either. */
+const VERDICT_LINE_PATTERN = /^VERDICT:\s*(pass|fail)\b/i
+
+/**
+ * Splits the verifier's raw reply into its required verdict and the text
+ * that follows it. `verdict` is `undefined` for a reply that skipped the
+ * required first line — treated the same as "pass" below, never as a
+ * reason to fail a build on a malformed reply the model itself produced.
+ */
+function parseVerifierReply(reply: string): { verdict: "pass" | "fail" | undefined; text: string } {
+  const match = reply.match(VERDICT_LINE_PATTERN)
+
+  if (!match) return { verdict: undefined, text: reply }
+
+  /** `match[1]` is always defined here — the capture group is mandatory in `VERDICT_LINE_PATTERN` — but the array type is not narrow enough to say so. */
+  const verdict = (match[1] ?? "pass").toLowerCase() as "pass" | "fail"
+
+  return { verdict, text: reply.slice(match[0].length).trim() }
+}
+
+/**
+ * The one extra finding the verifier's reply can add to the code-decided
+ * ones, or `undefined` when it has nothing to add. `severity` is `"error"`
+ * only when the reply's own verdict is `fail`, `"warning"` otherwise.
+ */
+function reviewerFinding(verdict: "pass" | "fail" | undefined, text: string): Finding | undefined {
+  if (text.length === 0 || text === NO_ADDITIONAL_FINDINGS) return undefined
+  return { message: text, severity: verdict === "fail" ? "error" : "warning" }
+}
+
+/**
  * The console-error baseline this turn started from, read once and cached in
  * `turnState.verifyBaseline` — see that field's own comment for why a second
  * call this turn must reuse the cached value rather than reading the
@@ -141,7 +188,7 @@ export function createVerifyTool(gameId: string): Tool {
           envelope: {
             agent: "verifier",
             status: "unavailable",
-            summary: `Verify result: UNAVAILABLE. ${findingsSummary(findings)}`,
+            summary: `Verify result: UNAVAILABLE. ${findingsSummary(findings)}${unfinishedTasksNote()}`,
             findings,
           },
         }
@@ -166,28 +213,40 @@ export function createVerifyTool(gameId: string): Tool {
       }
 
       const result: RunSubagentResult = next.value
-      const verifierReply = result.envelope.summary.trim()
+      const { verdict: reviewerVerdict, text: reviewerText } = parseVerifierReply(
+        result.envelope.summary.trim()
+      )
 
       /**
        * The model may only ADD a finding, never clear one (task 6.4): every
        * code-decided finding stays, whatever the verifier said, and its own
        * reply becomes one more finding only when it differs from the exact
        * "nothing to add" sentence both this file and `roles/verifier.ts`
-       * share. The code-decided `check.status` — never the verifier's own
-       * run status — is what `outcome` reports.
+       * share (`reviewerFinding` above).
+       *
+       * `outcome` is no longer only ever `check.status`: an explicit
+       * `VERDICT: fail` turns the whole outcome to FAIL even when the
+       * console check passed — benchmark traces caught a verifier reporting
+       * "severe visual artifacting" while `verify` still reported PASS,
+       * because only the console check was ever consulted. A console FAIL
+       * stays authoritative either way — nothing the reviewer says can turn
+       * a real console failure back into a pass.
        */
-      const findings: Finding[] =
-        verifierReply.length > 0 && verifierReply !== NO_ADDITIONAL_FINDINGS
-          ? [...codeFindings, { message: verifierReply, severity: "warning" }]
-          : codeFindings
+      const findings: Finding[] = (() => {
+        const extra = reviewerFinding(reviewerVerdict, reviewerText)
+        return extra ? [...codeFindings, extra] : codeFindings
+      })()
+
+      const outcome: VerifyOutcome =
+        check.status === "fail" ? "fail" : reviewerVerdict === "fail" ? "fail" : check.status
 
       yield {
-        outcome: check.status,
+        outcome,
         envelope: {
           ...result.envelope,
-          summary: `Verify result: ${check.status.toUpperCase()}. ${findingsSummary(codeFindings)}${
-            verifierReply.length > 0 ? `\nReviewer: ${verifierReply}` : ""
-          }`,
+          summary: `Verify result: ${outcome.toUpperCase()}. ${findingsSummary(codeFindings)}${
+            reviewerText.length > 0 ? `\nReviewer: ${reviewerText}` : ""
+          }${unfinishedTasksNote()}`,
           findings,
         },
         record: result.record,

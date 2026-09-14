@@ -46,6 +46,14 @@ import type { AgentUsageEntry } from "@/lib/ai/pricing"
  * moment the corrective pass fails to fix it. Caching the value read on the
  * turn's first `verify` call, here, and reusing it for the second, is what
  * keeps that categorization honest for both calls.
+ *
+ * `unfinishedTaskIds` is the honesty rule's own bookkeeping: every task id
+ * `run_tasks` last reported as anything other than `"done"`, this turn. A
+ * `verify` call that passes checks only what is on disk right now — it says
+ * nothing about whether a task the orchestrator dispatched actually
+ * finished, and a benchmark run showed the model conflating the two. Reset
+ * per turn like everything else here; a later `run_tasks` call clears an id
+ * from it the moment that same task settles `"done"`.
  */
 type TurnStateData = {
   turn: number
@@ -53,6 +61,14 @@ type TurnStateData = {
   tier: TierId
   ledger: AgentUsageEntry[]
   verifyCalls: number
+  /**
+   * How many times the orchestrator's own unscoped `read_file` has been
+   * called this turn — `trigger/chat.ts`'s per-turn read budget, reset
+   * every turn like `verifyCalls`. Only consulted when `HARNESS_PHASES` is
+   * on; a worker's, planner's and explorer's own `read_file` calls never
+   * touch this field.
+   */
+  orchestratorReadCalls: number
   /** Registry entries a slot fallback already ruled out this turn. */
   unavailable: Set<ModelEntryId>
   /** The entry that actually served the latest call on each slot. */
@@ -61,6 +77,16 @@ type TurnStateData = {
   finishedTaskIds: Set<string>
   /** The console-error baseline `verify` read at the start of this turn; `undefined` until the first `verify` call reads it. */
   verifyBaseline: string[] | undefined
+  /**
+   * Ids of every `run_tasks` task this turn whose latest outcome was NOT
+   * `"done"` — read by `tools/verify.ts` so a passing check can still warn
+   * the model that a specific task never actually finished, not just that
+   * the code currently on disk runs. Cleared for a task id the moment a
+   * LATER `run_tasks` call this same turn reports that same id `"done"`, so
+   * a corrective retry that actually fixes a task removes the warning for
+   * it.
+   */
+  unfinishedTaskIds: Set<string>
 }
 
 const local = chat.local<TurnStateData>({ id: "turnState" })
@@ -102,6 +128,13 @@ export const turnState = {
   },
   set verifyCalls(value: number) {
     local.verifyCalls = value
+  },
+
+  get orchestratorReadCalls(): number {
+    return local.orchestratorReadCalls
+  },
+  set orchestratorReadCalls(value: number) {
+    local.orchestratorReadCalls = value
   },
 
   /** The baseline cached on this turn's first `verify` call, or `undefined` before that call runs. */
@@ -150,6 +183,25 @@ export const turnState = {
     local.finishedTaskIds = new Set(local.finishedTaskIds).add(taskId)
   },
 
+  /** Ids of this turn's `run_tasks` tasks whose latest outcome was not `"done"`. */
+  get unfinishedTaskIds(): ReadonlySet<string> {
+    return local.unfinishedTaskIds
+  },
+
+  /** Records that a task's latest outcome this turn was not `"done"` — called from `run-tasks.ts`'s own `settle`, once per settled task. */
+  markTaskUnfinished(taskId: string): void {
+    local.unfinishedTaskIds = new Set(local.unfinishedTaskIds).add(taskId)
+  },
+
+  /** Clears a task id a LATER call this turn reported `"done"` — a no-op new `Set` only when the id was actually present, so an already-clear turn never churns the proxy for nothing. */
+  clearTaskUnfinished(taskId: string): void {
+    if (!local.unfinishedTaskIds.has(taskId)) return
+
+    const next = new Set(local.unfinishedTaskIds)
+    next.delete(taskId)
+    local.unfinishedTaskIds = next
+  },
+
   /**
    * Called once from `onBoot`, which — unlike `onChatStart` — fires on every
    * fresh worker, continuation runs included. The values here are
@@ -163,10 +215,12 @@ export const turnState = {
       tier: DEFAULT_TIER_ID,
       ledger: [],
       verifyCalls: 0,
+      orchestratorReadCalls: 0,
       unavailable: new Set(),
       served: {},
       finishedTaskIds: new Set(),
       verifyBaseline: undefined,
+      unfinishedTaskIds: new Set(),
     })
   },
 
@@ -181,10 +235,12 @@ export const turnState = {
     local.tier = tier
     local.ledger = []
     local.verifyCalls = 0
+    local.orchestratorReadCalls = 0
     local.unavailable = new Set()
     local.served = {}
     local.finishedTaskIds = new Set()
     local.verifyBaseline = undefined
+    local.unfinishedTaskIds = new Set()
   },
 
   /**

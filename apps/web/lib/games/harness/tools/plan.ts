@@ -7,6 +7,7 @@ import {
 } from "ai"
 import { z } from "zod"
 
+import { engineApiIndex } from "@/lib/games/instructions/engine-index"
 import { plannerInstructions } from "@/lib/games/instructions/roles/planner"
 import { runtimeInstructions } from "@/lib/games/instructions/runtime"
 import { skillBodies, skillIndex } from "@/lib/games/skills/registry"
@@ -22,6 +23,9 @@ import { createLoadSkillTool } from "./load-skill"
 
 /** The only skill pushed into the planner's own instructions by default (design.md's role catalogue: "roles/planner, runtime, engine-core, skill index"). */
 const PLANNER_PUSHED_SKILLS = ["engine-core"] as const
+
+/** How many of the planner's final steps may only call `submit_plan`. */
+const FORCED_SUBMIT_STEPS = 2
 
 /** The only two tools a planner run may call directly, beyond `load_skill`/`submit_plan` — see `plannerReadTools` below. */
 const PLANNER_READ_TOOL_NAMES: readonly string[] = ["read_file", "list_files"]
@@ -46,6 +50,7 @@ function buildPlannerInstructions(): string {
   return [
     plannerInstructions,
     runtimeInstructions.content,
+    engineApiIndex,
     skillBodies(PLANNER_PUSHED_SKILLS),
     skillIndex(PLANNER_PUSHED_SKILLS),
   ]
@@ -253,6 +258,17 @@ export function createPlanTool(gameId: string): Tool {
         prompt: brief,
         abortSignal,
         stopWhen: [stepCountIs(ROLES.planner.maxSteps), planSubmitted()],
+        /**
+         * The benchmark caught planners spending all 12 steps reading engine
+         * files and never submitting, which forces the orchestrator to re-plan
+         * from scratch. The last steps therefore offer `submit_plan` alone and
+         * require a call: two of them, so one rejected submission still gets a
+         * corrected retry.
+         */
+        prepareStep: ({ stepNumber }) =>
+          stepNumber >= ROLES.planner.maxSteps - FORCED_SUBMIT_STEPS
+            ? { activeTools: ["submit_plan"], toolChoice: "required" }
+            : undefined,
       })
 
       let next = await run.next()

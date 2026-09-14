@@ -1,4 +1,4 @@
-import type { Sandbox } from "@daytona/sdk"
+import { DaytonaFileNotFoundError, type Sandbox } from "@daytona/sdk"
 import { tool, type Tool, type ToolSet } from "ai"
 import { z } from "zod"
 
@@ -246,6 +246,18 @@ function protectedPathError(relative: string): ToolError | undefined {
  */
 export type PathGuard = (relative: string) => ToolError | undefined
 
+/**
+ * The optional check `createReadFileTool` runs before it ever touches the
+ * sandbox — the read-side sibling of `PathGuard` above, but budget-shaped
+ * rather than path-shaped: it takes no argument, and a call either passes
+ * (returning `undefined`, having also recorded the call against whatever
+ * budget it tracks) or refuses outright. Only `trigger/chat.ts`'s
+ * orchestrator instance passes one, for its own per-turn `read_file` budget
+ * — a worker's scoped tools, the planner's read-only tools and the explorer
+ * are unaffected.
+ */
+export type ReadBudgetGuard = () => ToolError | undefined
+
 /** Builds the `withSandbox` helper every tool builder below closes over. */
 function withSandboxFor(gameId: string) {
   return async function withSandbox<T>(
@@ -343,7 +355,7 @@ export function createAskPlayerTool(): Tool {
   })
 }
 
-export function createReadFileTool(gameId: string): Tool {
+export function createReadFileTool(gameId: string, budgetGuard?: ReadBudgetGuard): Tool {
   const withSandbox = withSandboxFor(gameId)
 
   return tool({
@@ -357,6 +369,9 @@ export function createReadFileTool(gameId: string): Tool {
         ),
     }),
     execute: async ({ path }) => {
+      const budgetError = budgetGuard?.()
+      if (budgetError) return budgetError
+
       const resolved = resolveGamePath(path)
 
       if (isError(resolved)) {
@@ -452,6 +467,25 @@ export function createListFilesTool(gameId: string): Tool {
 }
 
 /**
+ * Whether a path already exists in the sandbox — the existence check
+ * `createWriteFileTool` runs before an unmarked write to decide whether it is
+ * a new file (always allowed) or a whole-file replacement (needs
+ * `overwrite: true`). A missing path is the expected, common case for a new
+ * file, so it is read off `DaytonaFileNotFoundError` rather than logged or
+ * treated as a failure; any other error propagates, since that is a real
+ * problem talking to the sandbox, not an answer to "does this exist".
+ */
+async function fileExists(sandbox: Sandbox, path: string): Promise<boolean> {
+  try {
+    await sandbox.fs.getFileDetails(path)
+    return true
+  } catch (error) {
+    if (error instanceof DaytonaFileNotFoundError) return false
+    throw error
+  }
+}
+
+/**
  * Writes a file in the game directory, creating it or replacing it whole.
  *
  * `guard`, when given, runs after the protected-prefix check and before the
@@ -459,13 +493,20 @@ export function createListFilesTool(gameId: string): Tool {
  * from a task's declared ownership; the orchestrator's own `createGameTools`
  * passes none, so its only restriction is the protected-prefix guard every
  * write tool always applies.
+ *
+ * A whole-file rewrite of a file that already exists is a real cost, not
+ * just a style preference: harness benchmark traces showed a single agent
+ * writing the same file twice, paying for its whole content again where
+ * `replace_text` would have cost only the actual change. `overwrite`
+ * defaults to `false`, refusing the write before it reaches the sandbox; a
+ * NEW path is always allowed.
  */
 export function createWriteFileTool(gameId: string, guard?: PathGuard): Tool {
   const withSandbox = withSandboxFor(gameId)
 
   return tool({
     description:
-      "Write a file in the game directory, creating it or replacing it whole. Missing parent directories are created. Use it for new files and for rewrites; use replace_text for a small edit to a large file.",
+      "Write a file in the game directory. Creates a new file — always allowed. For a file that already exists, this is refused unless you pass overwrite: true; prefer replace_text for a change to an existing file, and reserve overwrite for a genuine full rewrite.",
     inputSchema: z.object({
       path: z
         .string()
@@ -477,8 +518,14 @@ export function createWriteFileTool(gameId: string, guard?: PathGuard): Tool {
         .describe(
           "The complete new contents of the file. Not a patch, not a fragment — whatever is here is exactly what the file becomes."
         ),
+      overwrite: z
+        .boolean()
+        .optional()
+        .describe(
+          "Required to replace a file that already exists. Omit or leave false for a new file — that is always allowed. true only for a genuine whole-file rewrite of an existing file; prefer replace_text for a smaller change."
+        ),
     }),
-    execute: async ({ path, content }) => {
+    execute: async ({ path, content, overwrite = false }) => {
       const resolved = resolveGamePath(path)
 
       if (isError(resolved)) {
@@ -492,6 +539,12 @@ export function createWriteFileTool(gameId: string, guard?: PathGuard): Tool {
       if (ownershipError) return ownershipError
 
       return withSandbox(async (sandbox) => {
+        if (!overwrite && (await fileExists(sandbox, resolved.path))) {
+          return failed(
+            `"${resolved.relative}" already exists. Use replace_text for a change to it, or pass overwrite: true to replace it whole — write_file with no overwrite is only for a new file.`
+          )
+        }
+
         const parent = resolved.path.slice(0, resolved.path.lastIndexOf("/"))
 
         if (parent !== GAME_DIR) {
@@ -679,11 +732,19 @@ export function createDeleteFileTool(gameId: string, guard?: PathGuard): Tool {
  * applies. `harness/ownership.ts`'s `createScopedGameTools` is the other
  * caller of the same builders, adding an ownership guard on top for a
  * dispatched worker.
+ *
+ * `readBudgetGuard`, when given, is threaded onto `read_file` alone — see
+ * `ReadBudgetGuard`'s own comment. Every other caller (the planner's own
+ * read-only subset, `instructions/roles/planner.ts`'s call site in
+ * `harness/tools/plan.ts`) omits it and is unaffected.
  */
-export function createGameTools(gameId: string): ToolSet {
+export function createGameTools(
+  gameId: string,
+  options?: { readBudgetGuard?: ReadBudgetGuard }
+): ToolSet {
   return {
     ask_player: createAskPlayerTool(),
-    read_file: createReadFileTool(gameId),
+    read_file: createReadFileTool(gameId, options?.readBudgetGuard),
     list_files: createListFilesTool(gameId),
     write_file: createWriteFileTool(gameId),
     replace_text: createReplaceTextTool(gameId),

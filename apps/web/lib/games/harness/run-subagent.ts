@@ -5,6 +5,7 @@ import {
   stepCountIs,
   type FinishReason,
   type ModelMessage,
+  type PrepareStepFunction,
   type StopCondition,
   type ToolSet,
 } from "ai"
@@ -29,7 +30,7 @@ import {
   type SubagentRunRecord,
   type SubagentRunTokens,
 } from "./records"
-import type { RoleDef } from "./roles"
+import type { RoleDef, RoleId } from "./roles"
 
 /**
  * How far behind the turn's own deadline every dispatched role must stop, so
@@ -41,6 +42,84 @@ const DEADLINE_BUFFER_MS = 60_000
 
 /** How often the generator yields a fresh snapshot (decision 5: "throttled to 500 ms"). */
 const PROGRESS_THROTTLE_MS = 500
+
+/**
+ * A worker (`gameplay`/`visuals`/`audio`) that hits its hard timeout gets
+ * killed mid-step: `run-tasks.ts` reports it `aborted`, "Timed out." — no
+ * word on what, if anything, it actually finished. A benchmark run caught
+ * the orchestrator relaying that as a plain success once `verify` happened
+ * to pass on whatever was left on disk. Every worker role therefore gets a
+ * forced wrap-up step once it is this close to running out of time: told to
+ * stop editing and report honestly, so a slow run ends with a `partial`
+ * summary instead of a silent kill. The hard timeout (`timeout: timeoutMs`
+ * below) stays as the backstop for a run that ignores even that.
+ */
+const WRAP_UP_WINDOW_MS = 120_000
+
+/** The only roles the wrap-up step applies to — the ones `run-tasks.ts` dispatches against a real file budget. `planner`'s own forced-submit `prepareStep` (`tools/plan.ts`) already handles running out of steps its own way, and `explorer`/`verifier` never write anything a wrap-up summary would need to explain. */
+const WRAP_UP_ROLES: ReadonlySet<RoleId> = new Set(["gameplay", "visuals", "audio"])
+
+/**
+ * Whether this step should be forced into a text-only wrap-up: the last
+ * allowed step by count, or within `WRAP_UP_WINDOW_MS` of the run's own
+ * effective timeout — whichever comes first. `stepNumber` is 0-indexed (the
+ * SDK passes `steps.length`, the count of steps already finished), so the
+ * last step `stepCountIs(role.maxSteps)` allows is `role.maxSteps - 1`.
+ */
+function shouldWrapUp(
+  role: RoleDef,
+  timeoutMs: number,
+  runStartedAt: number,
+  stepNumber: number
+): boolean {
+  if (stepNumber >= role.maxSteps - 1) return true
+  if (timeoutMs <= 0) return false
+
+  return Date.now() - runStartedAt >= timeoutMs - WRAP_UP_WINDOW_MS
+}
+
+/**
+ * The instructions a wrap-up step gets, replacing (not appending to) the
+ * run's own system instructions for this one step (`instructions` overrides
+ * carry forward, but nothing should run after this one: `toolChoice: "none"`
+ * forecloses another tool call, and the role's own step-count `stopWhen`
+ * ends the loop once this step finishes). Keeps the run's original brief
+ * folded in — `${instructions}` — so the model still knows what it was
+ * asked to build while it reports on it.
+ */
+function wrapUpInstructions(instructions: string): string {
+  return `${instructions}
+
+## You are almost out of time
+
+Stop editing. In plain text only — no more tool calls, none will run — report exactly what you have finished so far and what is still missing or incomplete. Be honest and specific: this report is what the agent that dispatched you tells the player, so a vague "mostly done" is worse than a precise list of what still needs work.`
+}
+
+/**
+ * Composes the wrap-up trigger with any caller-supplied `prepareStep` (the
+ * planner passes its own forced-submit one, but the planner is never a
+ * `WRAP_UP_ROLES` member — this only ever wraps a worker's own optional
+ * override, which no caller passes today). Once triggered, wrap-up wins
+ * outright: the caller's own step settings for that step are skipped, not
+ * merged with it.
+ */
+function buildWrapUpPrepareStep(
+  role: RoleDef,
+  timeoutMs: number,
+  runStartedAt: number,
+  instructions: string,
+  markWrappedUp: () => void,
+  callerPrepareStep: PrepareStepFunction<ToolSet> | undefined
+): PrepareStepFunction<ToolSet> {
+  return async (options) => {
+    if (shouldWrapUp(role, timeoutMs, runStartedAt, options.stepNumber)) {
+      markWrappedUp()
+      return { toolChoice: "none", activeTools: [], instructions: wrapUpInstructions(instructions) }
+    }
+
+    return callerPrepareStep?.(options)
+  }
+}
 
 export type RunSubagentInput = {
   /**
@@ -77,6 +156,12 @@ export type RunSubagentInput = {
    * the plain default.
    */
   stopWhen?: StopCondition<ToolSet> | StopCondition<ToolSet>[]
+  /**
+   * Per-step overrides, passed straight to the agent. The planner uses it to
+   * force its last steps onto `submit_plan`, so a run that spent its budget
+   * reading can never end without handing back a plan.
+   */
+  prepareStep?: PrepareStepFunction<ToolSet>
 }
 
 /**
@@ -253,7 +338,7 @@ function buildRunHooks(): { hooks: FallbackHooks; takeServed: () => ServedCall |
 export async function* runSubagent(
   input: RunSubagentInput
 ): AsyncGenerator<SubagentProgress, RunSubagentResult, void> {
-  const { role, instructions, tools, prompt, abortSignal, stopWhen } = input
+  const { role, instructions, tools, prompt, abortSignal, stopWhen, prepareStep } = input
   const agentId = input.agentId ?? randomUUID()
   const skills = input.skills ?? ROLE_DEFAULT_SKILLS[role.id]
   const promptText = promptToText(prompt)
@@ -266,11 +351,29 @@ export async function* runSubagent(
     Math.min(role.timeoutMs, turnState.deadline - Date.now() - DEADLINE_BUFFER_MS)
   )
 
+  const runStartedAt = Date.now()
+  /** Set once `buildWrapUpPrepareStep` actually forces a wrap-up step — read after the run ends to turn a natural `"done"` finish into the honest `"partial"` it actually is (see the `status` override below). */
+  let wrappedUp = false
+
+  const effectivePrepareStep = WRAP_UP_ROLES.has(role.id)
+    ? buildWrapUpPrepareStep(
+        role,
+        timeoutMs,
+        runStartedAt,
+        instructions,
+        () => {
+          wrappedUp = true
+        },
+        prepareStep
+      )
+    : prepareStep
+
   const agent = new ToolLoopAgent({
     model,
     instructions,
     tools,
     stopWhen: stopWhen ?? stepCountIs(role.maxSteps),
+    prepareStep: effectivePrepareStep,
     /**
      * `resolveModel`'s composite already owns retrying a candidate's own
      * retryable failures (`fallback-model.ts`); leaving `ai`'s default
@@ -449,6 +552,20 @@ export async function* runSubagent(
     } else {
       status = statusFromFinishReason(await result.finishReason)
       summary = await result.text
+
+      /**
+       * A wrap-up step ends the loop the same way a genuinely finished run
+       * does — the model stops calling tools, `finishReason` reads `"stop"`,
+       * `statusFromFinishReason` says `"done"` — but the run was cut short,
+       * not completed: `"done"` here would be exactly the dishonest
+       * completion this whole mechanism exists to prevent. Only downgrades
+       * an otherwise-`"done"` result; a wrap-up that still ended in
+       * `"partial"`/`"error"` (the model tried something else anyway) keeps
+       * whatever `statusFromFinishReason` already decided.
+       */
+      if (wrappedUp && status === "done") {
+        status = "partial"
+      }
     }
   } catch (error) {
     status = isAbortLike(error) ? "aborted" : "error"

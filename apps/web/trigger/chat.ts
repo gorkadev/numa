@@ -46,6 +46,23 @@ import { getCreditBalance } from "@/lib/polar/balance"
 const TURN_DEADLINE_MS = 3300_000
 
 /**
+ * A turn is a loop, not a single answer: read the file, edit it, check the
+ * result, then reply. The ceiling is high enough for a multi-file change and
+ * low enough that a model stuck retrying a failing edit gives up rather than
+ * burning the turn.
+ */
+const MAX_ORCHESTRATOR_STEPS = 25
+
+/**
+ * The 0-indexed step number of the LAST step `MAX_ORCHESTRATOR_STEPS`
+ * allows — `run`'s own `prepareStep` below forces this one step to a
+ * text-only reply, no tool calls. Benchmark traces showed a turn hit the
+ * step cap with a tool call as its last step, so the player got no final
+ * message at all that turn; this guarantees one.
+ */
+const LAST_ORCHESTRATOR_STEP_INDEX = MAX_ORCHESTRATOR_STEPS - 1
+
+/**
  * The tools that change what the player would see.
  *
  * `read_file` and `list_files` are deliberately absent: a turn that only looked
@@ -107,6 +124,37 @@ function changedGameFiles(message: UIMessage | undefined): boolean {
 
     return false
   })
+}
+
+/**
+ * The orchestrator's own per-turn `read_file` budget: benchmark traces
+ * showed the orchestrator reading 11-18 files one at a time, inline, as the
+ * single largest driver of ~1M-input-token turns. Delegate broader reading
+ * to `explore`/`run_tasks` instead.
+ */
+const MAX_ORCHESTRATOR_READS_PER_TURN = 3
+
+/**
+ * The read-side guard `createGameTools` threads onto the orchestrator's own
+ * `read_file` (`lib/games/tools.ts`'s `ReadBudgetGuard`) — nowhere else: a
+ * worker's scoped tools, the planner's read-only subset and the explorer all
+ * build their own `read_file` independently and never pass a guard.
+ *
+ * A no-op when `HARNESS_PHASES` is off: the single-loop path this flag falls
+ * back to has no `explore`/`run_tasks` to delegate to, so capping inline
+ * reads there would only strand the model.
+ */
+function orchestratorReadBudgetGuard(): { error: string } | undefined {
+  if (!HARNESS_PHASES) return undefined
+
+  if (turnState.orchestratorReadCalls >= MAX_ORCHESTRATOR_READS_PER_TURN) {
+    return {
+      error: `You have already read ${MAX_ORCHESTRATOR_READS_PER_TURN} files yourself this turn. Reading your way through the game one file at a time is exactly what this budget exists to stop — delegate instead: explore for a broader look at how something works, or plan/run_tasks to make the change itself.`,
+    }
+  }
+
+  turnState.orchestratorReadCalls += 1
+  return undefined
 }
 
 /**
@@ -250,6 +298,20 @@ export const gameChat = chat.agent({
     .default({}),
 
   /**
+   * Without this, `chat.agent` falls back to the AI SDK's own default
+   * `onError`: the literal string `"An error occurred."` for every failure.
+   * Benchmark traces caught a `run_tasks` call whose input failed
+   * validation reaching the model as that same generic sentence, so the
+   * model had nothing to react to and retried blind. Safe to return the
+   * real message here — nothing this harness throws carries a secret; a
+   * sandbox error is already reduced to one plain line by
+   * `lib/games/tools.ts`'s own `describe` before it gets here.
+   */
+  uiMessageStreamOptions: {
+    onError: (error) => (error instanceof Error ? error.message : String(error)),
+  },
+
+  /**
    * Initializes `chat.local`'s per-turn usage ledger.
    *
    * `onBoot` rather than `onChatStart`, on purpose: it fires on every fresh
@@ -287,7 +349,7 @@ export const gameChat = chat.agent({
    * its result formatting the moment the thread was replayed.
    */
   tools: ({ chatId }) => ({
-    ...createGameTools(chatId),
+    ...createGameTools(chatId, { readBudgetGuard: orchestratorReadBudgetGuard }),
     explore: createExploreTool(chatId),
     plan: createPlanTool(chatId),
     run_tasks: createRunTasksTool(chatId),
@@ -611,15 +673,27 @@ export const gameChat = chat.agent({
     })
   },
 
-  run: async ({ messages, tools, clientData, signal }) =>
-    streamText({
+  run: async ({ messages, tools, clientData, signal }) => {
+    /**
+     * Captured once so `prepareStep` below can call the auto-injected
+     * function it wires up (compaction, mid-turn steering, background
+     * injection) BEFORE this file's own final-step override runs — spreading
+     * `chat.toStreamTextOptions()` and then setting `prepareStep` again
+     * afterwards would silently replace the injected one instead of
+     * composing with it, per its own documented warning ("If you provide
+     * your own `prepareStep` after the spread, it overrides the
+     * auto-injected one").
+     */
+    const baseStreamTextOptions = chat.toStreamTextOptions({ tools })
+
+    return streamText({
       /**
        * Spread first, so every explicit option below still wins. This is what
        * wires up the `prepareStep` callback behind compaction, mid-turn
        * steering and background injection — omitting it throws no error, those
        * features simply never run.
        */
-      ...chat.toStreamTextOptions({ tools }),
+      ...baseStreamTextOptions,
       /**
        * Resolved per turn, not per chat: the choice is read off the message
        * that arrived, so switching tiers continues the same thread rather
@@ -657,12 +731,8 @@ export const gameChat = chat.agent({
        * the result, then reply. Without a stop condition the SDK ends the turn
        * after the first tool call, leaving the model's work unreported and the
        * user reading silence.
-       *
-       * The ceiling is high enough for a multi-file change and low enough that
-       * a model stuck retrying a failing edit gives up rather than burning the
-       * turn.
        */
-      stopWhen: stepCountIs(25),
+      stopWhen: stepCountIs(MAX_ORCHESTRATOR_STEPS),
       /**
        * Narrows the declared tool set down to what this turn's model may
        * actually call. Every phase tool (`explore`, `plan`, `run_tasks`,
@@ -672,5 +742,33 @@ export const gameChat = chat.agent({
        * declaration above never changes either way.
        */
       activeTools: activeToolNames(tools),
-    }),
+      /**
+       * Composes with `baseStreamTextOptions.prepareStep` rather than
+       * replacing it (see the comment above `baseStreamTextOptions` itself):
+       * every step still gets whatever compaction, steering or background
+       * injection would have applied, and only the turn's LAST allowed step
+       * additionally gets forced to a text-only reply — `toolChoice: "none"`
+       * so the model is not even offered the choice, `activeTools: []` so no
+       * tool is described in that step's own request at all, belt and
+       * braces. Every earlier step is untouched.
+       */
+      prepareStep: async (options) => {
+        /**
+         * `chat.toStreamTextOptions()`'s own return type is the deliberately
+         * loose `Record<string, unknown>` (it has no `TOOLS` generic to type
+         * `prepareStep` precisely against) — cast at the boundary rather than
+         * widening this whole function's typing to match.
+         */
+        const injectedPrepareStep = baseStreamTextOptions.prepareStep as
+          | ((step: typeof options) => unknown)
+          | undefined
+
+        const base = (await injectedPrepareStep?.(options)) as Record<string, unknown> | undefined
+
+        if (options.stepNumber < LAST_ORCHESTRATOR_STEP_INDEX) return base
+
+        return { ...base, toolChoice: "none", activeTools: [] }
+      },
+    })
+  },
 })
