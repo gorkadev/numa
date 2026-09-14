@@ -192,7 +192,7 @@ export function GameChat({
        * push past — the split would simply refuse to move.
        */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-12 shrink-0 items-center gap-1 border-b px-4">
+        <header className="flex h-14 shrink-0 items-center gap-1 px-4">
           <MobileSidebarTrigger className="-ms-1.5" />
           <h1 className="min-w-0 flex-1 truncate text-sm font-medium">
             {title}

@@ -85,7 +85,7 @@ export function SubagentEntry({ record, onSelect }: SubagentEntryProps) {
     <Marker
       render={<button type="button" />}
       className={cn(
-        "w-auto cursor-pointer ps-[13px] hover:text-foreground",
+        "w-fit cursor-pointer ps-[13px] hover:text-foreground",
         errored && "text-destructive"
       )}
       onClick={() => onSelect(record.agentId)}
