@@ -81,6 +81,7 @@ export function GameRow({
       <GameMenu
         gameId={game.id}
         title={game.title}
+        pinned={game.pinnedAt !== null}
         trigger={<SidebarMenuAction showOnHover />}
       />
     </SidebarMenuItem>

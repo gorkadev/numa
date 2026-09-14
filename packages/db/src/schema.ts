@@ -123,6 +123,15 @@ export const games = pgTable(
       .notNull()
       .defaultNow()
       .$onUpdate(() => new Date()),
+
+    /**
+     * When this game was pinned, or null for one that never was — the
+     * sidebar's own "is it pinned" flag doubles as its own sort key, so
+     * pinning something later always outranks one pinned earlier. Set and
+     * cleared through `setGamePinned`, never through `renameGame`'s sibling
+     * update pattern.
+     */
+    pinnedAt: timestamp("pinned_at", { withTimezone: true }),
   },
   (table) => [
     /**

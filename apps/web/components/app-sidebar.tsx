@@ -119,6 +119,14 @@ export function AppSidebar({
    */
   const billing = useLiveBilling(initialBilling)
 
+  /**
+   * `listGames` already sorts pinned-first, so the split here is a single
+   * pass over an already-ordered list rather than a second sort — a game
+   * only ever shows up in one of the two groups, never both.
+   */
+  const pinnedGames = games.filter((game) => game.pinnedAt !== null)
+  const recentGames = games.filter((game) => game.pinnedAt === null)
+
   const pathname = usePathname()
   const router = useRouter()
   const isMac = useIsMac()
@@ -354,6 +362,26 @@ export function AppSidebar({
            * the other half of the gap the rail used to show.
            */}
           {/**
+           * Its own group, above "Recents" and outside the scroller below —
+           * pinning is meant for the handful of games worth always seeing
+           * without scrolling, not a second long list. Left out entirely
+           * when nothing is pinned, rather than an empty group with only a
+           * label: an org that has never pinned anything should not see a
+           * heading for a feature it has not used yet.
+           */}
+          {pinnedGames.length > 0 ? (
+            <SidebarGroup className="pb-0 group-data-[collapsible=icon]:hidden">
+              <SidebarGroupLabel>Pinned</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {pinnedGames.map((game) => (
+                    <GameRow key={game.id} game={game} />
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          ) : null}
+          {/**
            * The list scrolls on its own, below a label that stays put, rather
            * than the whole `SidebarContent` scrolling "New game" and "Recents"
            * away with it: `min-h-0 flex-1` lets the group take the leftover
@@ -366,6 +394,9 @@ export function AppSidebar({
            * its own turns the other axis to `auto` as well, and a row a few
            * pixels wider than the list (the mobile drawer measures 274 in 270)
            * was enough to make it scroll sideways.
+           *
+           * Only `recentGames` here — a pinned game already has its row above
+           * and does not repeat below it.
            */}
           <SidebarGroup className="min-h-0 flex-1 pb-0 group-data-[collapsible=icon]:hidden">
             <SidebarGroupLabel>Recents</SidebarGroupLabel>
@@ -378,7 +409,7 @@ export function AppSidebar({
                 </Empty>
               ) : (
                 <SidebarMenu>
-                  {games.map((game) => (
+                  {recentGames.map((game) => (
                     <GameRow key={game.id} game={game} />
                   ))}
                 </SidebarMenu>

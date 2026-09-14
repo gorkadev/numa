@@ -9,6 +9,13 @@ import type { Game } from "@workspace/db/schema"
  *
  * A signed-in user with no active organization owns no games, so the empty list
  * is the correct answer rather than an error.
+ *
+ * Ordered pinned-first, most-recently-pinned first, then everything else
+ * newest first — the one query answers both the sidebar's "Pinned" group and
+ * its "Recents" group, which only split the same list on `pinnedAt` rather
+ * than issuing a second query for it. `nulls last` on the first key is load
+ * bearing: Postgres's own default for `desc` is `nulls first`, which would
+ * put every unpinned game ahead of the pinned ones instead of behind them.
  */
 export async function listGames(): Promise<Game[]> {
   const { orgId } = await auth.protect()
@@ -17,7 +24,10 @@ export async function listGames(): Promise<Game[]> {
 
   return db.query.games.findMany({
     where: (game, { eq }) => eq(game.orgId, orgId),
-    orderBy: (game, { desc }) => desc(game.createdAt),
+    orderBy: (game, { desc, sql }) => [
+      sql`${game.pinnedAt} desc nulls last`,
+      desc(game.createdAt),
+    ],
   })
 }
 

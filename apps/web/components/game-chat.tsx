@@ -27,6 +27,7 @@ import type { SubagentRunRecord } from "@/lib/games/harness/records"
 export function GameChat({
   gameId,
   title,
+  pinned = false,
   previewToken,
   initialMessages,
   initialSessions,
@@ -36,6 +37,8 @@ export function GameChat({
   gameId: string
   /** The game's name, as the header shows it. */
   title: string
+  /** Whether this game is pinned, for the header's own `GameMenu`. */
+  pinned?: boolean
   /**
    * The signed token the preview frame's requests carry, minted on the server so
    * the signing secret never reaches the browser.
@@ -242,7 +245,7 @@ export function GameChat({
               <span className="sr-only">Sub-agent runs</span>
             </Button>
           ) : null}
-          <GameMenu gameId={gameId} title={title} />
+          <GameMenu gameId={gameId} title={title} pinned={pinned} />
         </header>
         <ChatThread
           gameId={gameId}

@@ -8,6 +8,8 @@ import {
   Delete02Icon,
   MoreHorizontalIcon,
   PencilEdit02Icon,
+  PinIcon,
+  PinOffIcon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
@@ -42,7 +44,7 @@ import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 import { Spinner } from "@workspace/ui/components/spinner"
 
-import { deleteGame, renameGame } from "@/lib/games/actions"
+import { deleteGame, renameGame, setGamePinned } from "@/lib/games/actions"
 
 /** Matches `TITLE_MAX_LENGTH`, so the field stops where the action truncates. */
 const TITLE_MAX_LENGTH = 60
@@ -64,10 +66,13 @@ const TITLE_MAX_LENGTH = 60
 export function GameMenu({
   gameId,
   title,
+  pinned = false,
   trigger,
 }: {
   gameId: string
   title: string
+  /** Whether this game is currently pinned — decides which of the two the menu offers, and which icon it wears. */
+  pinned?: boolean
   /**
    * Replaces the control that opens the menu, for a caller whose layout owns
    * what it should look like — the sidebar's rows position theirs themselves.
@@ -99,6 +104,21 @@ export function GameMenu({
 
   const [deleting, startDeleting] = useTransition()
   const [deleteError, setDeleteError] = useState<string | null>(null)
+
+  /**
+   * No dialog and no error state: pinning is instant, reversible from the
+   * same menu, and low-stakes enough that a failure — the game was deleted
+   * out from under this row, say — is just a toggle that silently did not
+   * take. The transition alone is enough to stop a second click from firing
+   * while the first is still in flight.
+   */
+  const [pinning, startPinning] = useTransition()
+
+  function togglePinned() {
+    startPinning(async () => {
+      await setGamePinned(gameId, !pinned)
+    })
+  }
 
   function openRename() {
     setName(title)
@@ -160,6 +180,10 @@ export function GameMenu({
           <HugeiconsIcon icon={MoreHorizontalIcon} strokeWidth={2} />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-40">
+          <DropdownMenuItem onClick={togglePinned} disabled={pinning}>
+            <HugeiconsIcon icon={pinned ? PinOffIcon : PinIcon} strokeWidth={2} />
+            {pinned ? "Unpin" : "Pin"}
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={openRename}>
             <HugeiconsIcon icon={PencilEdit02Icon} strokeWidth={2} />
             Rename

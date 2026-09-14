@@ -223,6 +223,50 @@ export async function renameGame(
   return null
 }
 
+export type SetGamePinnedState = { error: string } | null
+
+/**
+ * Pins or unpins one game.
+ *
+ * Same shape as `renameGame`: an id and a value, the `org_id` predicate
+ * riding along in the `WHERE` clause rather than checked beforehand, so a
+ * game owned by another organization updates zero rows and is answered
+ * exactly like one that does not exist.
+ */
+export async function setGamePinned(
+  id: string,
+  pinned: boolean
+): Promise<SetGamePinnedState> {
+  const { orgId } = await auth.protect()
+
+  if (!orgId) {
+    return { error: "Select an organization before pinning a game." }
+  }
+
+  if (!UUID.test(id)) {
+    return { error: "That game no longer exists." }
+  }
+
+  const [game] = await db
+    .update(games)
+    .set({ pinnedAt: pinned ? new Date() : null })
+    .where(and(eq(games.id, id), eq(games.orgId, orgId)))
+    .returning({ id: games.id })
+
+  if (!game) {
+    return { error: "That game no longer exists." }
+  }
+
+  /**
+   * The sidebar's own pinned/recents split is rendered by the (app) layout,
+   * so — same as `renameGame` — only a whole-route re-render moves the row
+   * between the two groups.
+   */
+  refresh()
+
+  return null
+}
+
 export type DeleteGameState = { error: string } | null
 
 /**

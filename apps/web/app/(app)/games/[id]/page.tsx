@@ -63,6 +63,7 @@ export default async function GamePage({
     <GameChat
       gameId={game.id}
       title={game.title}
+      pinned={game.pinnedAt !== null}
       previewToken={previewToken}
       initialMessages={game.messages}
       initialSessions={initialSessions}
