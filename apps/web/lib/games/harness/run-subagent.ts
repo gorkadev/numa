@@ -9,10 +9,16 @@ import {
   type ToolSet,
 } from "ai"
 
-import { resolveModel, type FallbackHooks, type ServedCall } from "@/lib/ai/model-registry"
+import {
+  entryDisplayName,
+  resolveModel,
+  type FallbackHooks,
+  type ServedCall,
+} from "@/lib/ai/model-registry"
 import { turnUsageTokens } from "@/lib/ai/pricing"
 import { turnState } from "@/lib/games/harness/turn-state"
 import { ROLE_DEFAULT_SKILLS, type SkillName } from "@/lib/games/skills/registry"
+import { describeToolCall } from "@/lib/games/tool-parts"
 
 import type { EnvelopeStatus, SubagentEnvelope } from "./envelope"
 import {
@@ -291,6 +297,7 @@ export async function* runSubagent(
    */
   function snapshot(finalStatus?: EnvelopeStatus, finalSummary?: string): SubagentProgress {
     const served = takeServed()
+    const servedId = served?.entryId ?? primary.id
 
     return {
       agentId,
@@ -298,8 +305,8 @@ export async function* runSubagent(
       displayName: role.displayName,
       tier: turnState.tier,
       slot: role.slot,
-      modelId: served?.entryId ?? primary.id,
-      modelName: primary.displayName,
+      modelId: servedId,
+      modelName: entryDisplayName(servedId),
       status: finalStatus ?? "running",
       activity,
       steps,
@@ -372,7 +379,11 @@ export async function* runSubagent(
     for await (const part of result.stream) {
       switch (part.type) {
         case "tool-call":
-          activity = `calling ${part.toolName}`
+          activity = describeToolCall(
+            part.toolName,
+            toolCallPath(part.input),
+            "active"
+          )
           break
         case "tool-result": {
           const path = toolCallPath(part.input)
@@ -388,10 +399,15 @@ export async function* runSubagent(
             edits = pushCapped(edits, path, MAX_EDITS_PER_RECORD)
           }
 
-          activity = `finished ${part.toolName}`
+          activity = describeToolCall(part.toolName, path, "done")
           break
         }
         case "tool-error":
+          activity = describeToolCall(
+            part.toolName,
+            toolCallPath(part.input),
+            "failed"
+          )
           toolCalls = pushCapped(
             toolCalls,
             {
@@ -403,7 +419,6 @@ export async function* runSubagent(
             },
             MAX_TOOL_CALLS_PER_RECORD
           )
-          activity = `${part.toolName} failed`
           break
         case "finish-step":
           activity = "thinking"

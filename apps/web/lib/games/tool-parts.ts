@@ -98,6 +98,18 @@ export const TOOL_LABELS: Record<
     done: "Checked",
     failed: "Couldn't check",
   },
+  /** A planner's own tool — see `harness/tools/plan.ts`'s `buildSubmitPlanTool`. Never appears in the orchestrator's own thread, only in a planner run's `toolCalls` list (`subagent-run-detail.tsx`). */
+  submit_plan: {
+    active: "Submitting the plan",
+    done: "Submitted the plan",
+    failed: "Couldn't submit the plan",
+  },
+  /** The `load_skill` fallback tool — see `harness/tools/load-skill.ts`. Every phase role but explorer and verifier can call it. */
+  load_skill: {
+    active: "Loading a skill",
+    done: "Loaded a skill",
+    failed: "Couldn't load a skill",
+  },
 }
 
 /**
@@ -237,23 +249,60 @@ export function collectThreadSubagentRuns(
   return collectSubagentRuns(outputs)
 }
 
+/**
+ * `TOOL_LABELS`'s fallback for a name that has no entry there: read as words
+ * instead of a snake_case identifier ("replace_text" becomes "Replace
+ * text"), rather than the raw tool name leaking into the UI unchanged. All
+ * three phases share this one reading — there is no way to guess the right
+ * tense for a tool this module has never seen — except `failed`, which gets
+ * the same "Couldn't " prefix every entry in `TOOL_LABELS` already uses for
+ * failure.
+ */
+function fallbackLabels(name: string): {
+  active: string
+  done: string
+  failed: string
+} {
+  const readable = name
+    .split("_")
+    .filter(Boolean)
+    .map((word, index) =>
+      index === 0 ? `${word[0]?.toUpperCase() ?? ""}${word.slice(1)}` : word
+    )
+    .join(" ")
+
+  return {
+    active: readable,
+    done: readable,
+    failed: `Couldn't ${readable.toLowerCase()}`,
+  }
+}
+
+/**
+ * What a tool call reads as right now: a verb for the given phase, and the
+ * file it is about, if it has one. Pulled out of `toolLabel` below so a
+ * caller holding a sub-agent's own tool call record — `path` and pass/fail
+ * already extracted, no `ToolPart` in sight — can render the same voice
+ * without reconstructing one (`subagent-run-detail.tsx`'s tool call list,
+ * `run-subagent.ts`'s live `activity` string).
+ */
+export function describeToolCall(
+  name: string,
+  path: string | null | undefined,
+  phase: "active" | "done" | "failed"
+): string {
+  const labels = TOOL_LABELS[name] ?? fallbackLabels(name)
+
+  return `${labels[phase]}${path ? ` ${path}` : ""}`
+}
+
 /** What this call reads as right now: a verb, and the file it is about. */
 export function toolLabel(part: ToolPart): string {
   const name = getToolName(part)
-  const labels = TOOL_LABELS[name] ?? {
-    active: name,
-    done: name,
-    failed: `${name} failed`,
-  }
-  const path = toolPath(part.input)
-  const verb =
-    toolError(part) !== null
-      ? labels.failed
-      : isSettled(part)
-        ? labels.done
-        : labels.active
+  const phase =
+    toolError(part) !== null ? "failed" : isSettled(part) ? "done" : "active"
 
-  return `${verb}${path ? ` ${path}` : ""}`
+  return describeToolCall(name, toolPath(part.input), phase)
 }
 
 /**

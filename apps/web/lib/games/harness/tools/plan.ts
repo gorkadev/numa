@@ -63,6 +63,24 @@ function buildPlannerInstructions(): string {
 type SubmittedPlan = { design: string; tasks: TaskSpec[] }
 
 /**
+ * The plan's own task list, in the shape a browser-side reader needs to draw
+ * a task strip (the task-list UI above the chat composer): just enough to
+ * show a title and a status per task, never `goal`, `owns`, `dependsOn` or
+ * `skills` — those stay inside `.numa/tasks.json` and the envelope's
+ * JSON-encoded `summary`, not duplicated onto a field the model also has to
+ * pay context for. A sibling of `envelope` on the tool's final output, not a
+ * replacement for the JSON-in-`summary` shape `buildEnvelope` already
+ * produces: that shape is what the orchestrator's model reads through
+ * `toModelOutput`, this one is what `lib/games/plan-tasks.ts`'s pure
+ * derivation reads back out of the stored tool part.
+ */
+export type PlanTaskSummary = { id: string; title: string; role: TaskSpec["role"] }
+
+function planTaskSummaries(submission: SubmittedPlan | undefined): PlanTaskSummary[] | undefined {
+  return submission?.tasks.map(({ id, title, role }) => ({ id, title, role }))
+}
+
+/**
  * Builds the planner's own `submit_plan` tool for one game and run. A
  * factory rather than a module-level constant: it closes over `gameId` (to
  * write the accepted plan) and its own `submission` variable (to report it
@@ -215,7 +233,11 @@ export function createPlanTool(gameId: string): Tool {
     execute: async function* (
       { brief },
       { abortSignal }
-    ): AsyncGenerator<SubagentProgress | RunSubagentResult, void, void> {
+    ): AsyncGenerator<
+      SubagentProgress | (RunSubagentResult & { tasks?: PlanTaskSummary[] }),
+      void,
+      void
+    > {
       const { tool: submitPlanTool, takeSubmission } = buildSubmitPlanTool(gameId)
 
       const tools: ToolSet = {
@@ -243,7 +265,11 @@ export function createPlanTool(gameId: string): Tool {
       const result: RunSubagentResult = next.value
       const submission = takeSubmission()
 
-      yield { ...result, envelope: buildEnvelope(result.envelope, submission) }
+      yield {
+        ...result,
+        envelope: buildEnvelope(result.envelope, submission),
+        tasks: planTaskSummaries(submission),
+      }
     },
     /**
      * The orchestrator's model sees the envelope only — the accepted task

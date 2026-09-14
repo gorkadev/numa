@@ -184,6 +184,19 @@ export function resolveTier(id: TierId | undefined): TierId {
 }
 
 /**
+ * The display name for whichever entry actually served a call — the
+ * counterpart to `ServedCall.entryId` (`fallback-model.ts`'s `onServed`
+ * report). A run's `modelId` already names the entry that served it; a
+ * caller that also wants to show a human-readable name (`run-subagent.ts`'s
+ * `SubagentRunRecord.modelName`) looks it up here rather than reusing a
+ * slot's `primary.displayName`, which would be wrong the moment a fallback
+ * ever takes over mid-turn.
+ */
+export function entryDisplayName(id: ModelEntryId): string {
+  return REGISTRY[id].displayName
+}
+
+/**
  * A caller that never needs cross-call fallback state — a one-off resolution
  * with no turn to persist "already tried and failed" across — gets a
  * composite that still tries every candidate in order this one call, but

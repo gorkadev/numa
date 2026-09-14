@@ -23,10 +23,12 @@ import {
 import { ChatComposer } from "@/components/chat-composer"
 import { AssistantAvatar } from "@/components/chat/assistant-avatar"
 import { ChatMessage } from "@/components/chat/chat-message"
+import { TaskStrip } from "@/components/chat/task-strip"
 import { Thinking } from "@/components/chat/thinking"
 import { useGameChat } from "@/components/chat/use-game-chat"
 import type { TierId } from "@/lib/ai/model-catalog"
 import type { SubagentRunRecord } from "@/lib/games/harness/records"
+import { deriveTaskStrip, shouldShowTaskStrip } from "@/lib/games/plan-tasks"
 import { collectThreadSubagentRuns } from "@/lib/games/tool-parts"
 
 export function ChatThread({
@@ -130,6 +132,17 @@ export function ChatThread({
     onSubagentRunsChange(subagentRuns)
   }, [subagentRuns, onSubagentRunsChange])
 
+  /**
+   * The task-list strip above the composer (`task-strip.tsx`): derived from
+   * the latest `plan` call's task list plus every `run_tasks` call after it
+   * (`lib/games/plan-tasks.ts`), shown while any task is not yet done or the
+   * turn is still streaming — see `shouldShowTaskStrip`'s own comment for the
+   * exact rule, including why a failed task keeps it visible after the turn
+   * ends.
+   */
+  const taskStripTasks = useMemo(() => deriveTaskStrip(messages), [messages])
+  const showTaskStrip = shouldShowTaskStrip(taskStripTasks, pending)
+
   const onSelectRun = useCallback(
     (agentId: string) => {
       onSelectedRunIdChange(agentId)
@@ -227,6 +240,11 @@ export function ChatThread({
           onTierChange={setTierId}
           pending={pending}
           placeholder="Ask for a change…"
+          tasksSlot={
+            showTaskStrip && taskStripTasks ? (
+              <TaskStrip tasks={taskStripTasks} />
+            ) : undefined
+          }
         />
       </div>
     </div>

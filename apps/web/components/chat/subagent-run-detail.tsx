@@ -22,6 +22,7 @@ import { cn } from "@workspace/ui/lib/utils"
 import { Markdown } from "@/components/chat/markdown"
 import { subagentStatusLabel } from "@/components/chat/subagent-entry"
 import type { SubagentRunRecord } from "@/lib/games/harness/records"
+import { describeToolCall } from "@/lib/games/tool-parts"
 
 export type SubagentRunDetailProps = {
   record: SubagentRunRecord
@@ -209,8 +210,11 @@ export function SubagentRunDetail({ record }: SubagentRunDetailProps) {
                   className={!call.ok ? "text-destructive" : undefined}
                   title={call.error}
                 >
-                  {call.toolName}
-                  {call.path ? ` ${call.path}` : ""}
+                  {describeToolCall(
+                    call.toolName,
+                    call.path,
+                    call.ok ? "done" : "failed"
+                  )}
                 </span>
               </li>
             ))}

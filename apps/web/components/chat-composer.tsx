@@ -1,6 +1,6 @@
 "use client"
 
-import type { FormEvent, KeyboardEvent } from "react"
+import type { FormEvent, KeyboardEvent, ReactNode } from "react"
 import { ArrowUp02Icon, StopIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
@@ -10,7 +10,6 @@ import {
   InputGroupTextarea,
 } from "@workspace/ui/components/input-group"
 import { Spinner } from "@workspace/ui/components/spinner"
-
 import { ModelPicker } from "@/components/model-picker"
 import type { TierId } from "@/lib/ai/model-catalog"
 
@@ -38,6 +37,15 @@ type ChatComposerProps = {
    */
   tierId?: TierId
   onTierChange?: (tierId: TierId) => void
+  /**
+   * Rendered directly above the `InputGroup`, visually merged into it (the
+   * caller decides whether to render anything at all — this component stays
+   * presentational and owns no task-list state or derivation of its own).
+   * `task-strip.tsx`'s `TaskStrip` is the one caller today: it rounds its own
+   * top corners to match `InputGroup`'s, and `InputGroup` squares its top
+   * corners in turn whenever this is present, so the two read as one card.
+   */
+  tasksSlot?: ReactNode
 }
 
 /**
@@ -55,6 +63,7 @@ export function ChatComposer({
   placeholder = "Describe the game you want to build…",
   tierId,
   onTierChange,
+  tasksSlot,
 }: ChatComposerProps) {
   const trimmed = value.trim()
   const stoppable = pending && Boolean(onStop)
@@ -92,7 +101,8 @@ export function ChatComposer({
 
   return (
     <form onSubmit={handleSubmit} className="flex w-full flex-col">
-      <div className="flex w-full flex-col gap-2">
+      <div className="flex w-full flex-col">
+        {tasksSlot}
         <InputGroup>
           {/**
            * The control grows with what is typed — `field-sizing-content` on
@@ -140,7 +150,7 @@ export function ChatComposer({
             </InputGroupButton>
           </InputGroupAddon>
         </InputGroup>
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        {error ? <p className="text-sm text-destructive mt-2">{error}</p> : null}
       </div>
     </form>
   )
