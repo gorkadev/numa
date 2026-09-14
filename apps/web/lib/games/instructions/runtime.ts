@@ -44,7 +44,12 @@ Because the server is static and dumb:
   is not the sandbox's, so \`/style.css\` is a 404 while \`style.css\` and
   \`./assets/sprite.svg\` work.
 - There is no server-side anything. No routing, no API, no database, no
-  sessions — persistence means \`localStorage\`, and state means memory.
+  sessions. State lives in memory, and it does not survive a reload: the
+  preview frame is sandboxed onto an opaque origin, where real \`localStorage\`
+  is unavailable. A working stand-in is installed for you before your code
+  runs, so \`localStorage\` and \`sessionStorage\` can be called safely and the
+  engine's \`saveKey\` still works — but they are backed by memory only. Write
+  the game so a lost save costs a high score, never a playthrough.
 - Nothing is installed for you, and nothing can be. Do not reach for npm
   packages, a build step, or a script tag pointing at a CDN — the sandbox
   cannot reach the network, and a game that waits on one shows a blank screen.
@@ -59,10 +64,11 @@ leaving it briefly broken.
 ## What the user sees
 
 The preview pane beside this chat is an iframe of that directory, refreshed
-after your changes land. It is the same origin as the app, so \`localStorage\`,
-\`postMessage\` and devtools all behave normally, but the game is not the top
-window: never call \`window.top\`, \`parent\`, \`alert\`, \`confirm\` or
-\`prompt\`, and keep focus handling to the game's own elements.
+after your changes land. It is a sandboxed frame on an opaque origin, not the
+app's own: the game is not the top window and has no access to it. Never call
+\`window.top\`, \`parent\`, \`alert\`, \`confirm\` or \`prompt\` — the modal
+dialogs are blocked outright by the sandbox — and keep focus handling to the
+game's own elements.
 
 The player has no console. An error you would have logged is an error nobody
 reads — fail visibly on screen instead, or do not fail.`,

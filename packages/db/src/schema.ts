@@ -1,5 +1,7 @@
 import {
+  boolean,
   index,
+  integer,
   jsonb,
   pgTable,
   text,
@@ -7,6 +9,35 @@ import {
   uuid,
 } from "drizzle-orm/pg-core"
 import type { UIMessage } from "ai"
+
+/**
+ * The shape stored in `turn_usage.usage_breakdown` — see the column's own
+ * comment below. Declared locally, as loosely-typed strings, rather than
+ * imported from the app's model registry (`apps/web/lib/ai/model-registry.ts`,
+ * `lib/ai/pricing.ts`): this package is a dependency of the app, not the other
+ * way around, and `$type` is a compile-time assertion only — Postgres
+ * validates nothing beyond "this is JSON" either way.
+ */
+type UsageBreakdownEntry = {
+  agentId: string
+  role: string
+  slot: string
+  /** The concrete registry entry that served this call. */
+  modelId: string
+  /** Present only when a fallback candidate served instead of the primary. */
+  fallbackFrom?: string
+  status: string
+  inputTokens: number
+  outputTokens: number
+  cachedInputTokens: number
+  reasoningTokens: number
+  costMicroUsd: number
+}
+
+type UsageBreakdown = {
+  tier: string
+  entries: UsageBreakdownEntry[]
+}
 
 /**
  * Drizzle owns the schema for this database. Change a table here, then run
@@ -92,6 +123,15 @@ export const games = pgTable(
       .notNull()
       .defaultNow()
       .$onUpdate(() => new Date()),
+
+    /**
+     * When this game was pinned, or null for one that never was — the
+     * sidebar's own "is it pinned" flag doubles as its own sort key, so
+     * pinning something later always outranks one pinned earlier. Set and
+     * cleared through `setGamePinned`, never through `renameGame`'s sibling
+     * update pattern.
+     */
+    pinnedAt: timestamp("pinned_at", { withTimezone: true }),
   },
   (table) => [
     /**
@@ -109,3 +149,177 @@ export const games = pgTable(
 
 export type Game = typeof games.$inferSelect
 export type NewGame = typeof games.$inferInsert
+
+/**
+ * One row per completed chat turn: what it spent, and what that is estimated to
+ * have cost. Append-only — nothing in the application updates or deletes a row
+ * here, because the question this table answers is historical ("what did this
+ * game cost to build?") and a mutable answer to that is worth nothing.
+ *
+ * This is measurement, not billing. No price is charged from these numbers and
+ * no access is gated on them; they exist so the real cost-per-game can be
+ * learned from production before anything is priced on a guess.
+ */
+export const turnUsage = pgTable(
+  "turn_usage",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+
+    /**
+     * The game this turn belonged to — deliberately *not* a foreign key.
+     *
+     * Both available referential actions are wrong here. `restrict` would make
+     * the ledger block the app's delete-game feature, so a player could not
+     * remove their own game once it had cost anything. `cascade` would erase
+     * the cost record along with it, which is worse: the money was really
+     * spent, and a deletion in the product does not un-spend it.
+     *
+     * So the ledger outlives the game it describes, and a lookup against
+     * `games` is allowed to find nothing. Read this as an identifier, not as a
+     * relation.
+     */
+    gameId: uuid("game_id").notNull(),
+
+    /**
+     * Copied from `games.orgId` at write time rather than joined for.
+     *
+     * Denormalized for the same reason the game id is not a key: this is the
+     * boundary anything is ever eventually billed to, and it has to survive the
+     * game's deletion. Resolving the org through `games` at read time would
+     * make every deleted game's spend fall out of its organization's total —
+     * silently, and only for the orgs that delete things.
+     */
+    orgId: text("org_id").notNull(),
+
+    modelId: text("model_id").notNull(),
+
+    /** The turn's 0-indexed position within its chat, as `onTurnComplete`
+     * reports it. Ordering, not identity: a retried run can repeat a number. */
+    turn: integer("turn").notNull(),
+
+    /**
+     * The Trigger.dev run that produced the turn. Kept so a surprising row can
+     * be opened in the dashboard and read against the run's actual steps —
+     * which is the only way to reconcile an estimate here with what the
+     * provider really did.
+     */
+    runId: text("run_id").notNull(),
+
+    inputTokens: integer("input_tokens").notNull().default(0),
+    outputTokens: integer("output_tokens").notNull().default(0),
+    cachedInputTokens: integer("cached_input_tokens").notNull().default(0),
+    reasoningTokens: integer("reasoning_tokens").notNull().default(0),
+
+    /**
+     * The turn's ESTIMATED cost, in millionths of a USD.
+     *
+     * Integer micro-dollars rather than a float or a numeric, because money
+     * summed over thousands of rows must not accumulate binary rounding error —
+     * and because the unit has to be small enough that a single cheap turn is
+     * not rounded to zero cents.
+     *
+     * `int4` caps one row near $2,147, which `stopWhen: stepCountIs(25)` puts
+     * comfortably out of reach of any single turn. Aggregates are safe too:
+     * Postgres widens `sum(int4)` to `bigint`, so a rollup cannot overflow the
+     * column's own type.
+     */
+    costMicroUsd: integer("cost_micro_usd").notNull(),
+
+    /**
+     * The per-agent detail behind the totals on this row: which tier the turn
+     * ran on, and, per run, its role, concrete registry entry and priced
+     * cost — the orchestrator today, every dispatched sub-agent from unit 2a
+     * onward. Nullable because a row written before this column existed has
+     * none, and because a turn that never dispatched anything still writes a
+     * one-entry breakdown rather than an empty one.
+     *
+     * Kept alongside the aggregate columns rather than instead of them: the
+     * aggregates answer "what did this turn cost" with an index-friendly
+     * scalar, and this answers "which model, in what proportion" without
+     * requiring every reader to parse jsonb just to sum a number the row
+     * already has. See `turn-usage-accounting`'s Per-Sub-Agent Usage
+     * Breakdown Retained requirement and decision 10 in `design.md`.
+     */
+    usageBreakdown: jsonb("usage_breakdown").$type<UsageBreakdown>(),
+
+    /**
+     * Which version of the in-repo rate table produced `costMicroUsd`.
+     *
+     * This is what makes the number auditable instead of merely stored. Rates
+     * change on schedules nobody controls — Gemini 3.8 Flash doubles on
+     * 2027-01-01 when its introductory pricing ends — so without knowing which
+     * rates were in effect, a row's estimate can never be re-derived, explained
+     * to anyone, or corrected in bulk once a rate turns out to have been wrong.
+     */
+    rateVersion: text("rate_version").notNull(),
+
+    /**
+     * How many credits this turn consumed — the customer-facing unit, stored
+     * rather than derived from `cost_micro_usd` on read.
+     *
+     * The conversion is not a constant of nature. It is a markup somebody
+     * chose, and it will be chosen differently at some point. Recomputing this
+     * number later would apply today's markup to a turn that was sold under
+     * yesterday's, silently rewriting how much every historical turn cost the
+     * customer — including turns already paid for. A row has to stay
+     * explainable with the economics that were in force when it was written,
+     * and the only way that holds is if the answer is written down.
+     *
+     * `rate_version` covers this too, and deliberately: the markup constant
+     * lives in the same rate file as the per-model rates, so the version that
+     * explains `cost_micro_usd` is the same version that explains this column.
+     * There is no second version to keep in step.
+     */
+    credits: integer("credits").notNull().default(0),
+
+    /**
+     * When Polar accepted the usage event for this row, or null if it never
+     * did. This is the repair handle.
+     *
+     * `credits > 0 and credits_ingested_at is null` is usage this application
+     * charged for internally and never told Polar about — the exact query a
+     * reconciliation job runs, and the exact set of rows it has to replay.
+     * Without this column the ingest is fire-and-forget in the worst sense: a
+     * failed call leaves behind a row indistinguishable from a successful one,
+     * so the backlog is not merely unrepaired but unfindable. Nothing in the
+     * system would ever surface it, and the money is simply gone.
+     */
+    creditsIngestedAt: timestamp("credits_ingested_at", { withTimezone: true }),
+
+    /** Why the model stopped, when the provider said. Nullable because a turn
+     * can complete without one — an aborted stream reports nothing. */
+    finishReason: text("finish_reason"),
+
+    /** Whether the player stopped this turn mid-generation. A stopped turn
+     * still costs what it had already produced, so it is recorded, but it is
+     * not comparable to one that ran to completion. */
+    stopped: boolean("stopped").notNull().default(false),
+
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    /**
+     * Serves the rollup this table exists for: one organization's spend over a
+     * window, newest first. The leading `org_id` also covers a plain
+     * `where org_id = ?` total, so no second index is warranted for it.
+     */
+    index("turn_usage_org_id_created_at_idx").on(
+      table.orgId,
+      table.createdAt.desc()
+    ),
+
+    /**
+     * Serves the other question — what one game cost — which is a scan of every
+     * turn it ever ran. Separate from the index above because `org_id` does not
+     * prefix it: a game's rows are a narrow slice of its org's, and reaching
+     * them through the org index would read the whole organization's history to
+     * throw nearly all of it away.
+     */
+    index("turn_usage_game_id_idx").on(table.gameId),
+  ]
+)
+
+export type TurnUsage = typeof turnUsage.$inferSelect
+export type NewTurnUsage = typeof turnUsage.$inferInsert

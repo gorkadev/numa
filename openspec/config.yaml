@@ -1,0 +1,93 @@
+schema: spec-driven
+artifact_store: hybrid
+
+context: |
+  Stack: pnpm + Turborepo monorepo (TypeScript, Node >=20).
+  apps/web: Next.js 16.2.6 (non-standard — read node_modules/next/dist/docs
+  before writing code), React 19.2.4, AI SDK v7, Trigger.dev v4 tasks
+  (apps/web/trigger), Daytona sandboxes, Clerk auth, Polar billing.
+  packages/db: Drizzle ORM + Neon/pg. Schema changes via `pnpm db:push`
+  ONLY — never drizzle-kit generate/migrate, never commit packages/db/drizzle/.
+  packages/ui: shadcn + Base UI components (container/presentational,
+  atomic design conventions apply per user profile).
+  Testing: no test runner detected in any workspace project (see testing
+  block below) — Strict TDD is disabled.
+
+strict_tdd: false
+
+testing:
+  workspace_test_command: null
+  reason: "No test runner (vitest/jest/playwright/cypress) found in any project's package.json; no workspace-level test script exists."
+  projects:
+    - path: apps/web
+      stack: "Next.js 16.2.6 / React 19.2.4 / TypeScript"
+      test_command: null
+      framework: null
+      lint_command: "eslint"
+      typecheck_command: "tsc --noEmit"
+      format_command: "prettier --write \"**/*.{ts,tsx}\""
+    - path: packages/db
+      stack: "Drizzle ORM + Neon/pg / TypeScript"
+      test_command: null
+      framework: null
+      lint_command: "eslint"
+      typecheck_command: "tsc --noEmit"
+      format_command: "prettier --write \"**/*.ts\""
+    - path: packages/ui
+      stack: "shadcn + Base UI / React 19.2.4 / TypeScript"
+      test_command: null
+      framework: null
+      lint_command: "eslint"
+      typecheck_command: "tsc --noEmit"
+      format_command: "prettier --write \"**/*.{ts,tsx}\""
+    - path: packages/eslint-config
+      stack: "Shared ESLint config package"
+      test_command: null
+      framework: null
+      lint_command: null
+      typecheck_command: null
+      format_command: null
+    - path: packages/typescript-config
+      stack: "Shared tsconfig package"
+      test_command: null
+      framework: null
+      lint_command: null
+      typecheck_command: null
+      format_command: null
+  root_commands:
+    build: "neon-env run -- turbo build"
+    dev: "neon-env run -- turbo dev"
+    lint: "turbo lint"
+    format: "turbo format"
+    typecheck: "turbo typecheck"
+    db_push: "neon-env run -- pnpm --filter @workspace/db db:push"
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - Never propose drizzle-kit generate/migrate; schema changes go through pnpm db:push
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Include sequence diagrams for complex flows
+    - Document architecture decisions with rationale
+    - Read node_modules/next/dist/docs before proposing any Next.js API usage (non-standard version)
+    - Load the matching trigger-* skill before designing Trigger.dev tasks/chat agents
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+    - Do not plan drizzle-kit generate/migrate or drizzle/ migration files
+  apply:
+    guidelines:
+      - Follow existing code patterns (Clean/Hexagonal boundaries, container-presentational for UI)
+      - Apply schema changes with `pnpm db:push`, never drizzle-kit generate/migrate
+      - Never commit packages/db/drizzle/
+    tdd: false           # No test runner detected in this workspace
+    test_command: ""
+  verify:
+    test_command: ""
+    build_command: "neon-env run -- turbo build"
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas

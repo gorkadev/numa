@@ -8,15 +8,14 @@ import { cn } from "cn"
 
 import { useIsMobile } from "@workspace/ui/hooks/use-mobile"
 import { Button } from "@workspace/ui/components/button"
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerTitle,
+} from "@workspace/ui/components/drawer"
 import { Input } from "@workspace/ui/components/input"
 import { Separator } from "@workspace/ui/components/separator"
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@workspace/ui/components/sheet"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import {
   Tooltip,
@@ -182,27 +181,39 @@ function Sidebar({
 
   if (isMobile) {
     return (
-      <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
-        <SheetContent
+      <Drawer
+        open={openMobile}
+        onOpenChange={setOpenMobile}
+        swipeDirection={side === "left" ? "left" : "right"}
+        {...props}
+      >
+        {/**
+         * `--drawer-content-width` overrides `drawer.tsx`'s own
+         * `data-[swipe-axis=x]:[--drawer-content-width:75%]` class — both set
+         * the same custom property on this element, and an inline `style`
+         * always wins over a class regardless of source order, so setting it
+         * here is enough without touching the shared `Drawer` primitive.
+         */}
+        <DrawerContent
           dir={dir}
           data-sidebar="sidebar"
           data-slot="sidebar"
           data-mobile="true"
-          className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
+          className="bg-sidebar p-0 text-sidebar-foreground"
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
+              "--drawer-content-width": SIDEBAR_WIDTH_MOBILE,
             } as React.CSSProperties
           }
-          side={side}
         >
-          <SheetHeader className="sr-only">
-            <SheetTitle>Sidebar</SheetTitle>
-            <SheetDescription>Displays the mobile sidebar.</SheetDescription>
-          </SheetHeader>
+          <DrawerTitle className="sr-only">Sidebar</DrawerTitle>
+          <DrawerDescription className="sr-only">
+            Displays the mobile sidebar.
+          </DrawerDescription>
           <div className="flex h-full w-full flex-col">{children}</div>
-        </SheetContent>
-      </Sheet>
+        </DrawerContent>
+      </Drawer>
     )
   }
 

@@ -45,6 +45,61 @@ export const GAME_DIR = "/home/daytona/game"
 export const GAME_LABEL = "gameId"
 
 /**
+ * Label marking whether a sandbox was created from the Chromium-carrying
+ * snapshot (`DAYTONA_GAME_SNAPSHOT`, `lib/daytona/game-image.ts`), as
+ * opposed to today's default sandbox.
+ *
+ * `game-verification`'s spec (design.md decision 13, Deviation 2 — "older
+ * games report `unavailable`") needs a way to tell the two apart before
+ * running anything: a sandbox with no Chromium must fail `verify` as
+ * `status: "unavailable"` rather than attempting a check that can only ever
+ * error. Probing for that by trying to launch Chromium inside every
+ * `verify` call would cost a real round trip just to learn a fact that
+ * never changes for a sandbox's lifetime. Stamping it here, once, at
+ * creation, lets unit 6's verifier read
+ * `sandbox.labels?.[CHROMIUM_LABEL] === "true"` instead — cheap, and
+ * correct even for a sandbox created before this label existed, since a
+ * missing label reads as falsy the same as an explicit `"false"` would.
+ */
+export const CHROMIUM_LABEL = "hasChromium"
+
+/**
+ * Creates the underlying sandbox for one game, preferring the Chromium
+ * snapshot when `DAYTONA_GAME_SNAPSHOT` is configured.
+ *
+ * That env var is unset everywhere until the unit 5 spike's own snapshot is
+ * confirmed and an operator opts in (Migration / Rollout: "off until the
+ * unit 5 spike passes"), so the common path today is unchanged: no snapshot
+ * name, no `snapshot` field, the org's default sandbox. When the env var
+ * IS set, a failed `snapshot` create — most plausibly a deleted or renamed
+ * snapshot — falls back to that same default sandbox with a logged warning
+ * rather than throwing: a stale `DAYTONA_GAME_SNAPSHOT` should degrade game
+ * creation back to today's fully-playable behavior (just without in-sandbox
+ * Chromium/`verify`), not break it outright. Only a sandbox actually
+ * created from the snapshot carries `CHROMIUM_LABEL`.
+ */
+async function createSandboxForGame(gameId: string): Promise<Sandbox> {
+  const snapshot = process.env.DAYTONA_GAME_SNAPSHOT
+
+  if (!snapshot) {
+    return daytona.create({ labels: { [GAME_LABEL]: gameId } })
+  }
+
+  try {
+    return await daytona.create({
+      snapshot,
+      labels: { [GAME_LABEL]: gameId, [CHROMIUM_LABEL]: "true" },
+    })
+  } catch (error) {
+    console.warn(
+      `Failed to create a sandbox from DAYTONA_GAME_SNAPSHOT ("${snapshot}"); falling back to the default sandbox`,
+      error
+    )
+    return daytona.create({ labels: { [GAME_LABEL]: gameId } })
+  }
+}
+
+/**
  * Provisions the sandbox that will host one game and records it on the row.
  *
  * Called once per game, from the chat agent's `onChatStart`. Everything under
@@ -70,7 +125,7 @@ export async function createGameSandbox(
   gameId: string
 ): Promise<SandboxResult> {
   const { folders, files } = await readRuntimeSeed()
-  const sandbox = await daytona.create({ labels: { [GAME_LABEL]: gameId } })
+  const sandbox = await createSandboxForGame(gameId)
 
   await sandbox.fs.createFolder(GAME_DIR, "755")
 

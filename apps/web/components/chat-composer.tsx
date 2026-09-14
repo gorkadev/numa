@@ -1,11 +1,7 @@
 "use client"
 
-import type { FormEvent, KeyboardEvent } from "react"
-import {
-  ArrowUp02Icon,
-  Loading03Icon,
-  StopIcon,
-} from "@hugeicons/core-free-icons"
+import type { FormEvent, KeyboardEvent, ReactNode } from "react"
+import { ArrowUp02Icon, StopIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   InputGroup,
@@ -13,9 +9,9 @@ import {
   InputGroupButton,
   InputGroupTextarea,
 } from "@workspace/ui/components/input-group"
-
+import { Spinner } from "@workspace/ui/components/spinner"
 import { ModelPicker } from "@/components/model-picker"
-import type { GameModelId } from "@/lib/ai/model-catalog"
+import type { TierId } from "@/lib/ai/model-catalog"
 
 type ChatComposerProps = {
   value: string
@@ -32,15 +28,24 @@ type ChatComposerProps = {
   error?: string | null
   placeholder?: string
   /**
-   * The selected model, and the way to change it. Both are passed straight
-   * through to the picker — the composer is presentational, so the model is
+   * The selected tier, and the way to change it. Both are passed straight
+   * through to the picker — the composer is presentational, so the tier is
    * the caller's state for the same reason the text is.
    *
    * Optional together: a composer whose caller has nowhere to send the choice
    * shows no picker rather than a control that decides nothing.
    */
-  modelId?: GameModelId
-  onModelChange?: (modelId: GameModelId) => void
+  tierId?: TierId
+  onTierChange?: (tierId: TierId) => void
+  /**
+   * Rendered directly above the `InputGroup`, visually merged into it (the
+   * caller decides whether to render anything at all — this component stays
+   * presentational and owns no task-list state or derivation of its own).
+   * `task-strip.tsx`'s `TaskStrip` is the one caller today: it rounds its own
+   * top corners to match `InputGroup`'s, and `InputGroup` squares its top
+   * corners in turn whenever this is present, so the two read as one card.
+   */
+  tasksSlot?: ReactNode
 }
 
 /**
@@ -56,8 +61,9 @@ export function ChatComposer({
   pending = false,
   error = null,
   placeholder = "Describe the game you want to build…",
-  modelId,
-  onModelChange,
+  tierId,
+  onTierChange,
+  tasksSlot,
 }: ChatComposerProps) {
   const trimmed = value.trim()
   const stoppable = pending && Boolean(onStop)
@@ -95,7 +101,8 @@ export function ChatComposer({
 
   return (
     <form onSubmit={handleSubmit} className="flex w-full flex-col">
-      <div className="flex w-full flex-col gap-2">
+      <div className="flex w-full flex-col">
+        {tasksSlot}
         <InputGroup>
           {/**
            * The control grows with what is typed — `field-sizing-content` on
@@ -116,8 +123,8 @@ export function ChatComposer({
             onKeyDown={handleKeyDown}
           />
           <InputGroupAddon align="block-end">
-            {modelId && onModelChange ? (
-              <ModelPicker value={modelId} onValueChange={onModelChange} />
+            {tierId && onTierChange ? (
+              <ModelPicker value={tierId} onValueChange={onTierChange} />
             ) : null}
             {/**
              * One button, two meanings: while an answer streams it stops the
@@ -133,16 +140,17 @@ export function ChatComposer({
               variant={stoppable ? "destructive" : "default"}
               size="icon-sm"
             >
-              <HugeiconsIcon
-                icon={
-                  stoppable ? StopIcon : pending ? Loading03Icon : ArrowUp02Icon
-                }
-                className={!stoppable && pending ? "animate-spin" : undefined}
-              />
+              {stoppable ? (
+                <HugeiconsIcon icon={StopIcon} />
+              ) : pending ? (
+                <Spinner />
+              ) : (
+                <HugeiconsIcon icon={ArrowUp02Icon} />
+              )}
             </InputGroupButton>
           </InputGroupAddon>
         </InputGroup>
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        {error ? <p className="text-sm text-destructive mt-2">{error}</p> : null}
       </div>
     </form>
   )

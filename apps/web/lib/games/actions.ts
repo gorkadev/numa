@@ -2,24 +2,18 @@
 
 import { refresh } from "next/cache"
 import { redirect } from "next/navigation"
-import { googleVertex } from "@ai-sdk/google-vertex"
 import { auth } from "@clerk/nextjs/server"
 import { db } from "@workspace/db"
 import { games } from "@workspace/db/schema"
 import { generateText } from "ai"
 import { and, eq } from "drizzle-orm"
 
-import { DEFAULT_GAME_MODEL_ID, isGameModelId } from "@/lib/ai/model-catalog"
+import { DEFAULT_TIER_ID, isTierId } from "@/lib/ai/model-catalog"
+import { resolveUtilityModel } from "@/lib/ai/model-registry"
 import { deleteGameSandboxes } from "@/lib/daytona/utils"
+import { ensureBillingCustomer } from "@/lib/polar/customers"
 
 export type CreateGameState = { error: string } | null
-
-/**
- * Titles are short, disposable labels for the sidebar — no reasoning required —
- * so the cheapest, fastest model in the family handles them rather than the one
- * that answers the chat.
- */
-const TITLE_MODEL = "gemini-3.5-flash-lite"
 
 const TITLE_MAX_LENGTH = 60
 
@@ -31,9 +25,17 @@ const TITLE_MAX_LENGTH = 60
 async function generateTitle(prompt: string): Promise<string> {
   const fallback = prompt.slice(0, TITLE_MAX_LENGTH).trim()
 
+  /**
+   * Titles are short, disposable labels for the sidebar — no reasoning
+   * required — so they come from the registry's `title` utility model, the
+   * same for every tier, rather than from the model that answers the chat.
+   */
+  const { model, primary } = resolveUtilityModel("title")
+
   try {
     const { text } = await generateText({
-      model: googleVertex(TITLE_MODEL),
+      model,
+      providerOptions: primary.providerOptions,
       instructions:
         "You name games from the prompt that created them. Reply with the " +
         "title alone: 2 to 5 words, title case, no quotes, no punctuation at " +
@@ -80,14 +82,48 @@ export async function createGame(
   }
 
   /**
-   * The model the composer was showing. It arrives from the browser, so an
+   * The tier the composer was showing. It arrives from the browser, so an
    * unrecognised one falls back to the default rather than being carried
    * forward — this value ends up in a URL, and the URL is read as a choice.
    */
-  const model = formData.get("model")
-  const modelId = isGameModelId(model) ? model : DEFAULT_GAME_MODEL_ID
+  const tier = formData.get("tier")
+  const tierId = isTierId(tier) ? tier : DEFAULT_TIER_ID
 
   const title = await generateTitle(prompt)
+
+  /**
+   * Provisioning MOVED to the application shell — `app/(app)/layout.tsx` calls
+   * `ensureBillingCustomer` on every render, so an organization gets its free
+   * plan simply by opening the app, whatever its vintage and whether or not it
+   * ever creates a game. This call stayed behind anyway, and the reason is the
+   * one thing a layout cannot promise.
+   *
+   * A Server Action is an HTTP endpoint. It can be POSTed directly, and the
+   * action runs BEFORE any render, so nothing guarantees the shell provisioned
+   * this organization first. Keeping the call here means the path that is about
+   * to create a billable resource has provisioned billing itself rather than
+   * assuming somebody upstream did.
+   *
+   * It is idempotent, so the cost of keeping it is one state read on the
+   * already-provisioned path — the same read the layout does — and the cost of
+   * dropping it would be a game created for an organization with no plan.
+   *
+   * `ensureBillingCustomer` needs a Clerk request context: it reads the active
+   * organization off the session and the contact address off the signed-in
+   * user. The `chat.agent` task cannot do either. It runs on Trigger.dev with
+   * no request, no cookies and no session — which is exactly why
+   * `lib/games/thread.ts` and `lib/games/usage.ts` resolve the org from the
+   * game row instead of from the caller. So provisioning cannot happen at the
+   * moment credits are first SPENT; it has to happen somewhere that still has a
+   * user attached, and both the shell and this action do.
+   *
+   * Before the insert, so a game is never created for an organization this
+   * never got the chance to provision. It cannot throw, so it also cannot stop
+   * the insert that follows — a billing failure must not cost the user their
+   * game. Its return value is ignored here: this caller wants the side effect,
+   * not the summary the layout builds from it.
+   */
+  await ensureBillingCustomer()
 
   const [game] = await db
     .insert(games)
@@ -113,14 +149,14 @@ export async function createGame(
    * seeding the row directly would create a message the assistant never
    * answers. The thread strips both parameters once it has sent it.
    *
-   * The model goes the same way, and for the same reason it is not a column:
+   * The tier goes the same way, and for the same reason it is not a column:
    * the first turn has to be sent with what the home screen was showing, and
    * after that the thread's own picker owns the choice.
    *
    * `redirect` throws a control-flow exception, so nothing below it runs.
    */
   redirect(
-    `/games/${game.id}?prompt=${encodeURIComponent(prompt)}&model=${modelId}`
+    `/games/${game.id}?prompt=${encodeURIComponent(prompt)}&tier=${tierId}`
   )
 }
 
@@ -181,6 +217,50 @@ export async function renameGame(
    * The title is rendered in two places by two different server components —
    * the game page's header and the sidebar's list, which belongs to the (app)
    * layout — so only a whole-route re-render puts both back in sync.
+   */
+  refresh()
+
+  return null
+}
+
+export type SetGamePinnedState = { error: string } | null
+
+/**
+ * Pins or unpins one game.
+ *
+ * Same shape as `renameGame`: an id and a value, the `org_id` predicate
+ * riding along in the `WHERE` clause rather than checked beforehand, so a
+ * game owned by another organization updates zero rows and is answered
+ * exactly like one that does not exist.
+ */
+export async function setGamePinned(
+  id: string,
+  pinned: boolean
+): Promise<SetGamePinnedState> {
+  const { orgId } = await auth.protect()
+
+  if (!orgId) {
+    return { error: "Select an organization before pinning a game." }
+  }
+
+  if (!UUID.test(id)) {
+    return { error: "That game no longer exists." }
+  }
+
+  const [game] = await db
+    .update(games)
+    .set({ pinnedAt: pinned ? new Date() : null })
+    .where(and(eq(games.id, id), eq(games.orgId, orgId)))
+    .returning({ id: games.id })
+
+  if (!game) {
+    return { error: "That game no longer exists." }
+  }
+
+  /**
+   * The sidebar's own pinned/recents split is rendered by the (app) layout,
+   * so — same as `renameGame` — only a whole-route re-render moves the row
+   * between the two groups.
    */
   refresh()
 
