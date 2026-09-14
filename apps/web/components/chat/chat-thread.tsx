@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 
 import type { UIMessage } from "ai"
 import { Alert01Icon } from "@hugeicons/core-free-icons"
@@ -108,6 +108,19 @@ export function ChatThread({
   const runs = useMemo(() => groupRuns(messages), [messages])
   const trailing = runs.at(-1)
 
+  /**
+   * The user messages the thread mounted with, which must never act as scroll
+   * anchors. The scroller jumps to the first anchor it has not handled yet
+   * whenever its children change without their count changing, and it only
+   * marks an anchor handled when that anchor arrives as a new item. History
+   * rendered on mount never arrives that way, so a turn still streaming when
+   * the player comes back to the thread walked the viewport up through every
+   * earlier message, one stream update at a time.
+   */
+  const [historyIds] = useState(
+    () => new Set(initialMessages.map((message) => message.id))
+  )
+
   const subagentRuns = useMemo(
     () => collectThreadSubagentRuns(messages),
     [messages]
@@ -155,8 +168,9 @@ export function ChatThread({
                    * A turn starts where the player asked for something, so
                    * their message is what the viewport anchors on — the reply
                    * then streams below it rather than shoving it off screen.
+                   * Only for messages sent from this mount; see `historyIds`.
                    */
-                  scrollAnchor={run.role === "user"}
+                  scrollAnchor={run.role === "user" && !historyIds.has(run.id)}
                 >
                   <ChatMessage
                     role={run.role}

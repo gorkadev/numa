@@ -168,7 +168,15 @@ export function useGameChat({
     [transport, resumedHeadId]
   )
 
-  const { messages, sendMessage, addToolOutput, stop, status, error } = useChat(
+  const {
+    messages,
+    sendMessage,
+    addToolOutput,
+    stop,
+    status,
+    error,
+    resumeStream,
+  } = useChat(
     {
       id: gameId,
       messages: initialMessages,
@@ -183,11 +191,17 @@ export function useGameChat({
        */
       sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
       /**
-       * Reconnects to a turn that is still streaming when the tab mounts. A
-       * brand-new game has nothing to reconnect to, so it is gated on there
-       * being history.
+       * Off on purpose: the reconnect is issued by the effect below instead.
+       * `useChat`'s own `resume` calls `resumeStream()` from an effect with
+       * no guard, so any second run of that effect breaks it — StrictMode's
+       * development double run, or an `<Activity>` route coming back into
+       * view. The second call aborts the first reconnect, and the transport
+       * answers the second with `null`, because it still counts the aborted
+       * one as the chat's active stream until that stream's async teardown
+       * runs. Nothing is left listening, and a turn still streaming when the
+       * thread remounts shows none of its parts until a reload.
        */
-      resume: initialMessages.length > 0,
+      resume: false,
       /**
        * Caps how often a streaming turn hands `messages` back to React —
        * `throttle` is the current name for this option; the installed
@@ -232,6 +246,29 @@ export function useGameChat({
   )
 
   const pending = status === "submitted" || status === "streaming"
+
+  /**
+   * Reconnects to a turn that is still streaming when the thread mounts —
+   * exactly once per chat, which is the whole point of doing it here rather
+   * than through `useChat`'s `resume` (see the comment on that option above).
+   *
+   * The ref survives StrictMode's simulated unmount, so the effect's second
+   * run finds the chat already resumed and leaves the first reconnect alone.
+   * It records the chat id rather than a boolean because `useChat` builds a
+   * new chat when the id changes without a remount, and that one needs its
+   * own reconnect. A brand-new game has nothing to reconnect to, so it is
+   * gated on there being history.
+   */
+  const resumedChatId = useRef<string | null>(null)
+  const hasHistory = initialMessages.length > 0
+
+  useEffect(() => {
+    if (!hasHistory) return
+    if (resumedChatId.current === gameId) return
+
+    resumedChatId.current = gameId
+    void resumeStream()
+  }, [gameId, hasHistory, resumeStream])
 
   /**
    * The metadata records the choice on the message itself, which is what the
