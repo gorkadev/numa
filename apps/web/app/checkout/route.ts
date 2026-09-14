@@ -1,10 +1,32 @@
 import { auth } from "@clerk/nextjs/server"
 
 import { polar } from "@/lib/polar/client"
+import { ensureBillingCustomer } from "@/lib/polar/customers"
+import { activeSubscriptionsForProduct } from "@/lib/polar/plan"
+import type { CustomerState } from "@/lib/polar/plan"
 import {
+  POLAR_PRODUCT_FREE_ID,
   POLAR_PRODUCT_PRO_ID,
   POLAR_PRODUCT_TOPUP_ID,
 } from "@/lib/polar/products"
+
+/**
+ * The organization's customer state, or `null` if it could not be read.
+ *
+ * Every guard below needs the same document — whether Pro is already active,
+ * which free subscription to hand Polar for an upgrade, whether a top-up may
+ * be bought — so this is the one Polar call this route makes to decide any
+ * of them, rather than each guard asking again.
+ */
+async function readCustomerState(orgId: string): Promise<CustomerState | null> {
+  try {
+    return await polar.customers.getStateExternal({ externalId: orgId })
+  } catch (error) {
+    console.error("Failed to read Polar customer state", error)
+
+    return null
+  }
+}
 
 /**
  * Whether this organization holds a PAID subscription.
@@ -22,27 +44,9 @@ import {
  * nobody designed, at the price point with the worst margin and the least
  * predictable revenue — and the monthly plan becomes the option only the
  * inattentive choose.
- *
- * Any failure answers `false`, and that direction is deliberate. Everywhere
- * else in this integration an unanswerable question is forgiven — see the
- * credit gate in `trigger/chat.ts` — because refusing there takes away
- * something the customer already paid for. Here the unanswerable question is
- * blocking a PURCHASE that has not happened yet, and a refused checkout costs
- * the buyer a retry rather than anything they own. Selling a top-up we could
- * not justify is the more expensive mistake, so this one fails closed.
  */
-async function hasPaidSubscription(orgId: string): Promise<boolean> {
-  try {
-    const state = await polar.customers.getStateExternal({ externalId: orgId })
-
-    return state.activeSubscriptions.some(
-      (subscription) => subscription.productId === POLAR_PRODUCT_PRO_ID
-    )
-  } catch (error) {
-    console.error("Failed to read Polar customer state", error)
-
-    return false
-  }
+function hasActiveProduct(state: CustomerState, productId: string): boolean {
+  return activeSubscriptionsForProduct(state, productId).length > 0
 }
 
 /**
@@ -108,6 +112,29 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   /**
+   * The free plan is not a purchase, and it must never go through Polar's
+   * checkout to get one.
+   *
+   * Two separate reasons, either one fatal on its own. First, a free plan
+   * needs no payment, so a checkout session is pure friction — a page with a
+   * card-number field in front of a product that costs nothing. Second, and
+   * worse: a completed Polar checkout creates an `individual` customer for
+   * whoever paid, which bypasses `ensureBillingCustomer` entirely and gives
+   * the ORG nothing — no team customer, no `externalId` pointing at this
+   * organization, none of the provisioning the rest of this integration
+   * depends on. Routing "Get started" through `ensureBillingCustomer`
+   * instead is what actually grants the org its plan, the same call the
+   * application shell already makes on every render.
+   */
+  if (products.includes(POLAR_PRODUCT_FREE_ID)) {
+    await ensureBillingCustomer()
+
+    return Response.redirect(new URL("/", request.url), 302)
+  }
+
+  const state = await readCustomerState(orgId)
+
+  /**
    * A top-up may only be bought on top of a subscription.
    *
    * The reason is the top-up's own terms rather than anything technical: its
@@ -131,9 +158,18 @@ export async function GET(request: Request): Promise<Response> {
    *
    * 409 rather than 403: the request is not forbidden, the account is in the
    * wrong state for it, and the fix is to subscribe first.
+   *
+   * Any failure answers "not allowed", and that direction is deliberate.
+   * Everywhere else in this integration an unanswerable question is forgiven
+   * — see the credit gate in `trigger/chat.ts` — because refusing there takes
+   * away something the customer already paid for. Here the unanswerable
+   * question is blocking a PURCHASE that has not happened yet, and a refused
+   * checkout costs the buyer a retry rather than anything they own. Selling a
+   * top-up we could not justify is the more expensive mistake, so this one
+   * fails closed.
    */
   if (products.includes(POLAR_PRODUCT_TOPUP_ID)) {
-    if (!(await hasPaidSubscription(orgId))) {
+    if (!state || !hasActiveProduct(state, POLAR_PRODUCT_PRO_ID)) {
       return Response.json(
         { error: "A paid plan is required to buy extra credits" },
         { status: 409 }
@@ -141,9 +177,44 @@ export async function GET(request: Request): Promise<Response> {
     }
   }
 
+  /**
+   * Free-to-Pro upgrade in Polar, not a second subscription next to the
+   * first.
+   *
+   * A checkout that names the Pro product for an org that already has an
+   * active free subscription fails at Polar with "you already have an active
+   * subscription" unless the checkout is told which subscription to upgrade
+   * — `subscriptionId` on `CheckoutCreate`, valid only for a subscription
+   * that is on a free price. Passing it is what turns this into the upgrade
+   * it actually is. `activeSubscriptionsForProduct` is used rather than a
+   * fresh Polar read because this function already fetched the same
+   * document above; if more than one free subscription slipped through
+   * before `dedupeFreeSubscriptions` cleaned it up, the oldest is the one
+   * `ensureBillingCustomer` intends to keep, so it is the one offered here.
+   *
+   * An org that already holds an active Pro subscription is sent back to the
+   * pricing page rather than into a doomed checkout — there is nothing left
+   * to buy, and Polar's own rejection would be a worse way to say so.
+   */
+  let subscriptionId: string | undefined
+
+  if (products.includes(POLAR_PRODUCT_PRO_ID) && state) {
+    if (hasActiveProduct(state, POLAR_PRODUCT_PRO_ID)) {
+      return Response.redirect(new URL("/pricing", request.url), 302)
+    }
+
+    const [oldestFreeSubscription] = activeSubscriptionsForProduct(
+      state,
+      POLAR_PRODUCT_FREE_ID
+    )
+
+    subscriptionId = oldestFreeSubscription?.id
+  }
+
   try {
     const result = await polar.checkouts.create({
       products,
+      subscriptionId,
       /**
        * Polar treats this as unique and immutable once set, which is what makes
        * it usable as a join key: the second checkout from the same organization

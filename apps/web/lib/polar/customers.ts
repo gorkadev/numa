@@ -1,6 +1,7 @@
 import { auth, clerkClient, currentUser } from "@clerk/nextjs/server"
 
 import { polar } from "./client"
+import { activeSubscriptionsForProduct } from "./plan"
 import type { CustomerState } from "./plan"
 import { POLAR_PRODUCT_FREE_ID } from "./products"
 
@@ -232,9 +233,198 @@ async function primaryContactEmail(): Promise<string | undefined> {
  * individually recoverable: a customer without a plan is simply the next thing
  * this function fixes, the next time the organization opens the app.
  */
+/**
+ * In-process de-duplication of concurrent provisioning attempts.
+ *
+ * The application shell calls `ensureBillingCustomer` from every render of
+ * the authenticated layout, and a single navigation renders more than one
+ * server component that reaches it. Every one of those calls used to see "not
+ * subscribed" and race each other to `polar.subscriptions.create` — see the
+ * note on the catch below about why Polar does not stop that. Keying the
+ * in-flight promise by org id means the second and third call in the same
+ * server process await the first one's result instead of repeating its
+ * writes. It does nothing across processes or across page loads that do not
+ * overlap, which is what `dedupeFreeSubscriptions` below is for.
+ */
+const provisioning = new Map<string, Promise<CustomerState | null>>()
+
+/**
+ * Keeps at most one active free subscription per organization, revoking the
+ * rest.
+ *
+ * # Why free subscriptions, and never anything else
+ *
+ * A Pro subscription is money that already changed hands; revoking one this
+ * function did not create would be an unrequested cancellation, not a
+ * cleanup. The free plan is granted, not bought, so it is the only product
+ * this ever touches — a hardcoded product id rather than "whatever the
+ * duplicate happens to be" is what keeps that true even if this function is
+ * ever reused.
+ *
+ * # Why the oldest survives
+ *
+ * The oldest subscription is the one any credit balance has already accrued
+ * under. Keeping it and revoking newer duplicates changes nothing the
+ * organization can observe; the reverse would reset a relationship that
+ * predates the bug.
+ *
+ * # Why this runs on the already-provisioned path too, not only right after
+ * a create
+ *
+ * The duplicates this cleans up did not all arrive moments apart — one
+ * organization accumulated twenty-six of them over the days this bug went
+ * unnoticed. Limiting the cleanup to the moment of creation would stop the
+ * leak without ever draining what it had already produced.
+ *
+ * # Why this never throws
+ *
+ * Same contract as `ensureBillingCustomer`: a failed cleanup must not turn
+ * into a broken app shell. The caller gets back the best state available —
+ * freshly re-read if the revoke succeeded, the one it already had otherwise —
+ * and the next render tries again.
+ */
+async function dedupeFreeSubscriptions(
+  orgId: string,
+  state: CustomerState
+): Promise<CustomerState> {
+  const freeSubscriptions = activeSubscriptionsForProduct(
+    state,
+    POLAR_PRODUCT_FREE_ID
+  )
+
+  if (freeSubscriptions.length <= 1) return state
+
+  const [, ...duplicates] = freeSubscriptions
+
+  try {
+    await Promise.all(
+      duplicates.map((subscription) =>
+        polar.subscriptions.revoke({ id: subscription.id })
+      )
+    )
+
+    const after = await readBillingState(orgId)
+
+    return after.status === "provisioned" ? after.state : state
+  } catch (error) {
+    console.error("Failed to revoke duplicate free subscriptions", error)
+
+    return state
+  }
+}
+
+async function provisionBillingCustomer(
+  orgId: string,
+  userId: string | null
+): Promise<CustomerState | null> {
+  const state = await readBillingState(orgId)
+
+  if (state.status === "unreachable") return null
+
+  if (state.status === "provisioned" && state.subscribed) {
+    return await dedupeFreeSubscriptions(orgId, state.state)
+  }
+
+  if (state.status === "missing") {
+    const email = await primaryContactEmail()
+
+    /**
+     * No address, no customer. Polar would reject the create anyway, and
+     * sending it something invalid to hear that from the API is a round trip
+     * that buys nothing. Returning leaves the org unprovisioned and the next
+     * page load tries again — by which point the user may well have added an
+     * address.
+     */
+    if (!email) return null
+
+    const name = await organizationName(orgId)
+
+    try {
+      /**
+       * `owner`, not a top-level `email`. Polar enforces unique customer
+       * emails within a Polar organization, and a top-level email makes that
+       * uniqueness the address itself: the SECOND Clerk organization a person
+       * belongs to fails this create with 422 the moment the first one has
+       * already claimed their address, and the catch below cannot recover it
+       * — there is no other customer to find on re-read, just a permanently
+       * unprovisioned org. `owner.externalId` is what actually needs to be
+       * unique, and it is scoped to this customer rather than the whole Polar
+       * organization, so the same person's email can seed as many team
+       * customers as they have organizations, each identified by its own
+       * Clerk user id.
+       */
+      await polar.customers.create({
+        type: "team",
+        externalId: orgId,
+        name,
+        owner: {
+          email,
+          externalId: userId ?? undefined,
+        },
+      })
+    } catch (error) {
+      /**
+       * Either the concurrent-tab race above, or a genuine failure. Re-read
+       * to tell them apart: a customer that now exists means somebody else
+       * won the race, and this call carries on to the subscription — which is
+       * safe, because the branch below tolerates the winner having got there
+       * first.
+       */
+      const after = await readBillingState(orgId)
+
+      if (after.status !== "provisioned") throw error
+      if (after.subscribed) {
+        return await dedupeFreeSubscriptions(orgId, after.state)
+      }
+    }
+  }
+
+  try {
+    await polar.subscriptions.create({
+      productId: POLAR_PRODUCT_FREE_ID,
+      externalCustomerId: orgId,
+    })
+  } catch (error) {
+    /**
+     * A genuine failure, or the race described above: two calls reaching this
+     * line before either has committed. Polar does NOT refuse a second
+     * subscription on an already-subscribed customer — verified against the
+     * sandbox, which accepted two free subscriptions back to back, and an
+     * organization that had accumulated twenty-six of them is the reason
+     * `dedupeFreeSubscriptions` exists. So this catch cannot assume the error
+     * means "already subscribed"; it re-reads instead. The question is
+     * whether the organization now has its plan, and the state endpoint
+     * answers exactly that, while an error code only hints at it. Any
+     * duplicate this race produces — including the one this very call may
+     * have just created before failing — is cleaned up by the dedupe below
+     * before either caller sees the result.
+     */
+    const after = await readBillingState(orgId)
+
+    if (after.status === "provisioned" && after.subscribed) {
+      return await dedupeFreeSubscriptions(orgId, after.state)
+    }
+
+    throw error
+  }
+
+  /**
+   * One extra read, and only on the visit that actually provisioned. The
+   * state fetched at the top of this function predates the writes just made —
+   * handing it back would render a shell that says "no plan" to the very user
+   * who was just granted one, and it would keep saying it until they navigated
+   * again. This costs a round trip exactly once in an organization's life.
+   */
+  const provisioned = await readBillingState(orgId)
+
+  return provisioned.status === "provisioned"
+    ? await dedupeFreeSubscriptions(orgId, provisioned.state)
+    : null
+}
+
 export async function ensureBillingCustomer(): Promise<CustomerState | null> {
   try {
-    const { orgId } = await auth()
+    const { orgId, userId } = await auth()
 
     /**
      * No active organization means there is nothing to bill. Elsewhere in this
@@ -244,78 +434,27 @@ export async function ensureBillingCustomer(): Promise<CustomerState | null> {
      */
     if (!orgId) return null
 
-    const state = await readBillingState(orgId)
-
-    if (state.status === "unreachable") return null
-    if (state.status === "provisioned" && state.subscribed) return state.state
-
-    if (state.status === "missing") {
-      const email = await primaryContactEmail()
-
-      /**
-       * No address, no customer. Polar would reject the create anyway, and
-       * sending it something invalid to hear that from the API is a round trip
-       * that buys nothing. Returning leaves the org unprovisioned and the next
-       * page load tries again — by which point the user may well have added an
-       * address.
-       */
-      if (!email) return null
-
-      const name = await organizationName(orgId)
-
-      try {
-        await polar.customers.create({
-          type: "team",
-          externalId: orgId,
-          name,
-          email,
-        })
-      } catch (error) {
-        /**
-         * Either the concurrent-tab race above, or a genuine failure. Re-read
-         * to tell them apart: a customer that now exists means somebody else
-         * won the race, and this call carries on to the subscription — which is
-         * safe, because the branch below tolerates the winner having got there
-         * first.
-         */
-        const after = await readBillingState(orgId)
-
-        if (after.status !== "provisioned") throw error
-        if (after.subscribed) return after.state
-      }
-    }
-
-    try {
-      await polar.subscriptions.create({
-        productId: POLAR_PRODUCT_FREE_ID,
-        externalCustomerId: orgId,
-      })
-    } catch (error) {
-      /**
-       * Polar refuses a second subscription on an already-subscribed customer,
-       * and under the race above that refusal is the correct outcome rather
-       * than a problem — somebody granted the plan a moment ago. Re-read rather
-       * than parse the error: the question is whether the organization now has
-       * its plan, and the state endpoint answers exactly that, while an error
-       * code only hints at it.
-       */
-      const after = await readBillingState(orgId)
-
-      if (after.status === "provisioned" && after.subscribed) return after.state
-
-      throw error
-    }
+    const inFlight = provisioning.get(orgId)
 
     /**
-     * One extra read, and only on the visit that actually provisioned. The
-     * state fetched at the top of this function predates the writes just made —
-     * handing it back would render a shell that says "no plan" to the very user
-     * who was just granted one, and it would keep saying it until they navigated
-     * again. This costs a round trip exactly once in an organization's life.
+     * Awaited rather than returned bare: a bare `return inFlight` would hand
+     * back the shared promise without going through this function's own
+     * `try`, so a rejection from the call that is actually doing the work
+     * would reject every rider's call too instead of landing in the catch
+     * below. Awaiting it here is what keeps "never throws" true for callers
+     * who did not initiate the attempt.
      */
-    const provisioned = await readBillingState(orgId)
+    if (inFlight) return await inFlight
 
-    return provisioned.status === "provisioned" ? provisioned.state : null
+    const attempt = provisionBillingCustomer(orgId, userId)
+
+    provisioning.set(orgId, attempt)
+
+    try {
+      return await attempt
+    } finally {
+      provisioning.delete(orgId)
+    }
   } catch (error) {
     /**
      * The SDK's error carries Polar's own response body, which belongs in the

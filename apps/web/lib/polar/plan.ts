@@ -76,6 +76,32 @@ export type CustomerState = Awaited<
  * customer, or a Polar it could not reach. All three collapse into the same
  * `"none"`/`null` summary for the reason spelled out on `BillingPlan`.
  */
+/**
+ * The active subscriptions on a customer state that pay for a given product,
+ * oldest first.
+ *
+ * Two different bugs both need this question answered. A duplicated free
+ * plan (see the dedupe note on `ensureBillingCustomer` in `./customers.ts`)
+ * needs to know which one is the survivor — the oldest, because it is the
+ * one any credit balance has already accrued under. A free-to-Pro upgrade
+ * (see `app/checkout/route.ts`) needs to name the specific subscription
+ * Polar should convert, and the same "oldest first" answer is the correct
+ * one there too: it is the subscription Polar itself would have kept had the
+ * duplicate-create race never happened.
+ *
+ * Reading straight off `activeSubscriptions` rather than a fresh Polar call
+ * is the point — both callers already hold a `CustomerState` they fetched
+ * for another reason, and this derives from it for free.
+ */
+export function activeSubscriptionsForProduct(
+  state: CustomerState,
+  productId: string
+): CustomerState["activeSubscriptions"] {
+  return state.activeSubscriptions
+    .filter((subscription) => subscription.productId === productId)
+    .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+}
+
 export function summarizeBillingState(
   state: CustomerState | null
 ): BillingSummary {
