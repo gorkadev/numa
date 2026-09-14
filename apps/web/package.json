@@ -12,7 +12,8 @@
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
-    "snapshot:build": "node --env-file=.env.local scripts/build-game-snapshot.ts"
+    "snapshot:build": "node --env-file=.env.local scripts/build-game-snapshot.ts",
+    "perf:trace": "node --env-file=.env.local scripts/perf-trace.ts"
   },
   "dependencies": {
     "@ai-sdk/google-vertex": "^5.0.76",
