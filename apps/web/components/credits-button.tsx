@@ -61,13 +61,13 @@ export function CreditsButton({
         <span>Credits</span>
         {/**
          * Nothing at all for `"none"`, because that case means the plan is
-         * unknown — an organization that has not been provisioned yet, or a
-         * Polar that did not answer. A badge reading "Free" would be a guess,
-         * and it would be wrong in the one direction that annoys people.
+         * unknown — a user who has not been provisioned yet, or a Polar that
+         * did not answer. A badge reading "Free" would be a guess, and it
+         * would be wrong in the one direction that annoys people.
          */}
         {plan !== "none" && (
-          <Badge variant={plan === "pro" ? "default" : "secondary"}>
-            {plan === "pro" ? "Pro" : "Free"}
+          <Badge variant={plan === "free" ? "secondary" : "default"}>
+            {plan === "max" ? "Max" : plan === "pro" ? "Pro" : "Free"}
           </Badge>
         )}
       </SidebarMenuButton>

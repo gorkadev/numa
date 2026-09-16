@@ -4,15 +4,14 @@ import { validateEvent, WebhookVerificationError } from "@polar-sh/sdk/webhooks"
  * Receives Polar's webhook deliveries.
  *
  * THIS ROUTE MUST STAY PUBLICLY REACHABLE. Polar POSTs here from its own
- * infrastructure with no session, no cookie and no Clerk token — its
- * authentication is the signature verified below, and nothing else. Today that
- * works by accident rather than by design: `proxy.ts` calls `clerkMiddleware()`
- * without `auth.protect()`, so every route in this application is public. The
- * day somebody adds a blanket `auth.protect()` there, this endpoint starts
- * answering Polar with a redirect to `/sign-in`, Polar records a non-2xx
- * delivery, and every payment event is lost — silently, because nothing in this
- * application is watching for events that never arrived. Whoever tightens
- * `proxy.ts` has to exclude this path explicitly.
+ * infrastructure with no session and no cookie — its authentication is the
+ * signature verified below, and nothing else. `proxy.ts`'s `isPublicPath`
+ * explicitly excludes this path for exactly that reason: without the
+ * exclusion, an unauthenticated POST here would be redirected to `/sign-in`,
+ * Polar would record a non-2xx delivery, and every payment event would be
+ * lost — silently, because nothing in this application is watching for
+ * events that never arrived. Whoever narrows that exclusion has to keep this
+ * path in it.
  */
 export async function POST(request: Request): Promise<Response> {
   /**
@@ -50,8 +49,8 @@ export async function POST(request: Request): Promise<Response> {
 
     switch (event.type) {
       case "order.paid":
-        // TODO: grant credits for the purchased product to the organization
-        // behind `externalCustomerId`.
+        // TODO: grant credits for the purchased product to the user behind
+        // `externalCustomerId`.
         break
 
       case "customer.state_changed":

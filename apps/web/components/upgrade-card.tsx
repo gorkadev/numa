@@ -23,7 +23,7 @@ import type { BillingPlan } from "@/lib/polar/plan"
  * Where the dismissal is remembered, and why it is remembered THERE.
  *
  * `localStorage` is a per-viewer convenience and deliberately not server state.
- * Nothing downstream reads this: it does not change what the organization is
+ * Nothing downstream reads this: it does not change what the account is
  * entitled to, it does not travel to a teammate, and it does not need to
  * survive a new browser. Promoting it to a column would mean a write path, a
  * migration and a value two people on the same team can disagree about, all to
@@ -96,7 +96,7 @@ function dismiss() {
 }
 
 /**
- * The nudge that turns a free organization into a paying one.
+ * The nudge that turns a free user into a paying one.
  *
  * # Why it takes an href instead of building one
  *
@@ -114,8 +114,11 @@ function dismiss() {
  *
  * Returning `null` for every plan but `"free"` keeps the decision in one place.
  * The caller is the sidebar, which is already juggling collapse states and
- * keyboard chords; making it also know that Pro customers must not be sold Pro
- * is a rule that would then have to be repeated at the next call site.
+ * keyboard chords; making it also know that a paying customer — Pro or Max —
+ * must not be sold Pro again is a rule that would then have to be repeated at
+ * the next call site. `"max"` needs no case of its own here: it is simply
+ * neither `"none"` nor `"free"`, the same as `"pro"` already was, so a Max
+ * customer falls out of this check exactly like a Pro one always has.
  */
 export function UpgradeCard({
   plan,

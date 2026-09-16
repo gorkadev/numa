@@ -1,6 +1,5 @@
 import Image from "next/image"
 
-import { auth } from "@clerk/nextjs/server"
 import {
   Empty,
   EmptyContent,
@@ -12,9 +11,10 @@ import {
 
 import { MobileSidebarTrigger } from "@/components/mobile-sidebar-trigger"
 import { NewGameComposer } from "@/components/new-game-composer"
+import { requireSession } from "@/lib/session"
 
 export default async function Page() {
-  await auth.protect()
+  await requireSession()
 
   return (
     <div className="relative flex min-h-svh flex-col items-center justify-center gap-6">

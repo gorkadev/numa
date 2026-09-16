@@ -34,7 +34,7 @@ import { gameRevisionChunk } from "@/lib/games/revision"
 import { loadGameThread, saveGameThread } from "@/lib/games/thread"
 import { createGameTools } from "@/lib/games/tools"
 import { turnCreditsChunk } from "@/lib/games/turn-credits"
-import { getGameOrgId, recordTurnUsage } from "@/lib/games/usage"
+import { getGameUserId, recordTurnUsage } from "@/lib/games/usage"
 import { getCreditBalance } from "@/lib/polar/balance"
 
 /**
@@ -249,7 +249,7 @@ function orchestratorEntryId(): ModelEntryId {
  * since the turn is about to be aborted.
  *
  * `balance` is `number | null`, and the null is load-bearing. An exhausted
- * organization has a real number to show, and that number can be NEGATIVE:
+ * user has a real number to show, and that number can be NEGATIVE:
  * metering is asynchronous and eventually consistent, so a turn that started
  * with credits can finish having spent past zero. `null` is the unprovisioned
  * case — there is no Polar customer, therefore no meter, therefore no number to
@@ -358,7 +358,7 @@ export const gameChat = chat.agent({
   }),
 
   /**
-   * Refuses a turn the organization has no credits for.
+   * Refuses a turn the user has no credits for.
    *
    * This is the first hook of the per-turn lifecycle — it runs before
    * `hydrateMessages`, before `onChatStart` and before `onTurnStart` — and
@@ -367,9 +367,9 @@ export const gameChat = chat.agent({
    * `onChatStart`, so no Daytona sandbox is minted for a turn that will never
    * run. Gating any later would pay for the compute and then decline to use it.
    *
-   * `chatId` is the game id, and the organization is read out of the game row
-   * because there is nothing else to read it from — this task has no Clerk
-   * request context, which is the same reason `lib/games/thread.ts` and
+   * `chatId` is the game id, and the owning user is read out of the game row
+   * because there is nothing else to read it from — this task has no
+   * request-bound session, which is the same reason `lib/games/thread.ts` and
    * `lib/games/usage.ts` work the way they do.
    *
    * # Why an unreadable balance lets the turn through
@@ -378,19 +378,19 @@ export const gameChat = chat.agent({
    * down rather than left to be rediscovered from behaviour.
    *
    * A balance of zero is an ANSWER. Polar was asked, Polar replied, the
-   * organization has spent what it was granted. Acting on it is enforcement,
-   * and enforcement is the point of the feature.
+   * user has spent what they were granted. Acting on it is enforcement, and
+   * enforcement is the point of the feature.
    *
    * `"unavailable"` is not an answer. It means the question could not be asked:
-   * Polar was down, the network failed, the token was wrong. The organization
-   * behind it might have zero credits or ten thousand, and this code has no way
-   * to tell. Refusing on it converts every wobble at the billing vendor into a
+   * Polar was down, the network failed, the token was wrong. The user behind
+   * it might have zero credits or ten thousand, and this code has no way to
+   * tell. Refusing on it converts every wobble at the billing vendor into a
    * total outage of the product for everybody, including the customers who have
    * paid — the failure mode where a dependency that only decides whether you
    * MAY work ends up deciding whether you work at all.
    *
    * So: fail closed on facts, fail open on ignorance. `"unprovisioned"` is a
-   * fact and is enforced — an organization with no Polar customer holds no
+   * fact and is enforced — a user with no Polar customer holds no
    * entitlement, and letting it through would make provisioning optional and
    * therefore pointless.
    *
@@ -410,25 +410,25 @@ export const gameChat = chat.agent({
    * of concurrent turns; it does not eliminate it, and it was never going to.
    */
   onValidateMessages: async ({ messages, chatId }) => {
-    const orgId = await getGameOrgId(chatId)
+    const userId = await getGameUserId(chatId)
 
     /**
      * No game row means no tenant, which means nothing to charge this turn to
      * and nothing `recordTurnUsage` could attribute it to afterwards. It is a
      * fact rather than an unknown — the row is gone — so it is refused.
      */
-    if (!orgId) {
+    if (!userId) {
       writeCreditsExhausted(null)
 
       throw new Error("This game no longer exists")
     }
 
-    const credits = await getCreditBalance(orgId)
+    const credits = await getCreditBalance(userId)
 
     if (credits.status === "unavailable") {
       logger.warn("Credit balance unavailable, allowing turn", {
         chatId,
-        orgId,
+        userId,
       })
 
       return messages

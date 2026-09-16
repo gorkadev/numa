@@ -12,9 +12,9 @@ import type { gameChat } from "@/trigger/chat"
  * The transport calls them from the browser; they run on the server, so
  * `TRIGGER_SECRET_KEY` never crosses to the client.
  *
- * Both re-establish the caller's organization and refuse a game it does not
- * own. That check is load-bearing rather than defensive: `chatId` arrives from
- * the browser, and the token these actions mint grants read and write on that
+ * Both re-establish the caller's identity and refuse a game it does not own.
+ * That check is load-bearing rather than defensive: `chatId` arrives from the
+ * browser, and the token these actions mint grants read and write on that
  * chat's session. Being signed in is not the same as owning this conversation.
  */
 
@@ -65,9 +65,9 @@ export async function mintGameChatAccessToken(chatId: string) {
 }
 
 /**
- * `getGame` authenticates and folds the org into the lookup, so a game owned by
- * another organization is indistinguishable from one that does not exist — the
- * caller cannot probe for chat ids it does not own.
+ * `getGame` authenticates and folds the user id into the lookup, so a game
+ * owned by another user is indistinguishable from one that does not exist —
+ * the caller cannot probe for chat ids it does not own.
  */
 async function assertGameOwner(gameId: string): Promise<void> {
   const game = await getGame(gameId)

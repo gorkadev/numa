@@ -19,8 +19,8 @@
     "@ai-sdk/google-vertex": "^5.0.76",
     "@ai-sdk/otel": "^1.0.93",
     "@ai-sdk/react": "^4.0.96",
-    "@clerk/nextjs": "^7.9.1",
-    "@clerk/ui": "^1.32.2",
+    "@better-auth/infra": "^0.4.9",
+    "@better-auth/passkey": "^1.7.5",
     "@daytona/sdk": "^0.211.2",
     "@hugeicons/core-free-icons": "^4.3.2",
     "@hugeicons/react": "^1.1.10",
@@ -29,6 +29,7 @@
     "@workspace/db": "workspace:*",
     "@workspace/ui": "workspace:*",
     "ai": "^7.0.93",
+    "better-auth": "^1.7.5",
     "date-fns": "^4.4.0",
     "drizzle-orm": "^0.45.2",
     "next": "16.2.6",
@@ -36,9 +37,10 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-markdown": "^10.1.0",
+    "react-qr-code": "^2.2.0",
     "react-shiki": "^0.11.1",
     "remark-gfm": "^4.0.1",
-    "zod": "^4.4.3"
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

@@ -11,7 +11,7 @@ import { ingestTurnCredits } from "@/lib/polar/events"
  * The append-only cost ledger's only writer.
  *
  * Like `./thread`, this runs inside the `chat.agent` task on Trigger.dev, where
- * there is no Clerk request context — so the organization cannot be read off
+ * there is no request-bound session — so the owning user cannot be read off
  * the caller and is resolved from the game row instead. The tenant boundary is
  * upstream: reaching this code requires a session-scoped token, minted only by
  * the actions in `lib/games/chat-actions.ts`, each of which refuses a game its
@@ -19,9 +19,9 @@ import { ingestTurnCredits } from "@/lib/polar/events"
  */
 
 /**
- * The organization a game belongs to, or `undefined` if the game is gone.
+ * The user a game belongs to, or `undefined` if the game is gone.
  *
- * One column, no `org_id` predicate, and that asymmetry with
+ * One column, no `user_id` predicate, and that asymmetry with
  * `lib/games/queries.ts` is the point: this exists precisely for the callers
  * that have no session to derive the boundary from and must read it out of the
  * row instead. The tenant check happened upstream, when a session-scoped chat
@@ -33,15 +33,15 @@ import { ingestTurnCredits } from "@/lib/polar/events"
  * of the query in the task file would be one predicate away from disagreeing
  * with this one about what a game's owner is.
  */
-export async function getGameOrgId(
+export async function getGameUserId(
   gameId: string
 ): Promise<string | undefined> {
   const game = await db.query.games.findFirst({
-    columns: { orgId: true },
+    columns: { userId: true },
     where: (game, { eq }) => eq(game.id, gameId),
   })
 
-  return game?.orgId
+  return game?.userId
 }
 
 /**
@@ -103,17 +103,17 @@ export async function recordTurnUsage({
     if (cost.breakdown.length === 0) return
 
     /**
-     * `org_id` is denormalized onto the ledger, so it has to be read here
+     * `user_id` is denormalized onto the ledger, so it has to be read here
      * rather than joined for later — see the column's comment in `schema.ts`.
      *
      * A game deleted between the turn finishing and this write is the one case
-     * where the cost is genuinely unattributable: there is no org left to
+     * where the cost is genuinely unattributable: there is no user left to
      * charge it to and the column is `notNull`. Dropping the row is the only
      * option, and it is a narrow enough window to accept.
      */
-    const orgId = await getGameOrgId(gameId)
+    const userId = await getGameUserId(gameId)
 
-    if (!orgId) return
+    if (!userId) return
 
     const { credits } = cost
 
@@ -142,7 +142,7 @@ export async function recordTurnUsage({
       .insert(turnUsage)
       .values({
         gameId,
-        orgId,
+        userId,
         modelId,
         turn,
         runId,
@@ -174,7 +174,7 @@ export async function recordTurnUsage({
       .returning({ id: turnUsage.id })
 
     const ingested = await ingestTurnCredits({
-      orgId,
+      userId,
       gameId,
       turn,
       credits,

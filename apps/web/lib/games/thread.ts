@@ -8,12 +8,12 @@ import type { UIMessage } from "ai"
  * chat transport needs to resume it: the session token and the stream cursor.
  *
  * These helpers run inside the `chat.agent` task, which executes on
- * Trigger.dev — there is no Clerk request context there, so they cannot scope
- * to an organization the way `lib/games/queries.ts` does. The tenant boundary
- * moved rather than disappeared: reaching this code at all requires a
+ * Trigger.dev — there is no request-bound session there, so they cannot scope
+ * to a user the way `lib/games/queries.ts` does. The tenant boundary moved
+ * rather than disappeared: reaching this code at all requires a
  * session-scoped token, and those are minted only by the two server actions in
- * `lib/games/chat-actions.ts`, each of which resolves the caller's org and
- * refuses a game it does not own.
+ * `lib/games/chat-actions.ts`, each of which resolves the caller's identity
+ * and refuses a game it does not own.
  */
 
 /**

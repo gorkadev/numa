@@ -1,12 +1,10 @@
-import { ClerkProvider } from "@clerk/nextjs"
-import { shadcn } from "@clerk/ui/themes"
 import type { Metadata } from "next"
 import { Geist_Mono, Inter } from "next/font/google"
 
 import "@workspace/ui/globals.css"
-import "@clerk/ui/themes/shadcn.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from "@workspace/ui/lib/utils"
+import { Toaster } from "@workspace/ui/components/toast"
 import { TooltipProvider } from "@workspace/ui/components/tooltip"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
@@ -45,11 +43,20 @@ export default function RootLayout({
       )}
     >
       <body>
-        <TooltipProvider>
-          <ClerkProvider appearance={{ theme: shadcn }}>
+        {/**
+         * `Toaster` mounts the toast provider, portal and viewport once for
+         * the whole application. It has to sit above every page rather than
+         * inside the one screen that raises a toast today: the manager it
+         * renders is the module-level `toast` singleton from the UI package,
+         * and `toast.add()` from anywhere only reaches a viewport that is
+         * already on screen. Here it also survives navigation, so a toast
+         * raised just before a redirect is still readable after it.
+         */}
+        <Toaster>
+          <TooltipProvider>
             <ThemeProvider>{children}</ThemeProvider>
-          </ClerkProvider>
-        </TooltipProvider>
+          </TooltipProvider>
+        </Toaster>
       </body>
     </html>
   )

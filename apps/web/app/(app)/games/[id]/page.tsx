@@ -28,8 +28,8 @@ export default async function GamePage({
   const initialTierId = isTierId(tier) ? tier : undefined
 
   /**
-   * `getGame` authenticates and scopes to the caller's org, so a missing game
-   * and one owned by another organization both land here as a 404.
+   * `getGame` authenticates and scopes to the caller's user id, so a missing
+   * game and one owned by another user both land here as a 404.
    */
   const game = await getGame(id)
 

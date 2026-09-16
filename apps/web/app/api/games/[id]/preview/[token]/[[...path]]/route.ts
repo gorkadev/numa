@@ -20,7 +20,8 @@ const STRIPPED_RESPONSE_HEADERS = new Set([
  *
  * The sandbox's own preview URL is not something the browser can be handed
  * directly: it needs a per-sandbox token that is reissued on every restart, and
- * an unauthenticated visitor to that URL would bypass the org check entirely.
+ * an unauthenticated visitor to that URL would bypass the ownership check
+ * entirely.
  * Routing it through here keeps that token server-side.
  *
  * Authorization is the signed token in the path, not the session cookie. The
@@ -39,7 +40,7 @@ async function proxy(
 
   /**
    * A bad or expired token answers 404 rather than 403, for the same reason
-   * `getGame` folds the org boundary into the lookup: a distinct status would
+   * `getGame` folds the user boundary into the lookup: a distinct status would
    * confirm which game ids exist to a caller holding no valid token for any.
    */
   if (!verifyPreviewToken(previewToken, id)) {

@@ -24,13 +24,22 @@ function DialogClose({ ...props }: DialogPrimitive.Close.Props) {
   return <DialogPrimitive.Close data-slot="dialog-close" {...props} />
 }
 
+/**
+ * `forceRender` defaults to true because Base UI skips the backdrop of a
+ * nested dialog (`enabled: forceRender || !nested` in `DialogBackdrop`).
+ * Without it, a dialog opened from inside another — the 2FA setup and
+ * recovery-codes dialogs on top of Settings — paints no dim or blur, so the
+ * dialog underneath looks as interactive as the one on top.
+ */
 function DialogOverlay({
   className,
+  forceRender = true,
   ...props
 }: DialogPrimitive.Backdrop.Props) {
   return (
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
+      forceRender={forceRender}
       className={cn(
         "fixed inset-0 isolate z-50 bg-black/30 duration-100 supports-backdrop-filter:backdrop-blur-sm data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
         className

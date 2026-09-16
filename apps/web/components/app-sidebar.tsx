@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useSyncExternalStore } from "react"
+import { useEffect, useState } from "react"
 
 import Image from "next/image"
 import Link from "next/link"
@@ -47,6 +47,7 @@ import { CreditsButton } from "@/components/credits-button"
 import { GameRow } from "@/components/game-row"
 import { NavUser } from "@/components/nav-user"
 import { UpgradeCard } from "@/components/upgrade-card"
+import { useIsMac } from "@/hooks/use-is-mac"
 import { useLiveBilling } from "@/hooks/use-live-billing"
 import type { BillingSummary } from "@/lib/polar/plan"
 
@@ -66,29 +67,6 @@ const MENU_ICON = "[&_svg]:size-5 group-data-[collapsible=icon]:p-1.5!"
  */
 const NEW_GAME_KEY = "o"
 const SEARCH_KEY = "k"
-
-/**
- * A subscription that never fires, because the platform cannot change under a
- * running tab. `useSyncExternalStore` still needs one.
- */
-const noSubscribe = () => () => {}
-
-/**
- * Whether the running platform spells its modifiers the Apple way.
- *
- * Read through `useSyncExternalStore` rather than in an effect: the server has
- * no platform to ask, so the server snapshot is the portable answer and the
- * client's is whatever the browser reports. React swaps the two as part of
- * hydration, which is both warning-free and one render shorter than settling it
- * from an effect afterwards.
- */
-function useIsMac() {
-  return useSyncExternalStore(
-    noSubscribe,
-    () => /mac|iphone|ipad/i.test(navigator.userAgent),
-    () => false
-  )
-}
 
 export function AppSidebar({
   games,

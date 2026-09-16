@@ -19,5 +19,9 @@
   },
   "rtl": false,
   "menuColor": "default-translucent",
-  "menuAccent": "subtle"
+  "menuAccent": "subtle",
+  "registries": {
+    "@efferd": "https://efferd.com/r/{style}/{name}.json",
+    "@magicui": "https://magicui.design/r/{name}"
+  }
 }

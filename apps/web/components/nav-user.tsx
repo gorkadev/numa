@@ -1,19 +1,14 @@
 "use client"
 
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import {
-  useClerk,
-  useOrganization,
-  useOrganizationList,
-  useUser,
-} from "@clerk/nextjs"
-import {
   Logout01Icon,
-  PlusSignIcon,
-  Settings01Icon,
+  Settings02Icon,
   Tick02Icon,
   UnfoldMoreIcon,
-  UserCircleIcon,
+  UserAdd01Icon,
+  UserSwitchIcon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
@@ -28,6 +23,10 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 import {
@@ -37,60 +36,90 @@ import {
   useSidebar,
 } from "@workspace/ui/components/sidebar"
 import { Skeleton } from "@workspace/ui/components/skeleton"
-import { cn } from "@workspace/ui/lib/utils"
+import { toast } from "@workspace/ui/components/toast"
 
-function initials(name: string | null | undefined) {
-  return (name ?? "?").trim().charAt(0).toUpperCase()
-}
+import { authClient } from "@/lib/auth-client"
+import { initials } from "@/lib/format/initials"
+import { useIsMac } from "@/hooks/use-is-mac"
+import { useSettingsDialog } from "@/hooks/use-settings-dialog"
 
 /**
- * Organizations are square and people are round, the same convention Clerk's
- * own components follow, so the two avatars in the menu cannot be mistaken for
- * one another.
+ * One entry from `listDeviceSessions()`: a session cookie this browser holds
+ * and the account it belongs to.
  */
-function OrgAvatar({
-  name,
-  imageUrl,
-  className = "size-8",
-}: {
-  name: string
-  imageUrl?: string
-  className?: string
-}) {
-  return (
-    <Avatar className={cn("rounded-lg after:rounded-lg", className)}>
-      <AvatarImage src={imageUrl} alt={name} className="rounded-lg" />
-      <AvatarFallback className="rounded-lg">{initials(name)}</AvatarFallback>
-    </Avatar>
-  )
-}
+type DeviceSession = NonNullable<
+  Awaited<ReturnType<typeof authClient.multiSession.listDeviceSessions>>["data"]
+>[number]
 
 /**
- * The account row at the foot of the sidebar: the active organization and the
- * signed-in user behind one menu.
+ * The account row at the foot of the sidebar: the signed-in user behind one
+ * menu.
  *
- * It replaces Clerk's `OrganizationSwitcher` and `UserButton`, which render as
- * two unrelated widgets with their own sizing and do not follow the rail when
- * the sidebar collapses. Only the trigger and the menu are ours — account and
- * organization management still open Clerk's modals, because MFA, passwords,
- * sessions and membership screens are not worth rebuilding.
+ * This used to also hold Clerk's `OrganizationSwitcher` — an active
+ * organization, a membership list, "Create organization" — none of which
+ * exists any more, because this application has no organization concept.
+ * `user.id` is the only tenant boundary left, so this row is now exactly what
+ * its name says: one user's account, with nothing to switch between.
+ *
+ * "Settings" opens the settings dialog by writing `?settings=` to the URL
+ * through `useSettingsDialog` rather than owning an `open` flag itself —
+ * the dialog now renders from `components/app-settings.tsx`, mounted at the
+ * `(app)` layout level, precisely because this component can unmount (the
+ * mobile sidebar renders its content inside a `Drawer`) while the dialog
+ * has to stay reachable. There is no Clerk-hosted profile modal to fall
+ * back to for account management either (Better Auth ships no equivalent
+ * prebuilt UI), so this application owns the surface itself rather than
+ * leaving the menu item with nowhere to go.
  */
 export function NavUser() {
   const router = useRouter()
   const { isMobile, state } = useSidebar()
-  const { user, isLoaded: userLoaded } = useUser()
-  const { organization } = useOrganization()
-  const { setActive, userMemberships } = useOrganizationList({
-    userMemberships: { infinite: true },
-  })
-  const {
-    signOut,
-    openUserProfile,
-    openOrganizationProfile,
-    openCreateOrganization,
-  } = useClerk()
+  const { data: session, isPending } = authClient.useSession()
+  const { openSettings } = useSettingsDialog()
+  const isMac = useIsMac()
+  const settingsHint = isMac ? "⌘⇧," : "Ctrl Shift ,"
 
-  if (!userLoaded || !user) {
+  const [accounts, setAccounts] = useState<DeviceSession[]>([])
+
+  /**
+   * Fetched when the menu opens, not on mount. Every page that renders the
+   * sidebar would otherwise pay for a list nobody has asked to see yet, and
+   * the answer is stale-prone in exactly the way that matters — another tab
+   * signing a second account in — so fetching it at the moment it is about
+   * to be read is both cheaper and more correct.
+   */
+  async function loadAccounts() {
+    const { data } = await authClient.multiSession.listDeviceSessions()
+    setAccounts(data ?? [])
+  }
+
+  /**
+   * Switching swaps which of the device's session cookies is the active one,
+   * then reloads through the browser rather than `router.refresh()`.
+   *
+   * The tenant boundary in this application is `user.id` — games, usage,
+   * billing — so every server component on screen was rendered for the
+   * account being switched away from. A soft refresh would re-render them,
+   * but it would also keep the client router cache and any client state
+   * built from the old session. A full navigation to `/` is the honest
+   * reset, and it is what the user asked for by changing accounts.
+   */
+  async function switchAccount(sessionToken: string) {
+    const { error } = await authClient.multiSession.setActive({ sessionToken })
+
+    if (error) {
+      toast.add({
+        type: "error",
+        title: "Could not switch account",
+        description: error.message,
+      })
+      return
+    }
+
+    window.location.assign("/")
+  }
+
+  if (isPending || !session) {
     return (
       <SidebarMenu>
         <SidebarMenuItem>
@@ -100,24 +129,34 @@ export function NavUser() {
     )
   }
 
-  const email = user.primaryEmailAddress?.emailAddress
-  const title = organization?.name ?? user.fullName ?? email ?? "Account"
+  const { user } = session
+  const title = user.name || user.email
 
   /**
-   * The layout's server components read `orgId` from the session, so the
-   * games list and the credit balance are for the previous organization until
-   * the route is rendered again.
+   * The accounts to offer, with the active one guaranteed to be among them.
+   *
+   * `listDeviceSessions()` only returns sessions that carry a multi-session
+   * cookie, and the active session does not necessarily have one: it was
+   * created before this plugin existed, or it is the fifth one past
+   * `maximumSessions`. A switcher that omits the account you are currently
+   * using looks broken, so the active session is prepended from
+   * `useSession()` — which always knows it — and filtered out of the fetched
+   * list to avoid listing it twice.
    */
-  async function switchTo(organizationId: string) {
-    if (!setActive || organizationId === organization?.id) return
-    await setActive({ organization: organizationId })
-    router.refresh()
+  const switchableAccounts = [
+    { session: session.session, user },
+    ...accounts.filter((entry) => entry.session.id !== session.session.id),
+  ]
+
+  async function signOut() {
+    await authClient.signOut()
+    router.push("/sign-in")
   }
 
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <DropdownMenu>
+        <DropdownMenu onOpenChange={(open) => open && loadAccounts()}>
           <DropdownMenuTrigger
             render={
               <SidebarMenuButton
@@ -127,23 +166,14 @@ export function NavUser() {
               />
             }
           >
-            {organization ? (
-              <OrgAvatar
-                name={organization.name}
-                imageUrl={organization.imageUrl}
-              />
-            ) : (
-              <Avatar className="size-8">
-                <AvatarImage src={user.imageUrl} alt={user.fullName ?? ""} />
-                <AvatarFallback>
-                  {initials(user.fullName ?? email)}
-                </AvatarFallback>
-              </Avatar>
-            )}
+            <Avatar className="size-8">
+              <AvatarImage src={user.image ?? undefined} alt={title} />
+              <AvatarFallback>{initials(title)}</AvatarFallback>
+            </Avatar>
             <div className="grid flex-1 text-left leading-tight">
               <span className="truncate font-medium">{title}</span>
               <span className="truncate text-xs text-muted-foreground">
-                {email}
+                {user.email}
               </span>
             </div>
             <HugeiconsIcon icon={UnfoldMoreIcon} className="ml-auto size-4" />
@@ -157,18 +187,14 @@ export function NavUser() {
             <DropdownMenuGroup>
               <DropdownMenuLabel className="flex items-center gap-2 px-2 py-1.5 text-foreground">
                 <Avatar className="size-8">
-                  <AvatarImage src={user.imageUrl} alt={user.fullName ?? ""} />
-                  <AvatarFallback>
-                    {initials(user.fullName ?? email)}
-                  </AvatarFallback>
+                  <AvatarImage src={user.image ?? undefined} alt={title} />
+                  <AvatarFallback>{initials(title)}</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 leading-tight">
-                  <span className="truncate text-sm font-medium">
-                    {user.fullName ?? email}
-                  </span>
-                  {user.fullName && (
+                  <span className="truncate text-sm font-medium">{title}</span>
+                  {user.name && (
                     <span className="truncate text-xs text-muted-foreground">
-                      {email}
+                      {user.email}
                     </span>
                   )}
                 </div>
@@ -176,52 +202,69 @@ export function NavUser() {
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuLabel>Organizations</DropdownMenuLabel>
-              {userMemberships.data?.map(({ organization: org }) => (
-                <DropdownMenuItem key={org.id} onClick={() => switchTo(org.id)}>
-                  <OrgAvatar
-                    name={org.name}
-                    imageUrl={org.imageUrl}
-                    className="size-5"
-                  />
-                  <span className="flex-1 truncate">{org.name}</span>
-                  {org.id === organization?.id && (
-                    <HugeiconsIcon icon={Tick02Icon} />
+              <DropdownMenuItem onClick={() => openSettings()}>
+                <HugeiconsIcon icon={Settings02Icon} />
+                Settings
+                <DropdownMenuShortcut>{settingsHint}</DropdownMenuShortcut>
+              </DropdownMenuItem>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <HugeiconsIcon icon={UserSwitchIcon} />
+                  Switch account
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent className="min-w-56">
+                  {switchableAccounts.map(
+                    ({ session: deviceSession, user: account }) => {
+                      const label = account.name || account.email
+                      const isActive = deviceSession.id === session!.session.id
+
+                      return (
+                        <DropdownMenuItem
+                          key={deviceSession.id}
+                          onClick={() =>
+                            isActive
+                              ? undefined
+                              : switchAccount(deviceSession.token)
+                          }
+                        >
+                          <Avatar className="size-5">
+                            <AvatarImage
+                              src={account.image ?? undefined}
+                              alt={label}
+                            />
+                            <AvatarFallback className="text-[0.5rem]">
+                              {initials(label)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="truncate">{label}</span>
+                          {isActive && (
+                            <HugeiconsIcon
+                              icon={Tick02Icon}
+                              className="ml-auto size-4"
+                            />
+                          )}
+                        </DropdownMenuItem>
+                      )
+                    }
                   )}
-                </DropdownMenuItem>
-              ))}
-              {userMemberships.hasNextPage && (
-                <DropdownMenuItem
-                  closeOnClick={false}
-                  onClick={() => userMemberships.fetchNext?.()}
-                  className="text-muted-foreground"
-                >
-                  Show more
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuItem onClick={() => openCreateOrganization()}>
-                <HugeiconsIcon icon={PlusSignIcon} />
-                Create organization
-              </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  {/**
+                   * Straight to the normal sign-in page: `proxy.ts` leaves
+                   * `/sign-in` public rather than bouncing a signed-in
+                   * browser away from it, and the multi-session plugin adds
+                   * the new session's cookie beside the existing one instead
+                   * of replacing it — so signing in again IS adding an
+                   * account, with no separate flow to build.
+                   */}
+                  <DropdownMenuItem onClick={() => router.push("/sign-in")}>
+                    <HugeiconsIcon icon={UserAdd01Icon} />
+                    Add account
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              {organization && (
-                <DropdownMenuItem onClick={() => openOrganizationProfile()}>
-                  <HugeiconsIcon icon={Settings01Icon} />
-                  Organization settings
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuItem onClick={() => openUserProfile()}>
-                <HugeiconsIcon icon={UserCircleIcon} />
-                Account
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              variant="destructive"
-              onClick={() => signOut({ redirectUrl: "/sign-in" })}
-            >
+            <DropdownMenuItem variant="destructive" onClick={signOut}>
               <HugeiconsIcon icon={Logout01Icon} />
               Sign out
             </DropdownMenuItem>

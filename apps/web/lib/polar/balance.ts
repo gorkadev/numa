@@ -2,7 +2,7 @@ import { polar } from "./client"
 import { POLAR_METER_ID } from "./products"
 
 /**
- * What this application knows about an organization's credit balance.
+ * What this application knows about a user's credit balance.
  *
  * Three cases, and keeping them three is the entire reason this type exists.
  * The obvious signature — `Promise<number>` — forces every failure to become a
@@ -13,7 +13,7 @@ import { POLAR_METER_ID } from "./products"
  *
  * The distinction is not about caution, it is about what is actually true. A
  * balance of zero is an ANSWER: Polar was asked, Polar replied, the
- * organization has spent everything it was granted. `"unavailable"` is the
+ * user has spent everything it was granted. `"unavailable"` is the
  * absence of an answer — the question was never successfully asked, and the
  * balance behind it might be zero or might be ten thousand. Collapsing those
  * two into the same value destroys the only information a caller needs to
@@ -21,7 +21,7 @@ import { POLAR_METER_ID } from "./products"
  * makes: it enforces the answer and forgives the ignorance.
  *
  * `"unprovisioned"` is a third fact rather than a flavour of zero. No Polar
- * customer exists for this organization at all, so there is no entitlement, no
+ * customer exists for this user at all, so there is no entitlement, no
  * meter and no subscription — nothing was ever granted, as opposed to granted
  * and spent. It is separated because it is repairable by a completely different
  * action (`ensureBillingCustomer`) than an exhausted balance is (buy more), and
@@ -33,7 +33,7 @@ export type CreditBalance =
   | { status: "unavailable" }
 
 /**
- * Reads the `Game credits` meter for one organization.
+ * Reads the `Game credits` meter for one user.
  *
  * # This number is behind, always
  *
@@ -46,7 +46,7 @@ export type CreditBalance =
  * can only bound one. Two tabs starting a turn within the same few seconds both
  * read the pre-spend balance, both see credits, and both run. So do a tab and a
  * retry. What a check here buys is a ceiling on how far negative that can go —
- * an organization at zero is stopped within seconds rather than continuing
+ * a user at zero is stopped within seconds rather than continuing
  * indefinitely — and that is worth having while a single turn is worth cents.
  *
  * Closing the gap properly means a RESERVATION: deducting the turn's expected
@@ -73,9 +73,9 @@ export type CreditBalance =
  * customer created but never subscribed — see the gap named in
  * `./customers.ts`.
  */
-export async function getCreditBalance(orgId: string): Promise<CreditBalance> {
+export async function getCreditBalance(userId: string): Promise<CreditBalance> {
   try {
-    const state = await polar.customers.getStateExternal({ externalId: orgId })
+    const state = await polar.customers.getStateExternal({ externalId: userId })
 
     const meter = state.activeMeters.find(
       (meter) => meter.meterId === POLAR_METER_ID

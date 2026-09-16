@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { getBillingSummary } from "@/lib/polar/plan"
 
 /**
- * The current organization's plan and credit balance, for a client that
+ * The current user's plan and credit balance, for a client that
  * already has the page and only needs the number again.
  *
  * # Why an endpoint and not a server action
@@ -18,18 +18,18 @@ import { getBillingSummary } from "@/lib/polar/plan"
  *
  * A credit balance that a proxy is allowed to hold for even a few seconds is a
  * balance that lies to the user immediately after the turn they just spent. It
- * is also per-organization, so a shared cache entry would be a cross-tenant
- * leak rather than merely stale. `dynamic` states the first, the header
- * states the second, and `getBillingSummary` reads the org from the session on
- * every call.
+ * is also per-user, so a shared cache entry would be a cross-tenant leak
+ * rather than merely stale. `dynamic` states the first, the header states the
+ * second, and `getBillingSummary` reads the user id from the session on every
+ * call.
  *
  * # Why there is no auth check here
  *
- * There is one, it just lives in `getBillingSummary`: it reads `orgId` from
- * Clerk's `auth()` and answers `{ plan: "none", balance: null }` when there is
- * none. An unauthenticated caller therefore learns nothing about anybody, and
- * no caller can ask about an organization other than its own — the identity is
- * taken from the session, never from the request.
+ * There is one, it just lives in `getBillingSummary`: it reads the session
+ * and answers `{ plan: "none", balance: null }` when there is none. An
+ * unauthenticated caller therefore learns nothing about anybody, and no
+ * caller can ask about a user other than itself — the identity is taken from
+ * the session, never from the request.
  */
 export const dynamic = "force-dynamic"
 

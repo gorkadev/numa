@@ -7,7 +7,13 @@ import { cn } from "cn"
 import { Button } from "@workspace/ui/components/button"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { Cancel01Icon, CheckmarkCircle02Icon, InformationCircleIcon, Alert02Icon, MultiplicationSignCircleIcon } from "@hugeicons/core-free-icons"
+import {
+  Cancel01Icon,
+  CheckmarkCircle02Icon,
+  InformationCircleIcon,
+  Alert02Icon,
+  MultiplicationSignCircleIcon,
+} from "@hugeicons/core-free-icons"
 
 const toast = ToastPrimitive.createToastManager()
 
@@ -24,7 +30,14 @@ function ToastViewport({ className, ...props }: ToastPrimitive.Viewport.Props) {
     <ToastPrimitive.Viewport
       data-slot="toast-viewport"
       className={cn(
-        "pointer-events-none fixed inset-x-4 bottom-4 z-50 mx-auto w-auto max-w-sm outline-none sm:right-4 sm:left-auto sm:mx-0 sm:w-full",
+        /**
+         * Above `z-50`, which is where dialogs and their overlays sit: a
+         * toast raised BY a dialog — "renamed", "could not save" — is the
+         * result of what the dialog just did, and at the same z-index the
+         * later-mounted dialog portal wins and leaves the toast greyed out
+         * under the backdrop.
+         */
+        "pointer-events-none fixed inset-x-4 bottom-4 z-100 mx-auto w-auto max-w-sm outline-none sm:right-4 sm:left-auto sm:mx-0 sm:w-full",
         className
       )}
       {...props}
@@ -139,13 +152,21 @@ function ToastIcon({ type }: { type: string | undefined }) {
 
   if (type === "success") {
     icon = (
-      <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} aria-hidden="true" />
+      <HugeiconsIcon
+        icon={CheckmarkCircle02Icon}
+        strokeWidth={2}
+        aria-hidden="true"
+      />
     )
   }
 
   if (type === "info") {
     icon = (
-      <HugeiconsIcon icon={InformationCircleIcon} strokeWidth={2} aria-hidden="true" />
+      <HugeiconsIcon
+        icon={InformationCircleIcon}
+        strokeWidth={2}
+        aria-hidden="true"
+      />
     )
   }
 
@@ -157,14 +178,17 @@ function ToastIcon({ type }: { type: string | undefined }) {
 
   if (type === "error") {
     icon = (
-      <HugeiconsIcon icon={MultiplicationSignCircleIcon} strokeWidth={2} className="text-destructive" aria-hidden="true" />
+      <HugeiconsIcon
+        icon={MultiplicationSignCircleIcon}
+        strokeWidth={2}
+        className="text-destructive"
+        aria-hidden="true"
+      />
     )
   }
 
   if (type === "loading") {
-    icon = (
-      <Spinner aria-hidden="true" />
-    )
+    icon = <Spinner aria-hidden="true" />
   }
 
   if (!icon) {

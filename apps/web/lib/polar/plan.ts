@@ -1,25 +1,27 @@
-import { auth } from "@clerk/nextjs/server"
+import { getSession } from "@/lib/session"
 
 import { polar } from "./client"
 import {
   POLAR_METER_ID,
+  POLAR_PAID_PRODUCT_IDS,
   POLAR_PRODUCT_FREE_ID,
+  POLAR_PRODUCT_MAX_ID,
   POLAR_PRODUCT_PRO_ID,
 } from "./products"
 
 /**
- * Which product the organization is paying for.
+ * Which product the user is paying for.
  *
  * `"none"` is not a plan, it is the absence of an answer, and it covers three
- * genuinely different situations on purpose: no active organization, no Polar
- * customer yet, and a Polar that could not be reached. The UI treats all three
+ * genuinely different situations on purpose: no session, no Polar customer
+ * yet, and a Polar that could not be reached. The UI treats all three
  * the same way — it shows no plan badge and no "current plan" marker — because
  * every one of them means the same thing to a reader: this application cannot
  * currently say what you are subscribed to. Inventing `"free"` as the default
  * would be the tempting shortcut and it is the wrong one, since it would tell a
  * paying customer their plan is Free every time Polar has a bad minute.
  */
-export type BillingPlan = "free" | "pro" | "none"
+export type BillingPlan = "free" | "pro" | "max" | "none"
 
 /**
  * What the chrome needs to know about billing, in one object.
@@ -58,25 +60,6 @@ export type CustomerState = Awaited<
 >
 
 /**
- * Turns one customer-state document into the summary the chrome renders.
- *
- * # Why this is a separate, pure function
- *
- * Because the state document is expensive and the derivation is free. The
- * application shell has to provision billing on entry (see
- * `ensureBillingCustomer`), and provisioning already reads this exact document
- * to decide whether there is anything to do. Having the layout then call
- * `getBillingSummary` would ask Polar for the same document a second time, on
- * every navigation, to compute two fields out of a response it was already
- * holding. Splitting the derivation out lets the caller thread the state it
- * already has through it, so the common path — an organization that is already
- * provisioned — costs exactly one round trip instead of two.
- *
- * `null` is the caller saying it has no document: no active organization, no
- * customer, or a Polar it could not reach. All three collapse into the same
- * `"none"`/`null` summary for the reason spelled out on `BillingPlan`.
- */
-/**
  * The active subscriptions on a customer state that pay for a given product,
  * oldest first.
  *
@@ -102,27 +85,139 @@ export function activeSubscriptionsForProduct(
     .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
 }
 
+/**
+ * The user's customer state, or `null` if it could not be read.
+ *
+ * Shared by `app/checkout/route.ts` and `app/(app)/pricing/actions.ts`,
+ * which each need the same document to decide different things — whether a
+ * paid plan is already active, which free subscription to hand Polar for an
+ * upgrade, which paid subscription to hand Polar for a plan change — off of
+ * one Polar call rather than each caller asking again.
+ */
+export async function readCustomerState(
+  userId: string
+): Promise<CustomerState | null> {
+  try {
+    return await polar.customers.getStateExternal({ externalId: userId })
+  } catch (error) {
+    console.error("Failed to read Polar customer state", error)
+
+    return null
+  }
+}
+
+/**
+ * Whether this user holds an active subscription to a given product.
+ *
+ * Thin wrapper over `activeSubscriptionsForProduct`, kept because both
+ * `app/checkout/route.ts` and `app/(app)/pricing/actions.ts` only ever care
+ * about presence, not about which subscription rows exist or in what order —
+ * spelling that out as `.length > 0` at every call site is the kind of detail
+ * that is easy to get subtly wrong (`>= 0` reads as a typo of this, not as a
+ * different bug) and not worth repeating.
+ */
+export function hasActiveProduct(
+  state: CustomerState,
+  productId: string
+): boolean {
+  return activeSubscriptionsForProduct(state, productId).length > 0
+}
+
+/**
+ * Whether this user holds ANY paid subscription — Pro or Max.
+ *
+ * Not merely "any active subscription", which is the trap, because every
+ * user gets one. `ensureBillingCustomer` subscribes each user to the free
+ * plan the moment they open the application, so `activeSubscriptions.
+ * length > 0` is true for literally everybody and a guard built on it blocks
+ * nobody. It would look like a rule and behave like a comment.
+ *
+ * `app/checkout/route.ts` uses this for two separate guards — whether a
+ * top-up may be bought, and whether a "buy a paid plan" checkout should
+ * instead be turned away toward `changePlanAction` — and both guards mean the
+ * same thing: is there a subscription already generating revenue that a new
+ * one would either duplicate or that a plan-change call should touch instead.
+ * Which paid plan does not matter for either question.
+ */
+export function hasActivePaidPlan(state: CustomerState): boolean {
+  return POLAR_PAID_PRODUCT_IDS.some((productId) =>
+    hasActiveProduct(state, productId)
+  )
+}
+
+/**
+ * The active subscription paying for whichever paid plan is currently
+ * active, or `undefined` if neither Pro nor Max is.
+ *
+ * `app/(app)/pricing/actions.ts`'s `changePlanAction` needs the concrete
+ * subscription to hand Polar's `subscriptions.update` — the `id` field is
+ * required and there is no "update by product" call — not merely the yes/no
+ * answer `hasActivePaidPlan` gives.
+ */
+export function activePaidSubscription(
+  state: CustomerState
+): CustomerState["activeSubscriptions"][number] | undefined {
+  for (const productId of POLAR_PAID_PRODUCT_IDS) {
+    const [subscription] = activeSubscriptionsForProduct(state, productId)
+
+    if (subscription) return subscription
+  }
+
+  return undefined
+}
+
+/**
+ * Turns one customer-state document into the summary the chrome renders.
+ *
+ * # Why this is a separate, pure function
+ *
+ * Because the state document is expensive and the derivation is free. The
+ * application shell has to provision billing on entry (see
+ * `ensureBillingCustomer`), and provisioning already reads this exact document
+ * to decide whether there is anything to do. Having the layout then call
+ * `getBillingSummary` would ask Polar for the same document a second time, on
+ * every navigation, to compute two fields out of a response it was already
+ * holding. Splitting the derivation out lets the caller thread the state it
+ * already has through it, so the common path — a user that is already
+ * provisioned — costs exactly one round trip instead of two.
+ *
+ * `null` is the caller saying it has no document: no session, no
+ * customer, or a Polar it could not reach. All three collapse into the same
+ * `"none"`/`null` summary for the reason spelled out on `BillingPlan`.
+ */
 export function summarizeBillingState(
   state: CustomerState | null
 ): BillingSummary {
   if (!state) return { plan: "none", balance: null }
 
   /**
-   * Pro wins when both are present, and both CAN be present: the free plan is
-   * granted on the organization's first visit and Polar does not revoke it when
-   * a second subscription is added. Checking for the paid product first is
-   * therefore the whole rule, not a tiebreak — the reverse order would label
-   * every paying customer "Free".
+   * A paid product wins whenever any is present, and more than one CAN be
+   * present: the free plan is granted on the user's first visit and
+   * Polar does not revoke it when a paid subscription is added. Checking for
+   * a paid product first is therefore the whole rule, not a tiebreak — the
+   * reverse order would label every paying customer "Free".
+   *
+   * Max is checked before Pro for the same reason, not merely for symmetry:
+   * a user that upgraded from Pro to Max keeps its (now-cancelled-at-period-
+   * end, but still technically active until then) Pro subscription rows
+   * around during the transition in some Polar states, and Max is always the
+   * more accurate answer whenever both could apply. There is no ordering
+   * ambiguity between the two paid plans themselves the way there was between
+   * free and paid — a user is never sold both Pro and Max as independent,
+   * simultaneously-current subscriptions — but checking Max first keeps this
+   * function correct even if that ever changed.
    */
   const productIds = new Set(
     state.activeSubscriptions.map((subscription) => subscription.productId)
   )
 
-  const plan: BillingPlan = productIds.has(POLAR_PRODUCT_PRO_ID)
-    ? "pro"
-    : productIds.has(POLAR_PRODUCT_FREE_ID)
-      ? "free"
-      : "none"
+  const plan: BillingPlan = productIds.has(POLAR_PRODUCT_MAX_ID)
+    ? "max"
+    : productIds.has(POLAR_PRODUCT_PRO_ID)
+      ? "pro"
+      : productIds.has(POLAR_PRODUCT_FREE_ID)
+        ? "free"
+        : "none"
 
   /**
    * A customer with no matching meter really does have zero credits, the same
@@ -139,7 +234,7 @@ export function summarizeBillingState(
 }
 
 /**
- * Reads the current organization's plan and credit balance in one Polar call.
+ * Reads the current user's plan and credit balance in one Polar call.
  *
  * # Who still calls this
  *
@@ -165,14 +260,15 @@ export function summarizeBillingState(
  * and enforce the other), and collapsing the two would force that caller to
  * accept this one's lossier shape.
  *
- * # Why `auth()` and not `auth.protect()`
+ * # Why `getSession()` and not `requireSession()`
  *
- * This runs inside page and layout renders that are reached by a signed-in user
- * who has no active organization — a state Clerk allows and this application
- * treats as benign everywhere else, exactly as `listGames` does.
- * `auth.protect()` would redirect that user away from a page they are entitled
- * to see. There is simply nothing to bill without an organization, so the
- * answer is the same one an unreachable Polar gives: nothing is known.
+ * This runs inside page and layout renders that must stay reachable even when
+ * there is no session — `proxy.ts`'s optimistic redirect is a UX nicety, not
+ * the authorization boundary, so a page this function backs can still render
+ * for a caller with no cookie at all. `requireSession()` would redirect that
+ * caller away from a page they are entitled to see. There is simply nothing
+ * to bill without a session, so the answer is the same one an unreachable
+ * Polar gives: nothing is known.
  *
  * # Why it never throws
  *
@@ -184,12 +280,12 @@ export function summarizeBillingState(
  */
 export async function getBillingSummary(): Promise<BillingSummary> {
   try {
-    const { orgId } = await auth()
+    const session = await getSession()
 
-    if (!orgId) return summarizeBillingState(null)
+    if (!session) return summarizeBillingState(null)
 
     return summarizeBillingState(
-      await polar.customers.getStateExternal({ externalId: orgId })
+      await polar.customers.getStateExternal({ externalId: session.user.id })
     )
   } catch {
     return summarizeBillingState(null)

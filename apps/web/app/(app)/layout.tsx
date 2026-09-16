@@ -1,6 +1,7 @@
 import { cookies } from "next/headers"
 import { SidebarInset, SidebarProvider } from "@workspace/ui/components/sidebar"
 
+import { AppSettings } from "@/components/app-settings"
 import { AppSidebar } from "@/components/app-sidebar"
 import { listGames } from "@/lib/games/queries"
 import { ensureBillingCustomer } from "@/lib/polar/customers"
@@ -14,17 +15,17 @@ export default async function AppLayout({
 }>) {
   /**
    * Billing is provisioned HERE, in the shell that wraps every authenticated
-   * page, rather than at the moment an organization first spends money.
+   * page, rather than at the moment a user first spends money.
    *
    * The narrow version of this — provision on the first game — leaves out
-   * everyone who does not create one: every organization that existed before
-   * the provisioning code did, and every user who opens a game somebody else
-   * created. Those organizations have no customer, no free plan and no credits,
-   * so the gate in `trigger/chat.ts` refuses every turn, and nothing in the UI
-   * offers a way out of it. Opening the application is the one thing every such
-   * organization definitely does, which is what makes this the right hook. See
-   * `ensureBillingCustomer` for why it is safe to write from a render and why a
-   * Clerk webhook is not an option here.
+   * everyone who does not create one: every user who existed before the
+   * provisioning code did, and every user who opens a game somebody else
+   * created. Those users have no customer, no free plan and no credits, so
+   * the gate in `trigger/chat.ts` refuses every turn, and nothing in the UI
+   * offers a way out of it. Opening the application is the one thing every
+   * such user definitely does, which is what makes this the right hook. See
+   * `ensureBillingCustomer` for why it is safe to write from a render and why
+   * a database hook is not an option here.
    *
    * It returns the customer state it settled on, so the summary the sidebar
    * renders is derived from that same document instead of fetched again:
@@ -64,6 +65,12 @@ export default async function AppLayout({
         upgradeHref={`/checkout?products=${POLAR_PRODUCT_PRO_ID}`}
       />
       <SidebarInset>{children}</SidebarInset>
+      {/**
+       * Not inside `AppSidebar`: see `components/app-settings.tsx` for why
+       * the dialog and its shortcut have to live somewhere that survives the
+       * mobile sidebar's own `Drawer` closing.
+       */}
+      <AppSettings billing={billing} />
     </SidebarProvider>
   )
 }

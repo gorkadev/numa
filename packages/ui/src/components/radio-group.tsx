@@ -3,6 +3,8 @@
 import { Radio as RadioPrimitive } from "@base-ui/react/radio"
 import { RadioGroup as RadioGroupPrimitive } from "@base-ui/react/radio-group"
 import { cn } from "cn"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { Tick02Icon } from "@hugeicons/core-free-icons"
 
 function RadioGroup({ className, ...props }: RadioGroupPrimitive.Props) {
   return (
@@ -34,4 +36,44 @@ function RadioGroupItem({ className, ...props }: RadioPrimitive.Root.Props) {
   )
 }
 
-export { RadioGroup, RadioGroupItem }
+/**
+ * A radio rendered as a selectable card rather than a dot: the option's own
+ * content IS the control, with the selection shown as a ring around it and a
+ * check badge in the corner.
+ *
+ * The pattern belongs here rather than in a feature folder because nothing
+ * about it is specific to what is being picked — a theme preview, a layout,
+ * a plan — and it is the same accessibility contract as `RadioGroupItem`
+ * (Base UI's `Radio.Root` renders a real `input[type=radio]` under the hood,
+ * so keyboard navigation, form participation and a wrapping `<label>` all
+ * behave natively).
+ *
+ * `aspect-[4/3]` and the surface colors are left to the caller: a card's
+ * shape is a property of what it is previewing, not of "being selectable".
+ */
+function RadioGroupCard({
+  className,
+  children,
+  ...props
+}: RadioPrimitive.Root.Props) {
+  return (
+    <RadioPrimitive.Root
+      data-slot="radio-group-card"
+      className={cn(
+        "relative block w-full overflow-hidden rounded-xl border-2 border-border p-0 text-left transition-colors outline-none not-data-checked:hover:border-ring/50 focus-visible:ring-3 focus-visible:ring-ring/30 data-checked:border-primary",
+        className
+      )}
+      {...props}
+    >
+      {children}
+      <RadioPrimitive.Indicator
+        data-slot="radio-group-card-indicator"
+        className="absolute right-2 bottom-2 flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground"
+      >
+        <HugeiconsIcon icon={Tick02Icon} className="size-3" strokeWidth={3} />
+      </RadioPrimitive.Indicator>
+    </RadioPrimitive.Root>
+  )
+}
+
+export { RadioGroup, RadioGroupItem, RadioGroupCard }

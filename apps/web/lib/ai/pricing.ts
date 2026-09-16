@@ -30,7 +30,7 @@ import type { ModelEntryId, Slot } from "./model-registry"
  * stored `cost_micro_usd` re-derivable later: without it, a row is a number
  * nobody can reproduce, and the whole ledger becomes anecdote.
  */
-export const RATE_TABLE_VERSION = "2026-09-11"
+export const RATE_TABLE_VERSION = "2026-09-15"
 
 /**
  * USD per 1M tokens. `cachedInput` is what a cache *read* costs; cache writes
@@ -223,7 +223,7 @@ export const MICRO_USD_PER_CREDIT = 10_000
  * same commit. A markup change that leaves the version alone makes every
  * historical row silently unexplainable.
  */
-export const CREDIT_MARKUP = 3
+export const CREDIT_MARKUP = 2
 
 /**
  * The one place micro-dollars become credits, shared by `turnCreditCost`
@@ -316,7 +316,8 @@ export type TurnCost = {
   tokens: Tokens
   costMicroUsd: number
   credits: number
-  breakdown: (Omit<AgentUsageEntry, "usage"> & Tokens & { costMicroUsd: number })[]
+  breakdown: (Omit<AgentUsageEntry, "usage"> &
+    Tokens & { costMicroUsd: number })[]
 }
 
 const ZERO_TOKENS: Tokens = {
@@ -360,7 +361,10 @@ export function priceTurn(tier: TierId, entries: AgentUsageEntry[]): TurnCost {
     ZERO_TOKENS
   )
 
-  const costMicroUsd = breakdown.reduce((total, entry) => total + entry.costMicroUsd, 0)
+  const costMicroUsd = breakdown.reduce(
+    (total, entry) => total + entry.costMicroUsd,
+    0
+  )
 
   return {
     tier,
