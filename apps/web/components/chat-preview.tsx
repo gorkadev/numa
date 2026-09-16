@@ -5,6 +5,8 @@ import { useState } from "react"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { PREVIEW_SANDBOX_FLAGS } from "@/lib/games/preview-sandbox"
+
 /**
  * The running game, embedded from this origin.
  *
@@ -40,6 +42,7 @@ export function ChatPreviewBody({
   reloadKey,
   hidden,
   disablePointerEvents,
+  allowFullScreen,
   className,
   ...props
 }: {
@@ -77,6 +80,18 @@ export function ChatPreviewBody({
    * listener tracking the width.
    */
   disablePointerEvents?: boolean
+  /**
+   * Grants the frame the Fullscreen API permission it needs to answer its own
+   * `requestFullscreen()` calls — without a permissions policy allowing it, a
+   * cross-origin-feeling sandboxed frame refuses the call outright rather than
+   * expanding. Only `/games/[id]/play` passes this: the docked preview in
+   * `SidePanel` has its own toolbar and never asks the frame itself to go
+   * fullscreen, so leaving every other embed unchanged is the safer default.
+   * Both attributes are set together because browser support for the
+   * permissions-policy `allow` syntax and the legacy boolean attribute still
+   * varies.
+   */
+  allowFullScreen?: boolean
 } & Omit<React.ComponentPropsWithoutRef<"div">, "hidden" | "children">) {
   /**
    * Remounting is the reload. `src` is identical across updates — the sandbox
@@ -115,14 +130,14 @@ export function ChatPreviewBody({
         key={frameKey}
         onLoad={() => setLoadedKey(frameKey)}
         /**
-         * The game is model-generated code. `allow-scripts` is what makes it
-         * playable, but it is deliberately not paired with `allow-same-origin`:
-         * together they would let the frame reach this app's origin — its
-         * cookies and storage — and take the sandbox down with it.
+         * Never `allow-same-origin` — see `lib/games/preview-sandbox.ts`,
+         * which the proxy's CSP header reads the same flags from.
          */
-        sandbox="allow-scripts allow-forms allow-pointer-lock"
+        sandbox={PREVIEW_SANDBOX_FLAGS}
         src={`/api/games/${gameId}/preview/${previewToken}/index.html`}
         title="Game preview"
+        allow={allowFullScreen ? "fullscreen" : undefined}
+        allowFullScreen={allowFullScreen}
       />
     </div>
   )

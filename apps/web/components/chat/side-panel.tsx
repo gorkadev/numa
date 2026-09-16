@@ -2,9 +2,22 @@
 
 import { useState, useSyncExternalStore } from "react"
 
-import { Cancel01Icon, RefreshIcon } from "@hugeicons/core-free-icons"
+import Link from "next/link"
+
+import {
+  Cancel01Icon,
+  RefreshIcon,
+  SquareArrowUpRightIcon,
+} from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Button } from "@workspace/ui/components/button"
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@workspace/ui/components/drawer"
 import { ItemGroup } from "@workspace/ui/components/item"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { useIsMobile } from "@workspace/ui/hooks/use-mobile"
@@ -136,7 +149,7 @@ function AgentsTabBody({
         className="px-3 pt-3 pb-3 @2xl:hidden"
       />
       <div className="hidden min-h-0 flex-1 @2xl:flex">
-        <div className="no-scrollbar w-64 shrink-0 overflow-y-auto scroll-fade overscroll-contain border-e p-2">
+        <div className="no-scrollbar w-64 shrink-0 scroll-fade overflow-y-auto overscroll-contain border-e p-2">
           <ItemGroup>
             {records.map((record) => (
               <SubagentRunRow
@@ -148,7 +161,7 @@ function AgentsTabBody({
             ))}
           </ItemGroup>
         </div>
-        <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto scroll-fade overscroll-contain p-4">
+        <div className="no-scrollbar min-h-0 flex-1 scroll-fade overflow-y-auto overscroll-contain p-4">
           {selected ? (
             <SubagentRunDetail record={selected} />
           ) : (
@@ -209,8 +222,8 @@ export type SidePanelProps = {
  * Desktop only below `Mobile`'s own early return: on a narrow viewport the
  * Agents tab has nowhere to go here (it lives in `SubagentPanel`'s bottom
  * `Drawer` instead, opened independently by `game-chat.tsx`), so this
- * component's mobile shape is a single untabbed Preview pane — see
- * `MobilePreviewPane` below.
+ * component's mobile shape is its own bottom `Drawer` — see
+ * `MobilePreviewDrawer` below.
  */
 export function SidePanel({
   gameId,
@@ -297,15 +310,13 @@ export function SidePanel({
 
   if (isMobile) {
     return (
-      <MobilePreviewPane
+      <MobilePreviewDrawer
         open={open && activeTab === "preview"}
         gameId={gameId}
         previewToken={previewToken}
-        previewMounted={previewMounted}
-        revision={revision}
-        reloadKey={reloadKey}
-        onReload={() => setReloadKey((count) => count + 1)}
-        onClose={onClose}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) onClose()
+        }}
       />
     )
   }
@@ -320,7 +331,9 @@ export function SidePanel({
        */
       inert={!open}
       aria-hidden={!open}
-      style={{ "--side-panel-width": `${widthPercent}%` } as React.CSSProperties}
+      style={
+        { "--side-panel-width": `${widthPercent}%` } as React.CSSProperties
+      }
       className={cn(
         "relative h-full w-(--side-panel-width) shrink-0 p-2 transition-[margin,visibility] duration-300 ease-out motion-reduce:transition-none",
         dragging && "transition-none",
@@ -347,7 +360,7 @@ export function SidePanel({
          * `-translate-x-1/2` that centers the hit area on it is a physical
          * transform, same LTR assumption as `onDragStart`'s math above.
          */
-        className="group absolute inset-y-2 inset-s-0 z-10 w-2 -translate-x-1/2 cursor-col-resize touch-none"
+        className="group inset-s-0 absolute inset-y-2 z-10 w-2 -translate-x-1/2 cursor-col-resize touch-none"
       >
         <div
           className={cn(
@@ -384,7 +397,10 @@ export function SidePanel({
                 id="side-panel-tab-agents"
                 aria-selected={activeTab === "agents"}
                 aria-controls="side-panel-panel-agents"
-                className={cn(tabTriggerClassName, "inline-flex items-center gap-1.5")}
+                className={cn(
+                  tabTriggerClassName,
+                  "inline-flex items-center gap-1.5"
+                )}
                 onClick={() => onActiveTabChange("agents")}
               >
                 Agents
@@ -400,14 +416,36 @@ export function SidePanel({
           </div>
           <div className="flex shrink-0 items-center gap-1">
             {activeTab === "preview" && previewToken ? (
-              <Button
-                aria-label="Reload preview"
-                onClick={() => setReloadKey((count) => count + 1)}
-                size="icon-sm"
-                variant="ghost"
-              >
-                <HugeiconsIcon icon={RefreshIcon} />
-              </Button>
+              <>
+                <Button
+                  aria-label="Reload preview"
+                  onClick={() => setReloadKey((count) => count + 1)}
+                  size="icon-sm"
+                  variant="ghost"
+                >
+                  <HugeiconsIcon icon={RefreshIcon} />
+                </Button>
+                {/**
+                 * Opens the same game in `/games/[id]/play` — the
+                 * full-viewport route this docked pane has no room to become
+                 * itself. A new tab, not a navigation of this one: the chat
+                 * underneath stays exactly where the reader left it.
+                 */}
+                <Button
+                  aria-label="Open in full-screen play view"
+                  render={
+                    <a
+                      href={`/games/${gameId}/play`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    />
+                  }
+                  size="icon-sm"
+                  variant="ghost"
+                >
+                  <HugeiconsIcon icon={SquareArrowUpRightIcon} />
+                </Button>
+              </>
             ) : null}
             <Button
               aria-label="Close panel"
@@ -455,74 +493,63 @@ export function SidePanel({
 }
 
 /**
- * The mobile shape of the panel: today's preview-only docked pane, with no
- * tabs (Agents has its own bottom `Drawer` on this viewport, opened
- * independently — see `subagent-panel.tsx`) and no resize handle (a
- * fixed-width pane matches the platform, and a percentage of a phone screen
- * is not worth dragging). Styled and animated exactly like the desktop
- * shell's own slide, just without the CSS variable driving the width.
+ * The mobile shape of the panel: a bottom `Drawer` — same `swipeDirection="down"`
+ * plus `showSwipeHandle` shell `subagent-panel.tsx`'s `SubagentPanel` uses on
+ * this viewport — rather than a sliding pane that mounts the game.
+ *
+ * This deliberately never mounts `ChatPreviewBody`. The old pane
+ * (`w-3/5`, sliding in from the right) put the running game directly behind
+ * a swipeable surface, so the drawer's own swipe-to-dismiss gesture and the
+ * game's touch input were reading the same drags — a player trying to steer
+ * could close the panel by accident. The engine is also built around
+ * keyboard and pointer-lock input in the first place, not a panel meant to
+ * be swiped away. So this shows only a title, a one-line explanation of
+ * what "Play" does, and a single button that navigates to `/games/[id]/play`
+ * in the same tab — a new tab is an awkward add-on on a phone, and the chat
+ * underneath reconnects fine when the player comes back to it.
  */
-function MobilePreviewPane({
+function MobilePreviewDrawer({
   open,
   gameId,
   previewToken,
-  previewMounted,
-  revision,
-  reloadKey,
-  onReload,
-  onClose,
+  onOpenChange,
 }: {
   open: boolean
   gameId: string
   previewToken?: string
-  previewMounted: boolean
-  revision: number
-  reloadKey: number
-  onReload: () => void
-  onClose: () => void
+  onOpenChange: (open: boolean) => void
 }) {
   return (
-    <div
-      inert={!open}
-      aria-hidden={!open}
-      className={cn(
-        "h-full w-3/5 shrink-0 p-2 transition-[margin,visibility] duration-300 ease-out motion-reduce:transition-none",
-        open ? "me-0" : "invisible -me-[60%]"
-      )}
+    <Drawer
+      open={open}
+      onOpenChange={onOpenChange}
+      swipeDirection="down"
+      showSwipeHandle
     >
-      <div className="flex h-full flex-col overflow-hidden rounded-2xl bg-card shadow-sm ring-1 ring-border">
-        <header className="flex h-10 shrink-0 items-center justify-between gap-2 border-b px-3">
-          <h1 className="truncate text-sm font-medium">Preview</h1>
-          <div className="flex shrink-0 items-center gap-1">
+      <DrawerContent>
+        <DrawerHeader className="pb-4">
+          <DrawerTitle>Preview</DrawerTitle>
+          <DrawerDescription>
+            {previewToken
+              ? "Play your game full-screen. The chat stays right where you left it."
+              : "Nothing to play yet — send a message in the chat to build the game first."}
+          </DrawerDescription>
+        </DrawerHeader>
+        <div className="px-6 pb-6">
+          {previewToken ? (
             <Button
-              aria-label="Reload preview"
-              onClick={onReload}
-              size="icon-sm"
-              variant="ghost"
+              className="w-full"
+              render={<Link href={`/games/${gameId}/play`} />}
             >
-              <HugeiconsIcon icon={RefreshIcon} />
+              Play
             </Button>
-            <Button
-              aria-label="Close preview"
-              onClick={onClose}
-              size="icon-sm"
-              variant="ghost"
-            >
-              <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />
+          ) : (
+            <Button className="w-full" disabled>
+              Play
             </Button>
-          </div>
-        </header>
-        {previewMounted && previewToken ? (
-          <div className="relative min-h-0 flex-1">
-            <ChatPreviewBody
-              gameId={gameId}
-              previewToken={previewToken}
-              revision={revision}
-              reloadKey={reloadKey}
-            />
-          </div>
-        ) : null}
-      </div>
-    </div>
+          )}
+        </div>
+      </DrawerContent>
+    </Drawer>
   )
 }

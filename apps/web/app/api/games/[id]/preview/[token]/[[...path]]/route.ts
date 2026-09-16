@@ -1,4 +1,5 @@
 import { GAME_PORT, startGameServer } from "@/lib/daytona/utils"
+import { PREVIEW_SANDBOX_FLAGS } from "@/lib/games/preview-sandbox"
 import { injectPreviewStorageShim } from "@/lib/games/preview-storage"
 import { verifyPreviewToken } from "@/lib/games/preview-token"
 import { getGameForPreview } from "@/lib/games/queries"
@@ -112,6 +113,18 @@ async function proxy(
   }
 
   headers.set("cache-control", "no-store")
+
+  /**
+   * Sandboxes the document itself, not just the frame around it: a preview URL
+   * opened directly in a tab would otherwise run the game top-level on this
+   * origin with the visitor's session. See `lib/games/preview-sandbox.ts`.
+   *
+   * Set on every response rather than only on HTML, because a game file of any
+   * type — an SVG with a script, a mislabelled `.txt` — can be navigated to and
+   * rendered as a document. The directive is ignored on subresources, so it
+   * costs the textures and modules nothing.
+   */
+  headers.set("content-security-policy", `sandbox ${PREVIEW_SANDBOX_FLAGS}`)
 
   /**
    * The preview frame is sandboxed without `allow-same-origin`, so it runs on an

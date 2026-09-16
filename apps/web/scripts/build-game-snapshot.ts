@@ -39,8 +39,15 @@ async function main(): Promise<void> {
      * `memory: 1` is load-bearing: the spike confirmed Chromium plus the
      * Python dev server fit the default 1 GiB with no resize fallback
      * needed.
+     *
+     * `disk: 1` because the quota covers only the sandbox's writable layer,
+     * not the image: a sandbox from this snapshot reported ~1 MB used after
+     * launching Chromium with WebGL and taking a screenshot, and a game adds
+     * the ~1 MB runtime seed plus its own files. Each sandbox reserves this
+     * full amount against the org's disk quota, so a larger value only
+     * lowers how many games can hold a sandbox at once.
      */
-    resources: { cpu: 1, memory: 1, disk: 5 },
+    resources: { cpu: 1, memory: 1, disk: 1 },
   })
 
   console.log(

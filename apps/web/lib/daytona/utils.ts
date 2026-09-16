@@ -64,6 +64,20 @@ export const GAME_LABEL = "gameId"
 export const CHROMIUM_LABEL = "hasChromium"
 
 /**
+ * Minutes a game's sandbox stays `stopped` before Daytona archives it.
+ *
+ * A stopped container sandbox keeps its full disk reserved against the org's
+ * total disk quota until it is archived, and the SDK default is 7 days — so
+ * every game touched that week held its disk whether anyone came back or not,
+ * which is how the quota filled up. Archiving moves the filesystem to object
+ * storage and frees the quota; the files survive it, and `resumeSandbox`
+ * starts an archived sandbox the same way it starts a stopped one. A probe
+ * measured the cost at 2.8 s from archived versus 2.1 s from stopped, right
+ * after archiving; a restore days later may be slower.
+ */
+const AUTO_ARCHIVE_MINUTES = 60
+
+/**
  * Creates the underlying sandbox for one game, preferring the Chromium
  * snapshot when `DAYTONA_GAME_SNAPSHOT` is configured.
  *
@@ -80,22 +94,28 @@ export const CHROMIUM_LABEL = "hasChromium"
  */
 async function createSandboxForGame(gameId: string): Promise<Sandbox> {
   const snapshot = process.env.DAYTONA_GAME_SNAPSHOT
+  const createDefault = () =>
+    daytona.create({
+      labels: { [GAME_LABEL]: gameId },
+      autoArchiveInterval: AUTO_ARCHIVE_MINUTES,
+    })
 
   if (!snapshot) {
-    return daytona.create({ labels: { [GAME_LABEL]: gameId } })
+    return createDefault()
   }
 
   try {
     return await daytona.create({
       snapshot,
       labels: { [GAME_LABEL]: gameId, [CHROMIUM_LABEL]: "true" },
+      autoArchiveInterval: AUTO_ARCHIVE_MINUTES,
     })
   } catch (error) {
     console.warn(
       `Failed to create a sandbox from DAYTONA_GAME_SNAPSHOT ("${snapshot}"); falling back to the default sandbox`,
       error
     )
-    return daytona.create({ labels: { [GAME_LABEL]: gameId } })
+    return createDefault()
   }
 }
 
@@ -155,13 +175,14 @@ export async function createGameSandbox(
 /**
  * Brings a sandbox to the `started` state, or refuses.
  *
- * A stopped sandbox keeps its disk but not its processes, so it is resumable
- * and worth waiting on. Anything else (destroyed, error, archived, unknown) is
+ * A stopped sandbox keeps its disk but not its processes, and an archived one
+ * keeps its files in object storage (`AUTO_ARCHIVE_MINUTES`), so both are
+ * resumable and worth waiting on. Anything else (destroyed, error, unknown) is
  * a state no caller can work around by trying harder, so it fails loudly rather
  * than handing back a sandbox whose every subsequent call would error.
  */
 async function resumeSandbox(sandbox: Sandbox): Promise<SandboxResult> {
-  if (sandbox.state === "stopped") {
+  if (sandbox.state === "stopped" || sandbox.state === "archived") {
     await sandbox.start()
   } else if (sandbox.state !== "started") {
     throw new Error(
