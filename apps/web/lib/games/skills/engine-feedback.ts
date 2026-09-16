@@ -41,5 +41,17 @@ below that fraction),
 (\`pause\`, default true, pauses \`engine\` while the panel is up and resumes
 it on close — pass \`false\` for a panel that shouldn't stop the game),
 \`follow(object, { offset, content })\` (nameplates), \`theme({ accent })\`, \`clear()\`.
-Positions are \`"top|middle|bottom"\`-\`"left|center|right"\`.`,
+Positions are \`"top|middle|bottom"\`-\`"left|center|right"\`.
+
+\`hud.touch({ stick, look, buttons, show })\` — the on-screen stick, look-drag
+and buttons a touch player needs. Needs \`input\` passed to \`createHud(engine,
+{ input })\`, since it writes exclusively through \`input.virtual\`. \`stick\`
+and \`look\` (each \`"left"\`, \`"right"\` or \`false\`) pick which half of the
+screen drives the move stick and which drives the look drag — the stick wins
+where the halves overlap. \`buttons\` is \`{ label, code, hold }[]\`: \`code\` is
+the key code the button stands for (\`"Space"\`, \`"KeyE"\`), so the game keeps
+reading \`input.down(code)\` and never branches on whether the press came from
+a key or a tap; \`hold\` makes it behave like a held key instead of a single
+\`pressed()\` pulse. \`show\` is \`"auto"\` (default — shown only for a coarse
+pointer), \`"always"\` or \`"never"\`. Call it once per game.`,
 }

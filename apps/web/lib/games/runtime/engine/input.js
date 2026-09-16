@@ -46,6 +46,22 @@ export function createInput(engine, options = {}) {
   const delta = { x: 0, y: 0 }
   let wheel = 0
 
+  /**
+   * The move stick's persistent value. Unlike `delta`, a thumb held at the
+   * edge of the stick has to keep reporting the same offset every frame, so
+   * this survives `endFrame()` instead of being cleared by it.
+   */
+  const axis = { x: 0, y: 0 }
+
+  /**
+   * The client position of the previous touch move, used to derive a delta
+   * where `movementX` does not exist. Reset to `null` on every new drag so
+   * the first move of that drag reports zero instead of the jump from
+   * wherever the last drag happened to end.
+   */
+  let lastX = null
+  let lastY = null
+
   const onKeyDown = (event) => {
     if (event.repeat) return
     if (swallow && SWALLOWED.has(event.code)) event.preventDefault()
@@ -66,6 +82,9 @@ export function createInput(engine, options = {}) {
     for (const code of held) releasedThisFrame.add(code)
     held.clear()
     buttons.clear()
+    /** A finger lifted while the iframe loses focus otherwise leaves the player walking forever. */
+    axis.x = 0
+    axis.y = 0
   }
 
   const onPointerMove = (event) => {
@@ -82,16 +101,30 @@ export function createInput(engine, options = {}) {
       -(pointer.y / rect.height) * 2 + 1
     )
     /**
-     * `movementX` rather than a difference of positions: it keeps working
-     * under pointer lock, where the position stops moving entirely.
+     * `movementX` rather than a difference of positions where it exists: it
+     * keeps working under pointer lock, where the position stops moving
+     * entirely. Touch pointers never report it, so the two mechanisms are
+     * mutually exclusive rather than interchangeable — falling back to
+     * `?? 0` here would leave a dragging finger with a delta of zero
+     * forever, and `createFlyCamera` would silently never turn on mobile.
      */
-    delta.x += event.movementX ?? 0
-    delta.y += event.movementY ?? 0
+    if (event.movementX === undefined) {
+      delta.x += lastX === null ? 0 : event.clientX - lastX
+      delta.y += lastY === null ? 0 : event.clientY - lastY
+      lastX = event.clientX
+      lastY = event.clientY
+    } else {
+      delta.x += event.movementX
+      delta.y += event.movementY ?? 0
+    }
   }
 
   const onPointerDown = (event) => {
     buttons.add(event.button)
     buttonsPressed.add(event.button)
+    /** A new drag, not a continuation of whatever the pointer was doing before. */
+    lastX = null
+    lastY = null
   }
 
   const onPointerUp = (event) => {
@@ -149,11 +182,18 @@ export function createInput(engine, options = {}) {
      *
      * `y` is forward: the camera looks down -Z, so "up" on the keyboard means
      * -Z in the world, and the caller reads `-vector.y` for the Z axis.
+     *
+     * The virtual stick is summed in before normalising rather than switched
+     * to, so a thumb on the stick and a hand on the keyboard combine instead
+     * of one silently overriding the other — the same normalisation already
+     * keeps that combination from moving faster than either input alone.
      */
     moveVector(target = new THREE.Vector2()) {
       target.set(
-        input.axis("KeyA", "KeyD") + input.axis("ArrowLeft", "ArrowRight"),
-        input.axis("KeyS", "KeyW") + input.axis("ArrowDown", "ArrowUp")
+        axis.x +
+          input.axis("KeyA", "KeyD") +
+          input.axis("ArrowLeft", "ArrowRight"),
+        axis.y + input.axis("KeyS", "KeyW") + input.axis("ArrowDown", "ArrowUp")
       )
       if (target.lengthSq() > 1) target.normalize()
       return target
@@ -165,6 +205,34 @@ export function createInput(engine, options = {}) {
      */
     gamepad() {
       return navigator.getGamepads?.().find(Boolean) ?? null
+    },
+
+    /**
+     * The only door through which anything outside this file writes input
+     * state — a touch HUD, a remote-control message, a replay. It reuses the
+     * exact sets and objects the keyboard and pointer handlers write to, so
+     * `down()`, `pressed()`, `released()` and `moveVector()` cannot tell a
+     * screen button from a real key and never need a touch-specific branch.
+     */
+    virtual: {
+      press(code) {
+        held.add(code)
+        pressedThisFrame.add(code)
+      },
+      release(code) {
+        held.delete(code)
+        releasedThisFrame.add(code)
+      },
+      /** Persistent, unlike a keypress: a thumb parked at the edge of the stick keeps reporting the same value until it moves. */
+      setAxis(x, y) {
+        axis.x = x
+        axis.y = y
+      },
+      /** Accumulates into the same `delta` a mouse drag writes to, so it is cleared by `endFrame()` exactly the same way. */
+      addLook(dx, dy) {
+        delta.x += dx
+        delta.y += dy
+      },
     },
 
     /** Clears the per-frame edges. The engine calls this; games do not. */

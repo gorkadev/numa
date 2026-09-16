@@ -29,6 +29,9 @@ internally to turn the short way round); \`rng(seed)\` and the shared
 \`axis(neg, pos)\`, \`moveVector()\` (WASD + arrows, normalised),
 \`mouseDown/mousePressed/mouseReleased(button)\`, \`pointer.ndc\`, \`delta\`,
 \`wheel\`, \`gamepad()\`. Codes are \`event.code\`: \`"KeyW"\`, \`"Space"\`.
+\`moveVector()\`, \`down()\` and \`delta\` are also fed by the touch layer
+(\`hud.touch()\`, see \`engine-feedback\`) — a game that reads only these never
+needs to know whether the player has a keyboard or a thumb.
 \`createPicker(engine, input)\` gives \`pick(objects)\` and
 \`pickGround(y)\` for click-to-move and cursor-on-the-floor.`,
 }

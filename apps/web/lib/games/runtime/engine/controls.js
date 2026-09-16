@@ -172,12 +172,33 @@ export function createSideCamera(engine, target, options = {}) {
 }
 
 /**
- * First-person walking, with the pointer lock the browser demands.
+ * Radians per pixel of pointer movement on the manual first-person path,
+ * matching `PointerLockControls`' own internal `_MOUSE_SENSITIVITY` so the
+ * feel does not shift when a game happens to run on both paths across two
+ * devices.
+ */
+const FIRST_PERSON_LOOK_SPEED = 0.002
+
+/**
+ * First-person walking, with the pointer lock the browser demands where it
+ * is actually usable — and a manual fallback where it is not.
  *
- * Pointer lock cannot be requested without a user gesture, so this shows a
- * click-to-play prompt rather than failing silently — and it releases on
- * Escape, which the browser does anyway and which the game therefore has to
- * expect.
+ * Pointer Lock does not exist in Safari on iOS/iPadOS, so a rig that only
+ * knew how to lock the pointer would simply not work there. The capability
+ * is checked once, at creation, and the two paths are mutually exclusive:
+ * `PointerLockControls` consumes mousemove itself to rotate the camera,
+ * while the manual path reads `input.delta` for the same purpose — running
+ * both at once would double every degree of rotation.
+ *
+ * Android Chrome exposes `requestPointerLock` on a touchscreen too, but
+ * locking the pointer there buys nothing — there is no cursor to trap and
+ * no mouse to hide — so a coarse pointer routes to the manual path even
+ * where the API exists.
+ *
+ * Neither path imports or creates touch controls itself. The look-drag and
+ * the stick arrive through `input.delta` and `input.moveVector()` because
+ * the game called `hud.touch()` — keeping this file ignorant of `touch.js`
+ * is the whole point of the abstraction.
  */
 export function createFirstPersonControls(engine, input, options = {}) {
   const {
@@ -186,6 +207,34 @@ export function createFirstPersonControls(engine, input, options = {}) {
     eyeHeight = 1.7,
     prompt = "Click to play — WASD to move, Esc to release",
   } = options
+
+  const coarsePointer = window.matchMedia?.("(pointer: coarse)")
+  const canLockPointer =
+    typeof document.body.requestPointerLock === "function" &&
+    !coarsePointer?.matches
+
+  return canLockPointer
+    ? createPointerLockedFirstPerson(engine, input, {
+        speed,
+        sprintMultiplier,
+        eyeHeight,
+        prompt,
+      })
+    : createManualFirstPerson(engine, input, { speed, sprintMultiplier, eyeHeight })
+}
+
+/**
+ * The pointer-lock path, unchanged from before touch support existed — just
+ * pulled into its own function so the branch above reads as one choice
+ * instead of an `if` buried in the middle of the rig.
+ *
+ * Pointer lock cannot be requested without a user gesture, so this shows a
+ * click-to-play prompt rather than failing silently — and it releases on
+ * Escape, which the browser does anyway and which the game therefore has to
+ * expect.
+ */
+function createPointerLockedFirstPerson(engine, input, options) {
+  const { speed, sprintMultiplier, eyeHeight, prompt } = options
 
   /**
    * `PointerLockControls` rotates the camera itself, so there is no rig object
@@ -233,6 +282,57 @@ export function createFirstPersonControls(engine, input, options = {}) {
       hint.remove()
       controls.dispose()
     },
+  }
+}
+
+/**
+ * The fallback path for anywhere Pointer Lock is not genuinely usable.
+ *
+ * There is nothing to lock, so there is no click-to-play prompt either — a
+ * prompt that never dismisses is a game that never starts. Movement starts
+ * live on the first frame. `controls` is `null` here — there is no
+ * `PointerLockControls` instance to hand back, so a game reaching for
+ * `controls.moveForward` needs to check for this path first — and `locked`
+ * reads `true` always, since this path has no locked/unlocked state to
+ * report.
+ */
+function createManualFirstPerson(engine, input, options) {
+  const { speed, sprintMultiplier, eyeHeight } = options
+
+  engine.camera.position.y = eyeHeight
+
+  let yaw = engine.camera.rotation.y
+  let pitch = engine.camera.rotation.x
+
+  const move = new THREE.Vector2()
+  const forward = new THREE.Vector3()
+  const right = new THREE.Vector3()
+
+  const stop = engine.onUpdate((dt) => {
+    yaw -= input.delta.x * FIRST_PERSON_LOOK_SPEED
+    pitch = clamp(pitch - input.delta.y * FIRST_PERSON_LOOK_SPEED, -1.5, 1.5)
+    engine.camera.rotation.set(pitch, yaw % TAU, 0, "YXZ")
+
+    input.moveVector(move)
+    engine.camera.getWorldDirection(forward)
+    forward.y = 0
+    forward.normalize()
+    right.crossVectors(forward, engine.camera.up).normalize()
+
+    const scale = speed * dt * (input.down("ShiftLeft") ? sprintMultiplier : 1)
+    engine.camera.position
+      .addScaledVector(forward, move.y * scale)
+      .addScaledVector(right, move.x * scale)
+    engine.camera.position.y = eyeHeight
+  })
+
+  return {
+    controls: null,
+    get locked() {
+      return true
+    },
+    lock() {},
+    dispose: stop,
   }
 }
 

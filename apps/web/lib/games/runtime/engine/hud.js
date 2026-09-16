@@ -14,6 +14,8 @@
 
 import * as THREE from "three"
 
+import { createTouchControls } from "./touch.js"
+
 const STYLE_ID = "engine-hud-style"
 
 /**
@@ -98,6 +100,18 @@ const CSS = `
 
 .hud-panel {
   pointer-events: auto;
+  /**
+   * Every other stacking question in this file was decided by DOM insertion
+   * order alone, because nothing else here overlaps something else that is
+   * also clickable. A touch overlay's controls surface (touch.js) breaks
+   * that: it covers the whole grid and is pointer-events: auto too, so
+   * whichever of the two a game happened to create second would silently
+   * sit on top of the other. A title screen or pause card the player cannot
+   * tap is indistinguishable from a frozen game, so the panel claims the top
+   * on purpose rather than leaving it to creation order.
+   */
+  position: relative;
+  z-index: 1;
   min-width: 260px;
   max-width: min(90%, 420px);
   padding: 28px;
@@ -195,6 +209,8 @@ const CSS = `
  * node or rebuilding a string of HTML.
  */
 export function createHud(engine, options = {}) {
+  const { input = null } = options
+
   if (!document.getElementById(STYLE_ID)) {
     const style = document.createElement("style")
     style.id = STYLE_ID
@@ -446,6 +462,24 @@ export function createHud(engine, options = {}) {
           element.remove()
         },
       }
+    },
+
+    /**
+     * The on-screen stick, look-drag and buttons a touch player needs.
+     *
+     * Requires `input` because it writes exclusively through
+     * `input.virtual` — without it there is no way for a screen button to
+     * ever reach `held` or `pressedThisFrame`, and rendering the controls
+     * anyway would ship an unplayable game with no clue why the buttons do
+     * nothing.
+     */
+    touch(spec) {
+      if (!input) {
+        throw new Error(
+          "hud.touch() needs the input returned by createInput(): pass it as createHud(engine, { input })."
+        )
+      }
+      return createTouchControls(engine, input, hud, spec)
     },
 
     clear() {

@@ -17,6 +17,7 @@ export * from "./models.js"
 export * from "./anim.js"
 export * from "./physics.js"
 export * from "./hud.js"
+export * from "./touch.js"
 export * from "./sound.js"
 export * from "./fx.js"
 export * from "./state.js"
@@ -58,7 +59,7 @@ export function createGame(options = {}) {
   const picker = createPicker(engine, input)
   const lights = lighting ? addLighting(engine, lighting) : null
   if (environment) addEnvironment(engine)
-  const hud = createHud(engine, hudOptions)
+  const hud = createHud(engine, { ...hudOptions, input })
   const audio = createAudio(engine, audioOptions)
   const shake = createShake(engine)
   const physics = physicsOptions ? createPhysics(engine, physicsOptions) : null

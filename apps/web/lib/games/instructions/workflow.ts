@@ -154,10 +154,14 @@ access, and a game that waits on a CDN is a game that shows a blank screen.
 There are no image, model or audio files to load: every texture, mesh and sound
 is generated in code.
 
-Write for a keyboard and a mouse on a desktop viewport unless the user asks
-otherwise, and make controls discoverable from the screen itself — the HUD has
-a \`keys\` helper for exactly this, and a game whose controls live only in the
-chat is a game the player cannot play.`,
+Write for a desktop viewport with keyboard and mouse and for a phone with a
+thumb by default, unless the user asks otherwise. Input is one abstraction —
+\`moveVector\`/\`down\`/\`delta\` — so supporting touch is a declaration, not a
+second control scheme to write: call \`hud.touch()\` once and the same code
+that reads the keyboard reads the stick and the buttons. Make controls
+discoverable from the screen itself either way — the HUD has a \`keys\` helper
+for exactly this, and a game whose controls live only in the chat is a game
+the player cannot play.`,
 }
 
 /**

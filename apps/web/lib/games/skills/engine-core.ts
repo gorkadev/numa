@@ -77,5 +77,22 @@ on top of them in your own files, and do not rewrite or delete them.
   \`.pause()\`, \`.resume()\`, \`.dispose()\`, \`.fail(error)\`
 - \`engine.scene\`, \`.camera\`, \`.renderer\`, \`.canvas\`, \`.mount\`, \`.size\`,
   \`.dt\`, \`.elapsed\`, \`.paused\`
-- \`disposeObject(object)\` — frees geometry, materials and textures.`,
+- \`disposeObject(object)\` — frees geometry, materials and textures.
+
+### Input: one abstraction, keyboard and touch both feed it
+
+Read input only through \`input.moveVector()\`, \`input.axis()\`,
+\`input.down/pressed/released()\`, \`input.pointer\`, \`input.delta\`. Never
+attach a raw \`keydown\` or \`pointerdown\` listener for gameplay — that is the
+one thing that breaks touch support, because the touch layer feeds these same
+abstractions and nothing else. A key you read through a listener instead of
+\`input.down()\` is a key a thumb can never press.
+
+Declare touch controls once, if the game wants them, with \`hud.touch({
+stick, look, buttons, show })\`: \`stick\` and \`look\` pick which half of the
+screen drives movement and camera look (\`"left"\`, \`"right"\` or \`false\` to
+skip one), and \`buttons\` is a list of \`{ label, code, hold }\` — an on-screen
+button is declared with the key code it stands for, so the game keeps asking
+\`input.down("Space")\` and the same line of code works from a keyboard and a
+thumb.`,
 }

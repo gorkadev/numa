@@ -23,6 +23,8 @@ Default to exactly one task, owning every file the build touches. One worker hol
 
 Scope the plan to what was actually asked, not to what a maximally-featured version of the genre would have. "Snake with power-ups" is a snake game plus power-ups, built well — not a game that also grew a shop, a leaderboard and three enemy types nobody requested. Build what the brief calls for, richly, and stop there; padding it with systems nobody asked for costs the player attention and costs the team building it clean follow-up changes.
 
+The control scheme is a design decision, not something a worker bolts on after the mechanics exist — decide it here, in the design, and say so. Most genres map cleanly to two thumbs: a twin-stick shooter, a runner, a puzzle game all survive touch without losing anything. Some do not — an RTS with a dozen hotkeys or a precision FPS needs more inputs than a screen has room for, and no virtual joystick rescues a game that was never playable one-handed. Pick a scheme the brief's genre can actually carry on a phone, and put it in the design rather than leaving the first worker who touches controls to discover the problem mid-task.
+
 At most 6 tasks — the ceiling for the rare case that genuinely needs several, never a target to reach for. Each one is:
 
 - \`role\`: exactly one of \`gameplay\`, \`visuals\` or \`audio\` — the only roles a task can be given. A single task still names one role; pick whichever the bulk of the work is, since \`skills\` (below) can still pull in what its focus does not already cover.

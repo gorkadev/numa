@@ -64,6 +64,41 @@ export function createPhysics(engine, options = {}) {
     return body
   }
 
+  const MIN_THICKNESS = 0.1
+
+  /**
+   * Guarantees a collider has real thickness on every axis.
+   *
+   * The overlap test in `moveAxis` resolves collisions by measuring how far
+   * two boxes overlap on each axis, and a zero-thickness axis can never
+   * produce a positive overlap — a `PlaneGeometry` ground measures y:[0,0],
+   * so nothing could ever be found resting on or bumping into it. The old
+   * inclusive `intersectsBox` test masked this by accident, since exact
+   * contact with a zero-height ground already counted as an intersection.
+   * Fixing that test means a degenerate collider needs real thickness here.
+   */
+  function inflateBounds(bounds) {
+    if (bounds.max.y - bounds.min.y < MIN_THICKNESS) {
+      /**
+       * Downward only: games place ground and platforms so their walkable
+       * surface sits at a specific y, and thickening upward would bury that
+       * surface and leave the player floating above where it should stand.
+       */
+      bounds.min.y = bounds.max.y - MIN_THICKNESS
+    }
+    if (bounds.max.x - bounds.min.x < MIN_THICKNESS) {
+      const center = (bounds.max.x + bounds.min.x) / 2
+      bounds.min.x = center - MIN_THICKNESS / 2
+      bounds.max.x = center + MIN_THICKNESS / 2
+    }
+    if (bounds.max.z - bounds.min.z < MIN_THICKNESS) {
+      const center = (bounds.max.z + bounds.min.z) / 2
+      bounds.min.z = center - MIN_THICKNESS / 2
+      bounds.max.z = center + MIN_THICKNESS / 2
+    }
+    return bounds
+  }
+
   /**
    * Registers a mesh as immovable geometry, measured from its own bounds.
    *
@@ -72,7 +107,7 @@ export function createPhysics(engine, options = {}) {
    * roughly a box. Anything else should be approximated with several.
    */
   function addStatic(object) {
-    const bounds = new THREE.Box3().setFromObject(object)
+    const bounds = inflateBounds(new THREE.Box3().setFromObject(object))
     const collider = { object, bounds }
     statics.push(collider)
     return collider
@@ -80,7 +115,7 @@ export function createPhysics(engine, options = {}) {
 
   /** Re-measures a static that moved — a lift, a rotating platform. */
   function refreshStatic(collider) {
-    collider.bounds.setFromObject(collider.object)
+    inflateBounds(collider.bounds.setFromObject(collider.object))
     return collider
   }
 
@@ -111,7 +146,42 @@ export function createPhysics(engine, options = {}) {
 
     for (const collider of statics) {
       other.copy(collider.bounds)
-      if (!box.intersectsBox(other)) continue
+
+      const overlapX = Math.min(box.max.x, other.max.x) - Math.max(box.min.x, other.min.x)
+      const overlapY = Math.min(box.max.y, other.max.y) - Math.max(box.min.y, other.min.y)
+      const overlapZ = Math.min(box.max.z, other.max.z) - Math.max(box.min.z, other.min.z)
+
+      /**
+       * Contact is not penetration. `Box3.intersectsBox` is inclusive, so a
+       * body resting exactly on a surface — which is the resting state after
+       * every landing, box.min.y === collider.bounds.max.y — used to read as
+       * an intersection on every axis, including the horizontal ones. That
+       * turned the very next sideways step into a collision against the
+       * entire static, not just the sliver actually touched. Requiring real
+       * overlap (bigger than a small epsilon) on all three axes means bare
+       * contact no longer counts as something to resolve.
+       */
+      const CONTACT_EPSILON = 1e-4
+      if (
+        overlapX <= CONTACT_EPSILON ||
+        overlapY <= CONTACT_EPSILON ||
+        overlapZ <= CONTACT_EPSILON
+      )
+        continue
+
+      const overlapOnAxis = axis === "x" ? overlapX : axis === "y" ? overlapY : overlapZ
+
+      /**
+       * Only resolve overlap this move could have created. If the overlap on
+       * the axis just moved, in the direction just moved from, is bigger than
+       * the move itself (plus a small skin), the body was already inside this
+       * collider along that axis before the step — pushing it out would throw
+       * it clear across the whole collider instead of the sliver it actually
+       * crossed this step, which is exactly how a resting body gets ejected
+       * to the far edge of a 200-unit ground plane.
+       */
+      const MOVE_SKIN = 1e-3
+      if (overlapOnAxis > Math.abs(distance) + MOVE_SKIN) continue
 
       /**
        * The push-out is the overlap on the axis just moved, in the direction
