@@ -18,7 +18,7 @@ Phased delivery, selected by the user. Keep each phase reviewable and independen
 
 ## Tasks
 
-### 1. Add route and shell loading resilience — implementation verified, awaiting commit authorization
+### 1. Add route and shell loading resilience — completed
 
 **Outcome**
 - Authenticated navigation has meaningful loading UI.
@@ -35,22 +35,25 @@ Phased delivery, selected by the user. Keep each phase reviewable and independen
 
 **Evidence**
 - Independent verification: PASS after two correction rounds restored sidebar cookie state, billing ordering, and strong session validation.
-- Commit: pending explicit authorization.
+- Commit: `dd795e1` (`feat(web): add route loading resilience`).
 
-### 2. Guard subscription changes with confirmation and pending states — pending
+### 2. Guard subscription changes with confirmation and pending states — implementation verified, awaiting commit authorization
 
 **Outcome**
 - Pro→Max and Max→Pro require distinct confirmation dialogs.
-- Dialog copy explains immediate charge versus next-cycle downgrade.
-- Submission is single-flight and visibly pending through redirect.
-- Post-change billing reconciliation is explicit.
+- Dialog copy explains the approximate immediate prorated charge versus a next-cycle downgrade with no immediate charge or refund.
+- Submission is single-flight, locks dialog dismissal and actions, and remains visibly pending through redirect.
+- Existing redirect-driven success/error feedback, server refresh, and eventual sidebar reconciliation remain intact.
 
 **Checks**
-- Component/action tests where available.
-- Focused typecheck/lint.
-- Runtime confirmation, cancel, success, and failure paths.
+- No existing component/action test framework or nearby tests were available to extend without adding out-of-scope infrastructure.
+- Passed focused ESLint for the pricing page and plan-change dialog.
+- Passed `pnpm --filter web typecheck`.
+- Passed `git diff --check`.
+- Runtime confirmation, cancel, success, and failure paths remain pending because no browser harness was run.
 
 **Evidence**
+- Independent verification: PASS with no blockers.
 - Commit: pending explicit authorization.
 
 ### 3. Add preview startup, timeout, failure, and retry states — pending

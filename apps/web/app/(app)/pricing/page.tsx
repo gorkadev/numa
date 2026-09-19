@@ -36,6 +36,7 @@ import {
 } from "@workspace/ui/components/item"
 
 import { MobileSidebarTrigger } from "@/components/mobile-sidebar-trigger"
+import { PlanChangeDialog } from "@/components/plan-change-dialog"
 import { getBillingSummary } from "@/lib/polar/plan"
 import { getUpgradePreview } from "@/lib/polar/plan-change"
 import {
@@ -172,10 +173,9 @@ function TopUpCard({
  * those variables exist. Rendering here also means the current plan is known
  * before the first paint, so nobody watches a "Current plan" marker appear a
  * beat after they have already read the page and decided. The plan-change
- * forms below stay server-rendered for the same reason `changePlanAction`
- * itself is a Server Action rather than a client fetch — see the long note on
- * that function for why a `<form>` POST is the only safe shape for something
- * that reschedules or charges a subscription.
+ * controls pass their bound Server Action into a small client dialog rather
+ * than using a client fetch, so the action remains the only path that can
+ * reschedule or charge a subscription.
  *
  * # Why the top-up is disabled rather than hidden
  *
@@ -339,20 +339,10 @@ export default async function PricingPage({
                 Current plan
               </Button>
             ) : plan === "max" ? (
-              /**
-               * A downgrade, not a purchase: this posts to `changePlanAction`
-               * rather than linking to a checkout, because there is an
-               * existing paid subscription to convert, not a new one to
-               * create — see that function's own note on why. `next_period`
-               * proration is `changePlanAction`'s decision, not this page's;
-               * the note here only has to be honest that it is not
-               * immediate.
-               */
-              <form action={changePlanAction.bind(null, POLAR_PRODUCT_PRO_ID)}>
-                <Button className="w-full" variant="outline" type="submit">
-                  Switch to Pro
-                </Button>
-              </form>
+              <PlanChangeDialog
+                action={changePlanAction.bind(null, POLAR_PRODUCT_PRO_ID)}
+                direction="downgrade"
+              />
             ) : (
               <Button
                 className="w-full"
@@ -396,17 +386,16 @@ export default async function PricingPage({
                 Current plan
               </Button>
             ) : plan === "pro" ? (
-              /**
-               * An upgrade, not a purchase: same reasoning as the Pro card's
-               * downgrade form, mirrored. `changePlanAction` charges the
-               * prorated difference immediately for this direction — see
-               * that function's own note on `prorationBehavior`.
-               */
-              <form action={changePlanAction.bind(null, POLAR_PRODUCT_MAX_ID)}>
-                <Button className="w-full" type="submit">
-                  Upgrade to Max
-                </Button>
-              </form>
+              <PlanChangeDialog
+                action={changePlanAction.bind(null, POLAR_PRODUCT_MAX_ID)}
+                direction="upgrade"
+                estimatedCharge={
+                  upgradePreview
+                    ? formatEstimatedCharge(upgradePreview.estimatedChargeCents)
+                    : undefined
+                }
+                extraCredits={upgradePreview?.netExtraUnits}
+              />
             ) : (
               <Button
                 className="w-full"
