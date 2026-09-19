@@ -16,6 +16,16 @@ const STRIPPED_RESPONSE_HEADERS = new Set([
   "connection",
 ])
 
+const PREVIEW_ATTEMPT_PARAM = "previewAttempt"
+const PREVIEW_ATTEMPT_PATTERN = /^[A-Za-z0-9_-]{1,128}$/
+
+/** The preview runs in an opaque-origin sandbox, so source and this nonce bind readiness to its current frame. */
+function injectPreviewReadyBridge(html: string, attemptId: string): string {
+  const bridge = `<script>addEventListener("load",()=>parent.postMessage({type:"numa-preview-ready",attemptId:${JSON.stringify(attemptId)}},"*"),{once:true})</script>`
+
+  return `${bridge}${html}`
+}
+
 /**
  * Proxies the game's preview through this origin.
  *
@@ -83,7 +93,10 @@ async function proxy(
     (path ?? []).map(encodeURIComponent).join("/"),
     `${url.replace(/\/$/, "")}/`
   )
-  target.search = new URL(request.url).search
+  const requestUrl = new URL(request.url)
+  const attemptId = requestUrl.searchParams.get(PREVIEW_ATTEMPT_PARAM)
+  requestUrl.searchParams.delete(PREVIEW_ATTEMPT_PARAM)
+  target.search = requestUrl.search
 
   const upstream = await fetch(target, {
     method: request.method,
@@ -163,7 +176,19 @@ async function proxy(
     request.method === "GET" &&
     upstream.headers.get("content-type")?.includes("text/html")
   ) {
-    return new Response(injectPreviewStorageShim(await upstream.text()), {
+    let html = injectPreviewStorageShim(await upstream.text())
+
+    if (
+      upstream.ok &&
+      path?.length === 1 &&
+      path[0] === "index.html" &&
+      attemptId !== null &&
+      PREVIEW_ATTEMPT_PATTERN.test(attemptId)
+    ) {
+      html = injectPreviewReadyBridge(html, attemptId)
+    }
+
+    return new Response(html, {
       status: upstream.status,
       statusText: upstream.statusText,
       headers,

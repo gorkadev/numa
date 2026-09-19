@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
+import { Button } from "@workspace/ui/components/button"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { cn } from "@workspace/ui/lib/utils"
 
@@ -35,11 +36,19 @@ import { PREVIEW_SANDBOX_FLAGS } from "@/lib/games/preview-sandbox"
  * the proxy entirely, and a 404. Naming the file keeps the directory in the base
  * without asking Next for a redirect.
  */
+export type PreviewPhase = "starting" | "slow" | "ready" | "timeout" | "failed"
+
+const SLOW_AFTER_MS = 5_000
+const TIMEOUT_AFTER_MS = 30_000
+const READY_MESSAGE_TYPE = "numa-preview-ready"
+
 export function ChatPreviewBody({
   gameId,
   previewToken,
   revision,
   reloadKey,
+  onPhaseChange,
+  onRetry,
   hidden,
   disablePointerEvents,
   allowFullScreen,
@@ -62,6 +71,8 @@ export function ChatPreviewBody({
    * drives has to live wherever the button does.
    */
   reloadKey: number
+  onPhaseChange?: (phase: PreviewPhase) => void
+  onRetry?: () => void
   /**
    * Set by `SidePanel` while the Agents tab is active, so the frame — and
    * the running game inside it — stays mounted across a tab switch instead
@@ -101,14 +112,95 @@ export function ChatPreviewBody({
    */
   const frameKey = `${revision}:${reloadKey}`
 
-  /**
-   * Loading is derived from which frame has reported in, rather than tracked as
-   * its own flag. A boolean would have to be flipped back to `true` by whoever
-   * caused the remount — the button and the agent both — and forgetting either
-   * leaves the spinner hidden while the new frame is blank.
-   */
-  const [loadedKey, setLoadedKey] = useState<string | null>(null)
-  const loading = loadedKey !== frameKey
+  const iframeRef = useRef<HTMLIFrameElement>(null)
+  const activeAttemptRef = useRef<string | null>(null)
+  const failAttemptRef = useRef<(attemptId: string) => void>(() => {})
+  const [phaseState, setPhaseState] = useState<{
+    key: string
+    phase: PreviewPhase
+  }>({ key: frameKey, phase: "starting" })
+  const [attempt, setAttempt] = useState<{ key: string; id: string } | null>(
+    null
+  )
+  const phase =
+    phaseState.key === frameKey ? phaseState.phase : ("starting" as const)
+
+  useEffect(() => onPhaseChange?.(phase), [onPhaseChange, phase])
+
+  useEffect(() => {
+    const controller = new AbortController()
+    const attemptId = crypto.randomUUID()
+    let settled = false
+    const slowTimer = setTimeout(() => {
+      if (!settled) {
+        setPhaseState({ key: frameKey, phase: "slow" })
+      }
+    }, SLOW_AFTER_MS)
+    const timeoutTimer = setTimeout(() => finish("timeout"), TIMEOUT_AFTER_MS)
+
+    function clearTimers() {
+      clearTimeout(slowTimer)
+      clearTimeout(timeoutTimer)
+    }
+
+    function finish(nextPhase: PreviewPhase) {
+      if (settled) return
+      settled = true
+      clearTimers()
+      activeAttemptRef.current = null
+      setPhaseState({ key: frameKey, phase: nextPhase })
+    }
+
+    function failAttempt(id: string) {
+      if (activeAttemptRef.current === id) finish("failed")
+    }
+
+    activeAttemptRef.current = attemptId
+    failAttemptRef.current = failAttempt
+
+    function onMessage(event: MessageEvent) {
+      if (
+        event.source !== iframeRef.current?.contentWindow ||
+        typeof event.data !== "object" ||
+        event.data === null ||
+        event.data.type !== READY_MESSAGE_TYPE ||
+        event.data.attemptId !== attemptId
+      ) {
+        return
+      }
+
+      finish("ready")
+    }
+
+    window.addEventListener("message", onMessage)
+    void fetch(
+      `/api/games/${gameId}/preview/${previewToken}/index.html?previewAttempt=${encodeURIComponent(attemptId)}`,
+      { method: "HEAD", cache: "no-store", signal: controller.signal }
+    )
+      .then((response) => {
+        if (settled) return
+        if (!response.ok) {
+          finish("failed")
+          return
+        }
+        setAttempt({ key: frameKey, id: attemptId })
+      })
+      .catch((error: unknown) => {
+        if ((error as { name?: string }).name !== "AbortError") finish("failed")
+      })
+
+    return () => {
+      settled = true
+      controller.abort()
+      clearTimers()
+      window.removeEventListener("message", onMessage)
+      if (activeAttemptRef.current === attemptId)
+        activeAttemptRef.current = null
+    }
+  }, [frameKey, gameId, previewToken])
+
+  const loading = phase === "starting" || phase === "slow"
+  const canRetry = phase === "failed" || phase === "timeout"
 
   return (
     <div
@@ -116,29 +208,48 @@ export function ChatPreviewBody({
       hidden={hidden}
       {...props}
     >
-      {loading && (
-        <div className="absolute inset-0 grid place-items-center bg-background">
-          <Spinner />
+      {loading || canRetry ? (
+        <div className="absolute inset-0 z-10 grid place-items-center gap-3 bg-background p-4 text-center">
+          {loading ? (
+            <>
+              <Spinner />
+              <p className="text-sm text-muted-foreground">
+                {phase === "slow"
+                  ? "Preview is taking longer than expected."
+                  : "Starting preview…"}
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-muted-foreground">
+                {phase === "timeout"
+                  ? "Preview timed out. Try again."
+                  : "Preview could not be started. Try again."}
+              </p>
+              <Button size="sm" onClick={onRetry}>
+                Retry
+              </Button>
+            </>
+          )}
         </div>
-      )}
+      ) : null}
 
-      <iframe
-        className={cn(
-          "size-full border-0",
-          disablePointerEvents && "pointer-events-none"
-        )}
-        key={frameKey}
-        onLoad={() => setLoadedKey(frameKey)}
-        /**
-         * Never `allow-same-origin` — see `lib/games/preview-sandbox.ts`,
-         * which the proxy's CSP header reads the same flags from.
-         */
-        sandbox={PREVIEW_SANDBOX_FLAGS}
-        src={`/api/games/${gameId}/preview/${previewToken}/index.html`}
-        title="Game preview"
-        allow={allowFullScreen ? "fullscreen" : undefined}
-        allowFullScreen={allowFullScreen}
-      />
+      {attempt?.key === frameKey ? (
+        <iframe
+          ref={iframeRef}
+          className={cn(
+            "size-full border-0",
+            disablePointerEvents && "pointer-events-none"
+          )}
+          key={`${frameKey}:${attempt.id}`}
+          onError={() => failAttemptRef.current(attempt.id)}
+          sandbox={PREVIEW_SANDBOX_FLAGS}
+          src={`/api/games/${gameId}/preview/${previewToken}/index.html?previewAttempt=${encodeURIComponent(attempt.id)}`}
+          title="Game preview"
+          allow={allowFullScreen ? "fullscreen" : undefined}
+          allowFullScreen={allowFullScreen}
+        />
+      ) : null}
     </div>
   )
 }

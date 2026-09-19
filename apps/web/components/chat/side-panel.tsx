@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useSyncExternalStore } from "react"
+import { useCallback, useRef, useState, useSyncExternalStore } from "react"
 
 import Link from "next/link"
 
@@ -23,7 +23,7 @@ import { Spinner } from "@workspace/ui/components/spinner"
 import { useIsMobile } from "@workspace/ui/hooks/use-mobile"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { ChatPreviewBody } from "@/components/chat-preview"
+import { ChatPreviewBody, type PreviewPhase } from "@/components/chat-preview"
 import {
   SubagentPanelBody,
   SubagentRunRow,
@@ -252,6 +252,21 @@ export function SidePanel({
   const [dragWidth, setDragWidth] = useState<number | null>(null)
   const widthPercent = dragWidth ?? storedWidth
   const [reloadKey, setReloadKey] = useState(0)
+  const reloadInFlightRef = useRef(false)
+  const [previewPhase, setPreviewPhase] = useState<PreviewPhase>("starting")
+
+  const requestReload = useCallback(() => {
+    if (reloadInFlightRef.current) return
+    reloadInFlightRef.current = true
+    setReloadKey((count) => count + 1)
+  }, [])
+
+  const onPreviewPhaseChange = useCallback((phase: PreviewPhase) => {
+    setPreviewPhase(phase)
+    if (phase === "ready" || phase === "failed" || phase === "timeout") {
+      reloadInFlightRef.current = false
+    }
+  }, [])
 
   const hasRuns = subagentRuns.length > 0
   const runningCount = subagentRuns.filter(
@@ -418,8 +433,15 @@ export function SidePanel({
             {activeTab === "preview" && previewToken ? (
               <>
                 <Button
-                  aria-label="Reload preview"
-                  onClick={() => setReloadKey((count) => count + 1)}
+                  aria-label={
+                    previewPhase === "failed" || previewPhase === "timeout"
+                      ? "Retry preview"
+                      : "Reload preview"
+                  }
+                  disabled={
+                    previewPhase === "starting" || previewPhase === "slow"
+                  }
+                  onClick={requestReload}
                   size="icon-sm"
                   variant="ghost"
                 >
@@ -470,6 +492,8 @@ export function SidePanel({
               previewToken={previewToken}
               revision={revision}
               reloadKey={reloadKey}
+              onPhaseChange={onPreviewPhaseChange}
+              onRetry={requestReload}
             />
           ) : null}
           {activeTab === "agents" && hasRuns ? (

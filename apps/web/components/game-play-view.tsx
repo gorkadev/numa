@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState, useSyncExternalStore } from "react"
+import { useCallback, useRef, useState, useSyncExternalStore } from "react"
 
 import Link from "next/link"
 
@@ -26,7 +26,7 @@ import {
 } from "@workspace/ui/components/tooltip"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { ChatPreviewBody } from "@/components/chat-preview"
+import { ChatPreviewBody, type PreviewPhase } from "@/components/chat-preview"
 
 /** Shared styling for every floating toolbar control, over a game that may be any color. */
 const TOOLBAR_BUTTON_CLASS = "shadow-lg backdrop-blur-md"
@@ -97,8 +97,23 @@ export function GamePlayView({
   /** The element the Fullscreen API expands — the whole view, toolbar included, not just the frame. */
   const containerRef = useRef<HTMLDivElement>(null)
   const [reloadKey, setReloadKey] = useState(0)
+  const reloadInFlightRef = useRef(false)
+  const [previewPhase, setPreviewPhase] = useState<PreviewPhase>("starting")
   const fullscreen = useIsFullscreen(containerRef)
   const fullscreenSupported = useFullscreenSupported()
+
+  const requestReload = useCallback(() => {
+    if (reloadInFlightRef.current) return
+    reloadInFlightRef.current = true
+    setReloadKey((count) => count + 1)
+  }, [])
+
+  const onPreviewPhaseChange = useCallback((phase: PreviewPhase) => {
+    setPreviewPhase(phase)
+    if (phase === "ready" || phase === "failed" || phase === "timeout") {
+      reloadInFlightRef.current = false
+    }
+  }, [])
 
   function toggleFullscreen() {
     if (document.fullscreenElement) {
@@ -116,6 +131,8 @@ export function GamePlayView({
           previewToken={previewToken}
           revision={0}
           reloadKey={reloadKey}
+          onPhaseChange={onPreviewPhaseChange}
+          onRetry={requestReload}
           allowFullScreen
         />
       ) : (
@@ -176,8 +193,15 @@ export function GamePlayView({
                   <Button
                     variant="secondary"
                     size="icon"
-                    aria-label="Reload"
-                    onClick={() => setReloadKey((count) => count + 1)}
+                    aria-label={
+                      previewPhase === "failed" || previewPhase === "timeout"
+                        ? "Retry preview"
+                        : "Reload"
+                    }
+                    disabled={
+                      previewPhase === "starting" || previewPhase === "slow"
+                    }
+                    onClick={requestReload}
                     className={TOOLBAR_BUTTON_CLASS}
                   />
                 }

@@ -37,7 +37,7 @@ Phased delivery, selected by the user. Keep each phase reviewable and independen
 - Independent verification: PASS after two correction rounds restored sidebar cookie state, billing ordering, and strong session validation.
 - Commit: `dd795e1` (`feat(web): add route loading resilience`).
 
-### 2. Guard subscription changes with confirmation and pending states — implementation verified, awaiting commit authorization
+### 2. Guard subscription changes with confirmation and pending states — completed
 
 **Outcome**
 - Pro→Max and Max→Pro require distinct confirmation dialogs.
@@ -54,17 +54,25 @@ Phased delivery, selected by the user. Keep each phase reviewable and independen
 
 **Evidence**
 - Independent verification: PASS with no blockers.
-- Commit: pending explicit authorization.
+- Commit: `0c03b79` (`feat(web): confirm subscription changes`).
 
-### 3. Add preview startup, timeout, failure, and retry states — pending
+### 3. Add preview startup, timeout, failure, and retry states — completed
 
 **Outcome**
-- Preview and play views distinguish startup, slow startup, ready, timeout, and retry.
-- Reload cannot be spammed while a frame is starting.
-- Failure does not masquerade as a successful iframe load.
+- Preview and play views distinguish startup, slow startup, ready, timeout, failure, and retry.
+- Reload cannot be spammed while a frame is starting or slow.
+- Authenticated HEAD preflight plus an attempt-bound readiness bridge prevents iframe load failures from masquerading as success.
+- Timers, probes, listeners, and stale attempts are cleaned up across retry, revision changes, and unmount.
+
+**Checks**
+- Passed focused ESLint and Prettier checks for all four affected files.
+- Passed `pnpm --filter web typecheck` and `git diff --check`.
+- Independent security-sensitive verification confirmed token confinement, response-header rewriting, bridge validation, cleanup, and both toolbar integrations.
+- Browser-level lifecycle timing and forced-failure paths remain pending because no automated browser harness was run.
 
 **Evidence**
-- Commit: pending explicit authorization.
+- Independent verification: PASS with no blockers.
+- Commit: pending authorized commit.
 
 ### 4. Add authentication and account-transition feedback — pending
 
