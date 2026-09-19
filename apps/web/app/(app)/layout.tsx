@@ -1,5 +1,16 @@
+import { Suspense } from "react"
+
 import { cookies } from "next/headers"
-import { SidebarInset, SidebarProvider } from "@workspace/ui/components/sidebar"
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarHeader,
+  SidebarInset,
+  SidebarProvider,
+} from "@workspace/ui/components/sidebar"
+import { Skeleton } from "@workspace/ui/components/skeleton"
 
 import { AppSettings } from "@/components/app-settings"
 import { AppSidebar } from "@/components/app-sidebar"
@@ -7,70 +18,105 @@ import { listGames } from "@/lib/games/queries"
 import { ensureBillingCustomer } from "@/lib/polar/customers"
 import { summarizeBillingState } from "@/lib/polar/plan"
 import { POLAR_PRODUCT_PRO_ID } from "@/lib/polar/products"
+import { requireSession } from "@/lib/session"
 
-export default async function AppLayout({
+export default function AppLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  return (
+    <Suspense fallback={<AuthenticatedShellFallback />}>
+      <AuthenticatedShell>{children}</AuthenticatedShell>
+    </Suspense>
+  )
+}
+
+async function AuthenticatedShell({ children }: { children: React.ReactNode }) {
   /**
-   * Billing is provisioned HERE, in the shell that wraps every authenticated
-   * page, rather than at the moment a user first spends money.
-   *
-   * The narrow version of this — provision on the first game — leaves out
-   * everyone who does not create one: every user who existed before the
-   * provisioning code did, and every user who opens a game somebody else
-   * created. Those users have no customer, no free plan and no credits, so
-   * the gate in `trigger/chat.ts` refuses every turn, and nothing in the UI
-   * offers a way out of it. Opening the application is the one thing every
-   * such user definitely does, which is what makes this the right hook. See
-   * `ensureBillingCustomer` for why it is safe to write from a render and why
-   * a database hook is not an option here.
-   *
-   * It returns the customer state it settled on, so the summary the sidebar
-   * renders is derived from that same document instead of fetched again:
-   * `getBillingSummary` would read `getStateExternal` a second time on every
-   * navigation for fields this already has. One Polar call on the ordinary,
-   * already-provisioned path.
+   * Provision billing before rendering an interactive route. A user can then
+   * create a game as soon as the route hydrates without racing the customer and
+   * free-plan setup that authorizes their first turn.
    */
-  const [games, billingState, cookieStore] = await Promise.all([
-    listGames(),
-    ensureBillingCustomer(),
+  const [cookieStore, billingState] = await Promise.all([
     cookies(),
+    ensureBillingCustomer(),
+    requireSession(),
   ])
-
   const billing = summarizeBillingState(billingState)
-
-  /**
-   * `SidebarProvider` already writes this cookie on every toggle; nobody was
-   * reading it back, which is why the sidebar reopened on each load. A cookie
-   * rather than `localStorage` because this layout renders on the server: the
-   * collapsed state is known before the first paint, so the sidebar never
-   * flashes open and then snaps shut the way a client-only store would make it.
-   */
   const defaultOpen = cookieStore.get("sidebar_state")?.value !== "false"
 
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
-      {/**
-       * The upgrade link is assembled here rather than in the sidebar because
-       * `POLAR_PRODUCT_PRO_ID` carries no `NEXT_PUBLIC_` prefix: it exists on
-       * the server and nowhere else. A client component reading it would get
-       * `undefined` and render a checkout link that 400s after the click, which
-       * is the failure mode this prop exists to make impossible.
-       */}
-      <AppSidebar
-        games={games}
-        billing={billing}
-        upgradeHref={`/checkout?products=${POLAR_PRODUCT_PRO_ID}`}
-      />
+      <Suspense fallback={<SidebarFallback />}>
+        <AuthenticatedSidebar billing={billing} />
+      </Suspense>
       <SidebarInset>{children}</SidebarInset>
-      {/**
-       * Not inside `AppSidebar`: see `components/app-settings.tsx` for why
-       * the dialog and its shortcut have to live somewhere that survives the
-       * mobile sidebar's own `Drawer` closing.
-       */}
       <AppSettings billing={billing} />
+    </SidebarProvider>
+  )
+}
+
+async function AuthenticatedSidebar({
+  billing,
+}: {
+  billing: ReturnType<typeof summarizeBillingState>
+}) {
+  /**
+   * The game list is the only remaining slow shell concern. Keeping it in its
+   * own boundary lets the route content render after billing is ready while the
+   * sidebar replaces its geometry-preserving fallback independently.
+   */
+  const games = await listGames()
+
+  return (
+    <AppSidebar
+      games={games}
+      billing={billing}
+      upgradeHref={`/checkout?products=${POLAR_PRODUCT_PRO_ID}`}
+    />
+  )
+}
+
+function SidebarFallback() {
+  return (
+    <Sidebar collapsible="icon" variant="floating">
+      <SidebarHeader className="flex-row items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Skeleton className="size-5 rounded-md" />
+          <Skeleton className="h-4 w-16" />
+        </div>
+        <Skeleton className="size-7" />
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarGroup className="gap-3">
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-3 w-14" />
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-4/5" />
+            <Skeleton className="h-8 w-11/12" />
+          </div>
+        </SidebarGroup>
+      </SidebarContent>
+      <SidebarFooter className="gap-2">
+        <Skeleton className="h-16 w-full" />
+        <Skeleton className="h-8 w-full" />
+      </SidebarFooter>
+    </Sidebar>
+  )
+}
+
+function AuthenticatedShellFallback() {
+  return (
+    <SidebarProvider>
+      <SidebarFallback />
+      <SidebarInset>
+        <div className="flex min-h-svh flex-col gap-6 p-6 md:p-10">
+          <Skeleton className="h-7 w-36" />
+          <Skeleton className="h-40 w-full max-w-3xl" />
+        </div>
+      </SidebarInset>
     </SidebarProvider>
   )
 }
