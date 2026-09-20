@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Button } from "@workspace/ui/components/button"
 import {
   Dialog,
@@ -63,14 +63,25 @@ export function TwoFactorStepUpDialog({
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
   const [backupCodes, setBackupCodes] = useState<string[] | null>(null)
+  const attemptIdRef = useRef(0)
+  const mountedRef = useRef(true)
+
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
 
   function resetState() {
+    attemptIdRef.current++
     setCode("")
     setError(null)
     setBackupCodes(null)
   }
 
   function handleCancel() {
+    if (pending) return
     resetState()
     onOpenChange(false)
   }
@@ -81,37 +92,47 @@ export function TwoFactorStepUpDialog({
   }
 
   async function handleConfirm() {
+    const attemptId = ++attemptIdRef.current
     setPending(true)
     setError(null)
 
-    if (action === "regenerate") {
-      const result = await regenerateBackupCodes(code)
+    try {
+      if (action === "regenerate") {
+        const result = await regenerateBackupCodes(code)
+        if (!mountedRef.current || attemptId !== attemptIdRef.current) return
 
-      setPending(false)
+        if ("error" in result) {
+          setCode("")
+          setError(result.error)
+          return
+        }
 
-      if ("error" in result) {
+        setBackupCodes(result.backupCodes)
+        return
+      }
+
+      const result = await disableTwoFactor(code)
+      if (!mountedRef.current || attemptId !== attemptIdRef.current) return
+
+      if (result?.error) {
         setCode("")
         setError(result.error)
         return
       }
 
-      setBackupCodes(result.backupCodes)
-      return
+      resetState()
+      onOpenChange(false)
+      onDisabled?.()
+    } catch {
+      if (mountedRef.current && attemptId === attemptIdRef.current) {
+        setCode("")
+        setError("Something went wrong. Try again.")
+      }
+    } finally {
+      if (mountedRef.current && attemptId === attemptIdRef.current) {
+        setPending(false)
+      }
     }
-
-    const result = await disableTwoFactor(code)
-
-    setPending(false)
-
-    if (result?.error) {
-      setCode("")
-      setError(result.error)
-      return
-    }
-
-    resetState()
-    onOpenChange(false)
-    onDisabled?.()
   }
 
   const showingCodes = action === "regenerate" && backupCodes !== null
@@ -124,7 +145,7 @@ export function TwoFactorStepUpDialog({
         // recovery codes is shown at most once, so nothing but the
         // explicit "Done" button may close this dialog while they're on
         // screen.
-        if (!nextOpen && showingCodes) {
+        if (!nextOpen && (showingCodes || pending)) {
           eventDetails.cancel()
           return
         }
@@ -136,7 +157,7 @@ export function TwoFactorStepUpDialog({
         onOpenChange(nextOpen)
       }}
     >
-      <DialogContent showCloseButton={!showingCodes}>
+      <DialogContent showCloseButton={!showingCodes && !pending}>
         <DialogHeader>
           <DialogTitle>
             {showingCodes ? "New recovery codes" : COPY[action].title}
@@ -175,7 +196,12 @@ export function TwoFactorStepUpDialog({
             </div>
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={handleCancel}>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={pending}
+                onClick={handleCancel}
+              >
                 Cancel
               </Button>
               <Button

@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { AlertCircleIcon, Copy01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import QRCode from "react-qr-code"
@@ -72,34 +72,50 @@ export function useTwoFactorEnrollment() {
     status: "loading",
   })
   const requestIdRef = useRef(0)
+  const mountedRef = useRef(true)
+
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
 
   async function start() {
+    if (!mountedRef.current) return
+
     const requestId = ++requestIdRef.current
     setEnrollment({ status: "loading" })
 
-    const { data, error } = await authClient.twoFactor.enable({})
+    try {
+      const { data, error } = await authClient.twoFactor.enable({})
 
-    if (requestId !== requestIdRef.current) return
+      if (!mountedRef.current || requestId !== requestIdRef.current) return
 
-    // `method` defaults to `"totp"` server-side (nothing here ever passes
-    // `"otp"`), but the response type covers both, so `data.totpURI` is
-    // only visible once this narrows on `method`.
-    if (error || !data || data.method !== "totp") {
-      setEnrollment({ status: "error" })
-      return
+      // `method` defaults to `"totp"` server-side (nothing here ever passes
+      // `"otp"`), but the response type covers both, so `data.totpURI` is
+      // only visible once this narrows on `method`.
+      if (error || !data || data.method !== "totp") {
+        setEnrollment({ status: "error" })
+        return
+      }
+
+      setEnrollment({
+        status: "ready",
+        totpURI: data.totpURI,
+        backupCodes: data.backupCodes,
+      })
+    } catch {
+      if (mountedRef.current && requestId === requestIdRef.current) {
+        setEnrollment({ status: "error" })
+      }
     }
-
-    setEnrollment({
-      status: "ready",
-      totpURI: data.totpURI,
-      backupCodes: data.backupCodes,
-    })
   }
 
   /** Drops the secret and codes, and orphans any request still in flight. */
   function discard() {
     requestIdRef.current++
-    setEnrollment({ status: "loading" })
+    if (mountedRef.current) setEnrollment({ status: "loading" })
   }
 
   return { enrollment, start, discard }
@@ -133,6 +149,15 @@ export function TwoFactorSetupDialog({
   const [verifyError, setVerifyError] = useState<string | null>(null)
   const [verifying, setVerifying] = useState(false)
   const [revokingOthers, setRevokingOthers] = useState(false)
+  const verificationAttemptRef = useRef(0)
+  const mountedRef = useRef(true)
+
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
 
   const phase =
     enrollment.status !== "ready"
@@ -150,52 +175,81 @@ export function TwoFactorSetupDialog({
   }
 
   function resetState() {
+    verificationAttemptRef.current++
     setVerified(false)
     setCode("")
     setVerifyError(null)
   }
 
   function handleCancel() {
+    if (verifying || revokingOthers) return
     resetState()
     onOpenChange(false)
   }
 
   function handleDone() {
+    if (revokingOthers) return
     resetState()
     onOpenChange(false)
   }
 
   async function handleConfirm() {
+    const attemptId = ++verificationAttemptRef.current
     setVerifying(true)
     setVerifyError(null)
 
-    const { error } = await authClient.twoFactor.verifyTotp({ code })
+    try {
+      const { error } = await authClient.twoFactor.verifyTotp({ code })
+      if (!mountedRef.current || attemptId !== verificationAttemptRef.current) {
+        return
+      }
 
-    setVerifying(false)
+      if (error) {
+        setCode("")
+        setVerifyError(
+          error.code === "INVALID_CODE"
+            ? "That code didn't work. Check your authenticator app and try again."
+            : "Something went wrong. Try again."
+        )
+        return
+      }
 
-    if (error) {
-      setCode("")
-      setVerifyError(
-        error.code === "INVALID_CODE"
-          ? "That code didn't work. Check your authenticator app and try again."
-          : "Something went wrong. Try again."
-      )
-      return
+      /**
+       * No manual session refetch: `twoFactorClient`'s `atomListeners` already
+       * notify `useSession`'s signal for every successful `/two-factor/*` call
+       * (see `better-auth/dist/plugins/two-factor/client.mjs`), so the badge
+       * in `security-section.tsx` updates on its own the moment this resolves.
+       */
+      setVerified(true)
+    } catch {
+      if (mountedRef.current && attemptId === verificationAttemptRef.current) {
+        setCode("")
+        setVerifyError("Something went wrong. Try again.")
+      }
+    } finally {
+      if (mountedRef.current && attemptId === verificationAttemptRef.current) {
+        setVerifying(false)
+      }
     }
-
-    /**
-     * No manual session refetch: `twoFactorClient`'s `atomListeners` already
-     * notify `useSession`'s signal for every successful `/two-factor/*` call
-     * (see `better-auth/dist/plugins/two-factor/client.mjs`), so the badge
-     * in `security-section.tsx` updates on its own the moment this resolves.
-     */
-    setVerified(true)
   }
 
   async function signOutOtherSessions() {
     setRevokingOthers(true)
-    await authClient.revokeOtherSessions()
-    setRevokingOthers(false)
+    setVerifyError(null)
+    try {
+      const { error } = await authClient.revokeOtherSessions()
+      if (error && mountedRef.current) {
+        setVerifyError(
+          error.message ?? "Could not sign out other sessions. Try again."
+        )
+      }
+    } catch {
+      if (mountedRef.current) {
+        setVerifyError("Could not sign out other sessions. Try again.")
+      }
+    } finally {
+      if (mountedRef.current) setRevokingOthers(false)
+    }
   }
 
   const secret = totpURI ? new URL(totpURI).searchParams.get("secret") : null
@@ -208,7 +262,7 @@ export function TwoFactorSetupDialog({
         // stray Escape or an outside click is unrecoverable, so only the
         // explicit "Done" button (`handleDone`) is allowed to close from
         // there.
-        if (!nextOpen && phase === "codes") {
+        if (!nextOpen && (phase === "codes" || verifying || revokingOthers)) {
           eventDetails.cancel()
           return
         }
@@ -220,7 +274,9 @@ export function TwoFactorSetupDialog({
         onOpenChange(nextOpen)
       }}
     >
-      <DialogContent showCloseButton={phase !== "codes"}>
+      <DialogContent
+        showCloseButton={phase !== "codes" && !verifying && !revokingOthers}
+      >
         <DialogHeader>
           <DialogTitle>
             {phase === "codes"
@@ -338,13 +394,21 @@ export function TwoFactorSetupDialog({
                 {revokingOthers && <Spinner />}
                 Sign out other sessions
               </Button>
+              {verifyError && (
+                <p className="text-sm text-destructive">{verifyError}</p>
+              )}
             </div>
           </div>
         )}
 
         {phase === "setup" && (
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={handleCancel}>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={verifying || revokingOthers}
+              onClick={handleCancel}
+            >
               Cancel
             </Button>
             <Button

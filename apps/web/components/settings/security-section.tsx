@@ -9,6 +9,7 @@ import {
   ItemDescription,
   ItemTitle,
 } from "@workspace/ui/components/item"
+import { Skeleton } from "@workspace/ui/components/skeleton"
 
 import { authClient } from "@/lib/auth-client"
 import { PasskeysSection } from "@/components/settings/passkeys-section"
@@ -23,38 +24,59 @@ import {
 } from "@/components/settings/two-factor-setup-dialog"
 import { TwoFactorStepUpDialog } from "@/components/settings/two-factor-step-up-dialog"
 
-/** Which step-up-gated dialog, if any, is currently open. */
 type TwoFactorDialog = "none" | "setup" | "regenerate" | "disable"
 
-/**
- * The Security section of the settings dialog: two-factor authentication,
- * then the account's active sessions.
- *
- * # Why this is a real component and not inlined in `settings-dialog.tsx`
- *
- * Every other section there is a few lines of JSX reading props the dialog
- * already has. This one owns three pieces of dialog state (setup,
- * regenerate, disable) — plumbing the other sections don't need — so it gets
- * its own file the same way `credits-button.tsx` was split out of
- * `app-sidebar.tsx` once it grew a reason to exist independently. The
- * sessions list went one step further into `sessions-section.tsx`: it owns
- * its own fetch and revoke state and shares nothing with the 2FA dialogs.
- */
-export function SecuritySection() {
-  const { data: session } = authClient.useSession()
+function SecuritySkeleton() {
+  return (
+    <div className="flex flex-col gap-8">
+      <SettingsGroup
+        title="Two-factor authentication"
+        description="An extra step when you sign in, on top of your provider"
+      >
+        <SettingsRow>
+          <ItemContent className="gap-2">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-3 w-64" />
+          </ItemContent>
+          <Skeleton className="h-8 w-20" />
+        </SettingsRow>
+      </SettingsGroup>
+      <PasskeysSection />
+      <SessionsSection />
+    </div>
+  )
+}
 
+export function SecuritySection() {
+  const { data: session, error, isPending, refetch } = authClient.useSession()
   const [dialog, setDialog] = useState<TwoFactorDialog>("none")
   const enrollment = useTwoFactorEnrollment()
 
   function openSetup() {
     setDialog("setup")
-    enrollment.start()
+    void enrollment.start()
   }
 
+  if (isPending) return <SecuritySkeleton />
+  if (error)
+    return (
+      <SettingsGroup title="Security & access">
+        <SettingsRow>
+          <ItemContent>
+            <ItemTitle>Could not load security settings</ItemTitle>
+            <ItemDescription>{error.message}</ItemDescription>
+          </ItemContent>
+          <ItemActions>
+            <Button variant="outline" size="sm" onClick={() => void refetch()}>
+              Retry
+            </Button>
+          </ItemActions>
+        </SettingsRow>
+      </SettingsGroup>
+    )
   if (!session) return null
 
   const twoFactorEnabled = session.user.twoFactorEnabled ?? false
-
   return (
     <div className="flex flex-col gap-8">
       <SettingsGroup
@@ -104,16 +126,12 @@ export function SecuritySection() {
           </ItemActions>
         </SettingsRow>
       </SettingsGroup>
-
       <PasskeysSection />
-
       <SessionsSection />
-
       <TwoFactorSetupDialog
         open={dialog === "setup"}
         onOpenChange={(open) => {
           if (open) return
-
           enrollment.discard()
           setDialog("none")
         }}
