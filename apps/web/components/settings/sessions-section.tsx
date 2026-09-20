@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
   ComputerIcon,
   GlobalIcon,
@@ -19,6 +19,7 @@ import {
 } from "@workspace/ui/components/item"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Spinner } from "@workspace/ui/components/spinner"
+import { toast } from "@workspace/ui/components/toast"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { authClient } from "@/lib/auth-client"
@@ -33,11 +34,6 @@ import {
   SettingsRows,
 } from "@/components/settings/settings-group"
 
-/**
- * One row from `authClient.listSessions()` — the client-side counterpart of
- * `packages/db/src/schema.ts`'s `session` table, with its `Date` columns
- * serialized to strings over the wire.
- */
 type SessionListItem = NonNullable<
   Awaited<ReturnType<typeof authClient.listSessions>>["data"]
 >[number]
@@ -61,99 +57,181 @@ function DeviceIcon({ userAgent }: { userAgent: string | null | undefined }) {
   )
 }
 
-/**
- * A session's IP, or `null` when it carries no information worth a line.
- *
- * In development every session comes from the machine running the browser,
- * so the column is a loopback address — and Node normalizes `::1` into its
- * fully expanded form, which renders as a 39-character run of zeroes that
- * pushes the useful half of the row off screen. Nothing about "this request
- * came from here" helps someone recognize a device, so it is dropped rather
- * than shortened.
- */
 function displayIp(ipAddress: string | null | undefined) {
   if (!ipAddress) return null
-
-  /**
-   * `127.0.0.0/8` on the v4 side; on the v6 side every zero-padded spelling
-   * of `::1` and of the unspecified address `::`, which are nothing but
-   * zeroes, colons and an optional trailing one.
-   */
-  const local =
-    /^127\./.test(ipAddress) ||
+  return /^127\./.test(ipAddress) ||
     (ipAddress.includes(":") && /^[0:]*1?$/.test(ipAddress))
-
-  return local ? null : ipAddress
+    ? null
+    : ipAddress
 }
 
-/**
- * How long ago a session was last used.
- *
- * `updatedAt` is the column Better Auth touches on every session refresh, so
- * it is the closest thing to "last seen" the schema has. Prose here, unlike
- * the absolute timestamp this replaced: on this list the question is never
- * "when exactly" but "is this one stale", and "3 days ago" answers that at a
- * glance where "15/09/2026, 21:04:18" makes the reader do the subtraction.
- */
 function lastSeen(updatedAt: string | Date) {
   return formatDistanceToNow(new Date(updatedAt), { addSuffix: true })
 }
 
-/**
- * The account's active sessions: the one being used right now, then every
- * other one under a single revoke-all header.
- *
- * # Why the current session is its own card
- *
- * It is the one row that can never be acted on — you cannot sign yourself
- * out from a list whose purpose is signing *other* devices out — and it is
- * the reference point for reading the rest ("that one is me, so what is
- * that other one?"). Mixing it into the list means every row carries a
- * "(this device)" caveat and a conditionally-missing button, which is the
- * shape the previous version had. Splitting it puts the exception in its own
- * box and leaves the list below uniform: every row there has the same
- * affordance.
- */
-export function SessionsSection() {
-  const { data: session } = authClient.useSession()
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Please try again."
+}
 
+function SessionsSkeleton() {
+  return (
+    <div className="flex flex-col gap-4">
+      <SettingsGroup
+        title="Sessions"
+        description="Devices logged into your account"
+      >
+        <SettingsRow size="sm">
+          <Skeleton className="size-8 rounded-lg" />
+          <ItemContent className="gap-2">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-3 w-40" />
+          </ItemContent>
+        </SettingsRow>
+      </SettingsGroup>
+      <SettingsRows>
+        <SettingsRow>
+          <ItemContent className="gap-2">
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-3 w-52" />
+          </ItemContent>
+          <Skeleton className="h-8 w-20" />
+        </SettingsRow>
+        <SettingsRow>
+          <Skeleton className="size-8 rounded-lg" />
+          <ItemContent className="gap-2">
+            <Skeleton className="h-4 w-36" />
+            <Skeleton className="h-3 w-48" />
+          </ItemContent>
+        </SettingsRow>
+      </SettingsRows>
+    </div>
+  )
+}
+
+export function SessionsSection() {
+  const {
+    data: session,
+    error: sessionError,
+    isPending: sessionPending,
+    refetch: refetchSession,
+  } = authClient.useSession()
   const [sessions, setSessions] = useState<SessionListItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const requestId = useRef(0)
+  const mountedRef = useRef(true)
   const [revokingToken, setRevokingToken] = useState<string | null>(null)
   const [revokingOthers, setRevokingOthers] = useState(false)
 
   async function loadSessions() {
-    const { data } = await authClient.listSessions()
-    setSessions(data ?? [])
+    if (!mountedRef.current) return false
+
+    const id = ++requestId.current
+    setLoading(true)
+    setLoadError(null)
+    try {
+      const { data, error } = await authClient.listSessions()
+      if (!mountedRef.current || id !== requestId.current) return false
+      if (error) {
+        setLoadError(error.message ?? "Please try again.")
+        return false
+      }
+      setSessions(data ?? [])
+      return true
+    } catch (error) {
+      if (mountedRef.current && id === requestId.current) {
+        setLoadError(errorMessage(error))
+      }
+      return false
+    } finally {
+      if (mountedRef.current && id === requestId.current) setLoading(false)
+    }
   }
 
   useEffect(() => {
-    loadSessions().finally(() => setLoading(false))
+    mountedRef.current = true
+    void Promise.resolve().then(loadSessions)
+
+    return () => {
+      mountedRef.current = false
+    }
   }, [])
 
   async function signOutSession(token: string) {
     setRevokingToken(token)
-    await authClient.revokeSession({ token })
-    await loadSessions()
-    setRevokingToken(null)
+    try {
+      const { error } = await authClient.revokeSession({ token })
+      if (error) {
+        toast.add({
+          type: "error",
+          title: "Could not revoke the session",
+          description: error.message,
+        })
+        return
+      }
+      await loadSessions()
+    } catch (error) {
+      toast.add({
+        type: "error",
+        title: "Could not revoke the session",
+        description: errorMessage(error),
+      })
+    } finally {
+      if (mountedRef.current) setRevokingToken(null)
+    }
   }
 
   async function signOutOtherSessions() {
     setRevokingOthers(true)
-    await authClient.revokeOtherSessions()
-    await loadSessions()
-    setRevokingOthers(false)
+    try {
+      const { error } = await authClient.revokeOtherSessions()
+      if (error) {
+        toast.add({
+          type: "error",
+          title: "Could not revoke other sessions",
+          description: error.message,
+        })
+        return
+      }
+      await loadSessions()
+    } catch (error) {
+      toast.add({
+        type: "error",
+        title: "Could not revoke other sessions",
+        description: errorMessage(error),
+      })
+    } finally {
+      if (mountedRef.current) setRevokingOthers(false)
+    }
   }
 
+  if (sessionPending) return <SessionsSkeleton />
+  if (sessionError)
+    return (
+      <SettingsGroup
+        title="Sessions"
+        description="Devices logged into your account"
+      >
+        <SettingsRow>
+          <ItemContent>
+            <ItemTitle>Could not load sessions</ItemTitle>
+            <ItemDescription>{sessionError.message}</ItemDescription>
+          </ItemContent>
+          <ItemActions>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void refetchSession()}
+            >
+              Retry
+            </Button>
+          </ItemActions>
+        </SettingsRow>
+      </SettingsGroup>
+    )
   if (!session) return null
 
   const currentSessionId = session.session.id
-  /**
-   * `listSessions` includes the current session, but the client session
-   * object is the authority on the device's own user agent — so the current
-   * row is rendered from the list entry when it is there and from the
-   * session itself while the list is still loading.
-   */
   const current =
     sessions.find((item) => item.id === currentSessionId) ?? session.session
   const others = sessions.filter((item) => item.id !== currentSessionId)
@@ -180,7 +258,6 @@ export function SessionsSection() {
           </ItemContent>
         </SettingsRow>
       </SettingsGroup>
-
       {loading ? (
         <SettingsRows>
           <SettingsRow size="sm">
@@ -191,73 +268,77 @@ export function SessionsSection() {
             </ItemContent>
           </SettingsRow>
         </SettingsRows>
-      ) : (
-        others.length > 0 && (
-          <SettingsRows>
-            <SettingsRow>
+      ) : loadError ? (
+        <SettingsRows>
+          <SettingsRow>
+            <ItemContent>
+              <ItemTitle>Could not load other sessions</ItemTitle>
+              <ItemDescription>{loadError}</ItemDescription>
+            </ItemContent>
+            <ItemActions>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => void loadSessions()}
+              >
+                Retry
+              </Button>
+            </ItemActions>
+          </SettingsRow>
+        </SettingsRows>
+      ) : others.length > 0 ? (
+        <SettingsRows>
+          <SettingsRow>
+            <ItemContent>
+              <ItemTitle>
+                {others.length === 1
+                  ? "1 other session"
+                  : `${others.length} other sessions`}
+              </ItemTitle>
+            </ItemContent>
+            <ItemActions>
+              <Button
+                variant="ghost"
+                disabled={revokingOthers}
+                onClick={signOutOtherSessions}
+              >
+                {revokingOthers && <Spinner />}Revoke all
+              </Button>
+            </ItemActions>
+          </SettingsRow>
+          {others.map((item) => (
+            <SettingsRow
+              key={item.id}
+              className="transition-colors hover:bg-muted/60"
+            >
+              <DeviceIcon userAgent={item.userAgent} />
               <ItemContent>
-                <ItemTitle>
-                  {others.length === 1
-                    ? "1 other session"
-                    : `${others.length} other sessions`}
-                </ItemTitle>
+                <ItemTitle>{describeUserAgent(item.userAgent)}</ItemTitle>
+                <ItemDescription>
+                  {displayIp(item.ipAddress)
+                    ? `${displayIp(item.ipAddress)} · `
+                    : ""}
+                  Last seen {lastSeen(item.updatedAt)}
+                </ItemDescription>
               </ItemContent>
-              <ItemActions>
+              <ItemActions
+                className={cn(
+                  "opacity-0 transition-opacity group-hover/item:opacity-100 focus-within:opacity-100",
+                  revokingToken === item.token && "opacity-100"
+                )}
+              >
                 <Button
                   variant="ghost"
-                  disabled={revokingOthers}
-                  onClick={signOutOtherSessions}
+                  disabled={revokingToken === item.token}
+                  onClick={() => signOutSession(item.token)}
                 >
-                  {revokingOthers && <Spinner />}
-                  Revoke all
+                  {revokingToken === item.token && <Spinner />}Revoke
                 </Button>
               </ItemActions>
             </SettingsRow>
-
-            {others.map((item) => (
-              <SettingsRow
-                key={item.id}
-                className="transition-colors hover:bg-muted/60"
-              >
-                <DeviceIcon userAgent={item.userAgent} />
-                <ItemContent>
-                  <ItemTitle>{describeUserAgent(item.userAgent)}</ItemTitle>
-                  <ItemDescription>
-                    {displayIp(item.ipAddress)
-                      ? `${displayIp(item.ipAddress)} · `
-                      : ""}
-                    Last seen {lastSeen(item.updatedAt)}
-                  </ItemDescription>
-                </ItemContent>
-                {/**
-                 * Per-row revoke stays out of the way until the pointer is on
-                 * the row it belongs to — with one button per session the
-                 * column reads as a wall of identical actions otherwise, and
-                 * the header's "Revoke all" is the one that has to be visible
-                 * at all times. `focus-within` keeps it reachable by keyboard,
-                 * where there is no hover to trigger, and an in-flight revoke
-                 * stays visible so its spinner does not vanish mid-request.
-                 */}
-                <ItemActions
-                  className={cn(
-                    "opacity-0 transition-opacity group-hover/item:opacity-100 focus-within:opacity-100",
-                    revokingToken === item.token && "opacity-100"
-                  )}
-                >
-                  <Button
-                    variant="ghost"
-                    disabled={revokingToken === item.token}
-                    onClick={() => signOutSession(item.token)}
-                  >
-                    {revokingToken === item.token && <Spinner />}
-                    Revoke
-                  </Button>
-                </ItemActions>
-              </SettingsRow>
-            ))}
-          </SettingsRows>
-        )
-      )}
+          ))}
+        </SettingsRows>
+      ) : null}
     </div>
   )
 }

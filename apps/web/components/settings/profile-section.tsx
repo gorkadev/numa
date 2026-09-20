@@ -23,6 +23,7 @@ import {
   ItemMedia,
   ItemTitle,
 } from "@workspace/ui/components/item"
+import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
 
@@ -33,7 +34,6 @@ import {
   SettingsRow,
 } from "@/components/settings/settings-group"
 
-/** One row from `authClient.listAccounts()`. */
 type LinkedAccount = NonNullable<
   Awaited<ReturnType<typeof authClient.listAccounts>>["data"]
 >[number]
@@ -43,94 +43,150 @@ const PROVIDERS: Record<string, { label: string; icon: typeof GithubIcon }> = {
   google: { label: "Google", icon: GoogleIcon },
 }
 
-/**
- * The Profile section: the handful of identity fields this application is
- * actually allowed to change, plus the providers behind the ones it is not.
- *
- * # Why the name is the only editable field
- *
- * Better Auth's `/update-user` accepts exactly `name` and `image` (it throws
- * `EMAIL_CAN_NOT_BE_UPDATED` the moment a body carries an email — see
- * `api/routes/update-user.mjs`). Email goes through `/change-email`, which
- * refuses outright unless at least one email-delivery flow is configured:
- * for a verified address — and every address here is verified, because it
- * came from Google or GitHub — it needs `emailVerification.sendVerification
- * Email`. This project has no email provider at all (`lib/auth.ts` says so
- * where it explains why `emailAndPassword` is off), so an "edit" affordance
- * on that row could only ever produce a 400. It is shown as what it is:
- * a value owned by the identity provider.
- *
- * `image` is technically writable, but there is nowhere to upload a file to —
- * so the only honest control is removing the provider's photo and falling
- * back to initials, which is what the picture row offers.
- */
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Please try again."
+}
+
+function ProfileSkeleton() {
+  return (
+    <div className="flex flex-col gap-8">
+      <SettingsGroup>
+        {["picture", "name", "email"].map((row) => (
+          <SettingsRow key={row}>
+            <ItemContent className="gap-2">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-3 w-52" />
+            </ItemContent>
+            <Skeleton className="h-8 w-24" />
+          </SettingsRow>
+        ))}
+      </SettingsGroup>
+    </div>
+  )
+}
+
 export function ProfileSection() {
   const router = useRouter()
-  const { data: session } = authClient.useSession()
-
+  const {
+    data: session,
+    error: sessionError,
+    isPending: sessionPending,
+    refetch: refetchSession,
+  } = authClient.useSession()
   const [name, setName] = useState("")
   const [seededFor, setSeededFor] = useState<string | null>(null)
   const [savingName, setSavingName] = useState(false)
   const [removingImage, setRemovingImage] = useState(false)
-
   const [accounts, setAccounts] = useState<LinkedAccount[]>([])
+  const [accountsLoading, setAccountsLoading] = useState(true)
+  const [accountsError, setAccountsError] = useState<string | null>(null)
+  const accountsRequestId = useRef(0)
+  const mountedRef = useRef(true)
   const [signingOut, setSigningOut] = useState(false)
   const signOutInFlight = useRef(false)
-
   const user = session?.user
 
-  /**
-   * The name input is seeded from the session exactly once per identity,
-   * during render rather than from an effect.
-   *
-   * It cannot simply mirror `user.name`: `authClient.updateUser` pings the
-   * session atom, so the session object changes identity while the field is
-   * being edited, and re-seeding on every change would erase what is being
-   * typed. React's documented answer for "derive state from props, but only
-   * when they actually change" is this adjust-during-render pattern — an
-   * effect would render the stale value first, then immediately render
-   * again.
-   */
   if (user && seededFor !== user.id) {
     setSeededFor(user.id)
     setName(user.name ?? "")
   }
 
-  useEffect(() => {
-    authClient.listAccounts().then(({ data }) => setAccounts(data ?? []))
-  }, [])
+  async function loadAccounts() {
+    if (!mountedRef.current) return false
 
-  if (!user) return null
+    const requestId = ++accountsRequestId.current
+    setAccountsLoading(true)
+    setAccountsError(null)
+
+    try {
+      const { data, error } = await authClient.listAccounts()
+      if (!mountedRef.current || requestId !== accountsRequestId.current) {
+        return false
+      }
+      if (error) {
+        setAccountsError(error.message ?? "Please try again.")
+        return false
+      }
+      setAccounts(data ?? [])
+      return true
+    } catch (error) {
+      if (mountedRef.current && requestId === accountsRequestId.current) {
+        setAccountsError(errorMessage(error))
+      }
+      return false
+    } finally {
+      if (mountedRef.current && requestId === accountsRequestId.current) {
+        setAccountsLoading(false)
+      }
+    }
+  }
+
+  useEffect(() => {
+    mountedRef.current = true
+    void Promise.resolve().then(loadAccounts)
+
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
 
   async function saveName() {
     const next = name.trim()
-
-    if (!next || next === user!.name) {
-      setName(user!.name ?? "")
+    if (!next || next === user?.name) {
+      setName(user?.name ?? "")
       return
     }
 
     setSavingName(true)
-    await authClient.updateUser({ name: next })
-    setSavingName(false)
+    try {
+      const { error } = await authClient.updateUser({ name: next })
+      if (error) {
+        toast.add({
+          type: "error",
+          title: "Could not save your name",
+          description: error.message,
+        })
+      }
+    } catch (error) {
+      toast.add({
+        type: "error",
+        title: "Could not save your name",
+        description: errorMessage(error),
+      })
+    } finally {
+      if (mountedRef.current) setSavingName(false)
+    }
   }
 
   async function removeImage() {
     setRemovingImage(true)
-    await authClient.updateUser({ image: null })
-    setRemovingImage(false)
+    try {
+      const { error } = await authClient.updateUser({ image: null })
+      if (error) {
+        toast.add({
+          type: "error",
+          title: "Could not remove your picture",
+          description: error.message,
+        })
+      }
+    } catch (error) {
+      toast.add({
+        type: "error",
+        title: "Could not remove your picture",
+        description: errorMessage(error),
+      })
+    } finally {
+      if (mountedRef.current) setRemovingImage(false)
+    }
   }
 
   async function signOut() {
     if (signOutInFlight.current) return
-
     signOutInFlight.current = true
     setSigningOut(true)
     let navigating = false
-
     try {
       const { error } = await authClient.signOut()
-
       if (error) {
         toast.add({
           type: "error",
@@ -139,23 +195,45 @@ export function ProfileSection() {
         })
         return
       }
-
       navigating = true
       router.push("/sign-in")
     } catch (error) {
       toast.add({
         type: "error",
         title: "Could not sign out",
-        description:
-          error instanceof Error ? error.message : "Please try again.",
+        description: errorMessage(error),
       })
     } finally {
-      if (!navigating) {
+      if (!navigating && mountedRef.current) {
         signOutInFlight.current = false
         setSigningOut(false)
       }
     }
   }
+
+  if (sessionPending) return <ProfileSkeleton />
+  if (sessionError) {
+    return (
+      <SettingsGroup>
+        <SettingsRow>
+          <ItemContent>
+            <ItemTitle>Could not load your profile</ItemTitle>
+            <ItemDescription>{sessionError.message}</ItemDescription>
+          </ItemContent>
+          <ItemActions>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void refetchSession()}
+            >
+              Retry
+            </Button>
+          </ItemActions>
+        </SettingsRow>
+      </SettingsGroup>
+    )
+  }
+  if (!user) return null
 
   return (
     <div className="flex flex-col gap-8">
@@ -177,8 +255,7 @@ export function ProfileSection() {
                 disabled={removingImage}
                 onClick={removeImage}
               >
-                {removingImage && <Spinner />}
-                Remove
+                {removingImage && <Spinner />}Remove
               </Button>
             )}
             <Avatar>
@@ -192,7 +269,6 @@ export function ProfileSection() {
             </Avatar>
           </ItemActions>
         </SettingsRow>
-
         <SettingsRow>
           <ItemContent>
             <ItemTitle>Full name</ItemTitle>
@@ -215,7 +291,6 @@ export function ProfileSection() {
             />
           </ItemActions>
         </SettingsRow>
-
         <SettingsRow>
           <ItemContent>
             <ItemTitle>Email</ItemTitle>
@@ -229,35 +304,62 @@ export function ProfileSection() {
         </SettingsRow>
       </SettingsGroup>
 
-      {accounts.length > 0 && (
+      {(accountsLoading || accountsError || accounts.length > 0) && (
         <SettingsGroup
           title="Connected accounts"
           description="The providers you can sign in to Numa with"
         >
-          {accounts.map((account) => {
-            const provider = PROVIDERS[account.providerId]
-
-            return (
-              <SettingsRow key={account.id} size="sm">
-                <ItemMedia className="size-8 rounded-lg bg-background text-foreground">
-                  {provider ? (
-                    <HugeiconsIcon
-                      icon={provider.icon}
-                      className="size-4"
-                      strokeWidth={2}
-                    />
-                  ) : null}
-                </ItemMedia>
-                <ItemContent>
-                  <ItemTitle>{provider?.label ?? account.providerId}</ItemTitle>
-                  <ItemDescription>
-                    Connected{" "}
-                    {format(new Date(account.createdAt), "d MMM yyyy")}
-                  </ItemDescription>
-                </ItemContent>
-              </SettingsRow>
-            )
-          })}
+          {accountsLoading ? (
+            <SettingsRow size="sm">
+              <Skeleton className="size-8 rounded-lg" />
+              <ItemContent className="gap-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-3 w-36" />
+              </ItemContent>
+            </SettingsRow>
+          ) : accountsError ? (
+            <SettingsRow size="sm">
+              <ItemContent>
+                <ItemTitle>Could not load connected accounts</ItemTitle>
+                <ItemDescription>{accountsError}</ItemDescription>
+              </ItemContent>
+              <ItemActions>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void loadAccounts()}
+                >
+                  Retry
+                </Button>
+              </ItemActions>
+            </SettingsRow>
+          ) : (
+            accounts.map((account) => {
+              const provider = PROVIDERS[account.providerId]
+              return (
+                <SettingsRow key={account.id} size="sm">
+                  <ItemMedia className="size-8 rounded-lg bg-background text-foreground">
+                    {provider ? (
+                      <HugeiconsIcon
+                        icon={provider.icon}
+                        className="size-4"
+                        strokeWidth={2}
+                      />
+                    ) : null}
+                  </ItemMedia>
+                  <ItemContent>
+                    <ItemTitle>
+                      {provider?.label ?? account.providerId}
+                    </ItemTitle>
+                    <ItemDescription>
+                      Connected{" "}
+                      {format(new Date(account.createdAt), "d MMM yyyy")}
+                    </ItemDescription>
+                  </ItemContent>
+                </SettingsRow>
+              )
+            })
+          )}
         </SettingsGroup>
       )}
 
