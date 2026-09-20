@@ -1,11 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
 import { Search01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { Badge } from "@workspace/ui/components/badge"
-import { Button } from "@workspace/ui/components/button"
 import {
   Dialog,
   DialogContent,
@@ -17,12 +14,6 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "@workspace/ui/components/input-group"
-import {
-  ItemActions,
-  ItemContent,
-  ItemDescription,
-  ItemTitle,
-} from "@workspace/ui/components/item"
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import {
   Sidebar,
@@ -47,26 +38,11 @@ import {
   SECTIONS,
   type SectionId,
 } from "@/lib/settings/sections"
+import { BillingSection } from "@/components/settings/billing-section"
 import { ProfileSection } from "@/components/settings/profile-section"
 import { SecuritySection } from "@/components/settings/security-section"
-import {
-  SettingsGroup,
-  SettingsHeading,
-  SettingsRow,
-} from "@/components/settings/settings-group"
+import { SettingsHeading } from "@/components/settings/settings-group"
 import { ThemePicker } from "@/components/settings/theme-picker"
-
-/**
- * The plan label shown next to a user's plan.
- *
- * Copied verbatim from `credits-button.tsx` rather than imported, because
- * that file folds the same ternary directly into JSX with no exported
- * function to call — see the long note on `BillingPlan` in `lib/polar/plan.ts`
- * for why `"none"` is handled as an absence rather than a fourth label here.
- */
-function planLabel(plan: BillingSummary["plan"]) {
-  return plan === "max" ? "Max" : plan === "pro" ? "Pro" : "Free"
-}
 
 /**
  * A settings surface shaped like the ChatGPT / Claude.ai settings modal: a
@@ -130,6 +106,8 @@ export function SettingsDialog({
    * to derive state from props that changed — an effect would render the
    * wrong section first and only then correct it, which is the flash again.
    */
+  void billing
+
   const [shownSection, setShownSection] = useState(section)
 
   if (open && section !== shownSection) setShownSection(section)
@@ -295,68 +273,7 @@ export function SettingsDialog({
 
                 {shownSection === "security" && <SecuritySection />}
 
-                {shownSection === "billing" && (
-                  <div className="flex flex-col gap-8">
-                    <SettingsGroup
-                      title="Plan"
-                      description="What your account is on today"
-                    >
-                      <SettingsRow>
-                        <ItemContent>
-                          <ItemTitle>Current plan</ItemTitle>
-                        </ItemContent>
-                        <ItemActions>
-                          {billing.plan === "none" ? (
-                            <span className="text-sm text-muted-foreground">
-                              —
-                            </span>
-                          ) : (
-                            <Badge
-                              variant={
-                                billing.plan === "free"
-                                  ? "secondary"
-                                  : "default"
-                              }
-                            >
-                              {planLabel(billing.plan)}
-                            </Badge>
-                          )}
-                        </ItemActions>
-                      </SettingsRow>
-                      <SettingsRow>
-                        <ItemContent>
-                          <ItemTitle>Credits</ItemTitle>
-                          <ItemDescription>
-                            What is left of this period's allowance.
-                          </ItemDescription>
-                        </ItemContent>
-                        <ItemActions>
-                          <span className="text-sm text-muted-foreground">
-                            {billing.balance === null ? "—" : billing.balance}
-                          </span>
-                        </ItemActions>
-                      </SettingsRow>
-                      <SettingsRow>
-                        <ItemContent>
-                          <ItemTitle>Manage plan</ItemTitle>
-                          <ItemDescription>
-                            Change your plan or buy more credits.
-                          </ItemDescription>
-                        </ItemContent>
-                        <ItemActions>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            nativeButton={false}
-                            render={<Link href="/pricing" />}
-                          >
-                            Manage plan
-                          </Button>
-                        </ItemActions>
-                      </SettingsRow>
-                    </SettingsGroup>
-                  </div>
-                )}
+                {shownSection === "billing" && <BillingSection active={open} />}
               </div>
             </TabsContent>
           </Tabs>

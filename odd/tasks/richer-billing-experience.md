@@ -29,7 +29,7 @@ Give customers enough billing context to understand a plan change before confirm
 - Passed focused ESLint and Prettier checks for all three affected files.
 - Passed full web typecheck and `git diff --check`.
 - Independent verification: PASS after correcting mixed-price and cadence-authority blockers.
-- Runtime dialog inspection remains pending because no authenticated Pro/Max test scenario was available.
+- Runtime browser inspection passed for the authenticated Max→Pro dialog; Pro→Max remains unexecuted because no Pro test subscription was available.
 
 **Evidence**
 - Commit: `f97135a` (`feat(web): enrich plan change details`).
@@ -49,19 +49,21 @@ Give customers enough billing context to understand a plan change before confirm
 - Runtime API inspection remains pending because no route-test/browser fixture was run.
 
 **Evidence**
-- Commit: pending authorized commit.
+- Commit: `5a67801` (`feat(web): add private billing details`).
 
-### 3. Build the Settings billing history UI — pending
+### 3. Build the Settings billing history UI — completed
 
 **Outcome**
-- Settings → Billing lazily shows plan status, price/cadence, current period, renewal or scheduled change, credits, recent invoices/orders, and billing-management actions.
+- Settings → Billing lazily shows plan status, authoritative price/cadence, credits, current period, renewal/scheduled change/cancellation, recent invoices/orders, and same-origin billing-management actions.
 - Loading, unavailable, retry, and empty-history states are explicit.
-- Opening unrelated settings sections does not fetch billing details.
+- Abort, mount, and request-identity guards prevent stale or unmounted responses from winning.
+- Opening unrelated settings sections does not mount the billing component or request details.
 
 **Checks**
-- Focused lint/typecheck/format checks.
-- Independent accessibility and stale-request verification.
-- Runtime Settings inspection when available.
+- Passed focused ESLint and Prettier checks for both affected files.
+- Passed full web typecheck and cached/unstaged diff checks.
+- Independent verification: PASS after replacing the duplicated client contract with the authoritative type and rendering every `nextEvent` variant.
+- Runtime browser inspection passed for the loading skeleton, populated Max subscription/period/renewal/history view, and Max→Pro confirmation dialog.
 
 **Evidence**
-- Commit: pending explicit authorization.
+- Commit: this work unit (`feat(web): add billing history settings`).
