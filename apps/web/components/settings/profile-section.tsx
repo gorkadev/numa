@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
   GithubIcon,
   GoogleIcon,
@@ -24,6 +24,7 @@ import {
   ItemTitle,
 } from "@workspace/ui/components/item"
 import { Spinner } from "@workspace/ui/components/spinner"
+import { toast } from "@workspace/ui/components/toast"
 
 import { authClient } from "@/lib/auth-client"
 import { initials } from "@/lib/format/initials"
@@ -73,6 +74,8 @@ export function ProfileSection() {
   const [removingImage, setRemovingImage] = useState(false)
 
   const [accounts, setAccounts] = useState<LinkedAccount[]>([])
+  const [signingOut, setSigningOut] = useState(false)
+  const signOutInFlight = useRef(false)
 
   const user = session?.user
 
@@ -119,8 +122,39 @@ export function ProfileSection() {
   }
 
   async function signOut() {
-    await authClient.signOut()
-    router.push("/sign-in")
+    if (signOutInFlight.current) return
+
+    signOutInFlight.current = true
+    setSigningOut(true)
+    let navigating = false
+
+    try {
+      const { error } = await authClient.signOut()
+
+      if (error) {
+        toast.add({
+          type: "error",
+          title: "Could not sign out",
+          description: error.message,
+        })
+        return
+      }
+
+      navigating = true
+      router.push("/sign-in")
+    } catch (error) {
+      toast.add({
+        type: "error",
+        title: "Could not sign out",
+        description:
+          error instanceof Error ? error.message : "Please try again.",
+      })
+    } finally {
+      if (!navigating) {
+        signOutInFlight.current = false
+        setSigningOut(false)
+      }
+    }
   }
 
   return (
@@ -234,8 +268,17 @@ export function ProfileSection() {
             <ItemDescription>End your session on this device.</ItemDescription>
           </ItemContent>
           <ItemActions>
-            <Button variant="destructive" size="sm" onClick={signOut}>
-              <HugeiconsIcon icon={Logout01Icon} strokeWidth={2} />
+            <Button
+              variant="destructive"
+              size="sm"
+              disabled={signingOut}
+              onClick={signOut}
+            >
+              {signingOut ? (
+                <Spinner />
+              ) : (
+                <HugeiconsIcon icon={Logout01Icon} strokeWidth={2} />
+              )}
               Sign out
             </Button>
           </ItemActions>

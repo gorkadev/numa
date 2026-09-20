@@ -72,16 +72,24 @@ Phased delivery, selected by the user. Keep each phase reviewable and independen
 
 **Evidence**
 - Independent verification: PASS with no blockers.
-- Commit: pending authorized commit.
+- Commit: `86f37a7` (`feat(web): harden preview startup states`).
 
-### 4. Add authentication and account-transition feedback — pending
+### 4. Add authentication and account-transition feedback — completed
 
 **Outcome**
-- OAuth redirects, passkey entry, account loading/switching, and sign-out have scoped pending and error states.
-- Account lists do not pop into an apparently complete menu.
+- OAuth redirects, passkey entry, account loading/switching, and sign-out have scoped single-flight pending and error states.
+- Account lists explicitly distinguish loading, loaded, and failed/retry states instead of appearing complete early.
+- Returned and thrown Better Auth failures restore controls; successful navigation keeps them locked through unload.
+
+**Checks**
+- Passed focused ESLint with one pre-existing React Hooks warning in `auth-page.tsx`.
+- Passed full web typecheck, Prettier, and `git diff --check`.
+- Independent high-risk verification passed after correcting synchronous navigation-exception cleanup.
+- Browser-level OAuth, passkey, switching, and sign-out paths remain pending because no automated UI harness exists.
 
 **Evidence**
-- Commit: pending explicit authorization.
+- Independent verification: PASS after one correction round.
+- Commit: pending authorized commit.
 
 ### 5. Harden settings loading and mutation recovery — pending
 

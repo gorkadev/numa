@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
 import {
   AlertCircleIcon,
@@ -88,7 +88,11 @@ const FALLBACK_ERROR = {
  */
 function LastUsed({ shown }: { shown: boolean }) {
   return (
-    <Badge variant="secondary" className="absolute -right-2 -top-2" hidden={!shown}>
+    <Badge
+      variant="secondary"
+      className="absolute -top-2 -right-2"
+      hidden={!shown}
+    >
       Last used
     </Badge>
   )
@@ -110,7 +114,10 @@ export function AuthPage({ error }: { error?: string }) {
     ? (ERROR_MESSAGES[error] ?? FALLBACK_ERROR)
     : undefined
 
-  const [signingIn, setSigningIn] = useState(false)
+  const [signingInMethod, setSigningInMethod] = useState<
+    "google" | "github" | "passkey" | null
+  >(null)
+  const signInInFlight = useRef(false)
 
   /**
    * Read after mount, never during render: `getLastUsedLoginMethod()` reads
@@ -134,28 +141,79 @@ export function AuthPage({ error }: { error?: string }) {
    * A dismissed prompt is not an error — same reasoning as the passkey
    * registration in settings — so only a real failure raises a toast.
    */
-  async function signInWithPasskey() {
-    setSigningIn(true)
+  async function signInWithSocial(provider: "google" | "github") {
+    if (signInInFlight.current) return
 
-    const result = await authClient.signIn.passkey()
+    signInInFlight.current = true
+    setSigningInMethod(provider)
 
-    if (result?.error) {
-      const cancelled =
-        "code" in result.error && result.error.code === "AUTH_CANCELLED"
+    try {
+      const result = await authClient.signIn.social({
+        provider,
+        callbackURL: "/",
+        errorCallbackURL: ERROR_CALLBACK_URL,
+      })
 
-      if (!cancelled) {
+      if (result?.error) {
         toast.add({
           type: "error",
-          title: "Could not sign you in",
+          title: "Could not start sign-in",
           description: result.error.message,
         })
       }
-
-      setSigningIn(false)
-      return
+    } catch (error) {
+      toast.add({
+        type: "error",
+        title: "Could not start sign-in",
+        description:
+          error instanceof Error ? error.message : "Please try again.",
+      })
+    } finally {
+      signInInFlight.current = false
+      setSigningInMethod(null)
     }
+  }
 
-    window.location.assign("/")
+  async function signInWithPasskey() {
+    if (signInInFlight.current) return
+
+    signInInFlight.current = true
+    setSigningInMethod("passkey")
+    let navigating = false
+
+    try {
+      const result = await authClient.signIn.passkey()
+
+      if (result?.error) {
+        const cancelled =
+          "code" in result.error && result.error.code === "AUTH_CANCELLED"
+
+        if (!cancelled) {
+          toast.add({
+            type: "error",
+            title: "Could not sign you in",
+            description: result.error.message,
+          })
+        }
+
+        return
+      }
+
+      window.location.assign("/")
+      navigating = true
+    } catch (error) {
+      toast.add({
+        type: "error",
+        title: "Could not sign you in",
+        description:
+          error instanceof Error ? error.message : "Please try again.",
+      })
+    } finally {
+      if (!navigating) {
+        signInInFlight.current = false
+        setSigningInMethod(null)
+      }
+    }
   }
 
   return (
@@ -204,32 +262,30 @@ export function AuthPage({ error }: { error?: string }) {
               <div className="space-y-2">
                 <Button
                   variant="secondary"
-                  className="w-full relative"
+                  className="relative w-full"
                   type="button"
-                  onClick={() =>
-                    authClient.signIn.social({
-                      provider: "google",
-                      callbackURL: "/",
-                      errorCallbackURL: ERROR_CALLBACK_URL,
-                    })
-                  }
+                  disabled={signingInMethod !== null}
+                  onClick={() => signInWithSocial("google")}
                 >
-                  <HugeiconsIcon icon={GoogleIcon} data-icon="inline-start" />
+                  {signingInMethod === "google" ? (
+                    <Spinner data-icon="inline-start" />
+                  ) : (
+                    <HugeiconsIcon icon={GoogleIcon} data-icon="inline-start" />
+                  )}
                   Continue with Google
                   <LastUsed shown={lastMethod === "google"} />
                 </Button>
                 <Button
-                  className="w-full relative"
+                  className="relative w-full"
                   type="button"
-                  onClick={() =>
-                    authClient.signIn.social({
-                      provider: "github",
-                      callbackURL: "/",
-                      errorCallbackURL: ERROR_CALLBACK_URL,
-                    })
-                  }
+                  disabled={signingInMethod !== null}
+                  onClick={() => signInWithSocial("github")}
                 >
-                  <HugeiconsIcon icon={GithubIcon} data-icon="inline-start" />
+                  {signingInMethod === "github" ? (
+                    <Spinner data-icon="inline-start" />
+                  ) : (
+                    <HugeiconsIcon icon={GithubIcon} data-icon="inline-start" />
+                  )}
                   Continue with GitHub
                   <LastUsed shown={lastMethod === "github"} />
                 </Button>
@@ -250,12 +306,12 @@ export function AuthPage({ error }: { error?: string }) {
 
                 <Button
                   variant="outline"
-                  className="w-full relative"
+                  className="relative w-full"
                   type="button"
-                  disabled={signingIn}
+                  disabled={signingInMethod !== null}
                   onClick={signInWithPasskey}
                 >
-                  {signingIn ? (
+                  {signingInMethod === "passkey" ? (
                     <Spinner data-icon="inline-start" />
                   ) : (
                     <HugeiconsIcon

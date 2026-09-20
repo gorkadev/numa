@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
   Logout01Icon,
@@ -36,6 +36,7 @@ import {
   useSidebar,
 } from "@workspace/ui/components/sidebar"
 import { Skeleton } from "@workspace/ui/components/skeleton"
+import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
 
 import { authClient } from "@/lib/auth-client"
@@ -80,6 +81,15 @@ export function NavUser() {
   const settingsHint = isMac ? "⌘⇧," : "Ctrl Shift ,"
 
   const [accounts, setAccounts] = useState<DeviceSession[]>([])
+  const [accountListState, setAccountListState] = useState<
+    "idle" | "loading" | "loaded" | "error"
+  >("idle")
+  const [switchingSessionId, setSwitchingSessionId] = useState<string | null>(
+    null
+  )
+  const [signingOut, setSigningOut] = useState(false)
+  const accountLoadInFlight = useRef(false)
+  const actionInFlight = useRef(false)
 
   /**
    * Fetched when the menu opens, not on mount. Every page that renders the
@@ -89,8 +99,26 @@ export function NavUser() {
    * to be read is both cheaper and more correct.
    */
   async function loadAccounts() {
-    const { data } = await authClient.multiSession.listDeviceSessions()
-    setAccounts(data ?? [])
+    if (accountLoadInFlight.current) return
+
+    accountLoadInFlight.current = true
+    setAccountListState("loading")
+
+    try {
+      const { data, error } = await authClient.multiSession.listDeviceSessions()
+
+      if (error) {
+        setAccountListState("error")
+        return
+      }
+
+      setAccounts(data ?? [])
+      setAccountListState("loaded")
+    } catch {
+      setAccountListState("error")
+    } finally {
+      accountLoadInFlight.current = false
+    }
   }
 
   /**
@@ -104,19 +132,42 @@ export function NavUser() {
    * built from the old session. A full navigation to `/` is the honest
    * reset, and it is what the user asked for by changing accounts.
    */
-  async function switchAccount(sessionToken: string) {
-    const { error } = await authClient.multiSession.setActive({ sessionToken })
+  async function switchAccount(sessionId: string, sessionToken: string) {
+    if (actionInFlight.current) return
 
-    if (error) {
+    actionInFlight.current = true
+    setSwitchingSessionId(sessionId)
+    let navigating = false
+
+    try {
+      const { error } = await authClient.multiSession.setActive({
+        sessionToken,
+      })
+
+      if (error) {
+        toast.add({
+          type: "error",
+          title: "Could not switch account",
+          description: error.message,
+        })
+        return
+      }
+
+      window.location.assign("/")
+      navigating = true
+    } catch (error) {
       toast.add({
         type: "error",
         title: "Could not switch account",
-        description: error.message,
+        description:
+          error instanceof Error ? error.message : "Please try again.",
       })
-      return
+    } finally {
+      if (!navigating) {
+        actionInFlight.current = false
+        setSwitchingSessionId(null)
+      }
     }
-
-    window.location.assign("/")
   }
 
   if (isPending || !session) {
@@ -147,10 +198,42 @@ export function NavUser() {
     { session: session.session, user },
     ...accounts.filter((entry) => entry.session.id !== session.session.id),
   ]
+  const isActionPending = switchingSessionId !== null || signingOut
 
   async function signOut() {
-    await authClient.signOut()
-    router.push("/sign-in")
+    if (actionInFlight.current) return
+
+    actionInFlight.current = true
+    setSigningOut(true)
+    let navigating = false
+
+    try {
+      const { error } = await authClient.signOut()
+
+      if (error) {
+        toast.add({
+          type: "error",
+          title: "Could not sign out",
+          description: error.message,
+        })
+        return
+      }
+
+      navigating = true
+      router.push("/sign-in")
+    } catch (error) {
+      toast.add({
+        type: "error",
+        title: "Could not sign out",
+        description:
+          error instanceof Error ? error.message : "Please try again.",
+      })
+    } finally {
+      if (!navigating) {
+        actionInFlight.current = false
+        setSigningOut(false)
+      }
+    }
   }
 
   return (
@@ -202,50 +285,75 @@ export function NavUser() {
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => openSettings()}>
+              <DropdownMenuItem
+                disabled={isActionPending}
+                onClick={() => openSettings()}
+              >
                 <HugeiconsIcon icon={Settings02Icon} />
                 Settings
                 <DropdownMenuShortcut>{settingsHint}</DropdownMenuShortcut>
               </DropdownMenuItem>
               <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
+                <DropdownMenuSubTrigger disabled={isActionPending}>
                   <HugeiconsIcon icon={UserSwitchIcon} />
                   Switch account
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent className="min-w-56">
-                  {switchableAccounts.map(
-                    ({ session: deviceSession, user: account }) => {
-                      const label = account.name || account.email
-                      const isActive = deviceSession.id === session!.session.id
+                  {accountListState === "loading" ||
+                  accountListState === "idle" ? (
+                    <DropdownMenuItem disabled>
+                      <Spinner />
+                      Loading accounts…
+                    </DropdownMenuItem>
+                  ) : accountListState === "error" ? (
+                    <DropdownMenuItem onClick={loadAccounts}>
+                      Retry loading accounts
+                    </DropdownMenuItem>
+                  ) : (
+                    switchableAccounts.map(
+                      ({ session: deviceSession, user: account }) => {
+                        const label = account.name || account.email
+                        const isActive =
+                          deviceSession.id === session!.session.id
+                        const isSwitching =
+                          switchingSessionId === deviceSession.id
 
-                      return (
-                        <DropdownMenuItem
-                          key={deviceSession.id}
-                          onClick={() =>
-                            isActive
-                              ? undefined
-                              : switchAccount(deviceSession.token)
-                          }
-                        >
-                          <Avatar className="size-5">
-                            <AvatarImage
-                              src={account.image ?? undefined}
-                              alt={label}
-                            />
-                            <AvatarFallback className="text-[0.5rem]">
-                              {initials(label)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="truncate">{label}</span>
-                          {isActive && (
-                            <HugeiconsIcon
-                              icon={Tick02Icon}
-                              className="ml-auto size-4"
-                            />
-                          )}
-                        </DropdownMenuItem>
-                      )
-                    }
+                        return (
+                          <DropdownMenuItem
+                            key={deviceSession.id}
+                            disabled={isActionPending || isActive}
+                            onClick={() => {
+                              // eslint-disable-next-line react-hooks/refs -- the ref is read only after this click.
+                              void switchAccount(
+                                deviceSession.id,
+                                deviceSession.token
+                              )
+                            }}
+                          >
+                            <Avatar className="size-5">
+                              <AvatarImage
+                                src={account.image ?? undefined}
+                                alt={label}
+                              />
+                              <AvatarFallback className="text-[0.5rem]">
+                                {initials(label)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="truncate">{label}</span>
+                            {isSwitching ? (
+                              <Spinner className="ml-auto" />
+                            ) : (
+                              isActive && (
+                                <HugeiconsIcon
+                                  icon={Tick02Icon}
+                                  className="ml-auto size-4"
+                                />
+                              )
+                            )}
+                          </DropdownMenuItem>
+                        )
+                      }
+                    )
                   )}
                   <DropdownMenuSeparator />
                   {/**
@@ -256,7 +364,10 @@ export function NavUser() {
                    * of replacing it — so signing in again IS adding an
                    * account, with no separate flow to build.
                    */}
-                  <DropdownMenuItem onClick={() => router.push("/sign-in")}>
+                  <DropdownMenuItem
+                    disabled={isActionPending}
+                    onClick={() => router.push("/sign-in")}
+                  >
                     <HugeiconsIcon icon={UserAdd01Icon} />
                     Add account
                   </DropdownMenuItem>
@@ -264,8 +375,12 @@ export function NavUser() {
               </DropdownMenuSub>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive" onClick={signOut}>
-              <HugeiconsIcon icon={Logout01Icon} />
+            <DropdownMenuItem
+              variant="destructive"
+              disabled={isActionPending}
+              onClick={signOut}
+            >
+              {signingOut ? <Spinner /> : <HugeiconsIcon icon={Logout01Icon} />}
               Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>
