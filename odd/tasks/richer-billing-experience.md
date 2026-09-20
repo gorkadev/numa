@@ -17,7 +17,7 @@ Give customers enough billing context to understand a plan change before confirm
 
 ## Tasks
 
-### 1. Enrich plan-change confirmation — implementation verified, awaiting commit authorization
+### 1. Enrich plan-change confirmation — completed
 
 **Outcome**
 - Pro→Max and Max→Pro dialogs show current and target prices, currency/cadence, current billing period, effective date, and immediate charge/refund consequence.
@@ -32,22 +32,24 @@ Give customers enough billing context to understand a plan change before confirm
 - Runtime dialog inspection remains pending because no authenticated Pro/Max test scenario was available.
 
 **Evidence**
-- Commit: pending explicit authorization.
+- Commit: `f97135a` (`feat(web): enrich plan change details`).
 
-### 2. Add private billing details and document routes — pending
+### 2. Add private billing details and document routes — completed
 
 **Outcome**
-- An authenticated details endpoint returns subscription lifecycle data and recent orders without secrets or provider URLs.
-- A portal route creates a Polar customer session and redirects without serializing its token.
-- Same-origin invoice/receipt routes verify order ownership before issuing fresh provider redirects.
+- An authenticated private/no-store details endpoint returns subscription lifecycle data, credits, next billing event, and recent orders without secrets or provider URLs.
+- A portal route creates a Polar customer session and immediately redirects with private/no-store caching, without serializing its token or trusting the inbound Host as a return origin.
+- Same-origin invoice/receipt routes validate the document kind and order ownership before issuing fresh private/no-store provider redirects.
+- Pro/Max overlap selects the displayed plan and concrete subscription atomically with Max precedence.
 
 **Checks**
-- Focused lint/typecheck/format checks.
-- Route-level ownership and secret-exposure review.
-- Runtime API inspection when available.
+- Passed focused ESLint and Prettier checks for all four new files.
+- Passed full web typecheck and diff whitespace checks.
+- Independent security verification: PASS after correcting redirect caching, return-origin trust, and plan/subscription selection.
+- Runtime API inspection remains pending because no route-test/browser fixture was run.
 
 **Evidence**
-- Commit: pending explicit authorization.
+- Commit: pending authorized commit.
 
 ### 3. Build the Settings billing history UI — pending
 
