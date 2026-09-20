@@ -96,6 +96,7 @@ export function ChatThread({
     tierId,
     setTierId,
     pending,
+    reconnecting,
     input,
     setInput,
   } = useGameChat({
@@ -158,7 +159,8 @@ export function ChatThread({
    * else the indicator lives inside the trailing run's own row; see
    * `showThinking` in `chat/chat-message.tsx`.
    */
-  const showLeadingThinking = pending && (!trailing || trailing.role === "user")
+  const showLeadingThinking =
+    (pending || reconnecting) && (!trailing || trailing.role === "user")
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -189,6 +191,7 @@ export function ChatThread({
                     role={run.role}
                     messages={run.messages}
                     streaming={pending && index === runs.length - 1}
+                    reconnecting={reconnecting && index === runs.length - 1}
                     onAnswer={onAnswer}
                     onSelectRun={onSelectRun}
                   />
@@ -199,7 +202,7 @@ export function ChatThread({
                   <Message align="start">
                     <AssistantAvatar />
                     <MessageContent>
-                      <Thinking />
+                      <Thinking reconnecting={reconnecting} />
                     </MessageContent>
                   </Message>
                 </MessageScrollerItem>

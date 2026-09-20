@@ -33,6 +33,8 @@ type ChatMessageProps = {
    * identical while a turn streams and its memo holds.
    */
   streaming: boolean
+  /** True only while this trailing run's initial stream reconnect is pending. */
+  reconnecting: boolean
   onAnswer: (toolCallId: string, output: AskPlayerOutput) => void
   /**
    * Opens the sub-agent panel on one run, whether it is still going or
@@ -47,6 +49,7 @@ function ChatMessageImpl({
   role,
   messages,
   streaming,
+  reconnecting,
   onAnswer,
   onSelectRun,
 }: ChatMessageProps) {
@@ -65,7 +68,9 @@ function ChatMessageImpl({
 
   const lastBlock = blocks.at(-1)
   const showThinking =
-    role === "assistant" && streaming && !isProducing(lastBlock)
+    role === "assistant" &&
+    (streaming || reconnecting) &&
+    !isProducing(lastBlock)
 
   /**
    * An assistant run with nothing to render and nothing in flight is skipped
@@ -164,7 +169,7 @@ function ChatMessageImpl({
             </Bubble>
           )
         })}
-        {showThinking ? <Thinking /> : null}
+        {showThinking ? <Thinking reconnecting={reconnecting} /> : null}
         {/**
          * Withheld while the turn is still being written. The row would
          * report a token count and a tool tally for a message that is not
@@ -249,6 +254,7 @@ export const ChatMessage = memo(ChatMessageImpl, (prev, next) => {
   return (
     prev.role === next.role &&
     prev.streaming === next.streaming &&
+    prev.reconnecting === next.reconnecting &&
     prev.onAnswer === next.onAnswer &&
     prev.onSelectRun === next.onSelectRun &&
     messagesEqual(prev.messages, next.messages)

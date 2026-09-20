@@ -10,16 +10,27 @@ import { LoaderCircleIcon } from "@hugeicons/core-free-icons"
  */
 function Spinner({
   className,
+  label = "Loading",
+  decorative = false,
   ...props
-}: Omit<React.ComponentProps<"svg">, "width" | "height" | "strokeWidth">) {
+}: Omit<React.ComponentProps<"svg">, "width" | "height" | "strokeWidth"> & {
+  /** Announces this contextual loading state unless the spinner is decorative. */
+  label?: string
+  /** Hides a nested spinner when its parent already supplies the status. */
+  decorative?: boolean
+}) {
   return (
     <HugeiconsIcon
       icon={LoaderCircleIcon}
       strokeWidth={2}
       data-slot="spinner"
-      role="status"
-      aria-label="Loading"
-      className={cn("size-4 animate-spin", className)}
+      {...(decorative
+        ? { "aria-hidden": true }
+        : { role: "status", "aria-label": label })}
+      className={cn(
+        "size-4 animate-spin motion-reduce:animate-none",
+        className
+      )}
       {...props}
     />
   )

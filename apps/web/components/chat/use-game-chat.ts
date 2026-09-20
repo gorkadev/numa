@@ -176,76 +176,75 @@ export function useGameChat({
     status,
     error,
     resumeStream,
-  } = useChat(
-    {
-      id: gameId,
-      messages: initialMessages,
-      transport: chatTransport,
+  } = useChat({
+    id: gameId,
+    messages: initialMessages,
+    transport: chatTransport,
+    /**
+     * Restarts the agent once every pending tool call has an answer.
+     *
+     * `ask_player` has no `execute`, so the turn it was called in ended with
+     * the call unanswered and the run suspended. `addToolOutput` fills the
+     * answer in locally but sends nothing by itself — without this the player
+     * would pick an option, see it selected, and wait forever.
+     */
+    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
+    /**
+     * Off on purpose: the reconnect is issued by the effect below instead.
+     * `useChat`'s own `resume` calls `resumeStream()` from an effect with
+     * no guard, so any second run of that effect breaks it — StrictMode's
+     * development double run, or an `<Activity>` route coming back into
+     * view. The second call aborts the first reconnect, and the transport
+     * answers the second with `null`, because it still counts the aborted
+     * one as the chat's active stream until that stream's async teardown
+     * runs. Nothing is left listening, and a turn still streaming when the
+     * thread remounts shows none of its parts until a reload.
+     */
+    resume: false,
+    /**
+     * Caps how often a streaming turn hands `messages` back to React —
+     * `throttle` is the current name for this option; the installed
+     * `@ai-sdk/react` still accepts `experimental_throttle` too, but only as
+     * a deprecated alias for the same thing (see its `.d.ts`). Every network
+     * chunk otherwise triggers its own render of the whole thread, which
+     * re-runs `groupParts` and re-parses markdown for every row on screen —
+     * 50ms is short enough that typing still feels live, long enough that a
+     * fast stream stops re-rendering on every chunk.
+     */
+    throttle: 50,
+    /**
+     * Custom stream parts land here rather than in `messages`, because the
+     * agent marks this one transient — it is a notification about the sandbox,
+     * not a piece of the conversation.
+     *
+     * The callback is read from a ref on every chunk, so the closure is never
+     * the stale one from the render that created the chat.
+     */
+    onData: (part) => {
+      const revision = readGameRevision(part)
+
+      if (revision !== null) onRevision?.(revision)
+
       /**
-       * Restarts the agent once every pending tool call has an answer.
+       * The credit cost of the turn goes straight to the sidebar rather than
+       * through a prop or a callback on this component: the counter is
+       * application chrome and this is page content, so they have no shared
+       * ancestor that is not the server layout. See
+       * `lib/polar/credits-channel.ts`.
        *
-       * `ask_player` has no `execute`, so the turn it was called in ended with
-       * the call unanswered and the run suspended. `addToolOutput` fills the
-       * answer in locally but sends nothing by itself — without this the player
-       * would pick an option, see it selected, and wait forever.
+       * Not an `else if`. A turn writes both parts and the two are unrelated
+       * facts — one says the game changed, the other says what it cost —
+       * so chaining them would make the credit update depend on whether any
+       * file happened to be written.
        */
-      sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
-      /**
-       * Off on purpose: the reconnect is issued by the effect below instead.
-       * `useChat`'s own `resume` calls `resumeStream()` from an effect with
-       * no guard, so any second run of that effect breaks it — StrictMode's
-       * development double run, or an `<Activity>` route coming back into
-       * view. The second call aborts the first reconnect, and the transport
-       * answers the second with `null`, because it still counts the aborted
-       * one as the chat's active stream until that stream's async teardown
-       * runs. Nothing is left listening, and a turn still streaming when the
-       * thread remounts shows none of its parts until a reload.
-       */
-      resume: false,
-      /**
-       * Caps how often a streaming turn hands `messages` back to React —
-       * `throttle` is the current name for this option; the installed
-       * `@ai-sdk/react` still accepts `experimental_throttle` too, but only as
-       * a deprecated alias for the same thing (see its `.d.ts`). Every network
-       * chunk otherwise triggers its own render of the whole thread, which
-       * re-runs `groupParts` and re-parses markdown for every row on screen —
-       * 50ms is short enough that typing still feels live, long enough that a
-       * fast stream stops re-rendering on every chunk.
-       */
-      throttle: 50,
-      /**
-       * Custom stream parts land here rather than in `messages`, because the
-       * agent marks this one transient — it is a notification about the sandbox,
-       * not a piece of the conversation.
-       *
-       * The callback is read from a ref on every chunk, so the closure is never
-       * the stale one from the render that created the chat.
-       */
-      onData: (part) => {
-        const revision = readGameRevision(part)
+      const credits = readTurnCredits(part)
 
-        if (revision !== null) onRevision?.(revision)
-
-        /**
-         * The credit cost of the turn goes straight to the sidebar rather than
-         * through a prop or a callback on this component: the counter is
-         * application chrome and this is page content, so they have no shared
-         * ancestor that is not the server layout. See
-         * `lib/polar/credits-channel.ts`.
-         *
-         * Not an `else if`. A turn writes both parts and the two are unrelated
-         * facts — one says the game changed, the other says what it cost —
-         * so chaining them would make the credit update depend on whether any
-         * file happened to be written.
-         */
-        const credits = readTurnCredits(part)
-
-        if (credits !== null) publishTurnCredits(credits)
-      },
-    }
-  )
+      if (credits !== null) publishTurnCredits(credits)
+    },
+  })
 
   const pending = status === "submitted" || status === "streaming"
+  const [reconnecting, setReconnecting] = useState(false)
 
   /**
    * Reconnects to a turn that is still streaming when the thread mounts —
@@ -258,16 +257,45 @@ export function useGameChat({
    * new chat when the id changes without a remount, and that one needs its
    * own reconnect. A brand-new game has nothing to reconnect to, so it is
    * gated on there being history.
+   *
+   * `reconnecting` deliberately covers only this initial call. The attempt id
+   * lets a late resolution from an earlier game leave the current game's state
+   * alone, while not invalidating the in-flight call during StrictMode's second
+   * effect run.
    */
   const resumedChatId = useRef<string | null>(null)
+  const reconnectAttempt = useRef({ gameId: null as string | null, id: 0 })
   const hasHistory = initialMessages.length > 0
 
   useEffect(() => {
+    if (reconnectAttempt.current.gameId !== gameId) {
+      reconnectAttempt.current = {
+        gameId,
+        id: reconnectAttempt.current.id + 1,
+      }
+      setReconnecting(false)
+    }
+
     if (!hasHistory) return
     if (resumedChatId.current === gameId) return
 
     resumedChatId.current = gameId
-    void resumeStream()
+    const attempt = reconnectAttempt.current.id + 1
+
+    reconnectAttempt.current.id = attempt
+    setReconnecting(true)
+
+    void (async () => {
+      try {
+        await resumeStream()
+      } finally {
+        const currentAttempt = reconnectAttempt.current
+
+        if (currentAttempt.gameId === gameId && currentAttempt.id === attempt) {
+          setReconnecting(false)
+        }
+      }
+    })()
   }, [gameId, hasHistory, resumeStream])
 
   /**
@@ -335,6 +363,7 @@ export function useGameChat({
     tierId,
     setTierId,
     pending,
+    reconnecting,
     input,
     setInput,
   }

@@ -27,30 +27,37 @@ const THINKING_PHRASES = [
 
 const THINKING_INTERVAL = 2600
 
-export function Thinking() {
+export function Thinking({ reconnecting = false }: { reconnecting?: boolean }) {
   const [phrase, setPhrase] = useState(0)
 
   useEffect(() => {
+    if (reconnecting) return
+
     const timer = setInterval(
       () => setPhrase((it) => (it + 1) % THINKING_PHRASES.length),
       THINKING_INTERVAL
     )
 
     return () => clearInterval(timer)
-  }, [])
+  }, [reconnecting])
 
   return (
     /**
      * `ps-[13px]` lines this marker's content up with the bubble text beside
      * it — see the alignment note on `ToolGroup` in `./tool-group.tsx` for
      * where the 13px comes from.
+     *
+     * The marker is the only live region. The spinner is decorative so it does
+     * not announce a second, context-free loading status beside this message.
      */
-    <Marker role="status" aria-live="polite" className="ps-[13px]">
+    <Marker role="status" className="ps-[13px]">
       <MarkerIcon>
-        <Spinner />
+        <Spinner decorative />
       </MarkerIcon>
       <MarkerContent className="shimmer">
-        {THINKING_PHRASES[phrase]}…
+        {reconnecting
+          ? "Reconnecting to your response…"
+          : `${THINKING_PHRASES[phrase]}…`}
       </MarkerContent>
     </Marker>
   )

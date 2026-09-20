@@ -89,24 +89,39 @@ Phased delivery, selected by the user. Keep each phase reviewable and independen
 
 **Evidence**
 - Independent verification: PASS after one correction round.
-- Commit: pending authorized commit.
+- Commit: `4eeb2b1` (`feat(web): clarify auth transition states`).
 
-### 5. Harden settings loading and mutation recovery — pending
+### 5. Harden settings loading and mutation recovery — completed
 
 **Outcome**
 - Profile, passkeys, sessions, and security use stable skeletons for first load.
-- Fetch and mutation failures are visible and retryable.
-- Pending cleanup is guaranteed.
+- Fetch failures are explicit and retryable without stale results overwriting newer requests.
+- Returned and thrown mutation failures are visible; pending cleanup is guarded across unmount and superseded attempts.
+- Security-sensitive 2FA verification and recovery-code flows block unsafe dismissal and ignore obsolete completions.
+
+**Checks**
+- Passed focused ESLint, full web typecheck, Prettier, and diff checks across all six files.
+- Independent high-risk verification passed after three correction rounds covering dialog races, unmount safety, and truthful refresh feedback.
+- Browser-level failure injection remains pending because no automated component/browser harness exists.
 
 **Evidence**
-- Commit: pending explicit authorization.
+- Independent verification: PASS.
+- General settings commit: `3d6c6df` (`feat(web): recover settings data states`).
+- Security/2FA commit: `d52978a` (`fix(web): harden two-factor transitions`).
 
-### 6. Clarify chat reconnection and shared feedback primitives — pending
+### 6. Clarify chat reconnection and shared feedback primitives — completed
 
 **Outcome**
-- Chat distinguishes reconnecting from a newly submitted turn.
-- Shared skeleton/spinner primitives support reduced motion and contextual labels.
-- Existing task progress and stop behavior remain intact.
+- Chat distinguishes the initial stream reconnection from a newly submitted turn across both thinking render paths.
+- Reconnection attempts are guarded across game changes, stale resolutions, and React Strict Mode.
+- Shared skeleton/spinner primitives respect reduced motion; Spinner supports contextual labels while preserving its announced default and an explicit decorative mode.
+- Existing task progress, pending, and stop behavior remain intact.
+
+**Checks**
+- Passed focused web/UI ESLint, both package typechecks, Prettier, and cached/unstaged diff checks.
+- Independent verification passed after restoring Spinner accessibility backward compatibility.
+- Browser-level reconnection and screen-reader checks remain pending because no automated browser harness exists.
 
 **Evidence**
-- Commit: pending explicit authorization.
+- Independent verification: PASS after one correction round.
+- Commit: this work unit (`feat(web): clarify chat reconnection feedback`).
