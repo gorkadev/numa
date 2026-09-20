@@ -38,7 +38,7 @@ import {
 import { MobileSidebarTrigger } from "@/components/mobile-sidebar-trigger"
 import { PlanChangeDialog } from "@/components/plan-change-dialog"
 import { getBillingSummary } from "@/lib/polar/plan"
-import { getUpgradePreview } from "@/lib/polar/plan-change"
+import { getPlanChangePreview } from "@/lib/polar/plan-change"
 import {
   POLAR_PRODUCT_FREE_ID,
   POLAR_PRODUCT_MAX_ID,
@@ -60,19 +60,42 @@ import { changePlanAction } from "./actions"
  * that looks precise to the cent should also look like the estimate it is,
  * not like a promise this page cannot actually keep.
  */
-function formatEstimatedCharge(cents: number): string {
-  return `$${(cents / 100).toFixed(2)}`
+function formatMoney(cents: number, currency: string): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+  }).format(cents / 100)
 }
 
-/**
- * Renders a period boundary as the short, human date the preview quotes for
- * "renewing on ___" — no year, because nobody needs to be told the current
- * billing cycle renews in the same year it is already in.
- */
-function formatRenewalDate(date: Date): string {
+function formatCadence({
+  interval,
+  intervalCount,
+}: {
+  interval: string
+  intervalCount: number
+}): string {
+  const unit = intervalCount === 1 ? interval : `${interval}s`
+
+  return intervalCount === 1 ? `per ${unit}` : `every ${intervalCount} ${unit}`
+}
+
+function formatPlanPrice({
+  amountCents,
+  currency,
+  cadence,
+}: {
+  amountCents: number
+  currency: string
+  cadence: { interval: string; intervalCount: number }
+}): string {
+  return `${formatMoney(amountCents, currency)} ${formatCadence(cadence)}`
+}
+
+function formatDate(date: Date): string {
   return new Intl.DateTimeFormat("en-US", {
     month: "long",
     day: "numeric",
+    year: "numeric",
   }).format(date)
 }
 
@@ -223,15 +246,13 @@ export default async function PricingPage({
   const planChanged = resolvedSearchParams.planChanged === "1"
 
   /**
-   * The Pro→Max upgrade preview costs a Polar product read, so it is only
-   * ever computed for a user actually on Pro — see
-   * `getUpgradePreview`'s own note on why that scoping lives inside the
-   * function rather than as a check here. `null` means either "not on Pro"
-   * or "the read failed"; both render nothing, per the shared contract every
-   * Polar read in this application follows: a billing hiccup degrades the
-   * page, it does not break it.
+   * The paid-plan change preview costs Polar product reads, so it is only
+   * computed for users actually on Pro or Max. `null` means either no paid
+   * subscription or a failed Polar read; the dialog keeps its conservative
+   * generic consequences rather than inventing billing facts.
    */
-  const upgradePreview = plan === "pro" ? await getUpgradePreview() : null
+  const planChangePreview =
+    plan === "pro" || plan === "max" ? await getPlanChangePreview() : null
 
   /**
    * "Paid" means either paid plan, everywhere on this page a rule used to say
@@ -342,6 +363,24 @@ export default async function PricingPage({
               <PlanChangeDialog
                 action={changePlanAction.bind(null, POLAR_PRODUCT_PRO_ID)}
                 direction="downgrade"
+                preview={
+                  planChangePreview?.direction === "downgrade"
+                    ? {
+                        currentPlan: `${planChangePreview.currentPlan.name} — ${formatPlanPrice(planChangePreview.currentPlan)}`,
+                        targetPlan: `${planChangePreview.targetPlan.name} — ${formatPlanPrice(planChangePreview.targetPlan)}`,
+                        currentPeriodStart: formatDate(
+                          planChangePreview.currentPeriodStart
+                        ),
+                        currentPeriodEnd: formatDate(
+                          planChangePreview.currentPeriodEnd
+                        ),
+                        effectiveDate: formatDate(
+                          planChangePreview.effectiveAt
+                        ),
+                        immediateConsequence: `No immediate charge or refund. Max continues through ${formatDate(planChangePreview.currentPeriodEnd)}; Pro begins then.`,
+                      }
+                    : undefined
+                }
               />
             ) : (
               <Button
@@ -389,12 +428,28 @@ export default async function PricingPage({
               <PlanChangeDialog
                 action={changePlanAction.bind(null, POLAR_PRODUCT_MAX_ID)}
                 direction="upgrade"
-                estimatedCharge={
-                  upgradePreview
-                    ? formatEstimatedCharge(upgradePreview.estimatedChargeCents)
+                preview={
+                  planChangePreview?.direction === "upgrade" &&
+                  planChangePreview.immediateConsequence.type ===
+                    "estimated_charge"
+                    ? {
+                        currentPlan: `${planChangePreview.currentPlan.name} — ${formatPlanPrice(planChangePreview.currentPlan)}`,
+                        targetPlan: `${planChangePreview.targetPlan.name} — ${formatPlanPrice(planChangePreview.targetPlan)}`,
+                        currentPeriodStart: formatDate(
+                          planChangePreview.currentPeriodStart
+                        ),
+                        currentPeriodEnd: formatDate(
+                          planChangePreview.currentPeriodEnd
+                        ),
+                        effectiveDate: "Immediately",
+                        renewalDate: formatDate(
+                          planChangePreview.currentPeriodEnd
+                        ),
+                        immediateConsequence: `Estimated prorated charge today: about ${formatMoney(planChangePreview.immediateConsequence.amountCents, planChangePreview.targetPlan.currency)}.`,
+                        extraCredits: planChangePreview.extraCredits,
+                      }
                     : undefined
                 }
-                extraCredits={upgradePreview?.netExtraUnits}
               />
             ) : (
               <Button
@@ -425,18 +480,24 @@ export default async function PricingPage({
            * `computePlanChangeMath`, so this promise and what the action
            * later honors can never disagree.
            */}
-          {plan === "pro" && upgradePreview && (
-            <CardContent>
-              <CardDescription>
-                You&rsquo;ll be charged about{" "}
-                {formatEstimatedCharge(upgradePreview.estimatedChargeCents)}{" "}
-                today and get{" "}
-                {upgradePreview.netExtraUnits.toLocaleString()} extra credits
-                now. Then $50/month with 5,500 credits, renewing on{" "}
-                {formatRenewalDate(upgradePreview.currentPeriodEnd)}.
-              </CardDescription>
-            </CardContent>
-          )}
+          {planChangePreview?.direction === "upgrade" &&
+            planChangePreview.immediateConsequence.type ===
+              "estimated_charge" && (
+              <CardContent>
+                <CardDescription>
+                  You&rsquo;ll be charged about{" "}
+                  {formatMoney(
+                    planChangePreview.immediateConsequence.amountCents,
+                    planChangePreview.targetPlan.currency
+                  )}{" "}
+                  today and get{" "}
+                  {planChangePreview.extraCredits?.toLocaleString()} extra
+                  credits now. Then{" "}
+                  {formatPlanPrice(planChangePreview.targetPlan)}, renewing on{" "}
+                  {formatDate(planChangePreview.currentPeriodEnd)}.
+                </CardDescription>
+              </CardContent>
+            )}
         </Card>
       </div>
 

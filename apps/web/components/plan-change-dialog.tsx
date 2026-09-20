@@ -17,11 +17,21 @@ import { Spinner } from "@workspace/ui/components/spinner"
 
 type PlanChangeAction = (formData: FormData) => Promise<void>
 
+type PlanChangePreview = {
+  currentPlan: string
+  targetPlan: string
+  currentPeriodStart: string
+  currentPeriodEnd: string
+  effectiveDate: string
+  renewalDate?: string
+  immediateConsequence: string
+  extraCredits?: number
+}
+
 type PlanChangeDialogProps = {
   action: PlanChangeAction
   direction: "upgrade" | "downgrade"
-  estimatedCharge?: string
-  extraCredits?: number
+  preview?: PlanChangePreview
 }
 
 /**
@@ -35,8 +45,7 @@ type PlanChangeDialogProps = {
 export function PlanChangeDialog({
   action,
   direction,
-  estimatedCharge,
-  extraCredits,
+  preview,
 }: PlanChangeDialogProps) {
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
@@ -85,26 +94,58 @@ export function PlanChangeDialog({
             {isUpgrade ? "Upgrade to Max?" : "Switch to Pro?"}
           </AlertDialogTitle>
           <AlertDialogDescription>
-            {isUpgrade ? (
-              <>
-                {estimatedCharge
-                  ? `You’ll be charged about ${estimatedCharge} today for the prorated difference.`
-                  : "You’ll be charged an approximate prorated amount today."}{" "}
-                Max benefits start immediately, including
-                {extraCredits !== undefined
-                  ? ` ${extraCredits.toLocaleString()} extra credits today`
-                  : " additional credits today"}{" "}
-                and 5,500 credits each month.
-              </>
-            ) : (
-              <>
-                You won&rsquo;t be charged or refunded today. Your Max benefits
-                continue through the current billing cycle, and Pro starts with
-                your next billing cycle.
-              </>
-            )}
+            Review the billing consequences before confirming this change.
           </AlertDialogDescription>
         </AlertDialogHeader>
+        {preview ? (
+          <dl className="grid gap-3 text-sm">
+            <div className="grid gap-1">
+              <dt className="text-muted-foreground">Current plan</dt>
+              <dd className="font-medium">{preview.currentPlan}</dd>
+            </div>
+            <div className="grid gap-1">
+              <dt className="text-muted-foreground">Target plan</dt>
+              <dd className="font-medium">{preview.targetPlan}</dd>
+            </div>
+            <div className="grid gap-1">
+              <dt className="text-muted-foreground">Current billing cycle</dt>
+              <dd>
+                {preview.currentPeriodStart} – {preview.currentPeriodEnd}
+              </dd>
+            </div>
+            <div className="grid gap-1">
+              <dt className="text-muted-foreground">Takes effect</dt>
+              <dd>{preview.effectiveDate}</dd>
+            </div>
+            {preview.renewalDate ? (
+              <div className="grid gap-1">
+                <dt className="text-muted-foreground">Next renewal</dt>
+                <dd>{preview.renewalDate}</dd>
+              </div>
+            ) : null}
+            <div className="grid gap-1">
+              <dt className="text-muted-foreground">Today</dt>
+              <dd>{preview.immediateConsequence}</dd>
+            </div>
+            {isUpgrade && preview.extraCredits !== undefined ? (
+              <div className="grid gap-1">
+                <dt className="text-muted-foreground">Extra credits today</dt>
+                <dd>{preview.extraCredits.toLocaleString()}</dd>
+              </div>
+            ) : null}
+          </dl>
+        ) : isUpgrade ? (
+          <p className="text-sm text-muted-foreground">
+            You’ll be charged an approximate prorated amount today. Max benefits
+            start immediately, including additional credits today.
+          </p>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            You won&rsquo;t be charged or refunded today. Your Max benefits
+            continue through the current billing cycle, and Pro starts with your
+            next billing cycle.
+          </p>
+        )}
         <AlertDialogFooter>
           <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
           <AlertDialogAction disabled={pending} onClick={confirmPlanChange}>

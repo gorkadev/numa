@@ -122,11 +122,14 @@ export function computePlanChangeMath({
   proPriceCents: number
   maxPriceCents: number
 }): PlanChangeMath {
-  const totalPeriodMs = currentPeriodEnd.getTime() - currentPeriodStart.getTime()
+  const totalPeriodMs =
+    currentPeriodEnd.getTime() - currentPeriodStart.getTime()
   const remainingMs = currentPeriodEnd.getTime() - now.getTime()
 
   const fractionRemaining =
-    totalPeriodMs > 0 ? Math.min(1, Math.max(0, remainingMs / totalPeriodMs)) : 0
+    totalPeriodMs > 0
+      ? Math.min(1, Math.max(0, remainingMs / totalPeriodMs))
+      : 0
 
   const extraUnits = maxUnits - proUnits
   const clawbackUnits = Math.max(
@@ -149,7 +152,8 @@ export function computePlanChangeMath({
 
 /**
  * The Polar reads `computePlanChangeMath` needs and never hardcodes: each
- * paid product's `meter_credit` benefit units and its fixed monthly price.
+ * paid product's `meter_credit` benefit units, fixed price, and recurring
+ * cadence.
  *
  * Both products are read with one `Promise.all`, not sequentially — this
  * runs on the critical path of `changePlanAction`'s upgrade, between the
@@ -167,15 +171,21 @@ export function computePlanChangeMath({
  * Exported so `changePlanAction` can call it directly: the action already
  * holds the active Pro subscription it read before calling
  * `subscriptions.update` — see that function's own note on why the period
- * must be read BEFORE the update — so it has no use for `getUpgradePreview`'s
- * own subscription lookup below, only for these product reads and the shared
- * math underneath them.
+ * must be read BEFORE the update — so it has no use for
+ * `getPlanChangePreview`'s own subscription lookup below, only for these
+ * product reads and the shared math underneath them.
  */
 export async function readPlanChangeInputs(): Promise<{
   proUnits: number
   maxUnits: number
+  proPrice: FixedPrice
+  maxPrice: FixedPrice
+  proPreviewPrice: FixedPrice | null
+  maxPreviewPrice: FixedPrice | null
   proPriceCents: number
   maxPriceCents: number
+  proCadence: PlanCadence
+  maxCadence: PlanCadence
 } | null> {
   try {
     const [proProduct, maxProduct] = await Promise.all([
@@ -185,25 +195,45 @@ export async function readPlanChangeInputs(): Promise<{
 
     const proUnits = meterCreditUnits(proProduct)
     const maxUnits = meterCreditUnits(maxProduct)
-    const proPriceCents = fixedPriceCents(proProduct)
-    const maxPriceCents = fixedPriceCents(maxProduct)
+    const proPrice = fixedPrice(proProduct)
+    const maxPrice = fixedPrice(maxProduct)
+    const proPreviewPrice = unambiguousFixedRecurringPrice(proProduct)
+    const maxPreviewPrice = unambiguousFixedRecurringPrice(maxProduct)
+    const proCadence = productCadence(proProduct)
+    const maxCadence = productCadence(maxProduct)
 
     if (
       proUnits === null ||
       maxUnits === null ||
-      proPriceCents === null ||
-      maxPriceCents === null
+      proPrice === null ||
+      maxPrice === null ||
+      proCadence === null ||
+      maxCadence === null
     ) {
       console.error(
-        "Pro or Max product is missing a meter_credit benefit or a fixed price"
+        "Pro or Max product is missing a meter_credit benefit, fixed price, or recurring cadence"
       )
 
       return null
     }
 
-    return { proUnits, maxUnits, proPriceCents, maxPriceCents }
+    return {
+      proUnits,
+      maxUnits,
+      proPrice,
+      maxPrice,
+      proPreviewPrice,
+      maxPreviewPrice,
+      proPriceCents: proPrice.amountCents,
+      maxPriceCents: maxPrice.amountCents,
+      proCadence,
+      maxCadence,
+    }
   } catch (error) {
-    console.error("Failed to read Polar product benefits for a plan change", error)
+    console.error(
+      "Failed to read Polar product benefits for a plan change",
+      error
+    )
 
     return null
   }
@@ -222,7 +252,9 @@ function meterCreditUnits(product: {
   benefits: Array<{ type: string; properties?: unknown }>
 }): number | null {
   const benefit = product.benefits.find(
-    (candidate): candidate is { type: "meter_credit"; properties: { units: number } } =>
+    (
+      candidate
+    ): candidate is { type: "meter_credit"; properties: { units: number } } =>
       candidate.type === "meter_credit"
   )
 
@@ -230,7 +262,7 @@ function meterCreditUnits(product: {
 }
 
 /**
- * A product's fixed monthly price, in cents, or `null` if it has none.
+ * A product's fixed price and currency, or `null` if it has none.
  *
  * Polar's `prices` array is typed as a union because a product can be priced
  * several different ways — fixed, custom "pay what you want", metered, seat-
@@ -239,53 +271,127 @@ function meterCreditUnits(product: {
  * discriminate that union; anything else on either product would be a
  * pricing model this application's proration math was never built for.
  */
-function fixedPriceCents(product: {
-  prices: Array<{ amountType: string; priceAmount?: number }>
-}): number | null {
-  const price = product.prices.find((candidate) => candidate.amountType === "fixed")
+type FixedPrice = {
+  amountCents: number
+  currency: string
+}
 
-  return price?.priceAmount ?? null
+type PlanCadence = {
+  interval: string
+  intervalCount: number
+}
+
+function fixedPrice(product: {
+  prices: Array<{
+    amountType: string
+    priceAmount?: number
+    priceCurrency?: string
+  }>
+}): FixedPrice | null {
+  const price = product.prices.find(
+    (
+      candidate
+    ): candidate is {
+      amountType: "fixed"
+      priceAmount: number
+      priceCurrency: string
+    } =>
+      candidate.amountType === "fixed" &&
+      candidate.priceAmount !== undefined &&
+      candidate.priceCurrency !== undefined
+  )
+
+  return price
+    ? { amountCents: price.priceAmount, currency: price.priceCurrency }
+    : null
+}
+
+function unambiguousFixedRecurringPrice(product: {
+  isRecurring: boolean
+  isArchived: boolean
+  prices: Array<{
+    amountType: string
+    priceAmount?: number
+    priceCurrency?: string
+    isArchived?: boolean
+  }>
+}): FixedPrice | null {
+  if (
+    product.isArchived ||
+    !product.isRecurring ||
+    product.prices.length !== 1
+  ) {
+    return null
+  }
+
+  const price = product.prices[0]
+
+  if (
+    !price ||
+    price.amountType !== "fixed" ||
+    price.priceAmount === undefined ||
+    price.priceCurrency === undefined ||
+    price.isArchived
+  ) {
+    return null
+  }
+
+  return { amountCents: price.priceAmount, currency: price.priceCurrency }
+}
+
+function productCadence(product: {
+  recurringInterval: string | null
+  recurringIntervalCount: number | null
+}): PlanCadence | null {
+  if (
+    product.recurringInterval === null ||
+    product.recurringIntervalCount === null ||
+    product.recurringIntervalCount < 1
+  ) {
+    return null
+  }
+
+  return {
+    interval: product.recurringInterval,
+    intervalCount: product.recurringIntervalCount,
+  }
 }
 
 /**
- * `PlanChangeMath` plus the one Polar-sourced field the pricing page needs to
- * word the preview but that has nothing to do with the arithmetic itself:
- * when the CURRENT period — the one the customer is part-way through right
- * now — ends.
- *
- * `prorationBehavior: "invoice"` charges the price difference immediately
- * without moving the subscription's billing anchor, so the date the
- * customer's card is next charged does not change just because they
- * upgraded mid-cycle. Kept as its own type rather than folded into
- * `PlanChangeMath` so that type stays what its name says — pure arithmetic a
- * unit test can call with plain numbers — instead of also being a Polar
- * `Date` passthrough.
+ * Server-derived facts needed to explain a paid-plan change. Upgrade and
+ * downgrade previews deliberately share the same current/target price and
+ * cycle fields, while their effective date and immediate consequence remain
+ * direction-specific.
  */
-export type PlanChangePreview = PlanChangeMath & {
+export type PlanChangePreview = {
+  direction: "upgrade" | "downgrade"
+  currentPlan: {
+    name: "Pro" | "Max"
+    amountCents: number
+    currency: string
+    cadence: PlanCadence
+  }
+  targetPlan: {
+    name: "Pro" | "Max"
+    amountCents: number
+    currency: string
+    cadence: PlanCadence
+  }
+  currentPeriodStart: Date
   currentPeriodEnd: Date
+  effectiveAt: Date
+  immediateConsequence:
+    | { type: "estimated_charge"; amountCents: number }
+    | { type: "none" }
+  extraCredits?: number
 }
 
 /**
- * The upgrade preview `app/(app)/pricing/page.tsx` renders next to the
- * "Upgrade to Max" form for a user currently on Pro.
- *
- * Scoped to Pro users by construction, not by a check the caller has to
- * remember to add: it reads the user's active PAID subscription and bails
- * out unless that subscription's product is specifically Pro. This is also
- * why the Polar product reads inside `readPlanChangeInputs` only ever happen
- * for a Pro-plan viewer — a Free, Max or unprovisioned user returns before
- * either product is fetched, so nobody pays that round trip to render a
- * preview that would not apply to them.
- *
- * Returns `null` on any failure — no session, no Polar customer, no
- * active Pro subscription, or a product read that failed — and the page
- * treats `null` as "render nothing", per the task's own instruction that a
- * failed preview must never break the page. This mirrors
- * `getBillingSummary`'s "never throws" contract in `./plan.ts` for the same
- * reason: nobody opened the pricing page to watch a Polar hiccup take it
- * down.
+ * The paid-plan change preview for the pricing page. It returns the same
+ * server-derived billing facts for both directions, or `null` when Polar
+ * cannot provide every value needed to make a truthful confirmation.
  */
-export async function getUpgradePreview(): Promise<PlanChangePreview | null> {
+export async function getPlanChangePreview(): Promise<PlanChangePreview | null> {
   try {
     const session = await getSession()
 
@@ -297,25 +403,107 @@ export async function getUpgradePreview(): Promise<PlanChangePreview | null> {
 
     const subscription = activePaidSubscription(state)
 
-    if (!subscription || subscription.productId !== POLAR_PRODUCT_PRO_ID) {
+    if (
+      !subscription ||
+      (subscription.productId !== POLAR_PRODUCT_PRO_ID &&
+        subscription.productId !== POLAR_PRODUCT_MAX_ID)
+    ) {
       return null
     }
 
-    const inputs = await readPlanChangeInputs()
+    const [inputs, currentSubscription] = await Promise.all([
+      readPlanChangeInputs(),
+      polar.subscriptions.get({ id: subscription.id }),
+    ])
 
     if (!inputs) return null
 
+    // Customer state is the page's fast plan lookup, but it omits the interval
+    // count. Only display a detailed preview when its snapshot still agrees
+    // with the authoritative subscription response used for that cadence.
+    if (
+      currentSubscription.id !== subscription.id ||
+      currentSubscription.productId !== subscription.productId ||
+      currentSubscription.amount !== subscription.amount ||
+      currentSubscription.currency.toUpperCase() !==
+        subscription.currency.toUpperCase() ||
+      currentSubscription.recurringInterval !==
+        subscription.recurringInterval ||
+      currentSubscription.recurringIntervalCount < 1 ||
+      currentSubscription.currentPeriodStart.getTime() !==
+        subscription.currentPeriodStart.getTime() ||
+      currentSubscription.currentPeriodEnd.getTime() !==
+        subscription.currentPeriodEnd.getTime()
+    ) {
+      return null
+    }
+
+    const isUpgrade = currentSubscription.productId === POLAR_PRODUCT_PRO_ID
+    const targetPrice = isUpgrade
+      ? inputs.maxPreviewPrice
+      : inputs.proPreviewPrice
+    const targetCadence = isUpgrade ? inputs.maxCadence : inputs.proCadence
+
+    // A target with mixed or multiple prices has no unambiguous price to show.
+    if (!targetPrice) return null
+
+    // A cross-currency upgrade cannot produce a truthful proration estimate
+    // from cents alone, so leave the dialog on its conservative fallback.
+    if (
+      isUpgrade &&
+      currentSubscription.currency.toUpperCase() !==
+        targetPrice.currency.toUpperCase()
+    ) {
+      return null
+    }
+
+    const preview = {
+      direction: isUpgrade ? ("upgrade" as const) : ("downgrade" as const),
+      currentPlan: {
+        name: isUpgrade ? ("Pro" as const) : ("Max" as const),
+        amountCents: currentSubscription.amount,
+        currency: currentSubscription.currency,
+        cadence: {
+          interval: currentSubscription.recurringInterval,
+          intervalCount: currentSubscription.recurringIntervalCount,
+        },
+      },
+      targetPlan: {
+        name: isUpgrade ? ("Max" as const) : ("Pro" as const),
+        amountCents: targetPrice.amountCents,
+        currency: targetPrice.currency,
+        cadence: targetCadence,
+      },
+      currentPeriodStart: currentSubscription.currentPeriodStart,
+      currentPeriodEnd: currentSubscription.currentPeriodEnd,
+    }
+
+    if (!isUpgrade) {
+      return {
+        ...preview,
+        immediateConsequence: { type: "none" },
+        effectiveAt: currentSubscription.currentPeriodEnd,
+      }
+    }
+
+    const math = computePlanChangeMath({
+      now: new Date(),
+      currentPeriodStart: currentSubscription.currentPeriodStart,
+      currentPeriodEnd: currentSubscription.currentPeriodEnd,
+      ...inputs,
+    })
+
     return {
-      ...computePlanChangeMath({
-        now: new Date(),
-        currentPeriodStart: subscription.currentPeriodStart,
-        currentPeriodEnd: subscription.currentPeriodEnd,
-        ...inputs,
-      }),
-      currentPeriodEnd: subscription.currentPeriodEnd,
+      ...preview,
+      immediateConsequence: {
+        type: "estimated_charge",
+        amountCents: math.estimatedChargeCents,
+      },
+      extraCredits: math.netExtraUnits,
+      effectiveAt: new Date(),
     }
   } catch (error) {
-    console.error("Failed to compute the Pro→Max upgrade preview", error)
+    console.error("Failed to compute the paid-plan change preview", error)
 
     return null
   }
