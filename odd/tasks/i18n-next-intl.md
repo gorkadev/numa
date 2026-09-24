@@ -1,0 +1,313 @@
+# ODD — Internationalization with next-intl (cookie/user-scoped locale)
+
+- Feature: `i18n-next-intl`
+- File: `odd/tasks/i18n-next-intl.md`
+- Engram mirror: `odd/i18n-next-intl/tasks`
+- Route: delegated for routing and multi-file writes; bounded verification after each work unit
+- Created: 2026-09-23
+- Branch: `feat/new-flow` (worktree `/Users/gorka/workspace/worktrees/numa`)
+- Status: T1 in progress; routing and translation work not started
+
+## Objective
+
+Internationalize the `apps/web` UI with next-intl, keeping public URLs unprefixed.
+Choose a supported locale from the browser on a first anonymous visit, allow an
+in-app switcher, and persist an explicit preference for signed-in users. Keep
+API, webhook, preview, and checkout handlers outside locale page routing.
+
+## Decisions and gates
+
+- [x] **D1 — Launch locales and fallback (confirmed by user).** Launch with
+  `en` and `es`; use `en` when the browser has no supported language match.
+  An explicit supported cookie preference still takes precedence for an
+  anonymous visitor. Create and maintain messages for both locales.
+- [x] **D2 — Cross-device preference semantics (confirmed by user).** An
+  explicit DB preference, when present, wins for signed-in page requests,
+  including when the cookie differs or a preference changed on another
+  device; otherwise use a valid cookie, then `Accept-Language`, then `en`.
+  Reconcile on authenticated page rendering even if this needs an additional
+  preference lookup. DB `NULL` means no explicit preference; do not write a
+  default for existing users or on first sign-in. Logging in with a stored
+  preference overrides an anonymous cookie; a user with no stored
+  preference keeps the current negotiated language.
+
+Both product gates are resolved. Validate the technical implementation of
+these semantics in T1 rather than weakening them without asking.
+
+## Current-state evidence and design constraints
+
+- `apps/web/proxy.ts` returns early for public auth pages and unauthenticated
+  redirects. It currently checks session-cookie **presence only**, not a
+  validated session. That must stay a UX optimization, never authorization.
+- `apps/web/lib/session.ts` validates sessions server-side;
+  `apps/web/app/(app)/layout.tsx` requires one and resolves billing before
+  exposing an interactive authenticated route.
+- `apps/web/app/layout.tsx` owns `<html lang="en">` and global providers.
+  A nested layout cannot independently replace the root `<html>` element.
+- Page paths include `(app)`, `sign-in` (including `two-factor`), `sign-up`,
+  and `games/[id]/play` outside `(app)`. Preserve their `loading.tsx` and
+  `error.tsx` behavior. `app/api/**/route.ts` and `app/checkout/route.ts`
+  must remain handlers at their existing URLs.
+- `next-intl` is not yet declared in `apps/web/package.json`. No installed
+  `node_modules/next/dist/docs/` was present in this worktree at planning
+  time. The earlier next-intl design is a **proposal**, not verified evidence
+  for a pinned installed version.
+- Follow `AGENTS.md`: use `pnpm db:push` for schema changes, never generate or
+  apply migration files. Check for a destructive prompt and stop for human
+  confirmation rather than accepting it automatically.
+
+## T1 verified integration findings
+
+- Pinned `next-intl` **4.14.7** exactly in `apps/web/package.json` and
+  `pnpm-lock.yaml`. The installed package declares peers `next ^16.0.0` and
+  `react ^19.0.0`; this workspace installs Next.js 16.2.6 and React 19.2.4.
+- Configured the required `createNextIntlPlugin()` wrapper in `next.config.ts`
+  and its default `i18n/request.ts` discovery path. Added `i18n/routing.ts`
+  with `en`, `es`, default `en`, and `localePrefix: 'never'`; added a request
+  config that validates `requestLocale`, falls back to `en`, and loads the
+  matching minimal JSON catalog. These are setup assets only: no current route,
+  proxy, page, or layout uses them yet, so the existing app continues to render
+  without a locale provider.
+- `localePrefix: 'never'` is supported but still requires pages below
+  `app/[locale]/`; it rewrites unprefixed requests internally. Therefore T2
+  must move the page tree under `[locale]` and compose the next-intl
+  `createMiddleware(routing)` result with the existing auth proxy. The early
+  public-path return must not skip page localization; API/webhook/checkout
+  handlers must remain excluded from locale rewriting. Keep URLs unprefixed.
+- The API path is `getRequestConfig(async ({requestLocale}) => ...)`, with
+  `requestLocale` awaited and validated; it can be absent or invalid and must
+  fall back. The Server Component provider is `NextIntlClientProvider` from
+  `next-intl`, normally in the root locale layout, with `getMessages()` from
+  `next-intl/server`. The plugin is required for App Router request config;
+  the installed declarations confirm the routing/plugin entry points.
+- Default locale cookie is `NEXT_LOCALE`, a browser-session cookie set when
+  the selected locale differs from `Accept-Language`; default `sameSite` is
+  `lax`, with path `/` (or configured basePath) and no explicit `maxAge`.
+  Routing resolves that supported cookie before language negotiation. D1's
+  explicit cookie precedence is compatible; cookie lifetime should be decided
+  deliberately when T3 implements persistence.
+- Preference boundary: `requireSession()` in the authenticated shell calls
+  server-only `getSession()`, which obtains request headers and asks Better
+  Auth for a DB-backed session; `advanced.database.joins` loads its user in
+  that query. The current `user` schema has no `locale`. T3 can add nullable
+  `user.locale` and have authenticated server request configuration select
+  the validated DB preference over the routed/cookie locale, using the joined
+  session user where possible. Existing anonymous paths must not call the DB;
+  only a session-cookie-present request may attempt validation, and cookie
+  presence is never authorization. Rendering cannot write cookies: Next.js
+  16.2.6 requires `.set()`/`.delete()` in a Server Function or Route Handler.
+  T3 must implement a real authenticated response/action boundary that updates
+  a stale/missing cookie and refreshes the selected locale; do not pretend a
+  render-time `cookies().set()` is supported. Measure whether this adds a
+  second session lookup versus reusing/caching the existing shell validation.
+- T2 must make `[locale]` the page root layout so `<html lang>` and the
+  `NextIntlClientProvider` use the resolved locale while preserving global
+  providers and metadata. Next docs permit a root layout under a dynamic
+  segment. Keep API and checkout Route Handlers outside the moved page tree;
+  verify that boundary and loading/error files in the T2 build.
+- Versioned upstream next-intl docs consulted (official project repository;
+  docs source paths are pinned to the installed `v4.14.7` release):
+  - Routing/`localePrefix` and locale cookie:
+    https://github.com/amannn/next-intl/blob/v4.14.7/docs/src/pages/docs/routing/configuration.mdx
+  - App Router plugin:
+    https://github.com/amannn/next-intl/blob/v4.14.7/docs/src/pages/docs/usage/plugin.mdx
+  - Request/provider configuration:
+    https://github.com/amannn/next-intl/blob/v4.14.7/docs/src/pages/docs/usage/configuration.mdx
+  - Middleware setup:
+    https://github.com/amannn/next-intl/blob/v4.14.7/docs/src/pages/docs/routing/middleware.mdx
+  - Request-locale API update:
+    https://github.com/amannn/next-intl/blob/v4.14.7/docs/src/pages/blog/next-intl-4-0.mdx
+- Installed Next.js documentation read completely before implementation:
+  `apps/web/node_modules/next/dist/docs/01-app/02-guides/internationalization.md`,
+  `01-app/01-getting-started/16-proxy.md`,
+  `01-app/03-api-reference/03-file-conventions/proxy.md`,
+  `01-app/03-api-reference/03-file-conventions/layout.md`,
+  `01-app/03-api-reference/04-functions/cookies.md`, and
+  `01-app/03-api-reference/04-functions/headers.md` (all from installed
+  Next.js 16.2.6).
+
+## Architecture to validate before changing routes
+
+1. T1 pinned and checked `next-intl@4.14.7` against installed Next.js 16.2.6
+   and React 19.2.4. `localePrefix: 'never'` does **not** avoid the route move:
+   all pages still need `app/[locale]/` for the locale param and internal
+   rewrite target. The default locale cookie and server request/provider APIs
+   are recorded above; T2 must preserve the route and response boundaries.
+2. Document the response flow for a signed-out protected page, sign-in,
+   sign-up, an authenticated page, a session-expired page, API/auth, webhook,
+   preview, and checkout. Decide explicitly which paths skip i18n and which
+   receive it. Public auth **pages** still need locale routing if they live
+   under `[locale]`; an early `NextResponse.next()` cannot bypass their
+   rewrite. A redirect to `/sign-in` must land on a localized page without
+   exposing a prefix. Do not pass an i18n rewrite to API/handler paths.
+3. Design `<html lang>` and provider placement before moving layouts. If
+   the chosen approach uses `app/[locale]/layout.tsx` as the root for page
+   routes, verify that handlers outside that segment and error boundaries
+   build and behave correctly; otherwise keep a root layout with a supported
+   server-side locale source. Do not leave a hardcoded `lang="en"` after
+   localization. Check metadata and document title/description too.
+4. Specify a **real preference reconciliation boundary**, not a hypothetical
+   login-only hook: for signed-in page rendering, validate the session and
+   read the explicit preference using a server-only path that is already
+   session/DB-backed where possible. If it differs from the cookie, update
+   the cookie via a permitted mutation boundary (proxy/route handler/server
+   action as supported by the installed versions), then render/refresh in
+   the chosen locale. Server components must not silently attempt to write
+   cookies during rendering. Cover existing sessions, new browsers, deleted
+   cookies, sign-in, sign-out, and preference changes from another device.
+   A request-time DB lookup may be necessary to **guarantee** DB precedence;
+   do not claim DB > cookie and no request-time validation simultaneously.
+   Measure the added query/latency against the authenticated shell and avoid
+   extra reads if the existing validated session path already supplies it.
+   Keep anonymous paths DB-free. If strict precedence is too costly, return
+   to the user for an explicit change to D2 rather than silently weakening
+   the promise.
+
+## Work units (one functioning commit per completed unit)
+
+- [ ] **T1 — Validate integration.** Implement the recorded D1/D2 decisions.
+  Verify the actual installed next-intl and Next.js APIs, routing/layout
+  choice, cookie options and response composition, and the preference
+  read/write boundary above. Add dependency and minimum locale config/messages. No proxy or route changes yet; the current app must
+  remain usable. Route: delegated scout for multi-file mapping, then bounded
+  writer if installation/config touches multiple files. Checks: install
+  succeeds; focused typecheck; record doc/version and design evidence.
+- [ ] **T2 — Integrate page routing atomically.** In one functional work unit,
+  compose `proxy.ts` with locale handling **and** create the required page
+  route/layout structure. If `[locale]` is required, move `(app)`, sign-in
+  (catch-all and two-factor), sign-up (catch-all), and
+  `games/[id]/play` pages with their relevant loading/error boundaries.
+  Preserve global providers, auth guards, root HTML language, and unprefixed
+  navigation/redirects. Keep `api/**` and `checkout/route.ts` outside locale
+  pages; preserve preview token auth and Polar webhook reachability. Use
+  next-intl navigation helpers where required; do not assume every plain
+  `next/link` needs replacing. Route: delegated writer (multi-file).
+  Checks: typecheck, lint, build; manual route matrix below. Do not commit
+  an intermediate proxy rewrite pointing to absent pages or moved pages
+  without a matching rewrite. If too large, first create a backward-
+  compatible bridge and verify it before splitting into separate commits.
+- [ ] **T3 — Persist and switch preferences.** Add nullable `user.locale`
+  (or an equivalent explicitly chosen preference store) in
+  `packages/db/src/schema.ts`; validate permitted values at the app boundary
+  and apply via `pnpm db:push` after inspecting any prompt. Implement a
+  server-only preference update, signed-in reconciliation per D2, and an
+  in-app switcher for authenticated and anonymous use. Cookie changes must
+  take effect without a URL change; ensure the cookie's path, lifetime,
+  same-site/secure settings, and invalid-locale fallback are deliberate.
+  Do not write to DB based solely on an anonymous cookie or accept a client-
+  supplied user ID. Route: delegated writer; split only at a demonstrably
+  functional boundary. Checks: typecheck, lint, build; preference matrix
+  below and shell latency comparison. Never report DB persistence complete
+  if `db:push` or its confirmation was skipped.
+- [ ] **T4 — Translate user-visible copy in bounded slices.** Each slice
+  includes both language files and a render/smoke check; preserve existing
+  fallback behavior until its slice is complete. One writer and one commit
+  per independently working slice; no parallel writes in this worktree.
+  Inventory strings first, including shared components, metadata,
+  validation/toast/error text, accessibility labels, and server-generated
+  user-visible copy; do not translate API protocol values or persisted
+  identifiers.
+  - [ ] T4a: shell, navigation, layouts, loading states
+  - [ ] T4b: sign-in, sign-up, two-factor, account settings
+  - [ ] T4c: pricing, checkout-facing copy, billing settings
+  - [ ] T4d: games, play, chat composer/thread
+  - [ ] T4e: errors, empty states, tooltips, metadata, remaining inventory
+  Checks per slice: typecheck, lint, relevant render checks; track missing
+  keys and untranslated/hardcoded strings. The earlier ~49-file estimate
+  is a forecast, not a verified exhaustive inventory.
+- [ ] **T5 — Final verification and close.** Run root `pnpm typecheck`,
+  `pnpm lint`, `pnpm --filter web build`, verify both locales and the full
+  matrices, inspect dynamic/static rendering and caching consequences of
+  cookie/session reads, and record failures or skipped browser checks.
+  Check accessibility (`html lang`, labels), no locale prefix, provider
+  redirects, and no request secrets in client bundles. Route: delegated
+  command-running verifier. Report actual results and next action.
+
+## Runtime matrices (record observed outcomes, not intentions)
+
+- Signed-out `/` redirects to unprefixed `/sign-in` and renders in the
+  negotiated locale; direct `/sign-in`, `/sign-in/two-factor`, and `/sign-up`
+  render without auth loops or locale-prefixed URLs.
+- Signed-in `/`, `/pricing`, `/games/[id]`, `/games/[id]/play` render with
+  correct locale and retain auth/billing behavior; an expired cookie cannot
+  grant access. Exercise loading/error boundaries and direct refreshes.
+- `api/auth/**` (including OAuth callbacks), Polar webhook, preview iframe,
+  billing APIs, and `/checkout` keep their pre-existing handler semantics;
+  no locale rewrite or session-cookie-presence check becomes authorization.
+- Anonymous first visit: supported `Accept-Language`, unsupported language,
+  missing header, invalid cookie, and cookie persistence. Switch locale and
+  refresh a deep link; URL must remain unprefixed.
+- Authenticated: no DB preference uses negotiated locale; explicit DB
+  preference wins over a conflicting anonymous cookie at sign-in; existing
+  sessions, new browser, deleted cookie, and cross-device change reconcile
+  according to D2; switcher persists in DB and cookie; signed-out switching
+  does not mutate the former user's DB preference. Verify invalid input and
+  failed DB writes do not claim success.
+- Compare authenticated shell response time/query count before and after
+  preference reconciliation. Inspect build output for changed rendering or
+  caching and document the accepted tradeoff.
+
+## Delivery and verification policy
+
+- Forecast: high review workload; string extraction across many files should
+  be sliced. Ask before a work unit grows beyond ~400 authored changed lines:
+  split into reviewable commits/PR slices or obtain a size exception. This is
+  a planning heuristic, not a reason to omit required translations.
+- TDD is currently off (no web test runner configured). Typecheck/lint/build
+  alone do **not** prove routing or preference behavior. If no automated
+  browser harness exists, record each manual check as executed or pending,
+  with environment and result; never mark a behavioral criterion verified
+  solely because compilation passed.
+- Keep generated technical artifacts in English unless the selected UI
+  locale requires translated values. Conventional work-unit commits on the
+  feature branch; no push/PR/merge without user direction.
+
+## Acceptance criteria
+
+1. Selected launch locales and fallback are recorded; no locale prefix
+   appears in page URLs, links, auth redirects, or deep-link refreshes.
+2. Anonymous first visit negotiates a supported locale from
+   `Accept-Language` or falls back; explicit cookie selection wins until
+   changed. Invalid cookie/locale input fails safely.
+3. Signed-in explicit preference and cookie obey D2, including session
+   transitions and cross-device cases; switcher persists appropriately.
+4. Auth and billing authorization, public routes, APIs, checkout, webhook,
+   and preview behavior remain intact.
+5. Both launch locales cover the audited user-facing string inventory,
+   accessible labels, metadata, errors, and loading states; `html lang`
+   matches rendered text.
+6. Typecheck, lint, build, and observed routing/preference matrices are
+   recorded with any unexecuted runtime checks identified explicitly.
+7. Each completed work unit/slice has a verified outcome and conventional
+   commit identity recorded below.
+
+## Progress / evidence
+
+- [x] Read-only plan review identified proxy early-return, route-move,
+  root-layout, and DB/cookie precedence gaps; amended planning only.
+- [x] D1/D2 confirmed by user: `en` + `es`, fallback `en`; explicit account
+  preference wins across devices on authenticated page requests.
+- [ ] T1 implementation and checks complete, awaiting work-unit commit
+  (Next.js 16.2.6 and next-intl 4.14.7 installed; integration files added;
+  no routes or preference logic changed).
+  Route: delegated scout and bounded writer. TDD: off
+  (`openspec/config.yaml` strict_tdd=false); no web test runner.
+  Checks: `pnpm install` passed; `pnpm --filter web typecheck` passed
+  after generated types existed; independent rerun passed; `pnpm --filter
+  web lint` passed twice (0 errors, 25 existing warnings); `pnpm --filter
+  web build` initially compiled and typechecked twice but failed during
+  page-data collection at `/api/auth/[...all]` because `DATABASE_URL` was
+  missing. After copying the ignored development environment file from the
+  original worktree, an independent `pnpm --filter web build` passed with
+  TypeScript checks and static page generation complete (Node.js
+  `module.register()` deprecation warning). `git diff --check` passed.
+  No route/browser or DB-preference behavior verified yet (T2/T3).
+  No work-unit commit yet.
+- [ ] T2–T5 not started.
+- Verification evidence and commit IDs: none yet.
+
+## Next step
+
+T1 checks now pass. Record its work-unit commit identity before checking off
+T1; then begin T2. Do not claim T1 implements i18n routing or D2 preference
+behavior.
