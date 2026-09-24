@@ -25,7 +25,7 @@ const loadGame = cache((id: string) => getGame(id))
 
 export async function generateMetadata({
   params,
-}: PageProps<"/games/[id]/play">): Promise<Metadata> {
+}: PageProps<"/[locale]/games/[id]/play">): Promise<Metadata> {
   const { id } = await params
   const game = await loadGame(id)
 
@@ -34,7 +34,7 @@ export async function generateMetadata({
 
 export default async function PlayPage({
   params,
-}: PageProps<"/games/[id]/play">) {
+}: PageProps<"/[locale]/games/[id]/play">) {
   const { id } = await params
 
   /**

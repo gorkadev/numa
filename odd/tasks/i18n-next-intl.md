@@ -6,7 +6,7 @@
 - Route: delegated for routing and multi-file writes; bounded verification after each work unit
 - Created: 2026-09-23
 - Branch: `feat/new-flow` (worktree `/Users/gorka/workspace/worktrees/numa`)
-- Status: T1 in progress; routing and translation work not started
+- Status: T1 complete; T2 in progress; translation work not started
 
 ## Objective
 
@@ -165,7 +165,7 @@ these semantics in T1 rather than weakening them without asking.
 
 ## Work units (one functioning commit per completed unit)
 
-- [ ] **T1 — Validate integration.** Implement the recorded D1/D2 decisions.
+- [x] **T1 — Validate integration.** Implement the recorded D1/D2 decisions.
   Verify the actual installed next-intl and Next.js APIs, routing/layout
   choice, cookie options and response composition, and the preference
   read/write boundary above. Add dependency and minimum locale config/messages. No proxy or route changes yet; the current app must
@@ -226,8 +226,9 @@ these semantics in T1 rather than weakening them without asking.
 ## Runtime matrices (record observed outcomes, not intentions)
 
 - Signed-out `/` redirects to unprefixed `/sign-in` and renders in the
-  negotiated locale; direct `/sign-in`, `/sign-in/two-factor`, and `/sign-up`
-  render without auth loops or locale-prefixed URLs.
+  negotiated locale; direct `/sign-in` and `/sign-in/two-factor` render
+  without auth loops or locale-prefixed URLs. `/sign-up` retains the existing
+  one-hop redirect to `/sign-in` (social sign-in also creates accounts).
 - Signed-in `/`, `/pricing`, `/games/[id]`, `/games/[id]/play` render with
   correct locale and retain auth/billing behavior; an expired cookie cannot
   grant access. Exercise loading/error boundaries and direct refreshes.
@@ -287,9 +288,8 @@ these semantics in T1 rather than weakening them without asking.
   root-layout, and DB/cookie precedence gaps; amended planning only.
 - [x] D1/D2 confirmed by user: `en` + `es`, fallback `en`; explicit account
   preference wins across devices on authenticated page requests.
-- [ ] T1 implementation and checks complete, awaiting work-unit commit
-  (Next.js 16.2.6 and next-intl 4.14.7 installed; integration files added;
-  no routes or preference logic changed).
+- [x] T1 integration and checks complete (Next.js 16.2.6 and
+  next-intl 4.14.7 installed; no routes or preference logic changed).
   Route: delegated scout and bounded writer. TDD: off
   (`openspec/config.yaml` strict_tdd=false); no web test runner.
   Checks: `pnpm install` passed; `pnpm --filter web typecheck` passed
@@ -302,12 +302,42 @@ these semantics in T1 rather than weakening them without asking.
   TypeScript checks and static page generation complete (Node.js
   `module.register()` deprecation warning). `git diff --check` passed.
   No route/browser or DB-preference behavior verified yet (T2/T3).
-  No work-unit commit yet.
-- [ ] T2–T5 not started.
-- Verification evidence and commit IDs: none yet.
+  Work-unit commit: `769ee1ce102f46c41c9bb85d179527ec18fca8cc`
+  (`feat(web): establish next-intl locale configuration`); native medium-tier
+  reliability review approved and acknowledged on that committed candidate.
+- [ ] T2 in progress: atomic page routing and proxy integration.
+  The root layout now lives at `app/[locale]/layout.tsx`, validates `en`/`es`,
+  sets `<html lang>` from the route, and provides request messages through
+  `NextIntlClientProvider` while retaining metadata, fonts, and global providers.
+  `proxy.ts` composes next-intl routing with the existing cookie-presence UX
+  gate: public auth pages receive locale routing; API, tRPC, checkout, webhook,
+  and preview handler paths bypass locale middleware; non-public handlers retain
+  the prior cookie gate. The internal `x-next-intl-locale` rewrite request is
+  handled idempotently so rewritten auth pages remain public and protected pages
+  remain gated. Moved dynamic game pages now use the `[locale]` route type.
+  Checks: `pnpm --filter web build` passed and generated the `[locale]` page
+  routes while retaining API/webhook/preview/checkout handlers at their original
+  URLs; final `pnpm --filter web typecheck` passed; `pnpm --filter web lint`
+  passed with 0 errors and 25 existing warnings. A pre-build typecheck used
+  stale generated route types after the parent relocation and failed; build
+  refreshed them. Production `curl` smoke: `/sign-in` with `Accept-Language: es`
+  returned 200 with `html lang="es"`; absent/unsupported `fr` returned 200 with
+  `html lang="en"`; signed-out `/` and `/checkout` redirected to unprefixed
+  `/sign-in`; `/sign-up` redirected there; invalid preview token returned 404;
+  Polar webhook GET returned 405 without a locale rewrite. Independent
+  verification repeated typecheck, lint, build and localhost GET checks:
+  `/sign-in/two-factor` returned 200 in `es`, `NEXT_LOCALE=es` won, invalid
+  cookie fell back to `en`, and `/es/sign-in` redirected 307 to unprefixed
+  `/sign-in`. Signed-out `/pricing` and `/games/example/play` redirected 307
+  to `/sign-in`; `/api/auth/get-session` returned 200. `/sign-up` redirected
+  one hop to `/sign-in`, matching its unchanged redirect-only source.
+  Signed-in, valid preview, OAuth callback, webhook POST, and exercised
+  error/loading boundary behavior remain untested. No commit created.
+  Route: delegated writer (multi-file); parent owns T2 checkoff.
+- [ ] T3–T5 not started.
 
 ## Next step
 
-T1 checks now pass. Record its work-unit commit identity before checking off
-T1; then begin T2. Do not claim T1 implements i18n routing or D2 preference
+Implement T2 as an atomic routing/proxy work unit and verify its page and
+handler matrix. T1 alone does not implement i18n routing or D2 preference
 behavior.

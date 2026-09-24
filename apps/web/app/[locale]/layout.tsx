@@ -1,11 +1,15 @@
 import type { Metadata } from "next"
+import { notFound } from "next/navigation"
 import { Geist_Mono, Inter } from "next/font/google"
+import { hasLocale, NextIntlClientProvider } from "next-intl"
+import { getMessages } from "next-intl/server"
 
 import "@workspace/ui/globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from "@workspace/ui/lib/utils"
 import { Toaster } from "@workspace/ui/components/toast"
 import { TooltipProvider } from "@workspace/ui/components/tooltip"
+import { routing } from "@/i18n/routing"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 
@@ -26,14 +30,22 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
+  params,
 }: Readonly<{
   children: React.ReactNode
+  params: Promise<{ locale: string }>
 }>) {
+  const { locale } = await params
+
+  if (!hasLocale(routing.locales, locale)) notFound()
+
+  const messages = await getMessages()
+
   return (
     <html
-      lang="en"
+      lang={locale}
       suppressHydrationWarning
       className={cn(
         "antialiased",
@@ -52,11 +64,13 @@ export default function RootLayout({
          * already on screen. Here it also survives navigation, so a toast
          * raised just before a redirect is still readable after it.
          */}
-        <Toaster>
-          <TooltipProvider>
-            <ThemeProvider>{children}</ThemeProvider>
-          </TooltipProvider>
-        </Toaster>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <Toaster>
+            <TooltipProvider>
+              <ThemeProvider>{children}</ThemeProvider>
+            </TooltipProvider>
+          </Toaster>
+        </NextIntlClientProvider>
       </body>
     </html>
   )

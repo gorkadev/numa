@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSessionCookie } from "better-auth/cookies"
+import createMiddleware from "next-intl/middleware"
+
+import { routing } from "./i18n/routing"
+
+const handleI18nRouting = createMiddleware(routing)
 
 /**
  * Routes that must stay reachable without a session.
@@ -56,18 +61,78 @@ function isPublicPath(pathname: string): boolean {
  * to be added to `isPublicPath` above, the same way that file warned the next
  * person tightening this to do.
  */
+function getPathnameWithoutLocale(pathname: string): string | null {
+  const segments = pathname.split("/")
+  const locale = segments[1]
+
+  if (!routing.locales.includes(locale as (typeof routing.locales)[number])) {
+    return null
+  }
+
+  const unlocalizedPathname = `/${segments.slice(2).join("/")}`
+  return unlocalizedPathname === "/" ? "/" : unlocalizedPathname.replace(/\/$/, "")
+}
+
+function isHandlerPath(pathname: string): boolean {
+  return (
+    pathname === "/api" ||
+    pathname.startsWith("/api/") ||
+    pathname === "/trpc" ||
+    pathname.startsWith("/trpc/") ||
+    pathname === "/checkout" ||
+    pathname.startsWith("/checkout/")
+  )
+}
+
 export default function proxy(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl
+  const localeFromRewrite = request.headers.get("x-next-intl-locale")
+  const rewrittenPathname = getPathnameWithoutLocale(pathname)
 
-  if (isPublicPath(pathname)) return NextResponse.next()
+  // next-intl's internal rewrite targets /[locale]/..., and Next can invoke
+  // Proxy for that rewritten pathname as well. Treat its locale request header
+  // as an internal routing marker so it is neither localized twice nor blocked
+  // by the unprefixed public-page allowlist.
+  if (
+    rewrittenPathname !== null &&
+    localeFromRewrite !== null &&
+    routing.locales.includes(localeFromRewrite as (typeof routing.locales)[number])
+  ) {
+    if (isPublicPath(rewrittenPathname)) return NextResponse.next()
 
-  const sessionCookie = getSessionCookie(request)
+    if (!getSessionCookie(request)) {
+      return NextResponse.redirect(new URL("/sign-in", request.url))
+    }
 
-  if (!sessionCookie) {
+    return NextResponse.next()
+  }
+
+  // Route handlers keep their existing URLs and response semantics. In
+  // particular, never pass an API, webhook, preview, or checkout request to
+  // next-intl, even though the matcher still runs the auth cookie check there.
+  if (isHandlerPath(pathname)) {
+    if (isPublicPath(pathname)) return NextResponse.next()
+
+    if (!getSessionCookie(request)) {
+      return NextResponse.redirect(new URL("/sign-in", request.url))
+    }
+
+    return NextResponse.next()
+  }
+
+  // Public auth pages still need locale negotiation and the internal rewrite
+  // to app/[locale]. Only public handler paths bypass locale middleware above.
+  const localeResponse = handleI18nRouting(request)
+
+  if (isPublicPath(pathname)) return localeResponse
+
+  // Cookie presence is only an optimistic UX check, never authorization. The
+  // page and server-action session guards remain the security boundary.
+  if (!getSessionCookie(request)) {
     return NextResponse.redirect(new URL("/sign-in", request.url))
   }
 
-  return NextResponse.next()
+  return localeResponse
 }
 
 export const config = {
