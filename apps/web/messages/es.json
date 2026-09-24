@@ -1,5 +1,30 @@
 {
   "Common": {
     "appName": "Numa"
+  },
+  "Shell": {
+    "search": "Buscar",
+    "toggleSidebar": "Mostrar u ocultar la barra lateral",
+    "newGame": "Nuevo juego",
+    "recents": "Recientes",
+    "emptyGames": "Tus juegos aparecerán aquí.",
+    "pinned": "Fijados",
+    "commandPalette": "Paleta de comandos",
+    "commandPaletteDescription": "Busca un comando para ejecutar...",
+    "searchGamesAndActions": "Buscar juegos y acciones...",
+    "noResults": "No se encontraron resultados.",
+    "actions": "Acciones",
+    "settings": "Ajustes",
+    "switchAccount": "Cambiar de cuenta",
+    "loadingAccounts": "Cargando cuentas…",
+    "retryLoadingAccounts": "Reintentar la carga de cuentas",
+    "addAccount": "Añadir cuenta",
+    "signOut": "Cerrar sesión",
+    "couldNotSwitchAccount": "No se pudo cambiar de cuenta",
+    "couldNotSignOut": "No se pudo cerrar la sesión",
+    "couldNotChangeLanguage": "No se pudo cambiar el idioma",
+    "pleaseTryAgain": "Inténtalo de nuevo.",
+    "language": "Idioma",
+    "credits": "Créditos"
   }
 }

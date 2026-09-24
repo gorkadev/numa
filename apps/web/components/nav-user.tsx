@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
 import {
   Logout01Icon,
   Settings02Icon,
@@ -74,6 +75,7 @@ type DeviceSession = NonNullable<
  */
 export function NavUser() {
   const router = useRouter()
+  const t = useTranslations("Shell")
   const { isMobile, state } = useSidebar()
   const { data: session, isPending } = authClient.useSession()
   const { openSettings } = useSettingsDialog()
@@ -147,8 +149,8 @@ export function NavUser() {
       if (error) {
         toast.add({
           type: "error",
-          title: "Could not switch account",
-          description: error.message,
+          title: t("couldNotSwitchAccount"),
+          description: error.message || t("pleaseTryAgain"),
         })
         return
       }
@@ -158,9 +160,11 @@ export function NavUser() {
     } catch (error) {
       toast.add({
         type: "error",
-        title: "Could not switch account",
+        title: t("couldNotSwitchAccount"),
         description:
-          error instanceof Error ? error.message : "Please try again.",
+          error instanceof Error && error.message
+            ? error.message
+            : t("pleaseTryAgain"),
       })
     } finally {
       if (!navigating) {
@@ -213,8 +217,8 @@ export function NavUser() {
       if (error) {
         toast.add({
           type: "error",
-          title: "Could not sign out",
-          description: error.message,
+          title: t("couldNotSignOut"),
+          description: error.message || t("pleaseTryAgain"),
         })
         return
       }
@@ -224,9 +228,11 @@ export function NavUser() {
     } catch (error) {
       toast.add({
         type: "error",
-        title: "Could not sign out",
+        title: t("couldNotSignOut"),
         description:
-          error instanceof Error ? error.message : "Please try again.",
+          error instanceof Error && error.message
+            ? error.message
+            : t("pleaseTryAgain"),
       })
     } finally {
       if (!navigating) {
@@ -290,24 +296,24 @@ export function NavUser() {
                 onClick={() => openSettings()}
               >
                 <HugeiconsIcon icon={Settings02Icon} />
-                Settings
+                {t("settings")}
                 <DropdownMenuShortcut>{settingsHint}</DropdownMenuShortcut>
               </DropdownMenuItem>
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger disabled={isActionPending}>
                   <HugeiconsIcon icon={UserSwitchIcon} />
-                  Switch account
+                  {t("switchAccount")}
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent className="min-w-56">
                   {accountListState === "loading" ||
                   accountListState === "idle" ? (
                     <DropdownMenuItem disabled>
                       <Spinner />
-                      Loading accounts…
+                      {t("loadingAccounts")}
                     </DropdownMenuItem>
                   ) : accountListState === "error" ? (
                     <DropdownMenuItem onClick={loadAccounts}>
-                      Retry loading accounts
+                      {t("retryLoadingAccounts")}
                     </DropdownMenuItem>
                   ) : (
                     switchableAccounts.map(
@@ -369,7 +375,7 @@ export function NavUser() {
                     onClick={() => router.push("/sign-in")}
                   >
                     <HugeiconsIcon icon={UserAdd01Icon} />
-                    Add account
+                    {t("addAccount")}
                   </DropdownMenuItem>
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
@@ -381,7 +387,7 @@ export function NavUser() {
               onClick={signOut}
             >
               {signingOut ? <Spinner /> : <HugeiconsIcon icon={Logout01Icon} />}
-              Sign out
+              {t("signOut")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

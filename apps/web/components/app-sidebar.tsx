@@ -5,6 +5,7 @@ import { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
 import {
   MessageCircleIcon,
   PencilEdit02Icon,
@@ -107,6 +108,7 @@ export function AppSidebar({
 
   const pathname = usePathname()
   const router = useRouter()
+  const t = useTranslations("Shell")
   const isMac = useIsMac()
   const { state, setOpenMobile } = useSidebar()
   const [searchOpen, setSearchOpen] = useState(false)
@@ -187,7 +189,7 @@ export function AppSidebar({
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    aria-label="Search"
+                    aria-label={t("search")}
                     onClick={() => setSearchOpen(true)}
                     className="group-data-[collapsible=icon]:hidden [&_svg]:size-5!"
                   />
@@ -196,7 +198,7 @@ export function AppSidebar({
                 <HugeiconsIcon icon={SearchIcon} strokeWidth={2} />
               </TooltipTrigger>
               <TooltipContent sideOffset={10}>
-                <span className="text-[13px] font-medium">Search</span>
+                <span className="text-[13px] font-medium">{t("search")}</span>
                 <Kbd>{searchHint}</Kbd>
               </TooltipContent>
             </Tooltip>
@@ -206,13 +208,20 @@ export function AppSidebar({
              */}
             <Tooltip>
               <TooltipTrigger
-                render={<SidebarTrigger className="[&_svg]:size-5!" />}
+                render={
+                  <SidebarTrigger
+                    aria-label={t("toggleSidebar")}
+                    className="[&_svg]:size-5!"
+                  />
+                }
               />
               <TooltipContent
                 sideOffset={state === "expanded" ? 10 : 25}
                 side={state === "expanded" ? "bottom" : "right"}
               >
-                <span className="text-[13px] font-medium">Toggle sidebar</span>
+                <span className="text-[13px] font-medium">
+                  {t("toggleSidebar")}
+                </span>
                 <Kbd>{toggleHint}</Kbd>
               </TooltipContent>
             </Tooltip>
@@ -244,7 +253,7 @@ export function AppSidebar({
                       children: (
                         <>
                           <span className="text-[13px] font-medium">
-                            New game
+                            {t("newGame")}
                           </span>
                           <Kbd>{newGameHint}</Kbd>
                         </>
@@ -262,7 +271,7 @@ export function AppSidebar({
                     render={<Link href="/" />}
                   >
                     <HugeiconsIcon icon={PencilEdit02Icon} />
-                    <span>New game</span>
+                    <span>{t("newGame")}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem className="hidden group-data-[collapsible=icon]:block">
@@ -273,7 +282,7 @@ export function AppSidebar({
                       children: (
                         <>
                           <span className="text-[13px] font-medium">
-                            Search
+                            {t("search")}
                           </span>
                           <Kbd>{searchHint}</Kbd>
                         </>
@@ -282,7 +291,7 @@ export function AppSidebar({
                     }}
                   >
                     <HugeiconsIcon icon={SearchIcon} />
-                    <span>Search</span>
+                    <span>{t("search")}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem className="hidden group-data-[collapsible=icon]:block">
@@ -294,14 +303,14 @@ export function AppSidebar({
                           tooltip={{
                             children: (
                               <span className="text-[13px] font-medium">
-                                Recents
+                                {t("recents")}
                               </span>
                             ),
                             sideOffset: 25,
                           }}
                         >
                           <HugeiconsIcon icon={MessageCircleIcon} />
-                          <span>Recents</span>
+                          <span>{t("recents")}</span>
                         </SidebarMenuButton>
                       }
                     />
@@ -312,13 +321,13 @@ export function AppSidebar({
                     >
                       <PopoverHeader className="px-2 pt-1">
                         <PopoverTitle className="text-xs text-muted-foreground">
-                          Recents
+                          {t("recents")}
                         </PopoverTitle>
                       </PopoverHeader>
                       {games.length === 0 ? (
                         <Empty className="p-3">
                           <EmptyDescription className="text-xs">
-                            Your games will live here.
+                            {t("emptyGames")}
                           </EmptyDescription>
                         </Empty>
                       ) : (
@@ -349,7 +358,7 @@ export function AppSidebar({
            */}
           {pinnedGames.length > 0 ? (
             <SidebarGroup className="pb-0 group-data-[collapsible=icon]:hidden">
-              <SidebarGroupLabel>Pinned</SidebarGroupLabel>
+              <SidebarGroupLabel>{t("pinned")}</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                   {pinnedGames.map((game) => (
@@ -377,12 +386,12 @@ export function AppSidebar({
            * and does not repeat below it.
            */}
           <SidebarGroup className="min-h-0 flex-1 pb-0 group-data-[collapsible=icon]:hidden">
-            <SidebarGroupLabel>Recents</SidebarGroupLabel>
+            <SidebarGroupLabel>{t("recents")}</SidebarGroupLabel>
             <SidebarGroupContent className="no-scrollbar min-h-0 flex-1 scroll-fade overflow-x-hidden overflow-y-auto overscroll-contain pb-2">
               {games.length === 0 ? (
                 <Empty className="border p-3">
                   <EmptyDescription className="text-xs">
-                    Your games will live here.
+                    {t("emptyGames")}
                   </EmptyDescription>
                 </Empty>
               ) : (

@@ -6,7 +6,7 @@
 - Route: delegated for routing and multi-file writes; bounded verification after each work unit
 - Created: 2026-09-23
 - Branch: `feat/new-flow` (worktree `/Users/gorka/workspace/worktrees/numa`)
-- Status: T1–T2 complete; T3 in progress; translation work not started
+- Status: T1–T3 complete; T4 in progress
 
 ## Objective
 
@@ -186,7 +186,7 @@ these semantics in T1 rather than weakening them without asking.
   an intermediate proxy rewrite pointing to absent pages or moved pages
   without a matching rewrite. If too large, first create a backward-
   compatible bridge and verify it before splitting into separate commits.
-- [ ] **T3 — Persist and switch preferences.** Add nullable `user.locale`
+- [x] **T3 — Persist and switch preferences.** Add nullable `user.locale`
   (or an equivalent explicitly chosen preference store) in
   `packages/db/src/schema.ts`; validate permitted values at the app boundary
   and apply via `pnpm db:push` after inspecting any prompt. Implement a
@@ -207,7 +207,7 @@ these semantics in T1 rather than weakening them without asking.
   validation/toast/error text, accessibility labels, and server-generated
   user-visible copy; do not translate API protocol values or persisted
   identifiers.
-  - [ ] T4a: shell, navigation, layouts, loading states
+  - [x] T4a: shell, navigation, layouts, loading states
   - [ ] T4b: sign-in, sign-up, two-factor, account settings
   - [ ] T4c: pricing, checkout-facing copy, billing settings
   - [ ] T4d: games, play, chat composer/thread
@@ -250,10 +250,14 @@ these semantics in T1 rather than weakening them without asking.
 
 ## Delivery and verification policy
 
-- Forecast: high review workload; string extraction across many files should
-  be sliced. Ask before a work unit grows beyond ~400 authored changed lines:
-  split into reviewable commits/PR slices or obtain a size exception. This is
-  a planning heuristic, not a reason to omit required translations.
+- Forecast: high review workload; string extraction across many files is
+  sliced as T4a–T4e. The user selected `feature-branch-chain` after the
+  cumulative branch passed the ~400-authored-line review threshold; no PR,
+  push, or merge is authorized yet. Plan future PR slices in dependency order:
+  T1 (`769ee1c`), T2 (`4e85de2` + `84ef4b2`), T3 (`48be473`), then each
+  independent T4 slice and T5. Use a draft/no-merge tracker if PR creation is
+  later requested. The ~400-line per-task target is advisory, never a reason
+  to omit translations, tests, comments, or needed behavior.
 - TDD is currently off (no web test runner configured). Typecheck/lint/build
   alone do **not** prove routing or preference behavior. If no automated
   browser harness exists, record each manual check as executed or pending,
@@ -339,7 +343,7 @@ these semantics in T1 rather than weakening them without asking.
   and acknowledged (`review-0fbbc3c19cbcdba3`). Advisory `R3-001` at
   `apps/web/proxy.ts:80` is informational and non-blocking; follow up
   separately. Route: delegated writer (multi-file) and independent verifier.
-- [ ] T3 in progress: nullable `user.locale`, request-time DB > cookie >
+- [x] T3 preference persistence and switcher: nullable `user.locale`, request-time DB > cookie >
   language-header resolution, server actions, cookie reconciliation, and
   anonymous/authenticated switchers implemented. Independent typecheck, lint
   (0 errors, 27 warnings), and build passed before schema push. The first
@@ -355,13 +359,46 @@ these semantics in T1 rather than weakening them without asking.
   `information_schema.columns` query confirmed `user.locale` exists and is
   nullable, while both template columns remain present and non-nullable.
   Switcher now refreshes the current route after a successful server action.
-  Signed-in/cross-device behavior, anonymous switch interaction, and shell
-  query-count/latency are not runtime-verified yet; no T3 commit.
-- [ ] T4–T5 not started.
+  T3 work-unit commit: `48be47392dd936ca035b9f6ebcffff1050edfa5e`.
+  Native high-tier four-lens review approved and acknowledged
+  (`review-d078d68de0138c3d`); non-blocking advisories R2-001,
+  R3-001, and R4-001 are separate follow-ups, not corrections to that
+  receipt. Independent post-push anonymous production-server GET smoke:
+  `/sign-in` en/es/fr rendered `html lang=en/es/en`, `NEXT_LOCALE=es`
+  rendered `es`, invalid cookie fell back to `en`, and the URL stayed
+  unprefixed. A first smoke attempt failed before readiness (HTTP 000);
+  a bounded 30-second readiness retry passed. The user manually exercised
+  the authenticated switcher, refresh/deep link, DB-over-conflicting-cookie
+  sign-in, cross-device preference change, and sign-out/anonymous switch on
+  the local worktree server and reported all working; this is user-reported
+  runtime evidence, not an independently observed browser trace. The user
+  reported no noticeable authenticated-page slowdown. Quantitative shell
+  query-count/latency measurement remains pending for T5, as do valid
+  preview/OAuth/webhook POST and error/loading scenarios.
+- [ ] T4 in progress: inventory and bounded translation slices T4a–T4e.
+  - [x] T4a shell/navigation slice complete. The `Shell`
+    namespace now has 22 matching keys in `messages/en.json` and
+    `messages/es.json`, covering shell navigation, account menu, command
+    palette, credits navigation, mobile sidebar trigger, and the locale-switcher
+    language label. Game rows display only user-provided game titles; the scoped
+    app layout and four loading fallbacks contain only skeletons, with no visible
+    copy to translate. `pnpm --filter web typecheck` passed; lint passed with
+    0 errors and 27 warnings; build and `git diff --check` passed. Independent
+    public render smoke: `/sign-in` with `Accept-Language: en`/`es` returned
+    HTTP 200, `<html lang=en/es>`, translated `Language`/`Idioma`, and no URL
+    prefix. The locale-switcher failure toast is translated; account-menu
+    errors still display nonempty server error details with a translated
+    fallback. Shared UI drawer title/description and slice-owned app settings,
+    billing and metadata remain for T4e/T4b/T4c/T4e respectively.
+    Authenticated navigation render is not independently observed; carry it
+    explicitly to T5. Interrupted writers' final review-facade reports did
+    not reflect their already-written changes, so independent verification
+    read back the actual diff and reran checks before closing this slice.
+- [ ] T5 not started.
 
 ## Next step
 
-Finish T3 behavior verification, including an immediate refresh after the
-switch action so the language changes without changing the URL. Record
-unexecuted authenticated/browser matrix cases and shell latency honestly.
-Additional integration runtime cases remain pending for T5.
+Continue T4b auth/account settings translation with both catalogs and
+focused render checks. T4a's authenticated navigation render remains pending
+for T5. Quantify authenticated shell latency/query cost during T5 without
+logging credentials.
