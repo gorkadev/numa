@@ -394,6 +394,9 @@ these semantics in T1 rather than weakening them without asking.
     explicitly to T5. Interrupted writers' final review-facade reports did
     not reflect their already-written changes, so independent verification
     read back the actual diff and reran checks before closing this slice.
+    Work-unit commit: `b872085ea4b6d4a8d5fd6ad29f2558ce0975d6d1`;
+    native medium-tier reliability review approved and acknowledged
+    (`review-aa7263fee82bcb83`).
 - [ ] T5 not started.
 
 ## Next step
