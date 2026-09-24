@@ -29,6 +29,7 @@ import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
 
 import { authClient } from "@/lib/auth-client"
+import { LocaleSwitcher } from "@/components/locale-switcher"
 
 /**
  * Where Better Auth sends a failed OAuth round trip, per flow. It matches
@@ -325,6 +326,9 @@ export function AuthPage({ error }: { error?: string }) {
               </div>
             </CardContent>
           </Card>
+          <div className="mx-auto max-w-xs">
+            <LocaleSwitcher />
+          </div>
         </div>
       </div>
     </div>

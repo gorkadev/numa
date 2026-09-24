@@ -6,7 +6,7 @@
 - Route: delegated for routing and multi-file writes; bounded verification after each work unit
 - Created: 2026-09-23
 - Branch: `feat/new-flow` (worktree `/Users/gorka/workspace/worktrees/numa`)
-- Status: T1 complete; T2 in progress; translation work not started
+- Status: T1–T2 complete; T3 in progress; translation work not started
 
 ## Objective
 
@@ -172,7 +172,7 @@ these semantics in T1 rather than weakening them without asking.
   remain usable. Route: delegated scout for multi-file mapping, then bounded
   writer if installation/config touches multiple files. Checks: install
   succeeds; focused typecheck; record doc/version and design evidence.
-- [ ] **T2 — Integrate page routing atomically.** In one functional work unit,
+- [x] **T2 — Integrate page routing atomically.** In one functional work unit,
   compose `proxy.ts` with locale handling **and** create the required page
   route/layout structure. If `[locale]` is required, move `(app)`, sign-in
   (catch-all and two-factor), sign-up (catch-all), and
@@ -305,7 +305,7 @@ these semantics in T1 rather than weakening them without asking.
   Work-unit commit: `769ee1ce102f46c41c9bb85d179527ec18fca8cc`
   (`feat(web): establish next-intl locale configuration`); native medium-tier
   reliability review approved and acknowledged on that committed candidate.
-- [ ] T2 in progress: atomic page routing and proxy integration.
+- [x] T2 atomic page routing and proxy integration.
   The root layout now lives at `app/[locale]/layout.tsx`, validates `en`/`es`,
   sets `<html lang>` from the route, and provides request messages through
   `NextIntlClientProvider` while retaining metadata, fonts, and global providers.
@@ -334,16 +334,34 @@ these semantics in T1 rather than weakening them without asking.
   Signed-in, valid preview, OAuth callback, webhook POST, and exercised
   error/loading boundary behavior remain untested. Work-unit commit:
   `4e85de2258f35f9f7fe5d46034e78e39ec4188a4`.
-  Native review is pending: risk assessment for this exact commit failed with
-  `schema-incompatible`, while inspect offered the accumulated branch base
-  rather than T2's previous work-unit boundary. Do not review the accumulated
-  branch as a substitute for this commit. Route: delegated writer (multi-file);
-  parent owns T2 checkoff.
-- [ ] T3–T5 not started.
+  Explicit committed-range inspect at base `769ee1c` offered the T2+progress
+  slice ending at `84ef4b2`; native medium-tier reliability review approved
+  and acknowledged (`review-0fbbc3c19cbcdba3`). Advisory `R3-001` at
+  `apps/web/proxy.ts:80` is informational and non-blocking; follow up
+  separately. Route: delegated writer (multi-file) and independent verifier.
+- [ ] T3 in progress: nullable `user.locale`, request-time DB > cookie >
+  language-header resolution, server actions, cookie reconciliation, and
+  anonymous/authenticated switchers implemented. Independent typecheck, lint
+  (0 errors, 27 warnings), and build passed before schema push. The first
+  `pnpm db:push` on the explicitly authorized Neon `production` branch stopped
+  before mutation: it proposed dropping populated `games.template_id` and
+  `games.template_version` (8 rows each) because this worktree lacked the
+  original worktree's uncommitted game-template declarations. After the user
+  authorized taking those schema changes from the original worktree, added
+  exactly those two declarations while preserving `user.locale`; a second
+  `pnpm db:push` completed with `[✓] Changes applied` and no data-loss prompt.
+  No migration files or ad hoc DDL were used. Independent verification after
+  push: typecheck, lint (0 errors, 27 warnings), and build passed; a read-only
+  `information_schema.columns` query confirmed `user.locale` exists and is
+  nullable, while both template columns remain present and non-nullable.
+  Switcher now refreshes the current route after a successful server action.
+  Signed-in/cross-device behavior, anonymous switch interaction, and shell
+  query-count/latency are not runtime-verified yet; no T3 commit.
+- [ ] T4–T5 not started.
 
 ## Next step
 
-Resolve exact T2 work-unit native-review targeting before closing T2;
-additional signed-in and integration runtime cases remain pending for T5.
-Do not proceed to T3 based on the accumulated-branch review target.
-D2 preference behavior is not yet implemented.
+Finish T3 behavior verification, including an immediate refresh after the
+switch action so the language changes without changing the URL. Record
+unexecuted authenticated/browser matrix cases and shell latency honestly.
+Additional integration runtime cases remain pending for T5.

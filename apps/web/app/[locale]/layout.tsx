@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { Geist_Mono, Inter } from "next/font/google"
 import { hasLocale, NextIntlClientProvider } from "next-intl"
-import { getMessages } from "next-intl/server"
+import { getLocale, getMessages } from "next-intl/server"
 
 import "@workspace/ui/globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -10,6 +10,7 @@ import { cn } from "@workspace/ui/lib/utils"
 import { Toaster } from "@workspace/ui/components/toast"
 import { TooltipProvider } from "@workspace/ui/components/tooltip"
 import { routing } from "@/i18n/routing"
+import { LocaleReconciler } from "@/components/locale-reconciler"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 
@@ -41,11 +42,16 @@ export default async function RootLayout({
 
   if (!hasLocale(routing.locales, locale)) notFound()
 
+  // The rewritten route parameter can lag behind a cookie or account change.
+  // Request config is the canonical precedence resolver for both providers.
+  const resolvedLocale = await getLocale()
+  if (!hasLocale(routing.locales, resolvedLocale)) notFound()
+
   const messages = await getMessages()
 
   return (
     <html
-      lang={locale}
+      lang={resolvedLocale}
       suppressHydrationWarning
       className={cn(
         "antialiased",
@@ -64,7 +70,8 @@ export default async function RootLayout({
          * already on screen. Here it also survives navigation, so a toast
          * raised just before a redirect is still readable after it.
          */}
-        <NextIntlClientProvider locale={locale} messages={messages}>
+        <NextIntlClientProvider locale={resolvedLocale} messages={messages}>
+          <LocaleReconciler locale={resolvedLocale} />
           <Toaster>
             <TooltipProvider>
               <ThemeProvider>{children}</ThemeProvider>

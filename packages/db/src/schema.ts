@@ -77,6 +77,8 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").default(false).notNull(),
   image: text("image"),
+  /** Explicit locale preference; NULL preserves browser negotiation semantics. */
+  locale: text("locale"),
   /**
    * Owned by the `twoFactor` plugin in `apps/web/lib/auth.ts`. Stays false
    * after `/two-factor/enable` and only flips once the first TOTP code is
@@ -312,6 +314,15 @@ export const games = pgTable(
       .references(() => user.id, { onDelete: "cascade" }),
 
     title: text("title").notNull(),
+
+    /**
+     * The immutable starter kit selected when this game was created. The app
+     * validates the untrusted form value against its catalog before writing it;
+     * the database retains the stable id and version rather than a mutable
+     * display label or client-provided version.
+     */
+    templateId: text("template_id").notNull().default("none"),
+    templateVersion: integer("template_version").notNull().default(1),
 
     /**
      * The game's entire chat thread, stored in the AI SDK's `UIMessage` shape —

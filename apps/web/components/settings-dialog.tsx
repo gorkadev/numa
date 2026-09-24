@@ -43,6 +43,7 @@ import { ProfileSection } from "@/components/settings/profile-section"
 import { SecuritySection } from "@/components/settings/security-section"
 import { SettingsHeading } from "@/components/settings/settings-group"
 import { ThemePicker } from "@/components/settings/theme-picker"
+import { LocaleSwitcher } from "@/components/locale-switcher"
 
 /**
  * A settings surface shaped like the ChatGPT / Claude.ai settings modal: a
@@ -260,13 +261,22 @@ export function SettingsDialog({
             >
               <div className="p-6">
                 {shownSection === "general" && (
-                  <section className="flex flex-col gap-4">
+                  <>
+                    <section className="flex flex-col gap-4">
                     <SettingsHeading
                       title="Theme"
                       description="Main color of the interface"
                     />
-                    <ThemePicker />
-                  </section>
+                      <ThemePicker />
+                    </section>
+                    <section className="flex flex-col gap-4">
+                    <SettingsHeading
+                      title="Language"
+                      description="Choose the language used across Numa"
+                    />
+                      <LocaleSwitcher />
+                    </section>
+                  </>
                 )}
 
                 {shownSection === "account" && <ProfileSection />}
