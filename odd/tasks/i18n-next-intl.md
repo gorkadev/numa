@@ -332,12 +332,18 @@ these semantics in T1 rather than weakening them without asking.
   to `/sign-in`; `/api/auth/get-session` returned 200. `/sign-up` redirected
   one hop to `/sign-in`, matching its unchanged redirect-only source.
   Signed-in, valid preview, OAuth callback, webhook POST, and exercised
-  error/loading boundary behavior remain untested. No commit created.
-  Route: delegated writer (multi-file); parent owns T2 checkoff.
+  error/loading boundary behavior remain untested. Work-unit commit:
+  `4e85de2258f35f9f7fe5d46034e78e39ec4188a4`.
+  Native review is pending: risk assessment for this exact commit failed with
+  `schema-incompatible`, while inspect offered the accumulated branch base
+  rather than T2's previous work-unit boundary. Do not review the accumulated
+  branch as a substitute for this commit. Route: delegated writer (multi-file);
+  parent owns T2 checkoff.
 - [ ] T3–T5 not started.
 
 ## Next step
 
-Implement T2 as an atomic routing/proxy work unit and verify its page and
-handler matrix. T1 alone does not implement i18n routing or D2 preference
-behavior.
+Resolve exact T2 work-unit native-review targeting before closing T2;
+additional signed-in and integration runtime cases remain pending for T5.
+Do not proceed to T3 based on the accumulated-branch review target.
+D2 preference behavior is not yet implemented.
