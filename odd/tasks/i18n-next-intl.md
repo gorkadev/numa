@@ -212,13 +212,13 @@ these semantics in T1 rather than weakening them without asking.
     - [x] Auth source/catalog unit (native review stopped; no approval)
     - [x] Settings personal/dialog/catalog unit (`b0a2230`, `084c713`)
     - [x] Settings security/passkey/session unit (`2749aec`)
-  - [ ] T4c: pricing, checkout-facing copy, billing settings
+  - [x] T4c: pricing, checkout-facing copy, billing settings
     - [x] Pricing plan cards, top-ups, alerts, and locale-aware amounts
     - [x] Pricing FAQ copy
     - [x] Plan-change preview and confirmation dialog copy
     - [x] Billing settings plan/loading/action copy and locale format
     - [x] Billing history states and known provider-status labels
-    - [ ] Sidebar upgrade nudge copy
+    - [x] Sidebar upgrade nudge copy
   - [ ] T4d: games, play, chat composer/thread
   - [ ] T4e: errors, empty states, tooltips, metadata, remaining inventory
   Checks per slice: typecheck, lint, relevant render checks; track missing
@@ -448,7 +448,7 @@ these semantics in T1 rather than weakening them without asking.
   localization policy in T4e's error sweep. Independent precommit Security
   audit found no missing Settings keys or placeholder mismatch; typecheck,
   lint (0 errors/30 warnings), build, and diff check passed.
-- [ ] T4c started: read-only inventory mapped pricing, plan-change dialog,
+- [x] T4c copy slices complete: read-only inventory mapped pricing, plan-change dialog,
   billing settings, and upgrade card. Checkout route is Polar-owned protocol
   and must not be translated. Split pricing because the server page alone is
   606 lines; keep each reviewable unit under 400 diff lines. First pricing
@@ -479,7 +479,12 @@ these semantics in T1 rather than weakening them without asking.
   order descriptions remain provider-owned. Independent typecheck/lint (0
   errors/30 warnings)/build, key parity, and diff check passed; no covering
   status-mapping unit tests were found. Authenticated history render remains
-  T5.
+  T5. Billing core commit `adc4ca499b8dec7f163ffe320476428607d3a274`;
+  history commit `5d147aa1f41fd2dd893520fce6451002ba7b36ad`.
+  Sidebar upgrade nudge translated using shared Pricing copy and active-locale
+  USD display; independent typecheck/lint (0 errors/30 warnings)/build and
+  diff check passed. Its checkout href, plan gate, and dismissal behavior
+  remain unchanged. Work-unit commit recorded after creation.
 - [ ] T5 not started.
 
 ## Next step
