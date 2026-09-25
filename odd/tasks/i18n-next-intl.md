@@ -216,7 +216,9 @@ these semantics in T1 rather than weakening them without asking.
     - [x] Pricing plan cards, top-ups, alerts, and locale-aware amounts
     - [x] Pricing FAQ copy
     - [x] Plan-change preview and confirmation dialog copy
-    - [ ] Billing settings and sidebar upgrade nudge
+    - [x] Billing settings plan/loading/action copy and locale format
+    - [ ] Billing history states and known provider-status labels
+    - [ ] Sidebar upgrade nudge copy
   - [ ] T4d: games, play, chat composer/thread
   - [ ] T4e: errors, empty states, tooltips, metadata, remaining inventory
   Checks per slice: typecheck, lint, relevant render checks; track missing
@@ -463,7 +465,14 @@ these semantics in T1 rather than weakening them without asking.
   cadence, and confirmation copy, preserving action bindings and unknown
   interval fallback. Independent typecheck/lint (0 errors, 30 warnings)/build,
   catalog parity, and diff check passed (203 diff lines); authenticated plan
-  change flow remains T5.
+  change flow remains T5. Work-unit commit:
+  `198bc75b19f620be5115bac6c3d1bbfe2142ff5c`.
+  Billing core unit translated plan/loading/unavailable/action copy, known
+  cadence and next-event labels, and active-locale plan date/currency/credit
+  formatting; provider values and API paths preserved. Independent typecheck,
+  lint (0 errors/30 warnings), build, key/placeholder parity and diff check
+  passed (229 source/catalog diff lines). Billing history dates/status/order
+  copy remain for the next unit; authenticated rendering remains T5.
 - [ ] T5 not started.
 
 ## Next step

@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import { useFormatter, useLocale, useTranslations } from "next-intl"
 import Link from "next/link"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
@@ -23,13 +24,9 @@ type BillingState =
   | { status: "unavailable" }
   | { status: "ready"; details: BillingDetails }
 
-function planLabel(plan: BillingDetails["plan"]) {
-  return plan === "max" ? "Max" : plan === "pro" ? "Pro" : "Free"
-}
-
-function formatCurrency(amount: number, currency: string) {
+function formatCurrency(amount: number, currency: string, locale?: string) {
   try {
-    return new Intl.NumberFormat(undefined, {
+    return new Intl.NumberFormat(locale, {
       style: "currency",
       currency,
     }).format(amount / 100)
@@ -38,27 +35,33 @@ function formatCurrency(amount: number, currency: string) {
   }
 }
 
-function formatDate(value: string) {
+function formatDate(value: string, locale?: string) {
   const date = new Date(value)
 
   return Number.isNaN(date.getTime())
     ? null
-    : new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(date)
-}
-
-function formatCadence(cadence: BillingDetails["subscription"]["cadence"]) {
-  if (!cadence || cadence.count < 1 || !cadence.interval) return null
-
-  const interval = cadence.interval.replace(/_/g, " ")
-  return cadence.count === 1
-    ? `per ${interval}`
-    : `every ${cadence.count} ${interval}s`
+    : new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(date)
 }
 
 function statusLabel(status: string) {
   return status
     .replace(/_/g, " ")
     .replace(/\b\w/g, (letter) => letter.toUpperCase())
+}
+
+function knownStatusKey(status: string) {
+  const keys: Record<string, string> = {
+    active: "statusActive",
+    canceled: "statusCanceled",
+    cancelled: "statusCanceled",
+    incomplete: "statusIncomplete",
+    incomplete_expired: "statusIncompleteExpired",
+    past_due: "statusPastDue",
+    unpaid: "statusUnpaid",
+    trialing: "statusTrialing",
+    paused: "statusPaused",
+  }
+  return keys[status] ?? null
 }
 
 function isSameOriginPath(href: string | null): href is string {
@@ -108,9 +111,10 @@ function isBillingDetails(value: unknown): value is BillingDetails {
 }
 
 function BillingSkeleton() {
+  const t = useTranslations("Billing")
   return (
-    <div className="flex flex-col gap-8" aria-label="Loading billing details">
-      <SettingsGroup title="Plan" description="Your subscription and credits.">
+    <div className="flex flex-col gap-8" aria-label={t("loadingDetails")}>
+      <SettingsGroup title={t("planGroup")} description={t("planGroupDescription")}>
         {["plan", "credits", "manage"].map((row) => (
           <SettingsRow key={row}>
             <ItemContent>
@@ -144,19 +148,20 @@ function BillingSkeleton() {
 }
 
 function UnavailableBilling({ onRetry }: { onRetry: () => void }) {
+  const t = useTranslations("Billing")
   return (
     <div className="flex flex-col gap-8">
       <SettingsGroup
-        title="Billing unavailable"
-        description="We could not load your billing details. Please try again."
+        title={t("unavailableTitle")}
+        description={t("unavailableDescription")}
       >
         <SettingsRow>
           <ItemContent>
-            <ItemTitle>Billing details are unavailable</ItemTitle>
+            <ItemTitle>{t("unavailableDetails")}</ItemTitle>
           </ItemContent>
           <ItemActions>
             <Button variant="outline" size="sm" onClick={onRetry}>
-              Retry
+              {t("retry")}
             </Button>
           </ItemActions>
         </SettingsRow>
@@ -170,6 +175,9 @@ function FactValue({ value }: { value: string | number | null }) {
 }
 
 export function BillingSection({ active }: { active: boolean }) {
+  const t = useTranslations("Billing")
+  const format = useFormatter()
+  const locale = useLocale()
   const [state, setState] = useState<BillingState>({ status: "loading" })
   const [requestVersion, setRequestVersion] = useState(0)
   const requestId = useRef(0)
@@ -231,21 +239,44 @@ export function BillingSection({ active }: { active: boolean }) {
 
   const { details } = state
   const { subscription } = details
-  const cadence = formatCadence(subscription.cadence)
+  const cadence = subscription.cadence
+  const cadenceLabel =
+    cadence && cadence.count >= 1 && cadence.interval
+      ? (() => {
+          const interval =
+            cadence.interval === "day"
+              ? [t("intervalDay"), t("intervalDays")]
+              : cadence.interval === "week"
+                ? [t("intervalWeek"), t("intervalWeeks")]
+                : cadence.interval === "month"
+                  ? [t("intervalMonth"), t("intervalMonths")]
+                  : cadence.interval === "year"
+                    ? [t("intervalYear"), t("intervalYears")]
+                    : null
+          if (interval) {
+            return cadence.count === 1
+              ? t("cadencePer", { interval: interval[0]! })
+              : t("cadenceEvery", { count: cadence.count, interval: interval[1]! })
+          }
+          return cadence.count === 1
+            ? `per ${cadence.interval}`
+            : `every ${format.number(cadence.count)} ${cadence.interval}`
+        })()
+      : null
   const price =
     subscription.amount !== null && subscription.currency !== null
-      ? formatCurrency(subscription.amount, subscription.currency)
+      ? formatCurrency(subscription.amount, subscription.currency, locale)
       : null
 
   return (
     <div className="flex flex-col gap-8">
-      <SettingsGroup title="Plan" description="Your subscription and credits.">
+      <SettingsGroup title={t("planGroup")} description={t("planGroupDescription")}>
         <SettingsRow>
           <ItemContent>
-            <ItemTitle>Current plan</ItemTitle>
+            <ItemTitle>{t("currentPlan")}</ItemTitle>
             {subscription.status && (
               <ItemDescription>
-                Status: {statusLabel(subscription.status)}
+                {t("statusPrefix", { status: knownStatusKey(subscription.status) ? t(knownStatusKey(subscription.status)!) : subscription.status })}
               </ItemDescription>
             )}
           </ItemContent>
@@ -256,49 +287,45 @@ export function BillingSection({ active }: { active: boolean }) {
               <Badge
                 variant={details.plan === "free" ? "secondary" : "default"}
               >
-                {planLabel(details.plan)}
+                {details.plan === "free" ? t("freePlan") : details.plan === "pro" ? "Pro" : "Max"}
               </Badge>
             )}
           </ItemActions>
         </SettingsRow>
         <SettingsRow>
           <ItemContent>
-            <ItemTitle>Price and cadence</ItemTitle>
-            <ItemDescription>Current subscription price.</ItemDescription>
+            <ItemTitle>{t("priceAndCadence")}</ItemTitle>
+            <ItemDescription>{t("priceAndCadenceDescription")}</ItemDescription>
           </ItemContent>
           <ItemActions>
             <FactValue
               value={
-                price && cadence ? `${price} ${cadence}` : (price ?? cadence)
+                price && cadenceLabel ? `${price} ${cadenceLabel}` : (price ?? cadenceLabel)
               }
             />
           </ItemActions>
         </SettingsRow>
         <SettingsRow>
           <ItemContent>
-            <ItemTitle>Credits</ItemTitle>
-            <ItemDescription>
-              What is left of this period&apos;s allowance.
-            </ItemDescription>
+            <ItemTitle>{t("credits")}</ItemTitle>
+            <ItemDescription>{t("creditsDescription")}</ItemDescription>
           </ItemContent>
           <ItemActions>
-            <FactValue value={subscription.credits} />
+            <FactValue value={subscription.credits === null ? null : format.number(subscription.credits)} />
           </ItemActions>
         </SettingsRow>
         <SettingsRow>
           <ItemContent>
-            <ItemTitle>Current period</ItemTitle>
-            <ItemDescription>
-              Start and end of the current billing cycle.
-            </ItemDescription>
+            <ItemTitle>{t("currentPeriod")}</ItemTitle>
+            <ItemDescription>{t("currentPeriodDescription")}</ItemDescription>
           </ItemContent>
           <ItemActions>
             <FactValue
               value={
                 subscription.currentPeriod
                   ? [
-                      formatDate(subscription.currentPeriod.start),
-                      formatDate(subscription.currentPeriod.end),
+                      formatDate(subscription.currentPeriod.start, locale),
+                      formatDate(subscription.currentPeriod.end, locale),
                     ]
                       .filter((date): date is string => date !== null)
                       .join(" – ") || null
@@ -312,28 +339,26 @@ export function BillingSection({ active }: { active: boolean }) {
             <ItemContent>
               <ItemTitle>
                 {subscription.nextEvent.type === "renewal"
-                  ? "Next renewal"
+                  ? t("nextRenewal")
                   : subscription.nextEvent.type === "product_change"
-                    ? "Scheduled plan change"
-                    : "Cancellation"}
+                    ? t("scheduledPlanChange")
+                    : t("cancellation")}
               </ItemTitle>
               {subscription.nextEvent.type === "cancellation" && (
                 <ItemDescription>
-                  Your plan is scheduled to end.
+                  {t("planScheduledToEnd")}
                 </ItemDescription>
               )}
             </ItemContent>
             <ItemActions>
-              <FactValue value={formatDate(subscription.nextEvent.at)} />
+              <FactValue value={formatDate(subscription.nextEvent.at, locale)} />
             </ItemActions>
           </SettingsRow>
         )}
         <SettingsRow>
           <ItemContent>
-            <ItemTitle>Manage plan</ItemTitle>
-            <ItemDescription>
-              Change your plan or buy more credits.
-            </ItemDescription>
+            <ItemTitle>{t("managePlan")}</ItemTitle>
+            <ItemDescription>{t("managePlanDescription")}</ItemDescription>
           </ItemContent>
           <ItemActions>
             <Button
@@ -342,16 +367,14 @@ export function BillingSection({ active }: { active: boolean }) {
               nativeButton={false}
               render={<Link href="/pricing" />}
             >
-              Manage plan
+              {t("managePlan")}
             </Button>
           </ItemActions>
         </SettingsRow>
         <SettingsRow>
           <ItemContent>
-            <ItemTitle>Billing portal</ItemTitle>
-            <ItemDescription>
-              Manage payment details and invoices.
-            </ItemDescription>
+            <ItemTitle>{t("billingPortal")}</ItemTitle>
+            <ItemDescription>{t("billingPortalDescription")}</ItemDescription>
           </ItemContent>
           <ItemActions>
             <Button
@@ -360,7 +383,7 @@ export function BillingSection({ active }: { active: boolean }) {
               nativeButton={false}
               render={<Link href="/api/billing/portal" />}
             >
-              Open billing portal
+              {t("openBillingPortal")}
             </Button>
           </ItemActions>
         </SettingsRow>
