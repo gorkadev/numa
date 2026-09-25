@@ -24,6 +24,23 @@
     "edits": "Edits",
     "filesDeleted": "Files deleted"
   },
+  "ChatActivity": {
+    "placeholder": "Ask for a change…",
+    "turnErrorTitle": "That turn did not go through",
+    "reconnecting": "Reconnecting to your response…",
+    "thinking": "Thinking",
+    "workingOutWhatToChange": "Working out what to change",
+    "planningTheEdit": "Planning the edit",
+    "gettingToIt": "Getting to it",
+    "taskListHeading": "Tasks",
+    "taskStripSummary": "Tasks: {done} of {total} complete. Current task: {currentTask} ({status}).",
+    "taskStatus": {
+      "pending": "Not started",
+      "running": "In progress",
+      "done": "Done",
+      "failed": "Failed"
+    }
+  },
   "GameComposer": {
     "placeholder": "Describe the game you want to build…",
     "sendMessage": "Send message",

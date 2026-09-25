@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useTranslations } from "next-intl"
 
 import {
   Marker,
@@ -18,23 +19,24 @@ import { Spinner } from "@workspace/ui/components/spinner"
  * honest thing to say is that the agent is working, and a specific claim here
  * would be one nothing has happened to justify.
  */
-const THINKING_PHRASES = [
-  "Thinking",
-  "Working out what to change",
-  "Planning the edit",
-  "Getting to it",
-]
+const THINKING_PHRASE_KEYS = [
+  "thinking",
+  "workingOutWhatToChange",
+  "planningTheEdit",
+  "gettingToIt",
+] as const
 
 const THINKING_INTERVAL = 2600
 
 export function Thinking({ reconnecting = false }: { reconnecting?: boolean }) {
+  const t = useTranslations("ChatActivity")
   const [phrase, setPhrase] = useState(0)
 
   useEffect(() => {
     if (reconnecting) return
 
     const timer = setInterval(
-      () => setPhrase((it) => (it + 1) % THINKING_PHRASES.length),
+      () => setPhrase((it) => (it + 1) % THINKING_PHRASE_KEYS.length),
       THINKING_INTERVAL
     )
 
@@ -56,8 +58,8 @@ export function Thinking({ reconnecting = false }: { reconnecting?: boolean }) {
       </MarkerIcon>
       <MarkerContent className="shimmer">
         {reconnecting
-          ? "Reconnecting to your response…"
-          : `${THINKING_PHRASES[phrase]}…`}
+          ? t("reconnecting")
+          : `${t(THINKING_PHRASE_KEYS[phrase]!)}…`}
       </MarkerContent>
     </Marker>
   )

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 
 import {
   Alert01Icon,
@@ -92,6 +93,7 @@ function currentTask(tasks: readonly TaskStripTask[]): TaskStripTask {
  * not a floating card of its own.
  */
 export function TaskStrip({ tasks }: { tasks: TaskStripTask[] }) {
+  const t = useTranslations("ChatActivity")
   const [open, setOpen] = useState(false)
 
   const doneCount = tasks.filter((task) => task.status === "done").length
@@ -111,6 +113,12 @@ export function TaskStrip({ tasks }: { tasks: TaskStripTask[] }) {
        * this card-shaped strip's visual family).
        */}
       <CollapsibleTrigger
+        aria-label={t("taskStripSummary", {
+          done: doneCount,
+          total: tasks.length,
+          currentTask: current.title,
+          status: t(`taskStatus.${current.status}`),
+        })}
         className="flex items-center gap-2 rounded-t-2xl px-2.5 py-2 text-left text-sm hover:text-foreground focus-visible:outline-none"
         style={{ width: "stretch" }}
       >
@@ -122,7 +130,11 @@ export function TaskStrip({ tasks }: { tasks: TaskStripTask[] }) {
             open && "rotate-180"
           )}
         />
-        <span className="shrink-0">
+        <span
+          className="shrink-0"
+          role="img"
+          aria-label={t(`taskStatus.${current.status}`)}
+        >
           <TaskStatusIcon status={current.status} />
         </span>
         <span
@@ -147,10 +159,17 @@ export function TaskStrip({ tasks }: { tasks: TaskStripTask[] }) {
          * `--accordion-panel-height`.
          */}
         <div className="data-ending-style:h-0 data-starting-style:h-0 bg-muted/50 p-2 mx-4 rounded-t-2xl">
-          <ul className="flex flex-col gap-1.5 px-2.5 pb-2 text-sm">
+          <ul
+            aria-label={t("taskListHeading")}
+            className="flex flex-col gap-1.5 px-2.5 pb-2 text-sm"
+          >
             {tasks.map((task) => (
               <li key={task.id} className="flex items-center gap-2">
-                <span className="shrink-0">
+                <span
+                  className="shrink-0"
+                  role="img"
+                  aria-label={t(`taskStatus.${task.status}`)}
+                >
                   <TaskStatusIcon status={task.status} />
                 </span>
                 <span

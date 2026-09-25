@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 
 import type { UIMessage } from "ai"
+import { useTranslations } from "next-intl"
 import { Alert01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
@@ -87,6 +88,7 @@ export function ChatThread({
   /** Reported upward so the header button can hide itself on a thread with no runs yet — the same up-reporting shape `onRevision` above already uses. */
   onSubagentRunsChange: (runs: SubagentRunRecord[]) => void
 }) {
+  const t = useTranslations("ChatActivity")
   const {
     messages,
     error,
@@ -224,7 +226,7 @@ export function ChatThread({
         {error ? (
           <Alert variant="destructive">
             <HugeiconsIcon icon={Alert01Icon} strokeWidth={2} />
-            <AlertTitle>That turn did not go through</AlertTitle>
+            <AlertTitle>{t("turnErrorTitle")}</AlertTitle>
             <AlertDescription>{error.message}</AlertDescription>
           </Alert>
         ) : null}
@@ -242,7 +244,7 @@ export function ChatThread({
           tierId={tierId}
           onTierChange={setTierId}
           pending={pending}
-          placeholder="Ask for a change…"
+          placeholder={t("placeholder")}
           tasksSlot={
             showTaskStrip && taskStripTasks ? (
               <TaskStrip tasks={taskStripTasks} />

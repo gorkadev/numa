@@ -24,6 +24,23 @@
     "edits": "Ediciones",
     "filesDeleted": "Archivos eliminados"
   },
+  "ChatActivity": {
+    "placeholder": "Pide un cambio…",
+    "turnErrorTitle": "No se pudo completar el turno",
+    "reconnecting": "Reconectando con tu respuesta…",
+    "thinking": "Pensando",
+    "workingOutWhatToChange": "Pensando qué cambiar",
+    "planningTheEdit": "Planificando el cambio",
+    "gettingToIt": "En ello",
+    "taskListHeading": "Tareas",
+    "taskStripSummary": "Tareas: {done} de {total} completadas. Tarea actual: {currentTask} ({status}).",
+    "taskStatus": {
+      "pending": "Sin empezar",
+      "running": "En curso",
+      "done": "Completada",
+      "failed": "Fallida"
+    }
+  },
   "GameComposer": {
     "placeholder": "Describe el juego que quieres crear…",
     "sendMessage": "Enviar mensaje",

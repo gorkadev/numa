@@ -223,7 +223,8 @@ these semantics in T1 rather than weakening them without asking.
     - [x] Composer, suggestions, and model tiers
     - [x] Game management menu and errors
     - [x] Chat messages and copy actions
-    - [ ] Chat activity, tools, and tasks
+    - [x] Chat thread, thinking, and task-strip states
+    - [ ] Tool group and tool-part display labels
     - [ ] Agent side panel and run details
     - [ ] Game preview and play view
   - [ ] T4e: errors, empty states, tooltips, metadata, remaining inventory
@@ -513,6 +514,11 @@ these semantics in T1 rather than weakening them without asking.
   and unknown tool names unchanged. `chat-message.tsx` had no app-owned copy.
   Independent build/typecheck/lint (0 errors/29 warnings), key parity and diff
   check passed (105 diff lines); interactive chat render remains T5.
+  ChatActivity thread/thinking/task-strip unit translated placeholder, error
+  title, rotating/reconnect copy and accessible task status/counts; agent
+  task titles/activity, transport and dynamic error.message were untouched.
+  Independent build/typecheck/lint (0 errors/29 warnings), ICU parity, and
+  diff check passed (85 diff lines); interactive chat render remains T5.
 - [ ] T5 not started.
 
 ## Next step
