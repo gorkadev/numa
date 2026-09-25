@@ -275,7 +275,8 @@
     "couldNotChangeLanguage": "No se pudo cambiar el idioma",
     "pleaseTryAgain": "Inténtalo de nuevo.",
     "language": "Idioma",
-    "credits": "Créditos"
+    "credits": "Créditos",
+    "free": "Gratis"
   },
   "Auth": {
     "lastUsed": "Usado recientemente",

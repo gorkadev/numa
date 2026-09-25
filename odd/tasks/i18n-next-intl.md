@@ -234,6 +234,8 @@ these semantics in T1 rather than weakening them without asking.
     - [x] Shared mobile sidebar/drawer accessibility
     - [x] Shared spinner accessibility inventory and resolution
     - [x] Two-factor step-up errors at server source
+    - [x] Credit badge and balance formatting
+    - [ ] Shared scroller/dialog/toast close accessibility
     - [ ] Dynamic provider-error policy and residual copy sweep
   Checks per slice: typecheck, lint, relevant render checks; track missing
   keys and untranslated/hardcoded strings. The earlier ~49-file estimate
@@ -583,6 +585,10 @@ these semantics in T1 rather than weakening them without asking.
   client. Independent security-focused audit verified auth-before-translation,
   TOTP-before-mutation order and unchanged guards; build/typecheck/web lint
   (0 errors/29 warnings) and diff check passed. Live TOTP remains T5.
+  Credits sidebar unit translated Free badge and locale-formatted numeric
+  balance, preserving null dash, unknown-plan absence, Pro/Max names and
+  pricing link. Independent build/typecheck/web lint (0 errors/29 warnings),
+  catalog parity and diff check passed; runtime remains T5.
 - [ ] T5 not started.
 
 ## Next step
