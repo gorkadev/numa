@@ -62,7 +62,7 @@ const ERROR_MESSAGES: Record<string, [AuthMessageKey, AuthMessageKey, boolean?]>
 }
 
 function describeError(error: { status?: number; code?: string | null }, t: (key: AuthMessageKey) => string): ErrorMessage {
-  const keys = error.status === 429
+  const keys: readonly [AuthMessageKey, AuthMessageKey, boolean?] = error.status === 429
     ? ["tooManyAttemptsTitle", "tooManyAttemptsDescription"] as const
     : ERROR_MESSAGES[error.code ?? ""] ?? ["somethingWentWrongTitle", "somethingWentWrongDescription"]
   return { title: t(keys[0]), description: t(keys[1]), showBackLink: keys[2] === true }
