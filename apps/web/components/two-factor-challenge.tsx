@@ -31,6 +31,7 @@ import { Particles } from "@workspace/ui/components/particles"
 import { Spinner } from "@workspace/ui/components/spinner"
 
 import { authClient } from "@/lib/auth-client"
+import { useTranslations } from "next-intl"
 
 type ErrorMessage = {
   title: string
@@ -45,45 +46,26 @@ type ErrorMessage = {
  * reachable because the `two_factor` cookie `lib/oauth-two-factor.ts` issues
  * is short-lived (10 minutes) and consumed once a session is created.
  */
-const ERROR_MESSAGES: Record<string, ErrorMessage> = {
-  INVALID_CODE: {
-    title: "Incorrect code",
-    description: "That code didn't work. Try again.",
-  },
-  INVALID_BACKUP_CODE: {
-    title: "Incorrect code",
-    description: "That code didn't work. Try again.",
-  },
-  INVALID_TWO_FACTOR_COOKIE: {
-    title: "Sign-in attempt expired",
-    description: "Your sign-in attempt expired. Sign in again.",
-    showBackLink: true,
-  },
-  TOO_MANY_ATTEMPTS_REQUEST_NEW_CODE: {
-    title: "Sign-in attempt expired",
-    description: "Your sign-in attempt expired. Sign in again.",
-    showBackLink: true,
-  },
-  ACCOUNT_TEMPORARILY_LOCKED: {
-    title: "Account temporarily locked",
-    description: "Too many failed attempts. Try again in 15 minutes.",
-  },
+type AuthMessageKey =
+  | "incorrectCodeTitle" | "incorrectCodeDescription"
+  | "attemptExpiredTitle" | "attemptExpiredDescription"
+  | "accountLockedTitle" | "accountLockedDescription"
+  | "tooManyAttemptsTitle" | "tooManyAttemptsDescription"
+  | "somethingWentWrongTitle" | "somethingWentWrongDescription"
+
+const ERROR_MESSAGES: Record<string, [AuthMessageKey, AuthMessageKey, boolean?]> = {
+  INVALID_CODE: ["incorrectCodeTitle", "incorrectCodeDescription"],
+  INVALID_BACKUP_CODE: ["incorrectCodeTitle", "incorrectCodeDescription"],
+  INVALID_TWO_FACTOR_COOKIE: ["attemptExpiredTitle", "attemptExpiredDescription", true],
+  TOO_MANY_ATTEMPTS_REQUEST_NEW_CODE: ["attemptExpiredTitle", "attemptExpiredDescription", true],
+  ACCOUNT_TEMPORARILY_LOCKED: ["accountLockedTitle", "accountLockedDescription"],
 }
 
-const RATE_LIMIT_ERROR: ErrorMessage = {
-  title: "Too many attempts",
-  description: "Too many attempts. Wait a few seconds and try again.",
-}
-
-const FALLBACK_ERROR: ErrorMessage = {
-  title: "Something went wrong",
-  description: "Something went wrong. Try again.",
-}
-
-function describeError(error: { status?: number; code?: string | null }) {
-  if (error.status === 429) return RATE_LIMIT_ERROR
-
-  return (error.code && ERROR_MESSAGES[error.code]) || FALLBACK_ERROR
+function describeError(error: { status?: number; code?: string | null }, t: (key: AuthMessageKey) => string): ErrorMessage {
+  const keys = error.status === 429
+    ? ["tooManyAttemptsTitle", "tooManyAttemptsDescription"] as const
+    : ERROR_MESSAGES[error.code ?? ""] ?? ["somethingWentWrongTitle", "somethingWentWrongDescription"]
+  return { title: t(keys[0]), description: t(keys[1]), showBackLink: keys[2] === true }
 }
 
 /**
@@ -105,6 +87,7 @@ function describeError(error: { status?: number; code?: string | null }) {
  * the destination renders signed in.
  */
 export function TwoFactorChallenge() {
+  const t = useTranslations("Auth")
   const [mode, setMode] = useState<"totp" | "backup">("totp")
   const [code, setCode] = useState("")
   const [trustDevice, setTrustDevice] = useState(false)
@@ -125,7 +108,7 @@ export function TwoFactorChallenge() {
     if (verifyError) {
       setPending(false)
       setCode("")
-      setError(describeError(verifyError))
+      setError(describeError(verifyError, t))
       return
     }
 
@@ -147,7 +130,7 @@ export function TwoFactorChallenge() {
     if (verifyError) {
       setPending(false)
       setCode("")
-      setError(describeError(verifyError))
+      setError(describeError(verifyError, t))
       return
     }
 
@@ -184,12 +167,12 @@ export function TwoFactorChallenge() {
           <Card>
             <CardHeader>
               <CardTitle>
-                <h1>Two-factor authentication</h1>
+                <h1>{t("twoFactorTitle")}</h1>
               </CardTitle>
               <CardDescription>
                 {mode === "totp"
-                  ? "Enter the 6-digit code from your authenticator app."
-                  : "Enter one of your recovery codes."}
+                  ? t("enterAuthenticatorCode")
+                  : t("enterRecoveryCode")}
               </CardDescription>
             </CardHeader>
 
@@ -203,7 +186,7 @@ export function TwoFactorChallenge() {
                     {error.showBackLink && (
                       <>
                         {" "}
-                        <Link href="/sign-in">Back to sign in</Link>
+                        <Link href="/sign-in">{t("backToSignIn")}</Link>
                       </>
                     )}
                   </AlertDescription>
@@ -216,6 +199,7 @@ export function TwoFactorChallenge() {
                 <div className="space-y-4">
                   <InputOTP
                     maxLength={6}
+                    aria-label={t("enterAuthenticatorCode")}
                     value={code}
                     disabled={pending}
                     onChange={(value) => {
@@ -238,14 +222,14 @@ export function TwoFactorChallenge() {
                       disabled={pending}
                     />
                     <FieldLabel htmlFor="trust-device" className="font-normal">
-                      Trust this device for 30 days
+                      {t("trustDevice")}
                     </FieldLabel>
                   </Field>
 
                   {pending && (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Spinner />
-                      Verifying…
+                      {t("verifying")}
                     </div>
                   )}
                 </div>
@@ -254,6 +238,7 @@ export function TwoFactorChallenge() {
                   <Input
                     autoFocus
                     placeholder="XXXXX-XXXXX"
+                    aria-label={t("enterRecoveryCode")}
                     value={code}
                     disabled={pending}
                     onChange={(event) => setCode(event.target.value)}
@@ -270,7 +255,7 @@ export function TwoFactorChallenge() {
                       htmlFor="trust-device-backup"
                       className="font-normal"
                     >
-                      Trust this device for 30 days
+                      {t("trustDevice")}
                     </FieldLabel>
                   </Field>
 
@@ -280,7 +265,7 @@ export function TwoFactorChallenge() {
                     disabled={pending || !code}
                   >
                     {pending && <Spinner />}
-                    Verify
+                    {t("verify")}
                   </Button>
                 </form>
               )}
@@ -297,14 +282,14 @@ export function TwoFactorChallenge() {
                   }
                 >
                   {mode === "totp"
-                    ? "Use a recovery code instead"
-                    : "Use your authenticator app instead"}
+                    ? t("useRecoveryCode")
+                    : t("useAuthenticator")}
                 </Button>
                 <Link
                   href="/sign-in"
                   className="text-muted-foreground hover:text-foreground"
                 >
-                  Back to sign in
+                  {t("backToSignIn")}
                 </Link>
               </div>
             </CardFooter>

@@ -30,6 +30,7 @@ import { toast } from "@workspace/ui/components/toast"
 
 import { authClient } from "@/lib/auth-client"
 import { LocaleSwitcher } from "@/components/locale-switcher"
+import { useTranslations } from "next-intl"
 
 /**
  * Where Better Auth sends a failed OAuth round trip, per flow. It matches
@@ -45,39 +46,23 @@ const ERROR_CALLBACK_URL = "/sign-in"
  * would let a link put arbitrary text on this page. Unknown codes fall back
  * to a generic message.
  */
-const ERROR_MESSAGES: Record<string, { title: string; description: string }> = {
-  access_denied: {
-    title: "Sign-in cancelled",
-    description: "You cancelled the sign-in. Pick a provider to try again.",
-  },
-  state_mismatch: {
-    title: "Your sign-in expired",
-    description:
-      "The sign-in took too long or was opened in another tab. Please try again.",
-  },
-  email_not_found: {
-    title: "No email address shared",
-    description:
-      "Your account did not share an email address with Numa. Allow email access or try another provider.",
-  },
-  email_not_verified: {
-    title: "Email not verified",
-    description: "Verify your email address with the provider, then try again.",
-  },
-  account_already_linked_to_different_user: {
-    title: "Account already in use",
-    description: "This account is already linked to a different Numa user.",
-  },
-  unable_to_link_account: {
-    title: "Could not link your account",
-    description: "Sign in with the provider you used the first time.",
-  },
+const ERROR_MESSAGES: Record<string, [string, string]> = {
+  access_denied: ["signInCancelledTitle", "signInCancelledDescription"],
+  state_mismatch: ["signInExpiredTitle", "signInExpiredDescription"],
+  email_not_found: ["noEmailTitle", "noEmailDescription"],
+  email_not_verified: ["emailNotVerifiedTitle", "emailNotVerifiedDescription"],
+  account_already_linked_to_different_user: ["accountAlreadyUsedTitle", "accountAlreadyUsedDescription"],
+  unable_to_link_account: ["couldNotLinkTitle", "couldNotLinkDescription"],
 }
 
-const FALLBACK_ERROR = {
-  title: "Sign-in failed",
-  description: "Something went wrong while signing you in. Please try again.",
-}
+type AuthMessageKey =
+  | "signInCancelledTitle" | "signInCancelledDescription"
+  | "signInExpiredTitle" | "signInExpiredDescription"
+  | "noEmailTitle" | "noEmailDescription"
+  | "emailNotVerifiedTitle" | "emailNotVerifiedDescription"
+  | "accountAlreadyUsedTitle" | "accountAlreadyUsedDescription"
+  | "couldNotLinkTitle" | "couldNotLinkDescription"
+  | "signInFailedTitle" | "signInFailedDescription"
 
 /**
  * The hint on whichever button worked last time.
@@ -88,13 +73,14 @@ const FALLBACK_ERROR = {
  * as it lands.
  */
 function LastUsed({ shown }: { shown: boolean }) {
+  const t = useTranslations("Auth")
   return (
     <Badge
       variant="secondary"
       className="absolute -top-2 -right-2"
       hidden={!shown}
     >
-      Last used
+      {t("lastUsed")}
     </Badge>
   )
 }
@@ -111,8 +97,13 @@ function LastUsed({ shown }: { shown: boolean }) {
  * sign-up.
  */
 export function AuthPage({ error }: { error?: string }) {
+  const t = useTranslations("Auth")
+  const errorKeys = error ? ERROR_MESSAGES[error] : undefined
   const errorMessage = error
-    ? (ERROR_MESSAGES[error] ?? FALLBACK_ERROR)
+    ? {
+        title: t((errorKeys?.[0] ?? "signInFailedTitle") as AuthMessageKey),
+        description: t((errorKeys?.[1] ?? "signInFailedDescription") as AuthMessageKey),
+      }
     : undefined
 
   const [signingInMethod, setSigningInMethod] = useState<
@@ -158,16 +149,15 @@ export function AuthPage({ error }: { error?: string }) {
       if (result?.error) {
         toast.add({
           type: "error",
-          title: "Could not start sign-in",
+          title: t("couldNotStartSignIn"),
           description: result.error.message,
         })
       }
     } catch (error) {
       toast.add({
         type: "error",
-        title: "Could not start sign-in",
-        description:
-          error instanceof Error ? error.message : "Please try again.",
+        title: t("couldNotStartSignIn"),
+        description: error instanceof Error ? error.message : t("somethingWentWrongDescription"),
       })
     } finally {
       signInInFlight.current = false
@@ -192,7 +182,7 @@ export function AuthPage({ error }: { error?: string }) {
         if (!cancelled) {
           toast.add({
             type: "error",
-            title: "Could not sign you in",
+            title: t("couldNotSignIn"),
             description: result.error.message,
           })
         }
@@ -205,9 +195,8 @@ export function AuthPage({ error }: { error?: string }) {
     } catch (error) {
       toast.add({
         type: "error",
-        title: "Could not sign you in",
-        description:
-          error instanceof Error ? error.message : "Please try again.",
+        title: t("couldNotSignIn"),
+        description: error instanceof Error ? error.message : t("somethingWentWrongDescription"),
       })
     } finally {
       if (!navigating) {
@@ -241,11 +230,10 @@ export function AuthPage({ error }: { error?: string }) {
           <Card>
             <CardHeader>
               <CardTitle>
-                <h1>Sign in or create your account</h1>
+                <h1>{t("signInTitle")}</h1>
               </CardTitle>
               <CardDescription>
-                Build your own racers, shooters, puzzles and whole worlds using
-                your own words.
+                {t("signInDescription")}
               </CardDescription>
             </CardHeader>
             {errorMessage && (
@@ -273,7 +261,7 @@ export function AuthPage({ error }: { error?: string }) {
                   ) : (
                     <HugeiconsIcon icon={GoogleIcon} data-icon="inline-start" />
                   )}
-                  Continue with Google
+                  {t("continueGoogle")}
                   <LastUsed shown={lastMethod === "google"} />
                 </Button>
                 <Button
@@ -287,7 +275,7 @@ export function AuthPage({ error }: { error?: string }) {
                   ) : (
                     <HugeiconsIcon icon={GithubIcon} data-icon="inline-start" />
                   )}
-                  Continue with GitHub
+                  {t("continueGithub")}
                   <LastUsed shown={lastMethod === "github"} />
                 </Button>
 
@@ -301,7 +289,7 @@ export function AuthPage({ error }: { error?: string }) {
                  */}
                 <div className="flex items-center gap-3 py-1">
                   <Separator className="flex-1" />
-                  <span className="text-xs text-muted-foreground">or</span>
+                  <span className="text-xs text-muted-foreground">{t("or")}</span>
                   <Separator className="flex-1" />
                 </div>
 
@@ -320,7 +308,7 @@ export function AuthPage({ error }: { error?: string }) {
                       data-icon="inline-start"
                     />
                   )}
-                  Continue with a passkey
+                  {t("continuePasskey")}
                   <LastUsed shown={lastMethod === "passkey"} />
                 </Button>
               </div>
