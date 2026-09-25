@@ -25,10 +25,10 @@ import {
   InputOTPSlot,
 } from "@workspace/ui/components/input-otp"
 import { Separator } from "@workspace/ui/components/separator"
-import { Spinner } from "@workspace/ui/components/spinner"
 
 import { authClient } from "@/lib/auth-client"
 import { RecoveryCodes } from "@/components/settings/recovery-codes"
+import { Spinner } from "@/components/localized-spinner"
 
 /**
  * Splits a TOTP secret into 4-character blocks — `ABCD EFGH IJKL` rather

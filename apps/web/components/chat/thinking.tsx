@@ -8,7 +8,8 @@ import {
   MarkerContent,
   MarkerIcon,
 } from "@workspace/ui/components/marker"
-import { Spinner } from "@workspace/ui/components/spinner"
+
+import { Spinner } from "@/components/localized-spinner"
 
 /**
  * What the thread says while the agent has the turn and nothing to show yet.

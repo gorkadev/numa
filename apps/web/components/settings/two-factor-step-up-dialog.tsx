@@ -15,8 +15,9 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@workspace/ui/components/input-otp"
-import { Spinner } from "@workspace/ui/components/spinner"
 import { useTranslations } from "next-intl"
+
+import { Spinner } from "@/components/localized-spinner"
 
 import {
   disableTwoFactor,

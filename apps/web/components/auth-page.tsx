@@ -25,9 +25,9 @@ import {
 } from "@workspace/ui/components/card"
 import { Particles } from "@workspace/ui/components/particles"
 import { Separator } from "@workspace/ui/components/separator"
-import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
 
+import { Spinner } from "@/components/localized-spinner"
 import { authClient } from "@/lib/auth-client"
 import { LocaleSwitcher } from "@/components/locale-switcher"
 import { useTranslations } from "next-intl"

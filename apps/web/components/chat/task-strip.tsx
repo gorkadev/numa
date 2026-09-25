@@ -15,8 +15,9 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@workspace/ui/components/collapsible"
-import { Spinner } from "@workspace/ui/components/spinner"
 import { cn } from "@workspace/ui/lib/utils"
+
+import { Spinner } from "@/components/localized-spinner"
 
 import type { TaskStripTask } from "@/lib/games/plan-tasks"
 

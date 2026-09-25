@@ -18,9 +18,10 @@ import {
   ItemTitle,
 } from "@workspace/ui/components/item"
 import { Skeleton } from "@workspace/ui/components/skeleton"
-import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
 import { cn } from "@workspace/ui/lib/utils"
+
+import { Spinner } from "@/components/localized-spinner"
 
 import { authClient } from "@/lib/auth-client"
 import {

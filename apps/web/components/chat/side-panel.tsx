@@ -21,7 +21,6 @@ import {
   DrawerTitle,
 } from "@workspace/ui/components/drawer"
 import { ItemGroup } from "@workspace/ui/components/item"
-import { Spinner } from "@workspace/ui/components/spinner"
 import { useIsMobile } from "@workspace/ui/hooks/use-mobile"
 import { cn } from "@workspace/ui/lib/utils"
 
@@ -31,6 +30,7 @@ import {
   SubagentRunRow,
 } from "@/components/chat/subagent-panel"
 import { SubagentRunDetail } from "@/components/chat/subagent-run-detail"
+import { Spinner } from "@/components/localized-spinner"
 import type { SubagentRunRecord } from "@/lib/games/harness/records"
 
 export type SidePanelTab = "preview" | "agents"

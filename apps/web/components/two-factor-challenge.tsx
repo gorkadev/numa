@@ -28,8 +28,8 @@ import {
   InputOTPSlot,
 } from "@workspace/ui/components/input-otp"
 import { Particles } from "@workspace/ui/components/particles"
-import { Spinner } from "@workspace/ui/components/spinner"
 
+import { Spinner } from "@/components/localized-spinner"
 import { authClient } from "@/lib/auth-client"
 import { useTranslations } from "next-intl"
 

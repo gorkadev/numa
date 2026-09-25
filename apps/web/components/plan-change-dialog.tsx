@@ -13,8 +13,9 @@ import {
   AlertDialogTrigger,
 } from "@workspace/ui/components/alert-dialog"
 import { Button } from "@workspace/ui/components/button"
-import { Spinner } from "@workspace/ui/components/spinner"
 import { useLocale, useTranslations } from "next-intl"
+
+import { Spinner } from "@/components/localized-spinner"
 
 type PlanChangeAction = (formData: FormData) => Promise<void>
 

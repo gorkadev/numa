@@ -5,8 +5,9 @@ import { useEffect, useRef, useState } from "react"
 import { useTranslations } from "next-intl"
 
 import { Button } from "@workspace/ui/components/button"
-import { Spinner } from "@workspace/ui/components/spinner"
 import { cn } from "@workspace/ui/lib/utils"
+
+import { Spinner } from "@/components/localized-spinner"
 
 import { PREVIEW_SANDBOX_FLAGS } from "@/lib/games/preview-sandbox"
 

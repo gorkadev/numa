@@ -232,7 +232,7 @@ these semantics in T1 rather than weakening them without asking.
     - [x] Home empty state, error boundary, and metadata
     - [x] Fixed game-creation action errors
     - [x] Shared mobile sidebar/drawer accessibility
-    - [ ] Shared spinner accessibility inventory and resolution
+    - [x] Shared spinner accessibility inventory and resolution
     - [ ] Dynamic provider-error policy and residual copy sweep
   Checks per slice: typecheck, lint, relevant render checks; track missing
   keys and untranslated/hardcoded strings. The earlier ~49-file estimate
@@ -570,6 +570,12 @@ these semantics in T1 rather than weakening them without asking.
   Shell locale without an extra server request. Independent build/typecheck/
   web lint (0 errors/29 warnings) and diff check passed; mobile drawer
   accessibility runtime remains T5.
+  App-level localized Spinner wrapper now supplies Common.loading to all 18
+  app callers under NextIntlClientProvider while preserving explicit labels,
+  decorative state and SVG props; shared UI Spinner/toast remain generic.
+  Independent build/typecheck/web lint (0 errors/29 warnings), import audit,
+  catalog parity and staged diff check passed (84 source/catalog diff lines).
+  Spoken loading labels in a browser remain T5.
 - [ ] T5 not started.
 
 ## Next step

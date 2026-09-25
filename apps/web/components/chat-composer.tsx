@@ -10,7 +10,7 @@ import {
   InputGroupButton,
   InputGroupTextarea,
 } from "@workspace/ui/components/input-group"
-import { Spinner } from "@workspace/ui/components/spinner"
+import { Spinner } from "@/components/localized-spinner"
 import { ModelPicker } from "@/components/model-picker"
 import type { TierId } from "@/lib/ai/model-catalog"
 

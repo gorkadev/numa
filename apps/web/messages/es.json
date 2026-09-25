@@ -1,6 +1,7 @@
 {
   "Common": {
-    "appName": "Numa"
+    "appName": "Numa",
+    "loading": "Cargando"
   },
   "Home": {
     "emptyTitle": "¿Qué creamos hoy?",
