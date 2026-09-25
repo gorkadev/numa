@@ -231,7 +231,7 @@ these semantics in T1 rather than weakening them without asking.
   - [ ] T4e: errors, empty states, tooltips, metadata, remaining inventory
     - [x] Home empty state, error boundary, and metadata
     - [x] Fixed game-creation action errors
-    - [ ] Shared mobile sidebar/drawer accessibility
+    - [x] Shared mobile sidebar/drawer accessibility
     - [ ] Shared spinner accessibility inventory and resolution
     - [ ] Dynamic provider-error policy and residual copy sweep
   Checks per slice: typecheck, lint, relevant render checks; track missing
@@ -564,6 +564,12 @@ these semantics in T1 rather than weakening them without asking.
   translations; state shape, authentication, tier, insert and redirects remain
   unchanged. Independent build/typecheck/web lint (0 errors/29 warnings),
   catalog parity and diff check passed; action runtime failure paths remain T5.
+  Shared sidebar unit introduced optional English-default labels in packages/ui
+  and a client `LocalizedSidebarProvider` in both authenticated shell and
+  fallback. Drawer title/description and trigger/rail controls now follow
+  Shell locale without an extra server request. Independent build/typecheck/
+  web lint (0 errors/29 warnings) and diff check passed; mobile drawer
+  accessibility runtime remains T5.
 - [ ] T5 not started.
 
 ## Next step

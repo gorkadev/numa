@@ -252,6 +252,8 @@
   "Shell": {
     "search": "Buscar",
     "toggleSidebar": "Mostrar u ocultar la barra lateral",
+    "sidebarDrawerTitle": "Menú de navegación",
+    "sidebarDrawerDescription": "Navega por la aplicación con la barra lateral.",
     "newGame": "Nuevo juego",
     "recents": "Recientes",
     "emptyGames": "Tus juegos aparecerán aquí.",

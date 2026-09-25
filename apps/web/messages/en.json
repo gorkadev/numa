@@ -252,6 +252,8 @@
   "Shell": {
     "search": "Search",
     "toggleSidebar": "Toggle sidebar",
+    "sidebarDrawerTitle": "Navigation menu",
+    "sidebarDrawerDescription": "Navigate the application using the sidebar.",
     "newGame": "New game",
     "recents": "Recents",
     "emptyGames": "Your games will live here.",
