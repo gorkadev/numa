@@ -150,14 +150,14 @@ export function AuthPage({ error }: { error?: string }) {
         toast.add({
           type: "error",
           title: t("couldNotStartSignIn"),
-          description: result.error.message,
+          description: t("somethingWentWrongDescription"),
         })
       }
-    } catch (error) {
+    } catch {
       toast.add({
         type: "error",
         title: t("couldNotStartSignIn"),
-        description: error instanceof Error ? error.message : t("somethingWentWrongDescription"),
+        description: t("somethingWentWrongDescription"),
       })
     } finally {
       signInInFlight.current = false
@@ -183,7 +183,7 @@ export function AuthPage({ error }: { error?: string }) {
           toast.add({
             type: "error",
             title: t("couldNotSignIn"),
-            description: result.error.message,
+            description: t("somethingWentWrongDescription"),
           })
         }
 
@@ -192,11 +192,11 @@ export function AuthPage({ error }: { error?: string }) {
 
       window.location.assign("/")
       navigating = true
-    } catch (error) {
+    } catch {
       toast.add({
         type: "error",
         title: t("couldNotSignIn"),
-        description: error instanceof Error ? error.message : t("somethingWentWrongDescription"),
+        description: t("somethingWentWrongDescription"),
       })
     } finally {
       if (!navigating) {

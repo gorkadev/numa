@@ -151,21 +151,18 @@ export function NavUser() {
         toast.add({
           type: "error",
           title: t("couldNotSwitchAccount"),
-          description: error.message || t("pleaseTryAgain"),
+          description: t("pleaseTryAgain"),
         })
         return
       }
 
       window.location.assign("/")
       navigating = true
-    } catch (error) {
+    } catch {
       toast.add({
         type: "error",
         title: t("couldNotSwitchAccount"),
-        description:
-          error instanceof Error && error.message
-            ? error.message
-            : t("pleaseTryAgain"),
+        description: t("pleaseTryAgain"),
       })
     } finally {
       if (!navigating) {
@@ -219,21 +216,18 @@ export function NavUser() {
         toast.add({
           type: "error",
           title: t("couldNotSignOut"),
-          description: error.message || t("pleaseTryAgain"),
+          description: t("pleaseTryAgain"),
         })
         return
       }
 
       navigating = true
       router.push("/sign-in")
-    } catch (error) {
+    } catch {
       toast.add({
         type: "error",
         title: t("couldNotSignOut"),
-        description:
-          error instanceof Error && error.message
-            ? error.message
-            : t("pleaseTryAgain"),
+        description: t("pleaseTryAgain"),
       })
     } finally {
       if (!navigating) {
