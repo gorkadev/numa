@@ -251,6 +251,7 @@ export function GameChat({
           <GameMenu gameId={gameId} title={title} pinned={pinned} />
         </header>
         <ChatThread
+          key={gameId}
           gameId={gameId}
           initialMessages={initialMessages}
           initialSessions={initialSessions}

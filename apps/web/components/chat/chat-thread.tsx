@@ -92,6 +92,7 @@ export function ChatThread({
   const {
     messages,
     error,
+    failureKind,
     stop,
     onAnswer,
     send,
@@ -216,18 +217,24 @@ export function ChatThread({
       </MessageScrollerProvider>
       <div className="mx-auto flex w-full max-w-3xl shrink-0 flex-col gap-2 px-4 pb-4">
         {/**
-         * The failure gets its own surface with the real message in it, rather
-         * than one generic line under the composer. A turn can die for reasons
-         * the player can act on and that look nothing alike — no credits left,
-         * the sandbox failed to start, the model refused — and collapsing all
-         * of them into "something went wrong" turns a fixable problem into a
-         * dead end.
+         * Only application-owned structured stream events get specific copy.
+         * Provider and transport messages are not stable localization codes
+         * and may contain diagnostics, so unknown failures use a localized
+         * fallback rather than comparing or displaying English prose.
          */}
         {error ? (
           <Alert variant="destructive">
             <HugeiconsIcon icon={Alert01Icon} strokeWidth={2} />
             <AlertTitle>{t("turnErrorTitle")}</AlertTitle>
-            <AlertDescription>{error.message}</AlertDescription>
+            <AlertDescription>
+              {failureKind === "credits-unprovisioned"
+                ? t("creditsUnprovisioned")
+                : failureKind === "credits-exhausted"
+                  ? t("creditsExhausted")
+                  : failureKind === "game-unavailable"
+                    ? t("gameUnavailable")
+                    : t("genericTurnError")}
+            </AlertDescription>
           </Alert>
         ) : null}
         <ChatComposer
