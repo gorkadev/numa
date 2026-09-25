@@ -1,6 +1,7 @@
 "use client"
 
 import { ArrowDown01Icon, GridIcon } from "@hugeicons/core-free-icons"
+import { useTranslations } from "next-intl"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   DropdownMenu,
@@ -44,7 +45,9 @@ export function ModelPicker({
   onValueChange,
   disabled = false,
 }: ModelPickerProps) {
+  const t = useTranslations("GameComposer")
   const selected = getTier(value)
+  const tierLabel = (id: TierId) => t(`tiers.${id}.label`)
 
   return (
     <DropdownMenu>
@@ -52,7 +55,7 @@ export function ModelPicker({
         render={
           <InputGroupButton type="button" disabled={disabled} size="sm">
             <HugeiconsIcon icon={GridIcon} />
-            {selected.label}
+            {tierLabel(selected.id)}
             <HugeiconsIcon icon={ArrowDown01Icon} />
           </InputGroupButton>
         }
@@ -92,8 +95,8 @@ export function ModelPicker({
                */}
               <Item size="xs">
                 <ItemContent>
-                  <ItemTitle>{tier.label}</ItemTitle>
-                  <ItemDescription>{tier.tagline}</ItemDescription>
+                  <ItemTitle>{tierLabel(tier.id)}</ItemTitle>
+                  <ItemDescription>{t(`tiers.${tier.id}.tagline`)}</ItemDescription>
                 </ItemContent>
               </Item>
             </DropdownMenuRadioItem>

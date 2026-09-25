@@ -1,6 +1,7 @@
 "use client"
 
 import type { FormEvent, KeyboardEvent, ReactNode } from "react"
+import { useTranslations } from "next-intl"
 import { ArrowUp02Icon, StopIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
@@ -60,11 +61,12 @@ export function ChatComposer({
   onStop,
   pending = false,
   error = null,
-  placeholder = "Describe the game you want to build…",
+  placeholder,
   tierId,
   onTierChange,
   tasksSlot,
 }: ChatComposerProps) {
+  const t = useTranslations("GameComposer")
   const trimmed = value.trim()
   const stoppable = pending && Boolean(onStop)
 
@@ -118,7 +120,7 @@ export function ChatComposer({
             rows={3}
             value={value}
             disabled={pending}
-            placeholder={placeholder}
+            placeholder={placeholder ?? t("placeholder")}
             onChange={(event) => onValueChange(event.target.value)}
             onKeyDown={handleKeyDown}
           />
@@ -134,7 +136,7 @@ export function ChatComposer({
             <InputGroupButton
               type={stoppable ? "button" : "submit"}
               onClick={stoppable ? onStop : undefined}
-              aria-label={stoppable ? "Stop generating" : "Send message"}
+              aria-label={stoppable ? t("stopGenerating") : t("sendMessage")}
               disabled={stoppable ? false : pending || !trimmed}
               className="ml-auto rounded-full"
               variant={stoppable ? "destructive" : "default"}

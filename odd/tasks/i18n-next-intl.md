@@ -220,6 +220,12 @@ these semantics in T1 rather than weakening them without asking.
     - [x] Billing history states and known provider-status labels
     - [x] Sidebar upgrade nudge copy
   - [ ] T4d: games, play, chat composer/thread
+    - [x] Composer, suggestions, and model tiers
+    - [ ] Game management menu and errors
+    - [ ] Chat messages and copy actions
+    - [ ] Chat activity, tools, and tasks
+    - [ ] Agent side panel and run details
+    - [ ] Game preview and play view
   - [ ] T4e: errors, empty states, tooltips, metadata, remaining inventory
   Checks per slice: typecheck, lint, relevant render checks; track missing
   keys and untranslated/hardcoded strings. The earlier ~49-file estimate
@@ -485,6 +491,17 @@ these semantics in T1 rather than weakening them without asking.
   USD display; independent typecheck/lint (0 errors/30 warnings)/build and
   diff check passed. Its checkout href, plan gate, and dismissal behavior
   remain unchanged. Work-unit commit recorded after creation.
+- [ ] T4d started: read-only mapping identified six bounded UI slices. Keep
+  user-authored game titles/messages and agent-generated content untouched;
+  translate fixed controls/labels without changing tier/tool IDs or API
+  protocol. Authenticated smoke checks remain T5 when credentials are not
+  safely available. Composer unit translated suggestion labels and sample
+  prompts, picker labels/taglines, default placeholder and accessible controls;
+  suggestion IDs are stable and tier/form-data values unchanged. Independent
+  sequential build, typecheck, lint (0 errors/30 warnings), catalog parity,
+  and diff check passed (130 source/catalog diff lines). The writer's initial
+  concurrent typecheck/build raced on generated `.next/types/routes.js`; the
+  sequential rerun passed. Authenticated home render/submit remains T5.
 - [ ] T5 not started.
 
 ## Next step

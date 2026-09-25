@@ -2,6 +2,55 @@
   "Common": {
     "appName": "Numa"
   },
+  "GameComposer": {
+    "placeholder": "Describe the game you want to build…",
+    "sendMessage": "Send message",
+    "stopGenerating": "Stop generating",
+    "tiers": {
+      "pro": {
+        "label": "Pro",
+        "tagline": "Slower and stronger, for mechanics that need real reasoning."
+      },
+      "balanced": {
+        "label": "Balanced",
+        "tagline": "Fast and capable. The right pick for most games."
+      },
+      "fast": {
+        "label": "Fast",
+        "tagline": "Cheapest and quickest, for small tweaks and quick iterations."
+      }
+    },
+    "suggestions": {
+      "voxelSurvival": {
+        "label": "Voxel survival",
+        "prompt": "Build a first-person voxel survival game: mine and place blocks in a world I can walk around, gather what I need before nightfall, and stay alive."
+      },
+      "inkSamuraiDuel": {
+        "label": "Ink samurai duel",
+        "prompt": "Build a one-on-one samurai duel in a black-and-white ink-wash style, where fights are won by timing a parry and the counter-strike that follows it."
+      },
+      "comicBookFirefight": {
+        "label": "Comic-book firefight",
+        "prompt": "Build a top-down firefight drawn like a comic book — bold outlines, halftone shading and onomatopoeia popping up on every hit — where I clear a room of enemies using cover."
+      },
+      "realisticBattlefield": {
+        "label": "Realistic battlefield",
+        "prompt": "Build a first-person battlefield sequence with a realistic look: cross open ground under fire, use cover, and take an objective."
+      },
+      "fightFirstShooter": {
+        "label": "Fight-first shooter",
+        "prompt": "Build an arena shooter that rewards pushing forward rather than hiding: health comes from killing, enemies pressure me constantly, and standing still is what gets me killed."
+      },
+      "jungleExpeditionDrive": {
+        "label": "Jungle expedition drive",
+        "prompt": "Build a driving game through dense jungle: an off-road route with mud, river crossings and steep climbs where keeping the vehicle intact matters as much as speed."
+      },
+      "sunnyKingdomPlatformer": {
+        "label": "Sunny kingdom platformer",
+        "prompt": "Build a bright 3D platformer set in a sunny storybook kingdom: run, jump and double-jump across floating islands to collect what is scattered across each one."
+      }
+    }
+  },
   "Shell": {
     "search": "Search",
     "toggleSidebar": "Toggle sidebar",

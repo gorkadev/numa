@@ -2,6 +2,55 @@
   "Common": {
     "appName": "Numa"
   },
+  "GameComposer": {
+    "placeholder": "Describe el juego que quieres crear…",
+    "sendMessage": "Enviar mensaje",
+    "stopGenerating": "Detener la generación",
+    "tiers": {
+      "pro": {
+        "label": "Pro",
+        "tagline": "Más lento y potente, para mecánicas que requieren razonamiento avanzado."
+      },
+      "balanced": {
+        "label": "Equilibrado",
+        "tagline": "Rápido y capaz. La opción adecuada para la mayoría de los juegos."
+      },
+      "fast": {
+        "label": "Rápido",
+        "tagline": "La opción más económica y veloz, para pequeños cambios e iteraciones rápidas."
+      }
+    },
+    "suggestions": {
+      "voxelSurvival": {
+        "label": "Supervivencia voxel",
+        "prompt": "Crea un juego de supervivencia voxel en primera persona: quiero extraer y colocar bloques en un mundo que pueda recorrer, reunir lo necesario antes del anochecer y sobrevivir."
+      },
+      "inkSamuraiDuel": {
+        "label": "Duelo de samuráis a tinta",
+        "prompt": "Crea un duelo de samuráis uno contra uno con estética de tinta en blanco y negro. Los combates se ganan al calcular bien el momento de parar un ataque y lanzar el contraataque."
+      },
+      "comicBookFirefight": {
+        "label": "Tiroteo de cómic",
+        "prompt": "Crea un tiroteo cenital con estética de cómic: contornos marcados, sombreado de semitono y onomatopeyas con cada impacto. Quiero despejar una sala de enemigos usando la cobertura."
+      },
+      "realisticBattlefield": {
+        "label": "Campo de batalla realista",
+        "prompt": "Crea una secuencia bélica en primera persona con aspecto realista: quiero cruzar terreno abierto bajo fuego, usar cobertura y tomar un objetivo."
+      },
+      "fightFirstShooter": {
+        "label": "Shooter de combate agresivo",
+        "prompt": "Crea un shooter de arena que premie avanzar en vez de esconderse: recupero salud al eliminar enemigos, estos me presionan sin descanso y quedarme quieto es lo que me mata."
+      },
+      "jungleExpeditionDrive": {
+        "label": "Ruta todoterreno por la jungla",
+        "prompt": "Crea un juego de conducción por una jungla frondosa: quiero recorrer caminos todoterreno con barro, cruces de ríos y pendientes pronunciadas, donde mantener el vehículo intacto importe tanto como la velocidad."
+      },
+      "sunnyKingdomPlatformer": {
+        "label": "Plataformas en un reino soleado",
+        "prompt": "Crea un plataformas 3D luminoso en un reino de cuento bañado por el sol: quiero correr, saltar y hacer doble salto entre islas flotantes para recoger los objetos repartidos por cada una."
+      }
+    }
+  },
   "Shell": {
     "search": "Buscar",
     "toggleSidebar": "Mostrar u ocultar la barra lateral",
