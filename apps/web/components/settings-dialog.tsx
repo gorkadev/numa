@@ -44,6 +44,7 @@ import { SecuritySection } from "@/components/settings/security-section"
 import { SettingsHeading } from "@/components/settings/settings-group"
 import { ThemePicker } from "@/components/settings/theme-picker"
 import { LocaleSwitcher } from "@/components/locale-switcher"
+import { useTranslations } from "next-intl"
 
 /**
  * A settings surface shaped like the ChatGPT / Claude.ai settings modal: a
@@ -108,12 +109,13 @@ export function SettingsDialog({
    * wrong section first and only then correct it, which is the flash again.
    */
   void billing
-
+  const t = useTranslations("Settings")
   const [shownSection, setShownSection] = useState(section)
 
   if (open && section !== shownSection) setShownSection(section)
 
   const activeSection = SECTIONS.find((entry) => entry.id === shownSection)!
+  const sectionLabel = t(`${activeSection.id}Tab`)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -160,15 +162,19 @@ export function SettingsDialog({
                     />
                   </InputGroupAddon>
                   <InputGroupInput
-                    placeholder="Search..."
-                    aria-label="Search settings"
+                    placeholder={t("searchPlaceholder")}
+                    aria-label={t("searchAccessibleLabel")}
                   />
                 </InputGroup>
               </div>
 
               {SECTION_GROUPS.map((group) => (
                 <SidebarGroup key={group.label} className="py-1">
-                  <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+                  <SidebarGroupLabel>
+                    {t(
+                      group.label === "Personal" ? "personalGroup" : "billingGroup"
+                    )}
+                  </SidebarGroupLabel>
                   <SidebarGroupContent>
                     <SidebarMenu>
                       {group.sections.map((entry) => (
@@ -178,7 +184,7 @@ export function SettingsDialog({
                             onClick={() => onSectionChange(entry.id)}
                           >
                             <HugeiconsIcon icon={entry.icon} strokeWidth={2} />
-                            <span>{entry.label}</span>
+                            <span>{t(`${entry.id}Tab`)}</span>
                           </SidebarMenuButton>
                         </SidebarMenuItem>
                       ))}
@@ -207,7 +213,7 @@ export function SettingsDialog({
              */}
             <div className="flex flex-col gap-3 border-b border-border p-6">
               <div className="flex flex-col gap-1.5">
-                <DialogTitle>{activeSection.label}</DialogTitle>
+                <DialogTitle>{sectionLabel}</DialogTitle>
                 {/**
                  * `Popup` needs exactly one description for assistive tech;
                  * the mobile switcher below stands in for the visible nav, so
@@ -215,7 +221,7 @@ export function SettingsDialog({
                  * on screen.
                  */}
                 <DialogDescription className="sr-only">
-                  {activeSection.label} settings.
+                  {t("tabDescription", { section: sectionLabel })}
                 </DialogDescription>
               </div>
 
@@ -248,7 +254,7 @@ export function SettingsDialog({
                       className="flex-none px-3"
                     >
                       <HugeiconsIcon icon={entry.icon} strokeWidth={2} />
-                      {entry.label}
+                      {t(`${entry.id}Tab`)}
                     </TabsTrigger>
                   ))}
                 </TabsList>
@@ -264,15 +270,15 @@ export function SettingsDialog({
                   <>
                     <section className="flex flex-col gap-4">
                     <SettingsHeading
-                      title="Theme"
-                      description="Main color of the interface"
+                      title={t("theme")}
+                      description={t("themeDescription")}
                     />
                       <ThemePicker />
                     </section>
                     <section className="flex flex-col gap-4">
                     <SettingsHeading
-                      title="Language"
-                      description="Choose the language used across Numa"
+                      title={t("language")}
+                      description={t("languageDescription")}
                     />
                       <LocaleSwitcher />
                     </section>
