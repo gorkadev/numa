@@ -24,6 +24,26 @@
     "edits": "Ediciones",
     "filesDeleted": "Archivos eliminados"
   },
+  "ChatAgents": {
+    "previewTab": "Vista previa",
+    "agentsTab": "Agentes",
+    "selectRun": "Selecciona una ejecución para ver sus detalles.",
+    "resizeSidePanel": "Cambiar el ancho del panel lateral",
+    "sidePanel": "Panel lateral",
+    "retryPreview": "Reintentar la vista previa",
+    "reloadPreview": "Recargar la vista previa",
+    "openFullScreenPlay": "Abrir la vista de juego a pantalla completa",
+    "closePanel": "Cerrar el panel",
+    "mobilePreviewDescription": "Juega a pantalla completa. El chat seguirá donde lo dejaste.",
+    "emptyPreviewDescription": "Aún no hay nada que jugar. Envía un mensaje en el chat para crear el juego.",
+    "play": "Jugar",
+    "allRuns": "Todas las ejecuciones",
+    "noRuns": "Aún no hay ejecuciones de subagentes.",
+    "panelTitle": "Ejecuciones de subagentes",
+    "panelDescription": "Todos los subagentes que ha iniciado este hilo.",
+    "hidePreview": "Ocultar la vista previa",
+    "showPreview": "Mostrar la vista previa"
+  },
   "ChatActivity": {
     "placeholder": "Pide un cambio…",
     "turnErrorTitle": "No se pudo completar el turno",

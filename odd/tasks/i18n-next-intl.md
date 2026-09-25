@@ -225,7 +225,8 @@ these semantics in T1 rather than weakening them without asking.
     - [x] Chat messages and copy actions
     - [x] Chat thread, thinking, and task-strip states
     - [x] Tool group and tool-part display labels
-    - [ ] Agent side panel and run details
+    - [x] Agent panel tabs/navigation and preview controls
+    - [ ] Agent entries and run details
     - [ ] Game preview and play view
   - [ ] T4e: errors, empty states, tooltips, metadata, remaining inventory
   Checks per slice: typecheck, lint, relevant render checks; track missing
@@ -525,6 +526,13 @@ these semantics in T1 rather than weakening them without asking.
   labels also feed live/persisted subagent activity; subagent detail labels
   remain for the next slice. Independent build/typecheck/lint (0 errors/29
   warnings), catalog parity, and diff check passed (185 diff lines).
+  Agent panel navigation unit translated desktop/mobile tabs, preview controls,
+  subagent panel headings/empty states and accessible toggles while preserving
+  generated run content. Independent build/typecheck and scoped web lint
+  passed (0 errors/29 warnings), catalog parity and diff check passed (97 diff
+  lines). An extra root `pnpm lint` check failed in pre-existing `packages/db`
+  because it lacks `eslint.config.js`; track it as a T5 workspace blocker,
+  not evidence of a panel regression. Mobile drawer runtime remains T5.
 - [ ] T5 not started.
 
 ## Next step

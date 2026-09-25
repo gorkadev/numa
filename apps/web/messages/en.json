@@ -24,6 +24,26 @@
     "edits": "Edits",
     "filesDeleted": "Files deleted"
   },
+  "ChatAgents": {
+    "previewTab": "Preview",
+    "agentsTab": "Agents",
+    "selectRun": "Select a run to see its details.",
+    "resizeSidePanel": "Resize side panel",
+    "sidePanel": "Side panel",
+    "retryPreview": "Retry preview",
+    "reloadPreview": "Reload preview",
+    "openFullScreenPlay": "Open in full-screen play view",
+    "closePanel": "Close panel",
+    "mobilePreviewDescription": "Play your game full-screen. The chat stays right where you left it.",
+    "emptyPreviewDescription": "Nothing to play yet — send a message in the chat to build the game first.",
+    "play": "Play",
+    "allRuns": "All runs",
+    "noRuns": "No sub-agent runs yet.",
+    "panelTitle": "Sub-agent runs",
+    "panelDescription": "Every sub-agent this thread has dispatched.",
+    "hidePreview": "Hide preview",
+    "showPreview": "Show preview"
+  },
   "ChatActivity": {
     "placeholder": "Ask for a change…",
     "turnErrorTitle": "That turn did not go through",
