@@ -71,11 +71,12 @@ export async function createGame(
   formData: FormData
 ): Promise<CreateGameState> {
   const { user } = await requireSession()
+  const t = await getTranslations("GameComposer")
 
   const prompt = String(formData.get("prompt") ?? "").trim()
 
   if (!prompt) {
-    return { error: "Describe the game you want to build." }
+    return { error: t("errorPromptRequired") }
   }
 
   /**
@@ -128,7 +129,7 @@ export async function createGame(
     .returning({ id: games.id })
 
   if (!game) {
-    return { error: "The game could not be created. Try again." }
+    return { error: t("errorCreateFailed") }
   }
 
   /**

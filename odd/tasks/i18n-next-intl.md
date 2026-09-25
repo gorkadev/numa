@@ -230,7 +230,7 @@ these semantics in T1 rather than weakening them without asking.
     - [x] Game preview and play view
   - [ ] T4e: errors, empty states, tooltips, metadata, remaining inventory
     - [x] Home empty state, error boundary, and metadata
-    - [ ] Fixed game-creation action errors
+    - [x] Fixed game-creation action errors
     - [ ] Shared mobile sidebar/drawer accessibility
     - [ ] Shared spinner accessibility inventory and resolution
     - [ ] Dynamic provider-error policy and residual copy sweep
@@ -560,6 +560,10 @@ these semantics in T1 rather than weakening them without asking.
   (0 errors/29 warnings), catalog parity and diff check passed. Anonymous
   `/sign-in` metadata descriptions matched English and Spanish; the error
   boundary itself and authenticated home remain unexercised for T5.
+  createGame fixed prompt/insert errors now use request-scoped GameComposer
+  translations; state shape, authentication, tier, insert and redirects remain
+  unchanged. Independent build/typecheck/web lint (0 errors/29 warnings),
+  catalog parity and diff check passed; action runtime failure paths remain T5.
 - [ ] T5 not started.
 
 ## Next step

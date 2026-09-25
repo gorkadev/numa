@@ -183,6 +183,8 @@
     "placeholder": "Describe el juego que quieres crear…",
     "sendMessage": "Enviar mensaje",
     "stopGenerating": "Detener la generación",
+    "errorPromptRequired": "Describe el juego que quieres crear.",
+    "errorCreateFailed": "No se pudo crear el juego. Inténtalo de nuevo.",
     "tiers": {
       "pro": {
         "label": "Pro",

@@ -183,6 +183,8 @@
     "placeholder": "Describe the game you want to build…",
     "sendMessage": "Send message",
     "stopGenerating": "Stop generating",
+    "errorPromptRequired": "Describe the game you want to build.",
+    "errorCreateFailed": "The game could not be created. Try again.",
     "tiers": {
       "pro": {
         "label": "Pro",
