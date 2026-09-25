@@ -3,6 +3,7 @@
 import { useState } from "react"
 
 import { getToolName } from "ai"
+import { useTranslations } from "next-intl"
 import {
   Alert01Icon,
   ArrowDown01Icon,
@@ -24,9 +25,11 @@ import { cn } from "@workspace/ui/lib/utils"
 
 import {
   MUTATING_TOOLS,
+  TOOL_LABELS,
   isSettled,
   toolError,
   toolLabel,
+  toolPath,
   type ToolPart,
 } from "@/lib/games/tool-parts"
 
@@ -46,7 +49,23 @@ import {
  * failed halfway looks identical to a turn that worked, once you have replaced
  * its steps with a number.
  */
+const TOOL_TRANSLATION_KEYS = {
+  ask_player: "ask_player",
+  read_file: "read_file",
+  list_files: "list_files",
+  write_file: "write_file",
+  replace_text: "replace_text",
+  delete_file: "delete_file",
+  explore: "explore",
+  plan: "plan",
+  run_tasks: "run_tasks",
+  verify: "verify",
+  submit_plan: "submit_plan",
+  load_skill: "load_skill",
+} as const
+
 export function ToolGroup({ parts }: { parts: ToolPart[] }) {
+  const t = useTranslations("ChatActivity")
   const [open, setOpen] = useState(false)
 
   const active = parts.find((part) => !isSettled(part))
@@ -62,8 +81,13 @@ export function ToolGroup({ parts }: { parts: ToolPart[] }) {
   }
 
   const label = active
-    ? toolLabel(active)
-    : `${parts.some((part) => MUTATING_TOOLS.has(getToolName(part))) ? "Edited" : "Read"} ${parts.length} files`
+    ? localizedToolLabel(active, t)
+    : t(
+        parts.some((part) => MUTATING_TOOLS.has(getToolName(part)))
+          ? "toolGroupEdited"
+          : "toolGroupRead",
+        { count: parts.length }
+      )
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
@@ -101,7 +125,9 @@ export function ToolGroup({ parts }: { parts: ToolPart[] }) {
         </MarkerIcon>
         <MarkerContent className={active ? "shimmer" : undefined}>
           {label}
-          {!active && failed > 0 ? `, ${failed} failed` : null}
+          {!active && failed > 0
+            ? `, ${t("toolGroupFailed", { failed })}`
+            : null}
         </MarkerContent>
         <HugeiconsIcon
           icon={ArrowDown01Icon}
@@ -141,9 +167,10 @@ export function ToolMarker({
    */
   className?: string
 }) {
+  const t = useTranslations("ChatActivity")
   const error = toolError(part)
   const settled = isSettled(part)
-  const label = toolLabel(part)
+  const label = localizedToolLabel(part, t)
 
   if (error) {
     return (
@@ -173,5 +200,25 @@ export function ToolMarker({
       </MarkerIcon>
       <MarkerContent>{label}</MarkerContent>
     </Marker>
+  )
+}
+
+function localizedToolLabel(
+  part: ToolPart,
+  t: ReturnType<typeof useTranslations<"ChatActivity">>
+): string {
+  const name = getToolName(part)
+  const translationKey =
+    TOOL_TRANSLATION_KEYS[name as keyof typeof TOOL_TRANSLATION_KEYS]
+
+  if (!translationKey || !TOOL_LABELS[name]) return toolLabel(part)
+
+  const phase =
+    toolError(part) !== null ? "failed" : isSettled(part) ? "done" : "active"
+  const path = toolPath(part.input)
+
+  return t(
+    `toolLabels.${translationKey}.${phase}` as never,
+    { path: path ? ` ${path}` : "" } as never
   )
 }

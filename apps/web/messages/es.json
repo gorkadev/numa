@@ -39,6 +39,71 @@
       "running": "En curso",
       "done": "Completada",
       "failed": "Fallida"
+    },
+    "toolGroupEdited": "Se editaron {count} archivos",
+    "toolGroupRead": "Se leyeron {count} archivos",
+    "toolGroupFailed": "{failed} con error",
+    "toolLabels": {
+      "ask_player": {
+        "active": "Pensando la pregunta{path}",
+        "done": "Te hice una pregunta{path}",
+        "failed": "No pude hacerte una pregunta{path}"
+      },
+      "read_file": {
+        "active": "Leyendo{path}",
+        "done": "Leído{path}",
+        "failed": "No se pudo leer{path}"
+      },
+      "list_files": {
+        "active": "Revisando el juego{path}",
+        "done": "Revisé el juego{path}",
+        "failed": "No se pudo revisar el juego{path}"
+      },
+      "write_file": {
+        "active": "Escribiendo{path}",
+        "done": "Escribí{path}",
+        "failed": "No se pudo escribir{path}"
+      },
+      "replace_text": {
+        "active": "Editando{path}",
+        "done": "Edité{path}",
+        "failed": "No se pudo editar{path}"
+      },
+      "delete_file": {
+        "active": "Eliminando{path}",
+        "done": "Eliminé{path}",
+        "failed": "No se pudo eliminar{path}"
+      },
+      "explore": {
+        "active": "Investigando{path}",
+        "done": "Investigué{path}",
+        "failed": "No se pudo investigar{path}"
+      },
+      "plan": {
+        "active": "Planificando{path}",
+        "done": "Planifiqué{path}",
+        "failed": "No se pudo planificar{path}"
+      },
+      "run_tasks": {
+        "active": "Desarrollando{path}",
+        "done": "Desarrollé{path}",
+        "failed": "No se pudo desarrollar{path}"
+      },
+      "verify": {
+        "active": "Comprobando{path}",
+        "done": "Comprobé{path}",
+        "failed": "No se pudo comprobar{path}"
+      },
+      "submit_plan": {
+        "active": "Enviando el plan{path}",
+        "done": "Envié el plan{path}",
+        "failed": "No se pudo enviar el plan{path}"
+      },
+      "load_skill": {
+        "active": "Cargando una habilidad{path}",
+        "done": "Cargué una habilidad{path}",
+        "failed": "No se pudo cargar una habilidad{path}"
+      }
     }
   },
   "GameComposer": {

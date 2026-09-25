@@ -224,7 +224,7 @@ these semantics in T1 rather than weakening them without asking.
     - [x] Game management menu and errors
     - [x] Chat messages and copy actions
     - [x] Chat thread, thinking, and task-strip states
-    - [ ] Tool group and tool-part display labels
+    - [x] Tool group and tool-part display labels
     - [ ] Agent side panel and run details
     - [ ] Game preview and play view
   - [ ] T4e: errors, empty states, tooltips, metadata, remaining inventory
@@ -519,6 +519,12 @@ these semantics in T1 rather than weakening them without asking.
   task titles/activity, transport and dynamic error.message were untouched.
   Independent build/typecheck/lint (0 errors/29 warnings), ICU parity, and
   diff check passed (85 diff lines); interactive chat render remains T5.
+  Tool-marker UI unit translated all 12 known tool labels in three phases,
+  grouped read/edit/failure summaries and preserved raw paths/errors and
+  unknown-tool fallback. Shared `tool-parts.ts` remained unchanged because its
+  labels also feed live/persisted subagent activity; subagent detail labels
+  remain for the next slice. Independent build/typecheck/lint (0 errors/29
+  warnings), catalog parity, and diff check passed (185 diff lines).
 - [ ] T5 not started.
 
 ## Next step

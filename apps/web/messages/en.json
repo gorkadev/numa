@@ -39,6 +39,71 @@
       "running": "In progress",
       "done": "Done",
       "failed": "Failed"
+    },
+    "toolGroupEdited": "Edited {count} files",
+    "toolGroupRead": "Read {count} files",
+    "toolGroupFailed": "{failed} failed",
+    "toolLabels": {
+      "ask_player": {
+        "active": "Thinking it over{path}",
+        "done": "Asked you a question{path}",
+        "failed": "Couldn't ask you a question{path}"
+      },
+      "read_file": {
+        "active": "Reading{path}",
+        "done": "Read{path}",
+        "failed": "Couldn't read{path}"
+      },
+      "list_files": {
+        "active": "Looking at the game{path}",
+        "done": "Looked at the game{path}",
+        "failed": "Couldn't look at the game{path}"
+      },
+      "write_file": {
+        "active": "Writing{path}",
+        "done": "Wrote{path}",
+        "failed": "Couldn't write{path}"
+      },
+      "replace_text": {
+        "active": "Editing{path}",
+        "done": "Edited{path}",
+        "failed": "Couldn't edit{path}"
+      },
+      "delete_file": {
+        "active": "Deleting{path}",
+        "done": "Deleted{path}",
+        "failed": "Couldn't delete{path}"
+      },
+      "explore": {
+        "active": "Investigating{path}",
+        "done": "Investigated{path}",
+        "failed": "Couldn't investigate{path}"
+      },
+      "plan": {
+        "active": "Planning{path}",
+        "done": "Planned{path}",
+        "failed": "Couldn't plan{path}"
+      },
+      "run_tasks": {
+        "active": "Building{path}",
+        "done": "Built{path}",
+        "failed": "Couldn't build{path}"
+      },
+      "verify": {
+        "active": "Checking{path}",
+        "done": "Checked{path}",
+        "failed": "Couldn't check{path}"
+      },
+      "submit_plan": {
+        "active": "Submitting the plan{path}",
+        "done": "Submitted the plan{path}",
+        "failed": "Couldn't submit the plan{path}"
+      },
+      "load_skill": {
+        "active": "Loading a skill{path}",
+        "done": "Loaded a skill{path}",
+        "failed": "Couldn't load a skill{path}"
+      }
     }
   },
   "GameComposer": {
