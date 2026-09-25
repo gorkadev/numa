@@ -117,6 +117,7 @@ export function SettingsDialog({
    */
   void billing
   const t = useTranslations("Settings")
+  const common = useTranslations("Common")
   const [shownSection, setShownSection] = useState(section)
 
   if (open && section !== shownSection) setShownSection(section)
@@ -126,7 +127,10 @@ export function SettingsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="overflow-hidden p-0 md:max-h-[560px] md:max-w-[760px] lg:max-w-[880px]">
+      <DialogContent
+        closeLabel={common("close")}
+        className="overflow-hidden p-0 md:max-h-[560px] md:max-w-[760px] lg:max-w-[880px]"
+      >
         {/**
          * `min-w-0` is load-bearing, not tidiness. This is a grid item of
          * `DialogContent`, and grid and flex items both default to

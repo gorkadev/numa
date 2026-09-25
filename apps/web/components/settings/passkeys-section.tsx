@@ -319,9 +319,10 @@ function RenamePasskeyDialog({
   onRename: (name: string) => void
 }) {
   const t = useTranslations("Settings")
+  const common = useTranslations("Common")
   return (
     <Dialog open={passkey !== null} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent closeLabel={common("close")} className="sm:max-w-sm">
         <form
           onSubmit={(event) => {
             event.preventDefault()

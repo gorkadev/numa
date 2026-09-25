@@ -56,6 +56,7 @@ export function TwoFactorStepUpDialog({
   onDisabled?: () => void
 }) {
   const t = useTranslations("Settings")
+  const common = useTranslations("Common")
   const [code, setCode] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
@@ -154,7 +155,10 @@ export function TwoFactorStepUpDialog({
         onOpenChange(nextOpen)
       }}
     >
-      <DialogContent showCloseButton={!showingCodes && !pending}>
+      <DialogContent
+        closeLabel={common("close")}
+        showCloseButton={!showingCodes && !pending}
+      >
         <DialogHeader>
           <DialogTitle>
             {showingCodes ? t("newRecoveryCodes") : t(COPY[action][0])}

@@ -146,6 +146,7 @@ export function TwoFactorSetupDialog({
   onRetry: () => void
 }) {
   const t = useTranslations("Settings")
+  const common = useTranslations("Common")
   const [verified, setVerified] = useState(false)
   const [code, setCode] = useState("")
   const [verifyError, setVerifyError] = useState<string | null>(null)
@@ -277,6 +278,7 @@ export function TwoFactorSetupDialog({
       }}
     >
       <DialogContent
+        closeLabel={common("close")}
         showCloseButton={phase !== "codes" && !verifying && !revokingOthers}
       >
         <DialogHeader>

@@ -81,6 +81,7 @@ export function GameMenu({
   trigger?: React.ComponentProps<typeof DropdownMenuTrigger>["render"]
 }) {
   const t = useTranslations("GameMenu")
+  const common = useTranslations("Common")
 
   /**
    * Whether this menu belongs to the game currently on screen, which is the
@@ -198,7 +199,7 @@ export function GameMenu({
       </DropdownMenu>
 
       <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
-        <DialogContent>
+        <DialogContent closeLabel={common("close")}>
           <form onSubmit={submitRename} className="grid gap-6">
             <DialogHeader>
               <DialogTitle>{t("renameTitle")}</DialogTitle>

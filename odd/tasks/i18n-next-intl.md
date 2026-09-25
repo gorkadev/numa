@@ -236,7 +236,7 @@ these semantics in T1 rather than weakening them without asking.
     - [x] Two-factor step-up errors at server source
     - [x] Credit badge and balance formatting
     - [x] Chat scroller accessible buttons
-    - [ ] Dialog close accessible labels
+    - [x] Dialog close accessible labels
     - [ ] Toast close accessible label
     - [ ] Dynamic provider-error policy and residual copy sweep
   Checks per slice: typecheck, lint, relevant render checks; track missing
@@ -595,11 +595,16 @@ these semantics in T1 rather than weakening them without asking.
   MessageScrollerButton; its default English start/end fallback, direction,
   icon and custom children remain unchanged. Independent build/typecheck/web
   lint (0 errors/29 warnings), catalog parity and diff check passed.
+  Dialog close unit supplied Common.close to all five app DialogContent
+  callers; shared primitive keeps English default, 2FA pending guards remain.
+  Independent build/typecheck/web lint (0 errors/29 warnings), catalog parity
+  and diff check passed (30 source/catalog diff lines). Unused SheetContent
+  retains its generic default.
 - [ ] T5 not started.
 
 ## Next step
 
-With clone-local RDD off by explicit user choice, implement T4c–T4e serially
-with both catalogs and focused render checks. T4a's authenticated navigation
-render remains pending for T5. Quantify authenticated shell latency/query
+With clone-local RDD off by explicit user choice, complete T4e's toast close
+label and residual error-policy decision, then run T5. T4a's authenticated
+navigation render remains pending for T5. Quantify authenticated shell latency/query
 cost during T5 without logging credentials.
