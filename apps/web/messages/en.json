@@ -51,6 +51,25 @@
       }
     }
   },
+  "GameMenu": {
+    "menuLabel": "Game options",
+    "pin": "Pin",
+    "unpin": "Unpin",
+    "rename": "Rename",
+    "delete": "Delete",
+    "renameTitle": "Rename game",
+    "renameDescription": "This is the name the sidebar and this header show.",
+    "name": "Name",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving…",
+    "deleteTitle": "Delete this game?",
+    "deleteDescription": "“{title}” and its conversation will be deleted, and the sandbox running the game will be destroyed. This cannot be undone.",
+    "deleting": "Deleting…",
+    "errorNameRequired": "A game needs a name.",
+    "errorGameNotFound": "That game no longer exists.",
+    "errorSandboxDeleteFailed": "The game's sandbox could not be deleted. Try again in a moment."
+  },
   "Shell": {
     "search": "Search",
     "toggleSidebar": "Toggle sidebar",

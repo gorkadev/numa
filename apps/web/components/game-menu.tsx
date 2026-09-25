@@ -3,6 +3,7 @@
 import { useState, useTransition, type FormEvent } from "react"
 
 import { usePathname } from "next/navigation"
+import { useTranslations } from "next-intl"
 
 import {
   Delete02Icon,
@@ -37,7 +38,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 import { Input } from "@workspace/ui/components/input"
@@ -80,6 +80,8 @@ export function GameMenu({
    */
   trigger?: React.ComponentProps<typeof DropdownMenuTrigger>["render"]
 }) {
+  const t = useTranslations("GameMenu")
+
   /**
    * Whether this menu belongs to the game currently on screen, which is the
    * only thing deletion needs to know: from the sidebar the same menu can
@@ -175,22 +177,22 @@ export function GameMenu({
       <DropdownMenu>
         <DropdownMenuTrigger
           render={trigger ?? <Button variant="ghost" size="icon-sm" />}
-          aria-label="Game options"
+          aria-label={t("menuLabel")}
         >
           <HugeiconsIcon icon={MoreHorizontalIcon} strokeWidth={2} />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-40">
           <DropdownMenuItem onClick={togglePinned} disabled={pinning}>
             <HugeiconsIcon icon={pinned ? PinOffIcon : PinIcon} strokeWidth={2} />
-            {pinned ? "Unpin" : "Pin"}
+            {pinned ? t("unpin") : t("pin")}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={openRename}>
             <HugeiconsIcon icon={PencilEdit02Icon} strokeWidth={2} />
-            Rename
+            {t("rename")}
           </DropdownMenuItem>
           <DropdownMenuItem variant="destructive" onClick={openDelete}>
             <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
-            Delete
+            {t("delete")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -199,14 +201,12 @@ export function GameMenu({
         <DialogContent>
           <form onSubmit={submitRename} className="grid gap-6">
             <DialogHeader>
-              <DialogTitle>Rename game</DialogTitle>
-              <DialogDescription>
-                This is the name the sidebar and this header show.
-              </DialogDescription>
+              <DialogTitle>{t("renameTitle")}</DialogTitle>
+              <DialogDescription>{t("renameDescription")}</DialogDescription>
             </DialogHeader>
 
             <div className="grid gap-2">
-              <Label htmlFor="game-title">Name</Label>
+              <Label htmlFor="game-title">{t("name")}</Label>
               <Input
                 id="game-title"
                 value={name}
@@ -225,11 +225,11 @@ export function GameMenu({
               <DialogClose
                 render={<Button variant="outline" disabled={renaming} />}
               >
-                Cancel
+                {t("cancel")}
               </DialogClose>
               <Button type="submit" disabled={renaming || !name.trim()}>
                 {renaming ? <Spinner /> : null}
-                Save
+                {renaming ? t("saving") : t("save")}
               </Button>
             </DialogFooter>
           </form>
@@ -242,10 +242,9 @@ export function GameMenu({
             <AlertDialogMedia className="bg-destructive/10 text-destructive">
               <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
             </AlertDialogMedia>
-            <AlertDialogTitle>Delete this game?</AlertDialogTitle>
+            <AlertDialogTitle>{t("deleteTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              “{title}” and its conversation are deleted, and the sandbox
-              running the game is destroyed. This cannot be undone.
+              {t("deleteDescription", { title })}
             </AlertDialogDescription>
           </AlertDialogHeader>
 
@@ -254,7 +253,9 @@ export function GameMenu({
           ) : null}
 
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleting}>
+              {t("cancel")}
+            </AlertDialogCancel>
             {/**
              * Not an `AlertDialogCancel`: the dialog has to stay open while the
              * sandbox is being destroyed, both to hold the pending state and to
@@ -267,7 +268,7 @@ export function GameMenu({
               onClick={confirmDelete}
             >
               {deleting ? <Spinner /> : null}
-              Delete
+              {deleting ? t("deleting") : t("delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

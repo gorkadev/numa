@@ -221,7 +221,7 @@ these semantics in T1 rather than weakening them without asking.
     - [x] Sidebar upgrade nudge copy
   - [ ] T4d: games, play, chat composer/thread
     - [x] Composer, suggestions, and model tiers
-    - [ ] Game management menu and errors
+    - [x] Game management menu and errors
     - [ ] Chat messages and copy actions
     - [ ] Chat activity, tools, and tasks
     - [ ] Agent side panel and run details
@@ -502,6 +502,12 @@ these semantics in T1 rather than weakening them without asking.
   and diff check passed (130 source/catalog diff lines). The writer's initial
   concurrent typecheck/build raced on generated `.next/types/routes.js`; the
   sequential rerun passed. Authenticated home render/submit remains T5.
+  Game menu unit translated controls/dialogs and fixed rename/delete/pin
+  Server Action errors, preserving game titles verbatim, UUID/user predicates,
+  sandbox-before-row deletion and redirect behavior. Independent build,
+  typecheck, lint (0 errors/29 warnings), key/interpolation parity, and diff
+  check passed (93 diff lines). Pin failure remains silent as before, while
+  arbitrary thrown errors and createGame fixed errors remain for T4e/T5.
 - [ ] T5 not started.
 
 ## Next step

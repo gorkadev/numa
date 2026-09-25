@@ -51,6 +51,25 @@
       }
     }
   },
+  "GameMenu": {
+    "menuLabel": "Opciones del juego",
+    "pin": "Fijar",
+    "unpin": "Desfijar",
+    "rename": "Cambiar nombre",
+    "delete": "Eliminar",
+    "renameTitle": "Cambiar el nombre del juego",
+    "renameDescription": "Este es el nombre que se muestra en la barra lateral y en este encabezado.",
+    "name": "Nombre",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "saving": "Guardando…",
+    "deleteTitle": "¿Eliminar este juego?",
+    "deleteDescription": "Se eliminarán «{title}» y su conversación, y se destruirá el entorno aislado donde se ejecuta el juego. Esta acción no se puede deshacer.",
+    "deleting": "Eliminando…",
+    "errorNameRequired": "El juego necesita un nombre.",
+    "errorGameNotFound": "El juego ya no existe.",
+    "errorSandboxDeleteFailed": "No se pudo eliminar el entorno aislado del juego. Inténtalo de nuevo dentro de un momento."
+  },
   "Shell": {
     "search": "Buscar",
     "toggleSidebar": "Mostrar u ocultar la barra lateral",
