@@ -46,6 +46,13 @@ import { ThemePicker } from "@/components/settings/theme-picker"
 import { LocaleSwitcher } from "@/components/locale-switcher"
 import { useTranslations } from "next-intl"
 
+const SECTION_LABEL_KEYS = {
+  general: "preferencesTab",
+  account: "profileTab",
+  security: "securityTab",
+  billing: "billingTab",
+} as const satisfies Record<SectionId, string>
+
 /**
  * A settings surface shaped like the ChatGPT / Claude.ai settings modal: a
  * left section nav and a right content panel inside one dialog, rather than
@@ -115,7 +122,7 @@ export function SettingsDialog({
   if (open && section !== shownSection) setShownSection(section)
 
   const activeSection = SECTIONS.find((entry) => entry.id === shownSection)!
-  const sectionLabel = t(`${activeSection.id}Tab`)
+  const sectionLabel = t(SECTION_LABEL_KEYS[activeSection.id])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -184,7 +191,7 @@ export function SettingsDialog({
                             onClick={() => onSectionChange(entry.id)}
                           >
                             <HugeiconsIcon icon={entry.icon} strokeWidth={2} />
-                            <span>{t(`${entry.id}Tab`)}</span>
+                            <span>{t(SECTION_LABEL_KEYS[entry.id])}</span>
                           </SidebarMenuButton>
                         </SidebarMenuItem>
                       ))}
@@ -254,7 +261,7 @@ export function SettingsDialog({
                       className="flex-none px-3"
                     >
                       <HugeiconsIcon icon={entry.icon} strokeWidth={2} />
-                      {t(`${entry.id}Tab`)}
+                      {t(SECTION_LABEL_KEYS[entry.id])}
                     </TabsTrigger>
                   ))}
                 </TabsList>
