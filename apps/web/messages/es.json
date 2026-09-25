@@ -219,6 +219,20 @@
     "oneTime": "pago único",
     "topUpCredits": "{credits} créditos, añadidos de inmediato.",
     "buyCredits": "Comprar créditos",
-    "topUpEligibility": "Disponible con Pro o Max"
+    "topUpEligibility": "Disponible con Pro o Max",
+    "faqWhatIsCreditQuestion": "¿Qué es un crédito?",
+    "faqWhatIsCreditAnswer": "Un crédito equivale a un centavo de dólar estadounidense del costo de generar un turno. Crear un juego implica conversar con un modelo, y una conversación larga sobre un juego complejo cuesta más que una breve sobre uno sencillo; por eso, los créditos se consumen por turno y no por juego.",
+    "faqUsageQuestion": "¿Cómo se mide el uso?",
+    "faqUsageAnswer": "Al terminar, cada turno informa lo que realmente utilizó, y eso es lo que se descuenta de tu saldo. No se cobra nada por adelantado ni se hacen estimaciones, así que un turno que falla no tiene costo. El saldo se actualiza unos segundos después del turno que lo modificó; por eso, la cifra de la barra lateral puede tardar una o dos actualizaciones en reflejar el cambio.",
+    "faqRunningOutQuestion": "¿Qué ocurre cuando me quedo sin créditos?",
+    "faqRunningOutAnswer": "Los turnos nuevos se detienen hasta que se recupere tu saldo. No se elimina ni se bloquea nada: puedes seguir abriendo, jugando y compartiendo todos los juegos que ya hayas creado. Los planes Gratis se recargan el primer día del mes, y los planes Pro o Max permiten comprar una recarga sin esperar.",
+    "faqRolloverQuestion": "¿Los créditos no utilizados se acumulan?",
+    "faqRolloverAnswer": "Los créditos mensuales no se acumulan. Los que queden de tu asignación de Gratis, Pro o Max vencen al terminar el mes y se sustituyen por una nueva asignación. Las recargas son la excepción: sus créditos nunca vencen y solo se usan cuando se agota la asignación mensual.",
+    "faqTopUpPlanQuestion": "¿Por qué se necesita un plan de pago para comprar recargas?",
+    "faqTopUpPlanAnswer": "Los créditos de las recargas nunca vencen, así que, por sí solos, serían un plan de pago por uso que nadie diseñó: resultarían más baratos para quien compra y más irregulares para nosotros que cualquiera de los otros planes. Las recargas existen como un recurso para los meses de mayor uso, además de una suscripción; ese es el único contexto en el que el acuerdo funciona para ambas partes.",
+    "faqSwitchPlansQuestion": "¿Qué ocurre al cambiar entre Pro y Max?",
+    "faqSwitchPlansAnswer": "Al pasar a Max, se cobra de inmediato la diferencia prorrateada y los créditos cambian al instante. Al pasar a Pro, el cambio se aplica al inicio del siguiente ciclo de facturación; por eso, durante el mes que ya pagaste al precio de Max, conservas la asignación de créditos de Max.",
+    "faqCancelQuestion": "¿Puedo cancelar cuando quiera?",
+    "faqCancelAnswer": "Sí. Si cancelas Pro o Max, el plan sigue activo hasta el final del período que ya pagaste y después pasa a Gratis. Los créditos de las recargas que hayas comprado se conservan, porque nunca estuvieron vinculados a la suscripción."
   }
 }

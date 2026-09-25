@@ -554,71 +554,32 @@ export default async function PricingPage({
 
       <Accordion className="bg-card">
         <AccordionItem value="what-is-a-credit">
-          <AccordionTrigger>What is a credit?</AccordionTrigger>
-          <AccordionContent>
-            One credit is one US cent of what a turn costs to generate. Building
-            a game is a conversation with a model, and a long conversation about
-            a complicated game costs more than a short one about a simple game —
-            so credits are spent by the turn rather than by the game.
-          </AccordionContent>
+          <AccordionTrigger>{t("faqWhatIsCreditQuestion")}</AccordionTrigger>
+          <AccordionContent>{t("faqWhatIsCreditAnswer")}</AccordionContent>
         </AccordionItem>
         <AccordionItem value="how-usage-is-measured">
-          <AccordionTrigger>How is usage measured?</AccordionTrigger>
-          <AccordionContent>
-            Every turn reports what it actually used when it finishes, and that
-            is what comes off your balance. Nothing is charged up front and
-            nothing is estimated, so a turn that fails costs you nothing.
-            Balances settle a few seconds behind the turn that moved them, which
-            is why the number in the sidebar can lag a refresh or two.
-          </AccordionContent>
+          <AccordionTrigger>{t("faqUsageQuestion")}</AccordionTrigger>
+          <AccordionContent>{t("faqUsageAnswer")}</AccordionContent>
         </AccordionItem>
         <AccordionItem value="running-out">
-          <AccordionTrigger>What happens when I run out?</AccordionTrigger>
-          <AccordionContent>
-            New turns stop until your balance recovers. Nothing is deleted and
-            nothing is locked: every game you have already built stays yours to
-            open, play and share. Free plans refill on the first of the month,
-            and Pro or Max plans can buy a top-up without waiting.
-          </AccordionContent>
+          <AccordionTrigger>{t("faqRunningOutQuestion")}</AccordionTrigger>
+          <AccordionContent>{t("faqRunningOutAnswer")}</AccordionContent>
         </AccordionItem>
         <AccordionItem value="rollover">
-          <AccordionTrigger>Do unused credits roll over?</AccordionTrigger>
-          <AccordionContent>
-            Monthly credits do not. Whatever is left of your Free, Pro or Max
-            allowance expires when the month does, and a fresh allowance arrives
-            in its place. Top-up credits are the exception: they never expire,
-            and they are only touched once the month&rsquo;s allowance is gone.
-          </AccordionContent>
+          <AccordionTrigger>{t("faqRolloverQuestion")}</AccordionTrigger>
+          <AccordionContent>{t("faqRolloverAnswer")}</AccordionContent>
         </AccordionItem>
         <AccordionItem value="topup-requires-pro">
-          <AccordionTrigger>Why do top-ups need a paid plan?</AccordionTrigger>
-          <AccordionContent>
-            Top-up credits never expire, so on their own they would be a
-            pay-as-you-go plan nobody designed — cheaper for the buyer than
-            either plan and lumpier for us than either plan. They exist as a
-            release valve for a heavy month on top of a subscription, which is
-            the only shape in which both sides of that trade work.
-          </AccordionContent>
+          <AccordionTrigger>{t("faqTopUpPlanQuestion")}</AccordionTrigger>
+          <AccordionContent>{t("faqTopUpPlanAnswer")}</AccordionContent>
         </AccordionItem>
         <AccordionItem value="switching-plans">
-          <AccordionTrigger>
-            What happens when I switch between Pro and Max?
-          </AccordionTrigger>
-          <AccordionContent>
-            Moving up to Max charges the prorated difference right away and
-            switches your credits immediately. Moving down to Pro takes effect
-            at the start of your next billing cycle, so a month you already paid
-            the Max price for keeps its Max allowance.
-          </AccordionContent>
+          <AccordionTrigger>{t("faqSwitchPlansQuestion")}</AccordionTrigger>
+          <AccordionContent>{t("faqSwitchPlansAnswer")}</AccordionContent>
         </AccordionItem>
         <AccordionItem value="cancelling">
-          <AccordionTrigger>Can I cancel whenever I want?</AccordionTrigger>
-          <AccordionContent>
-            Yes. A cancelled Pro or Max plan runs to the end of the period you
-            have already paid for, then drops to Free. Any top-up credits you
-            bought survive that, because they were never tied to the
-            subscription.
-          </AccordionContent>
+          <AccordionTrigger>{t("faqCancelQuestion")}</AccordionTrigger>
+          <AccordionContent>{t("faqCancelAnswer")}</AccordionContent>
         </AccordionItem>
       </Accordion>
     </div>

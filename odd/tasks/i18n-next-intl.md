@@ -214,7 +214,8 @@ these semantics in T1 rather than weakening them without asking.
     - [x] Settings security/passkey/session unit (`2749aec`)
   - [ ] T4c: pricing, checkout-facing copy, billing settings
     - [x] Pricing plan cards, top-ups, alerts, and locale-aware amounts
-    - [ ] Pricing FAQ and plan-change preview/dialog copy
+    - [x] Pricing FAQ copy
+    - [ ] Plan-change preview and confirmation dialog copy
     - [ ] Billing settings and sidebar upgrade nudge
   - [ ] T4d: games, play, chat composer/thread
   - [ ] T4e: errors, empty states, tooltips, metadata, remaining inventory
@@ -454,7 +455,10 @@ these semantics in T1 rather than weakening them without asking.
   both catalogs match. Independent typecheck/lint (0 errors/30 warnings)/build
   and diff check passed. Anonymous pricing smoke redirected to sign-in (307),
   so authenticated render remains T5; FAQ and plan-change copy remain for the
-  next unit. Work-unit commit to be recorded after creation.
+  next unit. Work-unit commit: `ff1f2efbde30caceaa6615e8bd170ac78113445f`.
+  FAQ unit translated all seven Q/A pairs in both locales without changing
+  accordion IDs or billing rules; independent typecheck/lint (0 errors, 30
+  warnings)/build and diff check passed. Authenticated render remains T5.
 - [ ] T5 not started.
 
 ## Next step

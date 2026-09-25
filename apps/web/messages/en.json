@@ -219,6 +219,20 @@
     "oneTime": "one time",
     "topUpCredits": "{credits} credits, added immediately.",
     "buyCredits": "Buy credits",
-    "topUpEligibility": "Available on Pro or Max"
+    "topUpEligibility": "Available on Pro or Max",
+    "faqWhatIsCreditQuestion": "What is a credit?",
+    "faqWhatIsCreditAnswer": "One credit is one US cent of what a turn costs to generate. Building a game is a conversation with a model, and a long conversation about a complicated game costs more than a short one about a simple game — so credits are spent by the turn rather than by the game.",
+    "faqUsageQuestion": "How is usage measured?",
+    "faqUsageAnswer": "Every turn reports what it actually used when it finishes, and that is what comes off your balance. Nothing is charged up front and nothing is estimated, so a turn that fails costs you nothing. Balances settle a few seconds behind the turn that moved them, which is why the number in the sidebar can lag a refresh or two.",
+    "faqRunningOutQuestion": "What happens when I run out?",
+    "faqRunningOutAnswer": "New turns stop until your balance recovers. Nothing is deleted and nothing is locked: every game you have already built stays yours to open, play and share. Free plans refill on the first of the month, and Pro or Max plans can buy a top-up without waiting.",
+    "faqRolloverQuestion": "Do unused credits roll over?",
+    "faqRolloverAnswer": "Monthly credits do not. Whatever is left of your Free, Pro or Max allowance expires when the month does, and a fresh allowance arrives in its place. Top-up credits are the exception: they never expire, and they are only touched once the month’s allowance is gone.",
+    "faqTopUpPlanQuestion": "Why do top-ups need a paid plan?",
+    "faqTopUpPlanAnswer": "Top-up credits never expire, so on their own they would be a pay-as-you-go plan nobody designed — cheaper for the buyer than either plan and lumpier for us than either plan. They exist as a release valve for a heavy month on top of a subscription, which is the only shape in which both sides of that trade work.",
+    "faqSwitchPlansQuestion": "What happens when I switch between Pro and Max?",
+    "faqSwitchPlansAnswer": "Moving up to Max charges the prorated difference right away and switches your credits immediately. Moving down to Pro takes effect at the start of your next billing cycle, so a month you already paid the Max price for keeps its Max allowance.",
+    "faqCancelQuestion": "Can I cancel whenever I want?",
+    "faqCancelAnswer": "Yes. A cancelled Pro or Max plan runs to the end of the period you have already paid for, then drops to Free. Any top-up credits you bought survive that, because they were never tied to the subscription."
   }
 }
