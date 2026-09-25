@@ -233,6 +233,7 @@ these semantics in T1 rather than weakening them without asking.
     - [x] Fixed game-creation action errors
     - [x] Shared mobile sidebar/drawer accessibility
     - [x] Shared spinner accessibility inventory and resolution
+    - [x] Two-factor step-up errors at server source
     - [ ] Dynamic provider-error policy and residual copy sweep
   Checks per slice: typecheck, lint, relevant render checks; track missing
   keys and untranslated/hardcoded strings. The earlier ~49-file estimate
@@ -576,6 +577,12 @@ these semantics in T1 rather than weakening them without asking.
   Independent build/typecheck/web lint (0 errors/29 warnings), import audit,
   catalog parity and staged diff check passed (84 source/catalog diff lines).
   Spoken loading labels in a browser remain T5.
+  Two-factor step-up actions now map structured Better Auth codes to existing
+  localized Settings messages on the server; unknown errors use generic copy
+  without leaking raw content. Removed brittle English-prose matching in the
+  client. Independent security-focused audit verified auth-before-translation,
+  TOTP-before-mutation order and unchanged guards; build/typecheck/web lint
+  (0 errors/29 warnings) and diff check passed. Live TOTP remains T5.
 - [ ] T5 not started.
 
 ## Next step

@@ -27,25 +27,6 @@ import { RecoveryCodes } from "@/components/settings/recovery-codes"
 
 type Action = "regenerate" | "disable"
 
-type SettingsMessageKey =
-  | "invalidCode"
-  | "stepUpRateLimited"
-  | "stepUpAccountLocked"
-  | "twoFactorNotEnabled"
-  | "invalidCodeFormat"
-
-function localizeActionError(message: string, t: (key: SettingsMessageKey) => string) {
-  const messages: Record<string, SettingsMessageKey> = {
-    "That code didn't work. Check your authenticator app and try again.": "invalidCode",
-    "Too many attempts. Wait a moment and try again.": "stepUpRateLimited",
-    "Too many failed attempts. Try again in 15 minutes.": "stepUpAccountLocked",
-    "Two-factor authentication isn't enabled on your account.": "twoFactorNotEnabled",
-    "Enter the 6-digit code from your authenticator app.": "invalidCodeFormat",
-  }
-  const key = messages[message]
-  return key ? t(key) : message
-}
-
 const COPY = {
   regenerate: ["regenerateRecoveryCodes", "recoveryCodesWillStopWorking"],
   disable: ["disableTwoFactor", "onlySocialSignIn"],
@@ -119,7 +100,7 @@ export function TwoFactorStepUpDialog({
 
         if ("error" in result) {
           setCode("")
-          setError(localizeActionError(result.error, t))
+          setError(result.error)
           return
         }
 
@@ -132,7 +113,7 @@ export function TwoFactorStepUpDialog({
 
       if (result?.error) {
         setCode("")
-        setError(localizeActionError(result.error, t))
+        setError(result.error)
         return
       }
 

@@ -1,6 +1,7 @@
 "use server"
 
 import { headers } from "next/headers"
+import { getTranslations } from "next-intl/server"
 import { APIError } from "better-auth/api"
 
 import { auth } from "@/lib/auth"
@@ -8,36 +9,31 @@ import { requireSession } from "@/lib/session"
 
 const CODE_PATTERN = /^\d{6}$/
 
-/**
- * Turns a raw `APIError` from `auth.api.*` into copy safe to show a user.
- *
- * The two-factor endpoints throw structured errors — see
- * `better-auth/dist/plugins/two-factor/error-code.mjs` for the exhaustive
- * list — and the message on most of them is already user-facing. What is
- * NOT safe to forward is an error this function does not recognize: it could
- * carry internal detail (a stack trace, a database message) that has no
- * business reaching the browser, so anything unmapped falls back to a
- * generic line instead of `error.message`.
- */
-function describeTwoFactorError(error: unknown): string {
-  if (error instanceof APIError) {
-    const code = error.body?.code
+/** Maps provider codes to safe, localized Settings copy. */
+type TwoFactorErrorKey =
+  | "invalidCode"
+  | "stepUpRateLimited"
+  | "stepUpAccountLocked"
+  | "twoFactorNotEnabled"
+  | "genericError"
 
-    switch (code) {
+function describeTwoFactorError(error: unknown): TwoFactorErrorKey {
+  if (error instanceof APIError) {
+    switch (error.body?.code) {
       case "INVALID_CODE":
-        return "That code didn't work. Check your authenticator app and try again."
+        return "invalidCode"
       case "TOO_MANY_ATTEMPTS_REQUEST_NEW_CODE":
-        return "Too many attempts. Wait a moment and try again."
+        return "stepUpRateLimited"
       case "ACCOUNT_TEMPORARILY_LOCKED":
-        return "Too many failed attempts. Try again in 15 minutes."
+        return "stepUpAccountLocked"
       case "TWO_FACTOR_NOT_ENABLED":
-        return "Two-factor authentication isn't enabled on your account."
+        return "twoFactorNotEnabled"
       default:
-        return "Something went wrong. Try again."
+        return "genericError"
     }
   }
 
-  return "Something went wrong. Try again."
+  return "genericError"
 }
 
 export type TwoFactorStepUpState = { error: string } | { backupCodes: string[] }
@@ -66,9 +62,10 @@ export async function regenerateBackupCodes(
   code: string
 ): Promise<TwoFactorStepUpState> {
   await requireSession()
+  const t = await getTranslations("Settings")
 
   if (!CODE_PATTERN.test(code)) {
-    return { error: "Enter the 6-digit code from your authenticator app." }
+    return { error: t("invalidCodeFormat") }
   }
 
   const requestHeaders = await headers()
@@ -86,7 +83,7 @@ export async function regenerateBackupCodes(
 
     return { backupCodes: result.backupCodes }
   } catch (error) {
-    return { error: describeTwoFactorError(error) }
+    return { error: t(describeTwoFactorError(error)) }
   }
 }
 
@@ -106,9 +103,10 @@ export async function disableTwoFactor(
   code: string
 ): Promise<DisableTwoFactorState> {
   await requireSession()
+  const t = await getTranslations("Settings")
 
   if (!CODE_PATTERN.test(code)) {
-    return { error: "Enter the 6-digit code from your authenticator app." }
+    return { error: t("invalidCodeFormat") }
   }
 
   const requestHeaders = await headers()
@@ -126,6 +124,6 @@ export async function disableTwoFactor(
 
     return null
   } catch (error) {
-    return { error: describeTwoFactorError(error) }
+    return { error: t(describeTwoFactorError(error)) }
   }
 }
