@@ -14,6 +14,7 @@ import {
 } from "@workspace/ui/components/alert-dialog"
 import { Button } from "@workspace/ui/components/button"
 import { Spinner } from "@workspace/ui/components/spinner"
+import { useLocale, useTranslations } from "next-intl"
 
 type PlanChangeAction = (formData: FormData) => Promise<void>
 
@@ -47,6 +48,8 @@ export function PlanChangeDialog({
   direction,
   preview,
 }: PlanChangeDialogProps) {
+  const t = useTranslations("Pricing")
+  const locale = useLocale()
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -86,75 +89,72 @@ export function PlanChangeDialog({
           />
         }
       >
-        {isUpgrade ? "Upgrade to Max" : "Switch to Pro"}
+        {isUpgrade ? t("upgradeToMax") : t("switchToPro")}
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>
-            {isUpgrade ? "Upgrade to Max?" : "Switch to Pro?"}
+            {isUpgrade ? t("upgradeTitle") : t("downgradeTitle")}
           </AlertDialogTitle>
           <AlertDialogDescription>
-            Review the billing consequences before confirming this change.
+            {t("dialogDescription")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         {preview ? (
           <dl className="grid gap-3 text-sm">
             <div className="grid gap-1">
-              <dt className="text-muted-foreground">Current plan</dt>
+              <dt className="text-muted-foreground">{t("currentPlanLabel")}</dt>
               <dd className="font-medium">{preview.currentPlan}</dd>
             </div>
             <div className="grid gap-1">
-              <dt className="text-muted-foreground">Target plan</dt>
+              <dt className="text-muted-foreground">{t("targetPlanLabel")}</dt>
               <dd className="font-medium">{preview.targetPlan}</dd>
             </div>
             <div className="grid gap-1">
-              <dt className="text-muted-foreground">Current billing cycle</dt>
+              <dt className="text-muted-foreground">{t("currentBillingCycle")}</dt>
               <dd>
                 {preview.currentPeriodStart} – {preview.currentPeriodEnd}
               </dd>
             </div>
             <div className="grid gap-1">
-              <dt className="text-muted-foreground">Takes effect</dt>
+              <dt className="text-muted-foreground">{t("takesEffectLabel")}</dt>
               <dd>{preview.effectiveDate}</dd>
             </div>
             {preview.renewalDate ? (
               <div className="grid gap-1">
-                <dt className="text-muted-foreground">Next renewal</dt>
+                <dt className="text-muted-foreground">{t("nextRenewal")}</dt>
                 <dd>{preview.renewalDate}</dd>
               </div>
             ) : null}
             <div className="grid gap-1">
-              <dt className="text-muted-foreground">Today</dt>
+              <dt className="text-muted-foreground">{t("today")}</dt>
               <dd>{preview.immediateConsequence}</dd>
             </div>
             {isUpgrade && preview.extraCredits !== undefined ? (
               <div className="grid gap-1">
-                <dt className="text-muted-foreground">Extra credits today</dt>
-                <dd>{preview.extraCredits.toLocaleString()}</dd>
+                <dt className="text-muted-foreground">{t("extraCreditsToday")}</dt>
+                <dd>{new Intl.NumberFormat(locale).format(preview.extraCredits)}</dd>
               </div>
             ) : null}
           </dl>
         ) : isUpgrade ? (
           <p className="text-sm text-muted-foreground">
-            You’ll be charged an approximate prorated amount today. Max benefits
-            start immediately, including additional credits today.
+            {t("fallbackUpgrade")}
           </p>
         ) : (
           <p className="text-sm text-muted-foreground">
-            You won&rsquo;t be charged or refunded today. Your Max benefits
-            continue through the current billing cycle, and Pro starts with your
-            next billing cycle.
+            {t("fallbackDowngrade")}
           </p>
         )}
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={pending}>{t("cancel")}</AlertDialogCancel>
           <AlertDialogAction disabled={pending} onClick={confirmPlanChange}>
             {pending ? <Spinner /> : null}
             {pending
-              ? "Updating plan..."
+              ? t("updatingPlan")
               : isUpgrade
-                ? "Upgrade to Max"
-                : "Switch to Pro"}
+                ? t("upgradeToMax")
+                : t("switchToPro")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

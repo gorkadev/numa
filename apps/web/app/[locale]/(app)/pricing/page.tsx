@@ -62,8 +62,8 @@ import { changePlanAction } from "./actions"
  * that looks precise to the cent should also look like the estimate it is,
  * not like a promise this page cannot actually keep.
  */
-function formatMoney(cents: number, currency: string): string {
-  return new Intl.NumberFormat("en-US", {
+function formatMoney(cents: number, currency: string, locale: string): string {
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
   }).format(cents / 100)
@@ -84,13 +84,31 @@ function formatCredits(credits: number, locale: string): string {
 function formatCadence({
   interval,
   intervalCount,
+  locale,
+  t,
 }: {
   interval: string
   intervalCount: number
+  locale: string
+  t: (key: `interval${string}` | "cadencePer" | "cadenceEvery", values?: Record<string, string | number>) => string
 }): string {
-  const unit = intervalCount === 1 ? interval : `${interval}s`
+  const knownIntervals: Record<string, [string, string]> = {
+    day: [t("intervalDay"), t("intervalDays")],
+    week: [t("intervalWeek"), t("intervalWeeks")],
+    month: [t("intervalMonth"), t("intervalMonths")],
+    year: [t("intervalYear"), t("intervalYears")],
+  }
+  const units = knownIntervals[interval]
+  if (!units) {
+    return intervalCount === 1
+      ? `per ${interval}`
+      : `every ${new Intl.NumberFormat(locale).format(intervalCount)} ${interval}s`
+  }
 
-  return intervalCount === 1 ? `per ${unit}` : `every ${intervalCount} ${unit}`
+  const unit = units[intervalCount === 1 ? 0 : 1]
+  return intervalCount === 1
+    ? t("cadencePer", { interval: unit })
+    : t("cadenceEvery", { count: new Intl.NumberFormat(locale).format(intervalCount), interval: unit })
 }
 
 function formatPlanPrice({
@@ -101,12 +119,12 @@ function formatPlanPrice({
   amountCents: number
   currency: string
   cadence: { interval: string; intervalCount: number }
-}): string {
-  return `${formatMoney(amountCents, currency)} ${formatCadence(cadence)}`
+}, locale: string, t: (key: `interval${string}` | "cadencePer" | "cadenceEvery", values?: Record<string, string | number>) => string): string {
+  return `${formatMoney(amountCents, currency, locale)} ${formatCadence({ ...cadence, locale, t })}`
 }
 
-function formatDate(date: Date): string {
-  return new Intl.DateTimeFormat("en-US", {
+function formatDate(date: Date, locale: string): string {
+  return new Intl.DateTimeFormat(locale, {
     month: "long",
     day: "numeric",
     year: "numeric",
@@ -380,18 +398,14 @@ export default async function PricingPage({
                 preview={
                   planChangePreview?.direction === "downgrade"
                     ? {
-                        currentPlan: `${planChangePreview.currentPlan.name} — ${formatPlanPrice(planChangePreview.currentPlan)}`,
-                        targetPlan: `${planChangePreview.targetPlan.name} — ${formatPlanPrice(planChangePreview.targetPlan)}`,
-                        currentPeriodStart: formatDate(
-                          planChangePreview.currentPeriodStart
-                        ),
-                        currentPeriodEnd: formatDate(
-                          planChangePreview.currentPeriodEnd
-                        ),
-                        effectiveDate: formatDate(
-                          planChangePreview.effectiveAt
-                        ),
-                        immediateConsequence: `No immediate charge or refund. Max continues through ${formatDate(planChangePreview.currentPeriodEnd)}; Pro begins then.`,
+                        currentPlan: `${planChangePreview.currentPlan.name} — ${formatPlanPrice(planChangePreview.currentPlan, locale, t)}`,
+                        targetPlan: `${planChangePreview.targetPlan.name} — ${formatPlanPrice(planChangePreview.targetPlan, locale, t)}`,
+                        currentPeriodStart: formatDate(planChangePreview.currentPeriodStart, locale),
+                        currentPeriodEnd: formatDate(planChangePreview.currentPeriodEnd, locale),
+                        effectiveDate: formatDate(planChangePreview.effectiveAt, locale),
+                        immediateConsequence: t("downgradeConsequence", {
+                          endDate: formatDate(planChangePreview.currentPeriodEnd, locale),
+                        }),
                       }
                     : undefined
                 }
@@ -417,7 +431,7 @@ export default async function PricingPage({
           </CardContent>
           {plan === "max" && (
             <CardContent>
-              <CardDescription>Takes effect next billing cycle</CardDescription>
+              <CardDescription>{t("takesEffectNextCycle")}</CardDescription>
             </CardContent>
           )}
         </Card>
@@ -444,19 +458,15 @@ export default async function PricingPage({
                   planChangePreview.immediateConsequence.type ===
                     "estimated_charge"
                     ? {
-                        currentPlan: `${planChangePreview.currentPlan.name} — ${formatPlanPrice(planChangePreview.currentPlan)}`,
-                        targetPlan: `${planChangePreview.targetPlan.name} — ${formatPlanPrice(planChangePreview.targetPlan)}`,
-                        currentPeriodStart: formatDate(
-                          planChangePreview.currentPeriodStart
-                        ),
-                        currentPeriodEnd: formatDate(
-                          planChangePreview.currentPeriodEnd
-                        ),
-                        effectiveDate: "Immediately",
-                        renewalDate: formatDate(
-                          planChangePreview.currentPeriodEnd
-                        ),
-                        immediateConsequence: `Estimated prorated charge today: about ${formatMoney(planChangePreview.immediateConsequence.amountCents, planChangePreview.targetPlan.currency)}.`,
+                        currentPlan: `${planChangePreview.currentPlan.name} — ${formatPlanPrice(planChangePreview.currentPlan, locale, t)}`,
+                        targetPlan: `${planChangePreview.targetPlan.name} — ${formatPlanPrice(planChangePreview.targetPlan, locale, t)}`,
+                        currentPeriodStart: formatDate(planChangePreview.currentPeriodStart, locale),
+                        currentPeriodEnd: formatDate(planChangePreview.currentPeriodEnd, locale),
+                        effectiveDate: t("immediately"),
+                        renewalDate: formatDate(planChangePreview.currentPeriodEnd, locale),
+                        immediateConsequence: t("estimatedProratedCharge", {
+                          amount: formatMoney(planChangePreview.immediateConsequence.amountCents, planChangePreview.targetPlan.currency, locale),
+                        }),
                         extraCredits: planChangePreview.extraCredits,
                       }
                     : undefined
@@ -496,16 +506,19 @@ export default async function PricingPage({
               "estimated_charge" && (
               <CardContent>
                 <CardDescription>
-                  You&rsquo;ll be charged about{" "}
-                  {formatMoney(
-                    planChangePreview.immediateConsequence.amountCents,
-                    planChangePreview.targetPlan.currency
-                  )}{" "}
-                  today and get{" "}
-                  {planChangePreview.extraCredits?.toLocaleString()} extra
-                  credits now. Then{" "}
-                  {formatPlanPrice(planChangePreview.targetPlan)}, renewing on{" "}
-                  {formatDate(planChangePreview.currentPeriodEnd)}.
+                  {t("upgradeInlinePreview", {
+                    amount: formatMoney(
+                      planChangePreview.immediateConsequence.amountCents,
+                      planChangePreview.targetPlan.currency,
+                      locale
+                    ),
+                    credits:
+                      planChangePreview.extraCredits === undefined
+                        ? ""
+                        : formatCredits(planChangePreview.extraCredits, locale),
+                    planPrice: formatPlanPrice(planChangePreview.targetPlan, locale, t),
+                    renewalDate: formatDate(planChangePreview.currentPeriodEnd, locale),
+                  })}
                 </CardDescription>
               </CardContent>
             )}

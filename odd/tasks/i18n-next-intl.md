@@ -215,7 +215,7 @@ these semantics in T1 rather than weakening them without asking.
   - [ ] T4c: pricing, checkout-facing copy, billing settings
     - [x] Pricing plan cards, top-ups, alerts, and locale-aware amounts
     - [x] Pricing FAQ copy
-    - [ ] Plan-change preview and confirmation dialog copy
+    - [x] Plan-change preview and confirmation dialog copy
     - [ ] Billing settings and sidebar upgrade nudge
   - [ ] T4d: games, play, chat composer/thread
   - [ ] T4e: errors, empty states, tooltips, metadata, remaining inventory
@@ -459,6 +459,11 @@ these semantics in T1 rather than weakening them without asking.
   FAQ unit translated all seven Q/A pairs in both locales without changing
   accordion IDs or billing rules; independent typecheck/lint (0 errors, 30
   warnings)/build and diff check passed. Authenticated render remains T5.
+  Plan-change preview/dialog unit translated estimates, dates, known billing
+  cadence, and confirmation copy, preserving action bindings and unknown
+  interval fallback. Independent typecheck/lint (0 errors, 30 warnings)/build,
+  catalog parity, and diff check passed (203 diff lines); authenticated plan
+  change flow remains T5.
 - [ ] T5 not started.
 
 ## Next step
