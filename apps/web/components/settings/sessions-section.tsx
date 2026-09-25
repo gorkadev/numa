@@ -8,7 +8,7 @@ import {
   Tablet01Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { formatDistanceToNow } from "date-fns"
+import { useFormatter, useTranslations } from "next-intl"
 import { Button } from "@workspace/ui/components/button"
 import {
   ItemActions,
@@ -65,20 +65,17 @@ function displayIp(ipAddress: string | null | undefined) {
     : ipAddress
 }
 
-function lastSeen(updatedAt: string | Date) {
-  return formatDistanceToNow(new Date(updatedAt), { addSuffix: true })
-}
-
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Please try again."
+function errorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback
 }
 
 function SessionsSkeleton() {
+  const t = useTranslations("Settings")
   return (
     <div className="flex flex-col gap-4">
       <SettingsGroup
-        title="Sessions"
-        description="Devices logged into your account"
+        title={t("sessions")}
+        description={t("sessionsDescription")}
       >
         <SettingsRow size="sm">
           <Skeleton className="size-8 rounded-lg" />
@@ -109,6 +106,8 @@ function SessionsSkeleton() {
 }
 
 export function SessionsSection() {
+  const t = useTranslations("Settings")
+  const format = useFormatter()
   const {
     data: session,
     error: sessionError,
@@ -133,14 +132,14 @@ export function SessionsSection() {
       const { data, error } = await authClient.listSessions()
       if (!mountedRef.current || id !== requestId.current) return false
       if (error) {
-        setLoadError(error.message ?? "Please try again.")
+        setLoadError(error.message ?? t("genericError"))
         return false
       }
       setSessions(data ?? [])
       return true
     } catch (error) {
       if (mountedRef.current && id === requestId.current) {
-        setLoadError(errorMessage(error))
+        setLoadError(errorMessage(error, t("genericError")))
       }
       return false
     } finally {
@@ -164,7 +163,7 @@ export function SessionsSection() {
       if (error) {
         toast.add({
           type: "error",
-          title: "Could not revoke the session",
+          title: t("couldNotRevokeSession"),
           description: error.message,
         })
         return
@@ -173,8 +172,8 @@ export function SessionsSection() {
     } catch (error) {
       toast.add({
         type: "error",
-        title: "Could not revoke the session",
-        description: errorMessage(error),
+        title: t("couldNotRevokeSession"),
+        description: errorMessage(error, t("genericError")),
       })
     } finally {
       if (mountedRef.current) setRevokingToken(null)
@@ -188,7 +187,7 @@ export function SessionsSection() {
       if (error) {
         toast.add({
           type: "error",
-          title: "Could not revoke other sessions",
+          title: t("couldNotRevokeOtherSessions"),
           description: error.message,
         })
         return
@@ -197,8 +196,8 @@ export function SessionsSection() {
     } catch (error) {
       toast.add({
         type: "error",
-        title: "Could not revoke other sessions",
-        description: errorMessage(error),
+        title: t("couldNotRevokeOtherSessions"),
+        description: errorMessage(error, t("genericError")),
       })
     } finally {
       if (mountedRef.current) setRevokingOthers(false)
@@ -209,12 +208,12 @@ export function SessionsSection() {
   if (sessionError)
     return (
       <SettingsGroup
-        title="Sessions"
-        description="Devices logged into your account"
+        title={t("sessions")}
+        description={t("sessionsDescription")}
       >
         <SettingsRow>
           <ItemContent>
-            <ItemTitle>Could not load sessions</ItemTitle>
+            <ItemTitle>{t("couldNotLoadSessions")}</ItemTitle>
             <ItemDescription>{sessionError.message}</ItemDescription>
           </ItemContent>
           <ItemActions>
@@ -223,7 +222,7 @@ export function SessionsSection() {
               size="sm"
               onClick={() => void refetchSession()}
             >
-              Retry
+              {t("retry")}
             </Button>
           </ItemActions>
         </SettingsRow>
@@ -239,8 +238,8 @@ export function SessionsSection() {
   return (
     <div className="flex flex-col gap-4">
       <SettingsGroup
-        title="Sessions"
-        description="Devices logged into your account"
+        title={t("sessions")}
+        description={t("sessionsDescription")}
       >
         <SettingsRow size="sm">
           <DeviceIcon userAgent={current.userAgent} />
@@ -249,7 +248,7 @@ export function SessionsSection() {
             <ItemDescription className="flex items-center gap-1.5">
               <span className="inline-flex items-center gap-1.5 text-emerald-500">
                 <span className="size-1.5 rounded-full bg-current" />
-                Current session
+                {t("currentSession")}
               </span>
               {displayIp(current.ipAddress) && (
                 <span>· {displayIp(current.ipAddress)}</span>
@@ -272,7 +271,7 @@ export function SessionsSection() {
         <SettingsRows>
           <SettingsRow>
             <ItemContent>
-              <ItemTitle>Could not load other sessions</ItemTitle>
+              <ItemTitle>{t("couldNotLoadOtherSessions")}</ItemTitle>
               <ItemDescription>{loadError}</ItemDescription>
             </ItemContent>
             <ItemActions>
@@ -281,7 +280,7 @@ export function SessionsSection() {
                 size="sm"
                 onClick={() => void loadSessions()}
               >
-                Retry
+                {t("retry")}
               </Button>
             </ItemActions>
           </SettingsRow>
@@ -291,9 +290,7 @@ export function SessionsSection() {
           <SettingsRow>
             <ItemContent>
               <ItemTitle>
-                {others.length === 1
-                  ? "1 other session"
-                  : `${others.length} other sessions`}
+                {t("otherSessionCount", { count: others.length })}
               </ItemTitle>
             </ItemContent>
             <ItemActions>
@@ -302,7 +299,7 @@ export function SessionsSection() {
                 disabled={revokingOthers}
                 onClick={signOutOtherSessions}
               >
-                {revokingOthers && <Spinner />}Revoke all
+                {revokingOthers && <Spinner />}{t("revokeAll")}
               </Button>
             </ItemActions>
           </SettingsRow>
@@ -318,7 +315,9 @@ export function SessionsSection() {
                   {displayIp(item.ipAddress)
                     ? `${displayIp(item.ipAddress)} · `
                     : ""}
-                  Last seen {lastSeen(item.updatedAt)}
+                  {t("lastSeen", {
+                    time: format.relativeTime(new Date(item.updatedAt)),
+                  })}
                 </ItemDescription>
               </ItemContent>
               <ItemActions
@@ -332,7 +331,7 @@ export function SessionsSection() {
                   disabled={revokingToken === item.token}
                   onClick={() => signOutSession(item.token)}
                 >
-                  {revokingToken === item.token && <Spinner />}Revoke
+                  {revokingToken === item.token && <Spinner />}{t("revoke")}
                 </Button>
               </ItemActions>
             </SettingsRow>

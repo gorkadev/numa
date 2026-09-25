@@ -16,6 +16,7 @@ import {
   InputOTPSlot,
 } from "@workspace/ui/components/input-otp"
 import { Spinner } from "@workspace/ui/components/spinner"
+import { useTranslations } from "next-intl"
 
 import {
   disableTwoFactor,
@@ -25,16 +26,29 @@ import { RecoveryCodes } from "@/components/settings/recovery-codes"
 
 type Action = "regenerate" | "disable"
 
-const COPY: Record<Action, { title: string; description: string }> = {
-  regenerate: {
-    title: "Regenerate recovery codes",
-    description: "Your current recovery codes will stop working.",
-  },
-  disable: {
-    title: "Disable two-factor authentication",
-    description: "You'll only need GitHub or Google to sign in.",
-  },
+type SettingsMessageKey =
+  | "invalidCode"
+  | "stepUpRateLimited"
+  | "stepUpAccountLocked"
+  | "twoFactorNotEnabled"
+  | "invalidCodeFormat"
+
+function localizeActionError(message: string, t: (key: SettingsMessageKey) => string) {
+  const messages: Record<string, SettingsMessageKey> = {
+    "That code didn't work. Check your authenticator app and try again.": "invalidCode",
+    "Too many attempts. Wait a moment and try again.": "stepUpRateLimited",
+    "Too many failed attempts. Try again in 15 minutes.": "stepUpAccountLocked",
+    "Two-factor authentication isn't enabled on your account.": "twoFactorNotEnabled",
+    "Enter the 6-digit code from your authenticator app.": "invalidCodeFormat",
+  }
+  const key = messages[message]
+  return key ? t(key) : message
 }
+
+const COPY = {
+  regenerate: ["regenerateRecoveryCodes", "recoveryCodesWillStopWorking"],
+  disable: ["disableTwoFactor", "onlySocialSignIn"],
+} as const
 
 /**
  * The TOTP step-up prompt shared by "Regenerate codes" and "Disable" in
@@ -59,6 +73,7 @@ export function TwoFactorStepUpDialog({
   /** Called after a successful disable, once the dialog can safely close. */
   onDisabled?: () => void
 }) {
+  const t = useTranslations("Settings")
   const [code, setCode] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
@@ -103,7 +118,7 @@ export function TwoFactorStepUpDialog({
 
         if ("error" in result) {
           setCode("")
-          setError(result.error)
+          setError(localizeActionError(result.error, t))
           return
         }
 
@@ -116,7 +131,7 @@ export function TwoFactorStepUpDialog({
 
       if (result?.error) {
         setCode("")
-        setError(result.error)
+        setError(localizeActionError(result.error, t))
         return
       }
 
@@ -126,7 +141,7 @@ export function TwoFactorStepUpDialog({
     } catch {
       if (mountedRef.current && attemptId === attemptIdRef.current) {
         setCode("")
-        setError("Something went wrong. Try again.")
+        setError(t("genericError"))
       }
     } finally {
       if (mountedRef.current && attemptId === attemptIdRef.current) {
@@ -160,12 +175,12 @@ export function TwoFactorStepUpDialog({
       <DialogContent showCloseButton={!showingCodes && !pending}>
         <DialogHeader>
           <DialogTitle>
-            {showingCodes ? "New recovery codes" : COPY[action].title}
+            {showingCodes ? t("newRecoveryCodes") : t(COPY[action][0])}
           </DialogTitle>
           <DialogDescription>
             {showingCodes
-              ? "Your old recovery codes no longer work."
-              : COPY[action].description}
+              ? t("oldRecoveryCodesInvalid")
+              : t(COPY[action][1])}
           </DialogDescription>
         </DialogHeader>
 
@@ -175,10 +190,11 @@ export function TwoFactorStepUpDialog({
           <>
             <div className="flex flex-col gap-3">
               <p className="text-sm text-muted-foreground">
-                Enter the 6-digit code from your authenticator app to continue.
+                {t("enterCodeToContinue")}
               </p>
               <InputOTP
                 maxLength={6}
+                aria-label={t("enterCodeToContinue")}
                 value={code}
                 onChange={(value) => {
                   setCode(value)
@@ -202,7 +218,7 @@ export function TwoFactorStepUpDialog({
                 disabled={pending}
                 onClick={handleCancel}
               >
-                Cancel
+                {t("cancel")}
               </Button>
               <Button
                 type="button"
@@ -211,7 +227,7 @@ export function TwoFactorStepUpDialog({
                 disabled={code.length !== 6 || pending}
               >
                 {pending && <Spinner />}
-                {action === "disable" ? "Disable" : "Regenerate"}
+                {action === "disable" ? t("disable") : t("regenerateCodes")}
               </Button>
             </DialogFooter>
           </>

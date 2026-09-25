@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { AlertCircleIcon, Copy01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import QRCode from "react-qr-code"
+import { useTranslations } from "next-intl"
 import {
   Alert,
   AlertDescription,
@@ -144,6 +145,7 @@ export function TwoFactorSetupDialog({
   enrollment: Enrollment
   onRetry: () => void
 }) {
+  const t = useTranslations("Settings")
   const [verified, setVerified] = useState(false)
   const [code, setCode] = useState("")
   const [verifyError, setVerifyError] = useState<string | null>(null)
@@ -208,8 +210,8 @@ export function TwoFactorSetupDialog({
         setCode("")
         setVerifyError(
           error.code === "INVALID_CODE"
-            ? "That code didn't work. Check your authenticator app and try again."
-            : "Something went wrong. Try again."
+            ? t("invalidCode")
+            : t("genericError")
         )
         return
       }
@@ -224,7 +226,7 @@ export function TwoFactorSetupDialog({
     } catch {
       if (mountedRef.current && attemptId === verificationAttemptRef.current) {
         setCode("")
-        setVerifyError("Something went wrong. Try again.")
+        setVerifyError(t("genericError"))
       }
     } finally {
       if (mountedRef.current && attemptId === verificationAttemptRef.current) {
@@ -240,12 +242,12 @@ export function TwoFactorSetupDialog({
       const { error } = await authClient.revokeOtherSessions()
       if (error && mountedRef.current) {
         setVerifyError(
-          error.message ?? "Could not sign out other sessions. Try again."
+          error.message ?? t("couldNotRevokeOtherSessions")
         )
       }
     } catch {
       if (mountedRef.current) {
-        setVerifyError("Could not sign out other sessions. Try again.")
+        setVerifyError(t("couldNotRevokeOtherSessions"))
       }
     } finally {
       if (mountedRef.current) setRevokingOthers(false)
@@ -280,13 +282,13 @@ export function TwoFactorSetupDialog({
         <DialogHeader>
           <DialogTitle>
             {phase === "codes"
-              ? "Save your recovery codes"
-              : "Set up authenticator app"}
+              ? t("saveRecoveryCodes")
+              : t("authenticatorSetup")}
           </DialogTitle>
           <DialogDescription>
             {phase === "codes"
-              ? "Two-factor authentication is now on for your account."
-              : "Each time you sign in, you'll use an authenticator app to generate a one-time code."}
+              ? t("twoFactorEnabledDescription")
+              : t("authenticatorSetupDescription")}
           </DialogDescription>
         </DialogHeader>
 
@@ -300,14 +302,13 @@ export function TwoFactorSetupDialog({
           <div className="flex flex-col gap-4">
             <Alert variant="destructive">
               <HugeiconsIcon icon={AlertCircleIcon} />
-              <AlertTitle>Couldn&apos;t start setup</AlertTitle>
+              <AlertTitle>{t("couldNotStartSetup")}</AlertTitle>
               <AlertDescription>
-                Something went wrong while preparing two-factor authentication.
-                Try again.
+                {t("setupFailedDescription")}
               </AlertDescription>
             </Alert>
             <Button type="button" variant="outline" onClick={retryEnrollment}>
-              Retry
+              {t("retry")}
             </Button>
           </div>
         )}
@@ -315,14 +316,14 @@ export function TwoFactorSetupDialog({
         {phase === "setup" && totpURI && (
           <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-3">
-              <p className="text-sm font-medium">Step 1 — Scan QR code</p>
+              <p className="text-sm font-medium">{t("stepScanQr")}</p>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-[auto_1fr] sm:items-center">
                 <div className="w-fit rounded-2xl bg-white p-3">
                   <QRCode value={totpURI} size={128} />
                 </div>
                 <div className="flex flex-col gap-2">
                   <p className="text-sm text-muted-foreground">
-                    Can&apos;t scan the QR code? Enter this secret instead:
+                    {t("cannotScanQr")}
                   </p>
                   <div className="flex items-center gap-2">
                     <code className="flex-1 rounded-2xl bg-muted px-3 py-2 font-mono text-sm break-all text-muted-foreground">
@@ -332,7 +333,7 @@ export function TwoFactorSetupDialog({
                       type="button"
                       variant="outline"
                       size="icon-sm"
-                      aria-label="Copy secret"
+                      aria-label={t("copySecret")}
                       onClick={() =>
                         secret && navigator.clipboard.writeText(secret)
                       }
@@ -348,13 +349,14 @@ export function TwoFactorSetupDialog({
 
             <div className="flex flex-col gap-3">
               <p className="text-sm font-medium">
-                Step 2 — Get verification code
+                {t("stepVerificationCode")}
               </p>
               <p className="text-sm text-muted-foreground">
-                Enter the 6-digit code from your authenticator app.
+                {t("enterCodeToVerify")}
               </p>
               <InputOTP
                 maxLength={6}
+                aria-label={t("enterCodeToVerify")}
                 value={code}
                 onChange={(value) => {
                   setCode(value)
@@ -381,8 +383,7 @@ export function TwoFactorSetupDialog({
             <Separator />
             <div className="flex flex-col gap-2">
               <p className="text-sm text-muted-foreground">
-                Enabling two-factor authentication doesn&apos;t sign out devices
-                that are already signed in.
+                {t("twoFactorDoesNotSignOut")}
               </p>
               <Button
                 type="button"
@@ -392,7 +393,7 @@ export function TwoFactorSetupDialog({
                 onClick={signOutOtherSessions}
               >
                 {revokingOthers && <Spinner />}
-                Sign out other sessions
+                {t("signOutOtherSessions")}
               </Button>
               {verifyError && (
                 <p className="text-sm text-destructive">{verifyError}</p>
@@ -409,7 +410,7 @@ export function TwoFactorSetupDialog({
               disabled={verifying || revokingOthers}
               onClick={handleCancel}
             >
-              Cancel
+              {t("cancel")}
             </Button>
             <Button
               type="button"
@@ -417,7 +418,7 @@ export function TwoFactorSetupDialog({
               disabled={code.length !== 6 || verifying}
             >
               {verifying && <Spinner />}
-              Confirm
+              {t("confirm")}
             </Button>
           </DialogFooter>
         )}

@@ -209,6 +209,9 @@ these semantics in T1 rather than weakening them without asking.
   identifiers.
   - [x] T4a: shell, navigation, layouts, loading states
   - [ ] T4b: sign-in, sign-up, two-factor, account settings
+    - [x] Auth source/catalog unit (native review stopped; no approval)
+    - [x] Settings personal/dialog/catalog unit (`b0a2230`, `084c713`)
+    - [ ] Settings security/passkey/session unit
   - [ ] T4c: pricing, checkout-facing copy, billing settings
   - [ ] T4d: games, play, chat composer/thread
   - [ ] T4e: errors, empty states, tooltips, metadata, remaining inventory
@@ -397,11 +400,50 @@ these semantics in T1 rather than weakening them without asking.
     Work-unit commit: `b872085ea4b6d4a8d5fd6ad29f2558ce0975d6d1`;
     native medium-tier reliability review approved and acknowledged
     (`review-aa7263fee82bcb83`).
+- [ ] T4b in progress; T4c–T4e not started. Auth was split into
+  `4da225cde3f3bac4c30823fabb3bad67d7ae29e7` and its bounded tuple
+  correction `04abcf5bfc67b9f725450966a292f18371ad19b9`. The four-lens
+  native review `review-85adb0efbe03e39f` requested correction R3-001;
+  after the 2-diff-line correction passed typecheck/lint/build, bound STATUS
+  returned terminal `captured_artifacts_unverifiable`. No approved or burned
+  authority exists for this Auth unit; do not replay capture/start or claim
+  review success. The user first chose maintainer inspection. Read-only native
+  `inspect-authority` found one valid compact entry,
+  no invalid edges or diagnostics; `repair --preflight` reported `unsupported`
+  with zero eligible candidates. Bound STATUS still offers only terminal
+  `captured_artifacts_unverifiable`; no safe in-tool repair continuation was
+  identified. The user then explicitly chose `gentle-ai review mode disable
+  --scope clone`; mode status confirmed `off (decided by clone_local)`. Continue
+  under ordinary repository policy with independent verification; do not claim
+  Auth is approved. Settings changes remain uncommitted, split into personal
+  dialog/profile/theme/catalog and security/passkey/session slices below 400
+  diff lines each. The earlier delegated-writer
+  report said it stopped before edits because the child lacked the native
+  `gentle_review` facade, but the worktree contains its T4b source/catalog
+  changes (confirmed by `git status` and the read-only diff). Completed the
+  remaining hardcoded Retry labels in the passkeys and authenticator setup
+  components using the existing `Settings.retry` translations, and removed
+  duplicate `Settings.invalidCode` entries while retaining their existing
+  values in both catalogs. Independent checks: `pnpm --filter web typecheck`
+  passed; `pnpm --filter web lint` passed with 0 errors and 30 warnings;
+  `pnpm --filter web build` passed and generated the locale routes and
+  handlers. Remaining T4b render/smoke verification is unverified; do not mark
+  T4b complete until that is observed. Independent public `/sign-in` smoke
+  with `Accept-Language: en`/`es` returned HTTP 200 and translated AuthPage
+  headings; typecheck, lint (0 errors/30 warnings), build, and diff check
+  passed. All 125 referenced keys were present in both catalogs. Authenticated
+  settings, passkey/session actions, and two-factor behavior remain unverified
+  for T5. Better Auth dynamic error messages in passkey/security actions are
+  preserved as before and may remain English; include their user-facing
+  localization policy in T4e's error sweep. Independent precommit Security
+  audit found no missing Settings keys or placeholder mismatch; typecheck,
+  lint (0 errors/30 warnings), build, and diff check passed.
 - [ ] T5 not started.
 
 ## Next step
 
-Continue T4b auth/account settings translation with both catalogs and
-focused render checks. T4a's authenticated navigation render remains pending
-for T5. Quantify authenticated shell latency/query cost during T5 without
-logging credentials.
+With clone-local RDD off by explicit user choice, split and independently
+verify the two remaining Settings commits. Then implement T4c–T4e serially
+with both catalogs and focused render checks. T4a's authenticated navigation
+render remains pending for T5. Quantify authenticated shell latency/query
+cost during T5 without logging credentials.
