@@ -670,12 +670,24 @@ these semantics in T1 rather than weakening them without asking.
   manifests found no literal `lib/locale-preference`, `lib/session`,
   `DATABASE_URL`, `CLERK_SECRET_KEY`, or `POLAR_ACCESS_TOKEN`; one client chunk
   contains the literal name `TRIGGER_SECRET_KEY`. No value or excerpt was
-  printed, and a follow-up could not classify that match as a harmless
-  symbolic reference versus an inlined value. Thus client-bundle secret
-  absence is **inconclusive**, not passed; this requires a safe deeper audit.
+  printed. A structure-only follow-up classified all four occurrences in
+  that single chunk as error-message tokens, not an assignment/property
+  occurrence. A broader structure-only scan found 87 sensitive-name pattern
+  matches across 18 chunks without inspecting any values; it cannot establish
+  whether a value is a credential. Thus exhaustive client-bundle secret
+  absence is **inconclusive**, not passed; no evidence that the specific
+  `TRIGGER_SECRET_KEY` marker itself is an inlined credential was found.
   Quantitative baseline/current shell TTFB and SQL-count comparison
   remains unexecuted: no authorized authenticated measurement harness or
   credentials, and the original localhost:3000 server must not be replaced.
+  A separate read-only static route/locale audit confirmed
+  `localePrefix: "never"`, preference order, anonymous locale-path skip,
+  request validation before DB preference access, and distinct handler
+  route types. Both catalogs have 507 flattened keys with matching key and
+  placeholder names; 406 statically resolved namespaced translation calls
+  across 157 TS/TSX files had no missing keys. Dynamic computed keys and
+  full ICU parsing were outside that scan. Its initial inline script failed
+  with a syntax error, then a corrected rerun passed; no files changed.
   Signed-in pages, auth/billing actions, valid preview, OAuth callbacks,
   webhook POST, loading/error boundaries, chat structured failure delivery,
   accessibility labels, deep-link refresh and cross-device cases remain
