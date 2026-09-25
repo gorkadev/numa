@@ -68,6 +68,23 @@
     "hidePreview": "Ocultar la vista previa",
     "showPreview": "Mostrar la vista previa"
   },
+  "GamePreview": {
+    "startingPreview": "Iniciando la vista previa…",
+    "slowPreview": "La vista previa está tardando más de lo esperado.",
+    "timeoutPreview": "La vista previa agotó el tiempo de espera. Inténtalo de nuevo.",
+    "failedPreview": "No se pudo iniciar la vista previa. Inténtalo de nuevo.",
+    "retry": "Reintentar",
+    "retryPreview": "Reintentar la vista previa",
+    "iframeTitle": "Vista previa del juego",
+    "emptyTitle": "Aún no hay nada que jugar",
+    "emptyDescription": "Aún no se ha creado {gameTitle}. Vuelve al chat y envía un mensaje para empezar.",
+    "backToChat": "Volver al chat",
+    "reload": "Recargar",
+    "enterFullscreen": "Entrar en pantalla completa",
+    "exitFullscreen": "Salir de pantalla completa",
+    "playTitle": "Jugar · {gameTitle}",
+    "playTitleFallback": "Jugar"
+  },
   "ChatActivity": {
     "placeholder": "Pide un cambio…",
     "turnErrorTitle": "No se pudo completar el turno",

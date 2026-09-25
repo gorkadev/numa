@@ -219,7 +219,7 @@ these semantics in T1 rather than weakening them without asking.
     - [x] Billing settings plan/loading/action copy and locale format
     - [x] Billing history states and known provider-status labels
     - [x] Sidebar upgrade nudge copy
-  - [ ] T4d: games, play, chat composer/thread
+  - [x] T4d: games, play, chat composer/thread
     - [x] Composer, suggestions, and model tiers
     - [x] Game management menu and errors
     - [x] Chat messages and copy actions
@@ -227,7 +227,7 @@ these semantics in T1 rather than weakening them without asking.
     - [x] Tool group and tool-part display labels
     - [x] Agent panel tabs/navigation and preview controls
     - [x] Agent entries and run details
-    - [ ] Game preview and play view
+    - [x] Game preview and play view
   - [ ] T4e: errors, empty states, tooltips, metadata, remaining inventory
   Checks per slice: typecheck, lint, relevant render checks; track missing
   keys and untranslated/hardcoded strings. The earlier ~49-file estimate
@@ -539,6 +539,11 @@ these semantics in T1 rather than weakening them without asking.
   raw paths/errors and generated content unchanged. Independent build,
   typecheck, scoped lint (0 errors/29 warnings), key parity and diff check
   passed (168 diff lines); interactive agent panel remains T5.
+  Preview/play unit translated iframe/title/status/retry/fullscreen controls
+  and async page metadata, preserving game title, owner-scoped notFound,
+  sandbox paths and interactions. Independent build/typecheck/scoped lint,
+  catalog parity and diff check passed (90 diff lines). No covering
+  GamePlayView test was found; authenticated preview/play remains T5.
 - [ ] T5 not started.
 
 ## Next step

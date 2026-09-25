@@ -68,6 +68,23 @@
     "hidePreview": "Hide preview",
     "showPreview": "Show preview"
   },
+  "GamePreview": {
+    "startingPreview": "Starting preview…",
+    "slowPreview": "Preview is taking longer than expected.",
+    "timeoutPreview": "Preview timed out. Try again.",
+    "failedPreview": "Preview could not be started. Try again.",
+    "retry": "Retry",
+    "retryPreview": "Retry preview",
+    "iframeTitle": "Game preview",
+    "emptyTitle": "Nothing to play yet",
+    "emptyDescription": "{gameTitle} hasn't been built yet. Go back to the chat and send a message to get started.",
+    "backToChat": "Back to chat",
+    "reload": "Reload",
+    "enterFullscreen": "Enter fullscreen",
+    "exitFullscreen": "Exit fullscreen",
+    "playTitle": "Play · {gameTitle}",
+    "playTitleFallback": "Play"
+  },
   "ChatActivity": {
     "placeholder": "Ask for a change…",
     "turnErrorTitle": "That turn did not go through",
