@@ -7,7 +7,7 @@ import { getLocale, getMessages, getTranslations } from "next-intl/server"
 import "@workspace/ui/globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from "@workspace/ui/lib/utils"
-import { Toaster } from "@workspace/ui/components/toast"
+import { LocalizedToaster } from "@/components/localized-toaster"
 import { TooltipProvider } from "@workspace/ui/components/tooltip"
 import { routing } from "@/i18n/routing"
 import { LocaleReconciler } from "@/components/locale-reconciler"
@@ -75,11 +75,11 @@ export default async function RootLayout({
          */}
         <NextIntlClientProvider locale={resolvedLocale} messages={messages}>
           <LocaleReconciler locale={resolvedLocale} />
-          <Toaster>
+          <LocalizedToaster>
             <TooltipProvider>
               <ThemeProvider>{children}</ThemeProvider>
             </TooltipProvider>
-          </Toaster>
+          </LocalizedToaster>
         </NextIntlClientProvider>
       </body>
     </html>

@@ -2,7 +2,8 @@
   "Common": {
     "appName": "Numa",
     "loading": "Loading",
-    "close": "Close"
+    "close": "Close",
+    "closeToast": "Close toast"
   },
   "Home": {
     "emptyTitle": "What should we build today?",

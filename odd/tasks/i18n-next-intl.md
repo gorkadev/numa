@@ -237,7 +237,7 @@ these semantics in T1 rather than weakening them without asking.
     - [x] Credit badge and balance formatting
     - [x] Chat scroller accessible buttons
     - [x] Dialog close accessible labels
-    - [ ] Toast close accessible label
+    - [x] Toast close accessible label
     - [ ] Dynamic provider-error policy and residual copy sweep
   Checks per slice: typecheck, lint, relevant render checks; track missing
   keys and untranslated/hardcoded strings. The earlier ~49-file estimate
@@ -600,11 +600,17 @@ these semantics in T1 rather than weakening them without asking.
   Independent build/typecheck/web lint (0 errors/29 warnings), catalog parity
   and diff check passed (30 source/catalog diff lines). Unused SheetContent
   retains its generic default.
+  Toast close unit added a client wrapper under the locale provider and an
+  optional English-default label in shared UI; independent build/typecheck/
+  web lint (0 errors/29 warnings), full catalog parity and diff check passed.
+  Browser toast dismissal remains unverified for T5.
 - [ ] T5 not started.
 
 ## Next step
 
-With clone-local RDD off by explicit user choice, complete T4e's toast close
-label and residual error-policy decision, then run T5. T4a's authenticated
+Pause after the verified toast-close unit at the user's request (context 92%).
+Next session: reconcile task file and memory, then decide T4e's residual
+provider-error policy without mapping English message prose. Finish T5 only
+after root checks and authenticated/browser matrix evidence. T4a's authenticated
 navigation render remains pending for T5. Quantify authenticated shell latency/query
 cost during T5 without logging credentials.
