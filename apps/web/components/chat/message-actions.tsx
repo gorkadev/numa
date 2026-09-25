@@ -9,6 +9,7 @@ import {
   Tick02Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
+import { useTranslations } from "next-intl"
 import { Button } from "@workspace/ui/components/button"
 import { MessageFooter } from "@workspace/ui/components/message"
 import {
@@ -92,6 +93,7 @@ function messageText(message: UIMessage): string {
 const COPIED_FOR = 2000
 
 function CopyButton({ text }: { text: string }) {
+  const t = useTranslations("ChatMessages")
   const [copied, setCopied] = useState(false)
 
   /**
@@ -128,7 +130,7 @@ function CopyButton({ text }: { text: string }) {
           <Button
             variant="ghost"
             size="icon-sm"
-            aria-label={copied ? "Copied" : "Copy message"}
+            aria-label={copied ? t("copied") : t("copyMessage")}
             onClick={copy}
             className="text-muted-foreground"
           />
@@ -141,7 +143,7 @@ function CopyButton({ text }: { text: string }) {
       </TooltipTrigger>
       <TooltipContent>
         <span className="text-[13px] font-medium">
-          {copied ? "Copied" : "Copy"}
+          {copied ? t("copied") : t("copy")}
         </span>
       </TooltipContent>
     </Tooltip>
@@ -191,6 +193,7 @@ function SentAt({ at }: { at: number }) {
  * conversation the player is trying to have.
  */
 function DetailsButton({ message }: { message: UIMessage }) {
+  const t = useTranslations("ChatMessages")
   const meta = readMessageMeta(message)
   const tools = toolTally(message)
 
@@ -201,7 +204,7 @@ function DetailsButton({ message }: { message: UIMessage }) {
           <Button
             variant="ghost"
             size="icon-sm"
-            aria-label="Turn details"
+            aria-label={t("turnDetails")}
             className="text-muted-foreground"
           />
         }
@@ -212,20 +215,20 @@ function DetailsButton({ message }: { message: UIMessage }) {
         {meta.tokens ? (
           <section className="flex flex-col gap-1.5">
             <h3 className="text-xs font-medium text-muted-foreground">
-              Tokens
+              {t("tokens")}
             </h3>
             <dl className="flex flex-col gap-1 rounded-2xl bg-muted p-3 text-xs">
-              <Stat label="Input" value={meta.tokens.input} />
+              <Stat label={t("inputTokens")} value={meta.tokens.input} />
               {meta.tokens.cached > 0 ? (
-                <Stat label="Cached" value={meta.tokens.cached} />
+                <Stat label={t("cachedTokens")} value={meta.tokens.cached} />
               ) : null}
-              <Stat label="Output" value={meta.tokens.output} />
+              <Stat label={t("outputTokens")} value={meta.tokens.output} />
               {meta.tokens.reasoning > 0 ? (
-                <Stat label="Reasoning" value={meta.tokens.reasoning} />
+                <Stat label={t("reasoningTokens")} value={meta.tokens.reasoning} />
               ) : null}
               {meta.credits !== undefined ? (
                 <Stat
-                  label="Credits"
+                  label={t("credits")}
                   value={meta.credits}
                   className="border-t border-border pt-1 font-medium text-foreground"
                 />
@@ -235,10 +238,10 @@ function DetailsButton({ message }: { message: UIMessage }) {
         ) : null}
         {tools.length > 0 ? (
           <section className="flex flex-col gap-1.5">
-            <h3 className="text-xs font-medium text-muted-foreground">Tools</h3>
+            <h3 className="text-xs font-medium text-muted-foreground">{t("tools")}</h3>
             <dl className="flex flex-col gap-1 rounded-2xl bg-muted p-3 text-xs">
               {tools.map(({ name, count }) => (
-                <Stat key={name} label={toolNoun(name)} value={count} />
+                <Stat key={name} label={toolNoun(name, t)} value={count} />
               ))}
             </dl>
           </section>
@@ -294,15 +297,18 @@ function toolTally(message: UIMessage): { name: string; count: number }[] {
  * ("Reading src/game.js"), and this is a row in a tally where the count
  * supplies the number and the label has to read as a noun.
  */
-const TOOL_NOUNS: Record<string, string> = {
-  ask_player: "Questions asked",
-  read_file: "Files read",
-  list_files: "Listings",
-  write_file: "Files written",
-  replace_text: "Edits",
-  delete_file: "Files deleted",
-}
+function toolNoun(
+  name: string,
+  t: ReturnType<typeof useTranslations<"ChatMessages">>
+): string {
+  const labels: Record<string, string> = {
+    ask_player: t("questionsAsked"),
+    read_file: t("filesRead"),
+    list_files: t("listings"),
+    write_file: t("filesWritten"),
+    replace_text: t("edits"),
+    delete_file: t("filesDeleted"),
+  }
 
-function toolNoun(name: string): string {
-  return TOOL_NOUNS[name] ?? name
+  return labels[name] ?? name
 }

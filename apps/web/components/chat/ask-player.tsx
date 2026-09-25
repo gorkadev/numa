@@ -1,5 +1,6 @@
 import { Tick02Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
+import { useTranslations } from "next-intl"
 import { Bubble, BubbleContent } from "@workspace/ui/components/bubble"
 import {
   Questionnaire,
@@ -35,6 +36,8 @@ export function AskPlayer({
   question: AskQuestion
   onAnswer: (answer: AskPlayerOutput) => void
 }) {
+  const t = useTranslations("ChatMessages")
+
   return (
     <Bubble variant="muted" align="start" className="w-full max-w-full">
       {/**
@@ -79,7 +82,7 @@ export function AskPlayer({
             </QuestionnaireChoices>
             <QuestionnaireError />
             <QuestionnaireActions>
-              <QuestionnaireSubmit size="sm">Continue</QuestionnaireSubmit>
+              <QuestionnaireSubmit size="sm">{t("continue")}</QuestionnaireSubmit>
             </QuestionnaireActions>
           </QuestionnaireItem>
         </Questionnaire>
@@ -110,6 +113,8 @@ export function AskPlayerAnswer({
   question: AskQuestion
   answer: AskOption
 }) {
+  const t = useTranslations("ChatMessages")
+
   return (
     <Bubble variant="muted" align="start" className="w-full max-w-full">
       {/** Same `px-3` alignment as `AskPlayer`'s `BubbleContent` above. */}
@@ -124,7 +129,7 @@ export function AskPlayerAnswer({
             className="size-4 shrink-0 translate-y-0.5 text-primary"
           />
           <span className="min-w-0">
-            You chose {answer.label}
+            {t("youChose", { answer: answer.label })}
             {answer.description ? (
               <span className="block font-normal text-muted-foreground">
                 {answer.description}

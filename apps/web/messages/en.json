@@ -2,6 +2,28 @@
   "Common": {
     "appName": "Numa"
   },
+  "ChatMessages": {
+    "continue": "Continue",
+    "youChose": "You chose {answer}",
+    "copyMessage": "Copy message",
+    "copyCode": "Copy code",
+    "copied": "Copied",
+    "copy": "Copy",
+    "turnDetails": "Turn details",
+    "tokens": "Tokens",
+    "inputTokens": "Input",
+    "cachedTokens": "Cached",
+    "outputTokens": "Output",
+    "reasoningTokens": "Reasoning",
+    "credits": "Credits",
+    "tools": "Tools",
+    "questionsAsked": "Questions asked",
+    "filesRead": "Files read",
+    "listings": "Listings",
+    "filesWritten": "Files written",
+    "edits": "Edits",
+    "filesDeleted": "Files deleted"
+  },
   "GameComposer": {
     "placeholder": "Describe the game you want to build…",
     "sendMessage": "Send message",

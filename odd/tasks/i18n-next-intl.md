@@ -222,7 +222,7 @@ these semantics in T1 rather than weakening them without asking.
   - [ ] T4d: games, play, chat composer/thread
     - [x] Composer, suggestions, and model tiers
     - [x] Game management menu and errors
-    - [ ] Chat messages and copy actions
+    - [x] Chat messages and copy actions
     - [ ] Chat activity, tools, and tasks
     - [ ] Agent side panel and run details
     - [ ] Game preview and play view
@@ -508,6 +508,11 @@ these semantics in T1 rather than weakening them without asking.
   typecheck, lint (0 errors/29 warnings), key/interpolation parity, and diff
   check passed (93 diff lines). Pin failure remains silent as before, while
   arbitrary thrown errors and createGame fixed errors remain for T4e/T5.
+  Chat-message unit translated fixed ask-player/copy/turn-detail controls and
+  known tool display labels, leaving agent/user content, clipboard payloads
+  and unknown tool names unchanged. `chat-message.tsx` had no app-owned copy.
+  Independent build/typecheck/lint (0 errors/29 warnings), key parity and diff
+  check passed (105 diff lines); interactive chat render remains T5.
 - [ ] T5 not started.
 
 ## Next step

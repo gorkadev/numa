@@ -2,6 +2,28 @@
   "Common": {
     "appName": "Numa"
   },
+  "ChatMessages": {
+    "continue": "Continuar",
+    "youChose": "Elegiste {answer}",
+    "copyMessage": "Copiar mensaje",
+    "copyCode": "Copiar código",
+    "copied": "Copiado",
+    "copy": "Copiar",
+    "turnDetails": "Detalles del turno",
+    "tokens": "Tokens",
+    "inputTokens": "Entrada",
+    "cachedTokens": "En caché",
+    "outputTokens": "Salida",
+    "reasoningTokens": "Razonamiento",
+    "credits": "Créditos",
+    "tools": "Herramientas",
+    "questionsAsked": "Preguntas realizadas",
+    "filesRead": "Archivos leídos",
+    "listings": "Listados",
+    "filesWritten": "Archivos escritos",
+    "edits": "Ediciones",
+    "filesDeleted": "Archivos eliminados"
+  },
   "GameComposer": {
     "placeholder": "Describe el juego que quieres crear…",
     "sendMessage": "Enviar mensaje",
