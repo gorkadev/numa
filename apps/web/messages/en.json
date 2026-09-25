@@ -399,6 +399,8 @@
     "save": "Save",
     "sessions": "Sessions",
     "sessionsDescription": "Devices logged into your account",
+    "unknownDevice": "Unknown device",
+    "browserOnPlatform": "{browser} on {platform}",
     "couldNotLoadSessions": "Could not load sessions",
     "currentSession": "Current session",
     "couldNotLoadOtherSessions": "Could not load other sessions",

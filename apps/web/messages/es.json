@@ -399,6 +399,8 @@
     "save": "Guardar",
     "sessions": "Sesiones",
     "sessionsDescription": "Dispositivos con una sesión iniciada en tu cuenta",
+    "unknownDevice": "Dispositivo desconocido",
+    "browserOnPlatform": "{browser} en {platform}",
     "couldNotLoadSessions": "No se pudieron cargar las sesiones",
     "currentSession": "Sesión actual",
     "couldNotLoadOtherSessions": "No se pudieron cargar las otras sesiones",

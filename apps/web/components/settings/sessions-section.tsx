@@ -105,6 +105,12 @@ function SessionsSkeleton() {
 export function SessionsSection() {
   const t = useTranslations("Settings")
   const format = useFormatter()
+  const describeDevice = (userAgent: string | null | undefined) =>
+    describeUserAgent(userAgent, {
+      unknownDevice: t("unknownDevice"),
+      formatBrowserPlatform: (browser, platform) =>
+        t("browserOnPlatform", { browser, platform }),
+    })
   const {
     data: session,
     error: sessionError,
@@ -241,7 +247,7 @@ export function SessionsSection() {
         <SettingsRow size="sm">
           <DeviceIcon userAgent={current.userAgent} />
           <ItemContent>
-            <ItemTitle>{describeUserAgent(current.userAgent)}</ItemTitle>
+            <ItemTitle>{describeDevice(current.userAgent)}</ItemTitle>
             <ItemDescription className="flex items-center gap-1.5">
               <span className="inline-flex items-center gap-1.5 text-emerald-500">
                 <span className="size-1.5 rounded-full bg-current" />
@@ -307,7 +313,7 @@ export function SessionsSection() {
             >
               <DeviceIcon userAgent={item.userAgent} />
               <ItemContent>
-                <ItemTitle>{describeUserAgent(item.userAgent)}</ItemTitle>
+                <ItemTitle>{describeDevice(item.userAgent)}</ItemTitle>
                 <ItemDescription>
                   {displayIp(item.ipAddress)
                     ? `${displayIp(item.ipAddress)} · `
