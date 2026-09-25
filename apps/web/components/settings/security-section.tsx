@@ -67,7 +67,7 @@ export function SecuritySection() {
         <SettingsRow>
           <ItemContent>
             <ItemTitle>{t("couldNotLoadSecurity")}</ItemTitle>
-            <ItemDescription>{error.message}</ItemDescription>
+            <ItemDescription>{t("genericError")}</ItemDescription>
           </ItemContent>
           <ItemActions>
             <Button variant="outline" size="sm" onClick={() => void refetch()}>

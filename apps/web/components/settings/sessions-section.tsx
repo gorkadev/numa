@@ -66,10 +66,6 @@ function displayIp(ipAddress: string | null | undefined) {
     : ipAddress
 }
 
-function errorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback
-}
-
 function SessionsSkeleton() {
   const t = useTranslations("Settings")
   return (
@@ -133,14 +129,14 @@ export function SessionsSection() {
       const { data, error } = await authClient.listSessions()
       if (!mountedRef.current || id !== requestId.current) return false
       if (error) {
-        setLoadError(error.message ?? t("genericError"))
+        setLoadError(t("genericError"))
         return false
       }
       setSessions(data ?? [])
       return true
-    } catch (error) {
+    } catch {
       if (mountedRef.current && id === requestId.current) {
-        setLoadError(errorMessage(error, t("genericError")))
+        setLoadError(t("genericError"))
       }
       return false
     } finally {
@@ -165,16 +161,16 @@ export function SessionsSection() {
         toast.add({
           type: "error",
           title: t("couldNotRevokeSession"),
-          description: error.message,
+          description: t("genericError"),
         })
         return
       }
       await loadSessions()
-    } catch (error) {
+    } catch {
       toast.add({
         type: "error",
         title: t("couldNotRevokeSession"),
-        description: errorMessage(error, t("genericError")),
+        description: t("genericError"),
       })
     } finally {
       if (mountedRef.current) setRevokingToken(null)
@@ -189,16 +185,16 @@ export function SessionsSection() {
         toast.add({
           type: "error",
           title: t("couldNotRevokeOtherSessions"),
-          description: error.message,
+          description: t("genericError"),
         })
         return
       }
       await loadSessions()
-    } catch (error) {
+    } catch {
       toast.add({
         type: "error",
         title: t("couldNotRevokeOtherSessions"),
-        description: errorMessage(error, t("genericError")),
+        description: t("genericError"),
       })
     } finally {
       if (mountedRef.current) setRevokingOthers(false)
@@ -215,7 +211,7 @@ export function SessionsSection() {
         <SettingsRow>
           <ItemContent>
             <ItemTitle>{t("couldNotLoadSessions")}</ItemTitle>
-            <ItemDescription>{sessionError.message}</ItemDescription>
+            <ItemDescription>{t("genericError")}</ItemDescription>
           </ItemContent>
           <ItemActions>
             <Button

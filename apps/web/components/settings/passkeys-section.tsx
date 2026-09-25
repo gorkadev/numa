@@ -50,10 +50,6 @@ function passkeyLabel(passkey: Passkey, fallback: string) {
   return passkey.name || getAuthenticatorName(passkey.aaguid) || fallback
 }
 
-function errorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback
-}
-
 export function PasskeysSection() {
   const t = useTranslations("Settings")
   const format = useFormatter()
@@ -76,14 +72,14 @@ export function PasskeysSection() {
       const { data, error } = await authClient.passkey.listUserPasskeys()
       if (!mountedRef.current || id !== requestId.current) return false
       if (error) {
-        setLoadError(error.message ?? t("genericError"))
+        setLoadError(t("genericError"))
         return false
       }
       setPasskeys(data ?? [])
       return true
-    } catch (error) {
+    } catch {
       if (mountedRef.current && id === requestId.current) {
-        setLoadError(errorMessage(error, t("genericError")))
+        setLoadError(t("genericError"))
       }
       return false
     } finally {
@@ -112,18 +108,18 @@ export function PasskeysSection() {
           toast.add({
             type: "error",
             title: t("couldNotAddPasskey"),
-            description: result.error.message,
+            description: t("genericError"),
           })
         return
       }
       if (await loadPasskeys()) {
         toast.add({ type: "success", title: t("passkeyAdded") })
       }
-    } catch (error) {
+    } catch {
       toast.add({
         type: "error",
         title: t("couldNotAddPasskey"),
-        description: errorMessage(error, t("genericError"))
+        description: t("genericError"),
       })
     } finally {
       if (mountedRef.current) setAdding(false)
@@ -140,18 +136,18 @@ export function PasskeysSection() {
         toast.add({
           type: "error",
           title: t("couldNotRemovePasskey"),
-          description: error.message,
+          description: t("genericError"),
         })
         return
       }
       if (await loadPasskeys()) {
         toast.add({ type: "success", title: t("passkeyRemoved") })
       }
-    } catch (error) {
+    } catch {
       toast.add({
         type: "error",
         title: t("couldNotRemovePasskey"),
-        description: errorMessage(error, t("genericError"))
+        description: t("genericError"),
       })
     } finally {
       if (mountedRef.current) setBusyId(null)
@@ -172,18 +168,18 @@ export function PasskeysSection() {
         toast.add({
           type: "error",
           title: t("couldNotRenamePasskey"),
-          description: error.message,
+          description: t("genericError"),
         })
         return
       }
       if (await loadPasskeys()) {
         toast.add({ type: "success", title: t("passkeyRenamed") })
       }
-    } catch (error) {
+    } catch {
       toast.add({
         type: "error",
         title: t("couldNotRenamePasskey"),
-        description: errorMessage(error, t("genericError"))
+        description: t("genericError"),
       })
     } finally {
       if (mountedRef.current) setBusyId(null)

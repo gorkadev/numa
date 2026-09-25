@@ -242,9 +242,7 @@ export function TwoFactorSetupDialog({
     try {
       const { error } = await authClient.revokeOtherSessions()
       if (error && mountedRef.current) {
-        setVerifyError(
-          error.message ?? t("couldNotRevokeOtherSessions")
-        )
+        setVerifyError(t("genericError"))
       }
     } catch {
       if (mountedRef.current) {

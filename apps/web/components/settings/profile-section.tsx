@@ -44,10 +44,6 @@ const PROVIDERS: Record<string, { label: string; icon: typeof GithubIcon }> = {
   google: { label: "Google", icon: GoogleIcon },
 }
 
-function errorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback
-}
-
 function ProfileSkeleton() {
   return (
     <div className="flex flex-col gap-8">
@@ -107,14 +103,14 @@ export function ProfileSection() {
         return false
       }
       if (error) {
-        setAccountsError(error.message ?? t("genericError"))
+        setAccountsError(t("genericError"))
         return false
       }
       setAccounts(data ?? [])
       return true
-    } catch (error) {
+    } catch {
       if (mountedRef.current && requestId === accountsRequestId.current) {
-        setAccountsError(errorMessage(error, t("genericError")))
+        setAccountsError(t("genericError"))
       }
       return false
     } finally {
@@ -147,14 +143,14 @@ export function ProfileSection() {
         toast.add({
           type: "error",
           title: t("couldNotSaveName"),
-          description: error.message,
+          description: t("genericError"),
         })
       }
-    } catch (error) {
+    } catch {
       toast.add({
         type: "error",
         title: t("couldNotSaveName"),
-        description: errorMessage(error, t("genericError")),
+        description: t("genericError"),
       })
     } finally {
       if (mountedRef.current) setSavingName(false)
@@ -169,14 +165,14 @@ export function ProfileSection() {
         toast.add({
           type: "error",
           title: t("couldNotRemovePicture"),
-          description: error.message,
+          description: t("genericError"),
         })
       }
-    } catch (error) {
+    } catch {
       toast.add({
         type: "error",
         title: t("couldNotRemovePicture"),
-        description: errorMessage(error, t("genericError")),
+        description: t("genericError"),
       })
     } finally {
       if (mountedRef.current) setRemovingImage(false)
@@ -194,17 +190,17 @@ export function ProfileSection() {
         toast.add({
           type: "error",
           title: t("couldNotSignOut"),
-          description: error.message,
+          description: t("genericError"),
         })
         return
       }
       navigating = true
       router.push("/sign-in")
-    } catch (error) {
+    } catch {
       toast.add({
         type: "error",
         title: t("couldNotSignOut"),
-        description: errorMessage(error, t("genericError")),
+        description: t("genericError"),
       })
     } finally {
       if (!navigating && mountedRef.current) {
@@ -221,7 +217,7 @@ export function ProfileSection() {
         <SettingsRow>
           <ItemContent>
             <ItemTitle>{t("couldNotLoadProfile")}</ItemTitle>
-            <ItemDescription>{sessionError.message}</ItemDescription>
+            <ItemDescription>{t("genericError")}</ItemDescription>
           </ItemContent>
           <ItemActions>
             <Button
