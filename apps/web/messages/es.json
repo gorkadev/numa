@@ -100,6 +100,7 @@
   },
   "ChatActivity": {
     "placeholder": "Pide un cambio…",
+    "scrollToEnd": "Ir al final",
     "turnErrorTitle": "No se pudo completar el turno",
     "reconnecting": "Reconectando con tu respuesta…",
     "thinking": "Pensando",

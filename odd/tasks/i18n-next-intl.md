@@ -235,7 +235,9 @@ these semantics in T1 rather than weakening them without asking.
     - [x] Shared spinner accessibility inventory and resolution
     - [x] Two-factor step-up errors at server source
     - [x] Credit badge and balance formatting
-    - [ ] Shared scroller/dialog/toast close accessibility
+    - [x] Chat scroller accessible buttons
+    - [ ] Dialog close accessible labels
+    - [ ] Toast close accessible label
     - [ ] Dynamic provider-error policy and residual copy sweep
   Checks per slice: typecheck, lint, relevant render checks; track missing
   keys and untranslated/hardcoded strings. The earlier ~49-file estimate
@@ -589,6 +591,10 @@ these semantics in T1 rather than weakening them without asking.
   balance, preserving null dash, unknown-plan absence, Pro/Max names and
   pricing link. Independent build/typecheck/web lint (0 errors/29 warnings),
   catalog parity and diff check passed; runtime remains T5.
+  Chat scroller unit passed the locale's `scrollToEnd` label into the shared
+  MessageScrollerButton; its default English start/end fallback, direction,
+  icon and custom children remain unchanged. Independent build/typecheck/web
+  lint (0 errors/29 warnings), catalog parity and diff check passed.
 - [ ] T5 not started.
 
 ## Next step

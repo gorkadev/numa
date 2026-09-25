@@ -86,12 +86,15 @@ function MessageScrollerButton({
   direction = "end",
   className,
   children,
+  label,
   render,
   variant = "secondary",
   size = "icon-sm",
   ...props
 }: React.ComponentProps<typeof MessageScrollerPrimitive.Button> &
-  Pick<React.ComponentProps<typeof Button>, "variant" | "size">) {
+  Pick<React.ComponentProps<typeof Button>, "variant" | "size"> & {
+    label?: string
+  }) {
   return (
     <MessageScrollerPrimitive.Button
       data-slot="message-scroller-button"
@@ -110,7 +113,7 @@ function MessageScrollerButton({
         <>
           <HugeiconsIcon icon={ArrowDown02Icon} strokeWidth={2} />
           <span className="sr-only">
-            {direction === "end" ? "Scroll to end" : "Scroll to start"}
+            {label ?? (direction === "end" ? "Scroll to end" : "Scroll to start")}
           </span>
         </>
       )}

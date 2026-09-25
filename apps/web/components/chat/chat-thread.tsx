@@ -211,7 +211,7 @@ export function ChatThread({
               ) : null}
             </MessageScrollerContent>
           </MessageScrollerViewport>
-          <MessageScrollerButton />
+          <MessageScrollerButton label={t("scrollToEnd")} />
         </MessageScroller>
       </MessageScrollerProvider>
       <div className="mx-auto flex w-full max-w-3xl shrink-0 flex-col gap-2 px-4 pb-4">
