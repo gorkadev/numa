@@ -6,7 +6,7 @@
 - Route: delegated for routing and multi-file writes; bounded verification after each work unit
 - Created: 2026-09-23
 - Branch: `feat/new-flow` (worktree `/Users/gorka/workspace/worktrees/numa`)
-- Status: T1–T3 complete; T4 in progress
+- Status: T1–T4 complete; T5 in progress
 
 ## Objective
 
@@ -199,7 +199,7 @@ these semantics in T1 rather than weakening them without asking.
   functional boundary. Checks: typecheck, lint, build; preference matrix
   below and shell latency comparison. Never report DB persistence complete
   if `db:push` or its confirmation was skipped.
-- [ ] **T4 — Translate user-visible copy in bounded slices.** Each slice
+- [x] **T4 — Translate user-visible copy in bounded slices.** Each slice
   includes both language files and a render/smoke check; preserve existing
   fallback behavior until its slice is complete. One writer and one commit
   per independently working slice; no parallel writes in this worktree.
@@ -228,7 +228,7 @@ these semantics in T1 rather than weakening them without asking.
     - [x] Agent panel tabs/navigation and preview controls
     - [x] Agent entries and run details
     - [x] Game preview and play view
-  - [ ] T4e: errors, empty states, tooltips, metadata, remaining inventory
+  - [x] T4e: errors, empty states, tooltips, metadata, remaining inventory
     - [x] Home empty state, error boundary, and metadata
     - [x] Fixed game-creation action errors
     - [x] Shared mobile sidebar/drawer accessibility
@@ -238,7 +238,7 @@ these semantics in T1 rather than weakening them without asking.
     - [x] Chat scroller accessible buttons
     - [x] Dialog close accessible labels
     - [x] Toast close accessible label
-    - [ ] Dynamic provider-error policy and residual copy sweep
+    - [x] Dynamic provider-error policy and residual copy sweep
   Checks per slice: typecheck, lint, relevant render checks; track missing
   keys and untranslated/hardcoded strings. The earlier ~49-file estimate
   is a forecast, not a verified exhaustive inventory.
@@ -402,7 +402,7 @@ these semantics in T1 rather than weakening them without asking.
   reported no noticeable authenticated-page slowdown. Quantitative shell
   query-count/latency measurement remains pending for T5, as do valid
   preview/OAuth/webhook POST and error/loading scenarios.
-- [ ] T4 in progress: inventory and bounded translation slices T4a–T4e.
+- [x] T4 source inventory and bounded translation slices T4a–T4e complete; runtime matrix remains T5.
   - [x] T4a shell/navigation slice complete. The `Shell`
     namespace now has 22 matching keys in `messages/en.json` and
     `messages/es.json`, covering shell navigation, account menu, command
@@ -503,7 +503,7 @@ these semantics in T1 rather than weakening them without asking.
   USD display; independent typecheck/lint (0 errors/30 warnings)/build and
   diff check passed. Its checkout href, plan gate, and dismissal behavior
   remain unchanged. Work-unit commit recorded after creation.
-- [ ] T4d started: read-only mapping identified six bounded UI slices. Keep
+- [x] T4d source slices complete: read-only mapping identified six bounded UI slices. Keep
   user-authored game titles/messages and agent-generated content untouched;
   translate fixed controls/labels without changing tier/tool IDs or API
   protocol. Authenticated smoke checks remain T5 when credentials are not
@@ -554,7 +554,7 @@ these semantics in T1 rather than weakening them without asking.
   sandbox paths and interactions. Independent build/typecheck/scoped lint,
   catalog parity and diff check passed (90 diff lines). No covering
   GamePlayView test was found; authenticated preview/play remains T5.
-- [ ] T4e started: read-only residual inventory found fixed home/error/metadata
+- [x] T4e source slices complete: read-only residual inventory found fixed home/error/metadata
   copy, fixed createGame action errors, shared sidebar/drawer accessibility,
   shared spinner defaults, and dynamic Better Auth errors. Preserve provider
   error details pending a stable-code policy; do not translate arbitrary
@@ -603,14 +603,95 @@ these semantics in T1 rather than weakening them without asking.
   Toast close unit added a client wrapper under the locale provider and an
   optional English-default label in shared UI; independent build/typecheck/
   web lint (0 errors/29 warnings), full catalog parity and diff check passed.
-  Browser toast dismissal remains unverified for T5.
-- [ ] T5 not started.
+  Browser toast dismissal remains unverified for T5. Commit `c8ebe1a`.
+  Provider-error inventory found Better Auth 1.7.5 structured TOTP codes
+  (already mapped at TOTP boundaries) and passkey cancellation codes; Polar
+  SDK 0.49.0 has endpoint-specific error types/status but no universal stable
+  translation code. Policy for ordinary provider failures: localize an
+  allowlisted structured code only in its relevant flow, otherwise show an
+  existing application-owned translated generic error; never compare English
+  prose, expose untrusted provider text as a localized message, or alter
+  user/agent-authored content. Auth social/passkey and account switch/sign-out
+  now use generic translated fallbacks; OAuth callback known-code mapping and
+  passkey cancellation remain intact. Independent typecheck/web lint (0 errors,
+  29 warnings)/build, source audit and diff check passed; commit `e34baf1`.
+  Settings profile/passkey/session/security/2FA revoke error surfaces now use
+  `Settings.genericError`, retaining `ERROR_CEREMONY_ABORTED` suppression and
+  TOTP `INVALID_CODE` mapping. Independent typecheck/web lint (0 errors,
+  29 warnings)/build, source audit and diff check passed; commit `597e4a3`.
+  Neither unit exercised authenticated failure paths in a browser.
+  The user chose application-owned structured codes for actionable chat
+  failures rather than preserving raw stream details or hiding every failure
+  behind a generic message. The missing-game branch now emits a separate
+  transient `data-game-unavailable` event; actual credit refusals retain
+  `data-credits-exhausted` with `null` for unprovisioned accounts and a
+  non-positive number for exhaustion. The hook validates both payloads and
+  clears classification on the next send/answer/reconnect; the alert shows
+  actionable translated copy for those cases and generic translated copy for
+  unclassified stream failures. Model-facing tool errors and server-thrown
+  diagnostics remain unchanged. Keying the chat thread by game ID prevents
+  prior-game hook state from contaminating a new game. Independent sequential
+  build/typecheck/web lint (0 errors, 29 warnings), catalog audit and diff
+  check passed; commit `391b375`. Installed AI/Trigger SDK source preserves
+  streamed transient data-before-error ordering, but browser delivery and a
+  hypothetical late same-game event after a new send remain unverified for T5.
+  Final residual source inventory found one app-owned gap: session device
+  labels. Both current and other sessions now localize the unknown-device
+  fallback and browser/OS connector while retaining browser/platform names
+  and an English-default formatter. Independent typecheck/web lint (0 errors,
+  29 warnings)/build, placeholder parity and diff check passed; commit
+  `e5f3bea`. Authenticated session render remains T5. Recovery-code
+  `XXXXX-XXXXX` is a format hint, deliberately locale-invariant, not English
+  prose. Brand, product names, shortcuts, IDs, paths, provider order
+  descriptions and user/agent content are excluded from translation.
+- [ ] T5 in progress. Independent sequential checks on `e5f3bea` plus this
+  ODD edit: root `pnpm typecheck` passed (3/3 tasks); root `pnpm lint` failed
+  in `packages/db` because that package has no `eslint.config.js` (known
+  workspace baseline, not evidence of an i18n regression); `pnpm --filter
+  web build` passed, with 1 static `/_not-found` route and 14 dynamic routes
+  including `[locale]` pages and separate API/auth/billing/preview/webhook/
+  checkout handlers; `pnpm --filter web lint` passed (0 errors, 29 warnings);
+  `git diff --check` passed. Build classification and separated handler routes
+  do not prove middleware runtime semantics. No credentials or localhost server
+  were used. No authenticated or public browser matrix was run in T5; prior
+  anonymous smoke and user-reported authenticated T3 checks remain recorded
+  above and must not be upgraded into independent T5 evidence.
+  Read-only source audit: `i18n/request.ts` and `lib/locale-preference.ts`
+  imply one explicit user-locale SELECT on an authenticated request resolving
+  locale, and the hydrated `LocaleReconciler` action adds another SELECT on
+  invocation after session validation; this is an **estimate**, not measured
+  query count. Better Auth session SQL and billing costs are not counted.
+  Anonymous locale resolution skips preference reads without a session cookie;
+  cookie presence alone remains a UX gate, not authorization. `headers()` and
+  `cookies()` make page locale request-dependent; build classifies the pages
+  dynamically. Server actions and `server-only` imports protect preference
+  code by design, but emitted client-bundle secret absence has not been
+  audited. A bounded emitted-artifact scan of 172 client chunks and 121
+  manifests found no literal `lib/locale-preference`, `lib/session`,
+  `DATABASE_URL`, `CLERK_SECRET_KEY`, or `POLAR_ACCESS_TOKEN`; one client chunk
+  contains the literal name `TRIGGER_SECRET_KEY`. No value or excerpt was
+  printed, and a follow-up could not classify that match as a harmless
+  symbolic reference versus an inlined value. Thus client-bundle secret
+  absence is **inconclusive**, not passed; this requires a safe deeper audit.
+  Quantitative baseline/current shell TTFB and SQL-count comparison
+  remains unexecuted: no authorized authenticated measurement harness or
+  credentials, and the original localhost:3000 server must not be replaced.
+  Signed-in pages, auth/billing actions, valid preview, OAuth callbacks,
+  webhook POST, loading/error boundaries, chat structured failure delivery,
+  accessibility labels, deep-link refresh and cross-device cases remain
+  pending independent runtime observation. A late same-game transient chat
+  failure event might misclassify a later error; no turn ID or browser trace
+  establishes whether this race is reachable.
 
 ## Next step
 
-Pause after the verified toast-close unit at the user's request (context 92%).
-Next session: reconcile task file and memory, then decide T4e's residual
-provider-error policy without mapping English message prose. Finish T5 only
-after root checks and authenticated/browser matrix evidence. T4a's authenticated
-navigation render remains pending for T5. Quantify authenticated shell latency/query
-cost during T5 without logging credentials.
+T5 remains open for independently observed runtime matrices, a client-bundle
+secret audit and quantitative baseline/current authenticated shell latency
+and SQL counts. Root lint's missing packages/db ESLint config is a pre-existing
+workspace blocker. Do not use credentials or displace the original localhost:3000
+server; request an authorized isolated test harness before executing authenticated
+checks. Until then preserve the pending results without claiming acceptance.
+T4a's authenticated navigation render and chat failure delivery remain pending.
+Engram topic `odd/i18n-next-intl/tasks` was updated with a recovery summary,
+not a full-document mirror; full mirror remains pending. This file is the
+complete task record.
