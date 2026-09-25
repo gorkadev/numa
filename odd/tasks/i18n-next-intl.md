@@ -229,6 +229,11 @@ these semantics in T1 rather than weakening them without asking.
     - [x] Agent entries and run details
     - [x] Game preview and play view
   - [ ] T4e: errors, empty states, tooltips, metadata, remaining inventory
+    - [x] Home empty state, error boundary, and metadata
+    - [ ] Fixed game-creation action errors
+    - [ ] Shared mobile sidebar/drawer accessibility
+    - [ ] Shared spinner accessibility inventory and resolution
+    - [ ] Dynamic provider-error policy and residual copy sweep
   Checks per slice: typecheck, lint, relevant render checks; track missing
   keys and untranslated/hardcoded strings. The earlier ~49-file estimate
   is a forecast, not a verified exhaustive inventory.
@@ -544,6 +549,17 @@ these semantics in T1 rather than weakening them without asking.
   sandbox paths and interactions. Independent build/typecheck/scoped lint,
   catalog parity and diff check passed (90 diff lines). No covering
   GamePlayView test was found; authenticated preview/play remains T5.
+- [ ] T4e started: read-only residual inventory found fixed home/error/metadata
+  copy, fixed createGame action errors, shared sidebar/drawer accessibility,
+  shared spinner defaults, and dynamic Better Auth errors. Preserve provider
+  error details pending a stable-code policy; do not translate arbitrary
+  English error.message text by matching its prose. Run each bounded unit
+  through independent verification before T5. Home/error/metadata unit
+  translated fixed empty/error UI and SEO description without changing the
+  Numa title template or retry action. Independent build/typecheck/web lint
+  (0 errors/29 warnings), catalog parity and diff check passed. Anonymous
+  `/sign-in` metadata descriptions matched English and Spanish; the error
+  boundary itself and authenticated home remain unexercised for T5.
 - [ ] T5 not started.
 
 ## Next step

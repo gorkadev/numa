@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { Geist_Mono, Inter } from "next/font/google"
 import { hasLocale, NextIntlClientProvider } from "next-intl"
-import { getLocale, getMessages } from "next-intl/server"
+import { getLocale, getMessages, getTranslations } from "next-intl/server"
 
 import "@workspace/ui/globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -19,16 +19,19 @@ const fontMono = Geist_Mono({
   variable: "--font-mono",
 })
 
-export const metadata: Metadata = {
-  title: {
-    default: "Numa",
-    template: "%s | Numa",
-  },
-  description:
-    "Build your own racers, shooters, puzzles and whole worlds using your own words. If you can describe it, you can play it.",
-  icons: {
-    icon: "/logo.svg",
-  },
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Metadata")
+
+  return {
+    title: {
+      default: "Numa",
+      template: "%s | Numa",
+    },
+    description: t("description"),
+    icons: {
+      icon: "/logo.svg",
+    },
+  }
 }
 
 export default async function RootLayout({

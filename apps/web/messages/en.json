@@ -2,6 +2,18 @@
   "Common": {
     "appName": "Numa"
   },
+  "Home": {
+    "emptyTitle": "What should we build today?",
+    "emptyDescription": "Build your own racers, shooters, puzzles and whole worlds using your own words. If you can describe it, you can play it."
+  },
+  "Errors": {
+    "title": "Something went wrong",
+    "description": "We could not load this page. Please try again.",
+    "retry": "Try again"
+  },
+  "Metadata": {
+    "description": "Build your own racers, shooters, puzzles and whole worlds using your own words. If you can describe it, you can play it."
+  },
   "ChatMessages": {
     "continue": "Continue",
     "youChose": "You chose {answer}",
