@@ -64,6 +64,18 @@ function knownStatusKey(status: string) {
   return keys[status] ?? null
 }
 
+function knownOrderStatusKey(status: string) {
+  const keys: Record<string, string> = {
+    paid: "orderStatusPaid",
+    pending: "orderStatusPending",
+    refunded: "orderStatusRefunded",
+    partially_refunded: "orderStatusPartiallyRefunded",
+    disputed: "orderStatusDisputed",
+    partially_disputed: "orderStatusPartiallyDisputed",
+  }
+  return keys[status] ?? null
+}
+
 function isSameOriginPath(href: string | null): href is string {
   return href !== null && href.startsWith("/") && !href.startsWith("//")
 }
@@ -128,8 +140,8 @@ function BillingSkeleton() {
         ))}
       </SettingsGroup>
       <SettingsGroup
-        title="Billing history"
-        description="Recent invoices and receipts."
+        title={t("historyTitle")}
+        description={t("historyDescription")}
       >
         {["first", "second"].map((row) => (
           <SettingsRow key={row}>
@@ -390,24 +402,24 @@ export function BillingSection({ active }: { active: boolean }) {
       </SettingsGroup>
 
       <SettingsGroup
-        title="Billing history"
-        description="Recent invoices and receipts."
+        title={t("historyTitle")}
+        description={t("historyDescription")}
       >
         {details.recentOrders.availability === "unavailable" ? (
           <SettingsRow>
             <ItemContent>
-              <ItemTitle>Billing history is unavailable</ItemTitle>
+              <ItemTitle>{t("historyUnavailableTitle")}</ItemTitle>
               <ItemDescription>
-                Try again later for recent orders.
+                {t("historyUnavailableDescription")}
               </ItemDescription>
             </ItemContent>
           </SettingsRow>
         ) : details.recentOrders.items.length === 0 ? (
           <SettingsRow>
             <ItemContent>
-              <ItemTitle>No billing history yet</ItemTitle>
+              <ItemTitle>{t("historyEmptyTitle")}</ItemTitle>
               <ItemDescription>
-                Invoices and receipts will appear here after a purchase.
+                {t("historyEmptyDescription")}
               </ItemDescription>
             </ItemContent>
           </SettingsRow>
@@ -417,7 +429,12 @@ export function BillingSection({ active }: { active: boolean }) {
               <ItemContent>
                 <ItemTitle>{order.description}</ItemTitle>
                 <ItemDescription>
-                  {[formatDate(order.createdAt), statusLabel(order.status)]
+                  {[
+                    formatDate(order.createdAt, locale),
+                    knownOrderStatusKey(order.status)
+                      ? t(knownOrderStatusKey(order.status)!)
+                      : statusLabel(order.status),
+                  ]
                     .filter((value): value is string => value !== null)
                     .join(" · ")}
                 </ItemDescription>
@@ -425,7 +442,7 @@ export function BillingSection({ active }: { active: boolean }) {
               <ItemActions>
                 <div className="flex items-center gap-2">
                   <FactValue
-                    value={formatCurrency(order.amount, order.currency)}
+                    value={formatCurrency(order.amount, order.currency, locale)}
                   />
                   {isSameOriginPath(order.invoiceHref) && (
                     <Button
@@ -434,7 +451,7 @@ export function BillingSection({ active }: { active: boolean }) {
                       nativeButton={false}
                       render={<Link href={order.invoiceHref} />}
                     >
-                      Invoice
+                      {t("invoice")}
                     </Button>
                   )}
                   {isSameOriginPath(order.receiptHref) && (
@@ -444,7 +461,7 @@ export function BillingSection({ active }: { active: boolean }) {
                       nativeButton={false}
                       render={<Link href={order.receiptHref} />}
                     >
-                      Receipt
+                      {t("receipt")}
                     </Button>
                   )}
                 </div>

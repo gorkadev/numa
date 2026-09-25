@@ -217,7 +217,7 @@ these semantics in T1 rather than weakening them without asking.
     - [x] Pricing FAQ copy
     - [x] Plan-change preview and confirmation dialog copy
     - [x] Billing settings plan/loading/action copy and locale format
-    - [ ] Billing history states and known provider-status labels
+    - [x] Billing history states and known provider-status labels
     - [ ] Sidebar upgrade nudge copy
   - [ ] T4d: games, play, chat composer/thread
   - [ ] T4e: errors, empty states, tooltips, metadata, remaining inventory
@@ -472,7 +472,14 @@ these semantics in T1 rather than weakening them without asking.
   formatting; provider values and API paths preserved. Independent typecheck,
   lint (0 errors/30 warnings), build, key/placeholder parity and diff check
   passed (229 source/catalog diff lines). Billing history dates/status/order
-  copy remain for the next unit; authenticated rendering remains T5.
+  copy remained for the next unit; authenticated rendering remains T5.
+  Billing history unit translated loading/unavailable/empty states, known
+  Polar order status display, invoice/receipt labels, and locale-aware order
+  dates/currency. Unknown statuses preserve humanized provider fallback and
+  order descriptions remain provider-owned. Independent typecheck/lint (0
+  errors/30 warnings)/build, key parity, and diff check passed; no covering
+  status-mapping unit tests were found. Authenticated history render remains
+  T5.
 - [ ] T5 not started.
 
 ## Next step

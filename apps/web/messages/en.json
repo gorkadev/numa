@@ -232,7 +232,21 @@
     "managePlanDescription": "Change your plan or buy more credits.",
     "billingPortal": "Billing portal",
     "billingPortalDescription": "Manage payment details and invoices.",
-    "openBillingPortal": "Open billing portal"
+    "openBillingPortal": "Open billing portal",
+    "historyTitle": "Billing history",
+    "historyDescription": "Recent invoices and receipts.",
+    "historyUnavailableTitle": "Billing history is unavailable",
+    "historyUnavailableDescription": "Try again later for recent orders.",
+    "historyEmptyTitle": "No billing history yet",
+    "historyEmptyDescription": "Invoices and receipts will appear here after a purchase.",
+    "invoice": "Invoice",
+    "receipt": "Receipt",
+    "orderStatusPaid": "Paid",
+    "orderStatusPending": "Pending",
+    "orderStatusRefunded": "Refunded",
+    "orderStatusPartiallyRefunded": "Partially refunded",
+    "orderStatusDisputed": "Disputed",
+    "orderStatusPartiallyDisputed": "Partially disputed"
   },
   "Pricing": {
     "title": "Pay for what you build",

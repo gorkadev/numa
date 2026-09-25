@@ -232,7 +232,21 @@
     "managePlanDescription": "Cambia de plan o compra más créditos.",
     "billingPortal": "Portal de facturación",
     "billingPortalDescription": "Administra los datos de pago y las facturas.",
-    "openBillingPortal": "Abrir portal de facturación"
+    "openBillingPortal": "Abrir portal de facturación",
+    "historyTitle": "Historial de facturación",
+    "historyDescription": "Facturas y recibos recientes.",
+    "historyUnavailableTitle": "El historial de facturación no está disponible",
+    "historyUnavailableDescription": "Vuelve a intentarlo más tarde para consultar los pedidos recientes.",
+    "historyEmptyTitle": "Todavía no hay historial de facturación",
+    "historyEmptyDescription": "Las facturas y los recibos aparecerán aquí después de una compra.",
+    "invoice": "Factura",
+    "receipt": "Recibo",
+    "orderStatusPaid": "Pagado",
+    "orderStatusPending": "Pendiente",
+    "orderStatusRefunded": "Reembolsado",
+    "orderStatusPartiallyRefunded": "Reembolsado parcialmente",
+    "orderStatusDisputed": "En disputa",
+    "orderStatusPartiallyDisputed": "En disputa parcialmente"
   },
   "Pricing": {
     "title": "Paga por lo que creas",
