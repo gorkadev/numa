@@ -48,6 +48,8 @@ import {
   POLAR_PRODUCT_TOPUP_ID,
 } from "@/lib/polar/products"
 
+import { getLocale, getTranslations } from "next-intl/server"
+
 import { changePlanAction } from "./actions"
 
 /**
@@ -65,6 +67,18 @@ function formatMoney(cents: number, currency: string): string {
     style: "currency",
     currency,
   }).format(cents / 100)
+}
+
+function formatLocalizedMoney(amount: number, locale: string): string {
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(amount)
+}
+
+function formatCredits(credits: number, locale: string): string {
+  return new Intl.NumberFormat(locale).format(credits)
 }
 
 function formatCadence({
@@ -134,25 +148,31 @@ function Feature({ children }: { children: React.ReactNode }) {
  */
 function TopUpCard({
   price,
-  credits,
   productId,
   hasPaidPlan,
+  badgeLabel,
+  oneTimeLabel,
+  creditDescription,
+  buyLabel,
+  eligibilityLabel,
 }: {
   price: string
-  credits: number
   productId: string
   hasPaidPlan: boolean
+  badgeLabel: string
+  oneTimeLabel: string
+  creditDescription: string
+  buyLabel: string
+  eligibilityLabel: string
 }) {
   return (
     <Card>
       <CardHeader>
-        <Badge variant="outline">Top-up</Badge>
+        <Badge variant="outline">{badgeLabel}</Badge>
         <CardTitle>
-          {price} <span className="text-muted-foreground">one time</span>
+          {price} <span className="text-muted-foreground">{oneTimeLabel}</span>
         </CardTitle>
-        <CardDescription>
-          {credits.toLocaleString()} credits, added immediately.
-        </CardDescription>
+        <CardDescription>{creditDescription}</CardDescription>
       </CardHeader>
       <CardContent>
         {hasPaidPlan ? (
@@ -169,17 +189,17 @@ function TopUpCard({
             nativeButton={false}
             render={<Link href={`/checkout?products=${productId}`} />}
           >
-            Buy credits
+            {buyLabel}
           </Button>
         ) : (
           <Button className="w-full" variant="outline" disabled>
-            Buy credits
+            {buyLabel}
           </Button>
         )}
       </CardContent>
       {!hasPaidPlan && (
         <CardContent>
-          <CardDescription>Available on Pro or Max</CardDescription>
+          <CardDescription>{eligibilityLabel}</CardDescription>
         </CardContent>
       )}
     </Card>
@@ -226,9 +246,16 @@ export default async function PricingPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
-  const [{ plan }, resolvedSearchParams] = await Promise.all([
+  const [
+    { plan },
+    resolvedSearchParams,
+    t,
+    locale,
+  ] = await Promise.all([
     getBillingSummary(),
     searchParams,
+    getTranslations("Pricing"),
+    getLocale(),
   ])
 
   const planChangeFailed = resolvedSearchParams.planChangeError === "1"
@@ -271,49 +298,38 @@ export default async function PricingPage({
        */}
       <Empty className="flex-none">
         <EmptyHeader>
-          <EmptyTitle>Pay for what you build</EmptyTitle>
-          <EmptyDescription>
-            Every plan runs on credits. One credit is one cent of what a turn
-            actually costs to generate.
-          </EmptyDescription>
+          <EmptyTitle>{t("title")}</EmptyTitle>
+          <EmptyDescription>{t("description")}</EmptyDescription>
         </EmptyHeader>
       </Empty>
 
       {planChangeFailed && (
         <Alert variant="destructive">
-          <AlertTitle>Your plan change did not go through</AlertTitle>
-          <AlertDescription>
-            Nothing was charged and your plan has not changed. Try again, or
-            check your payment method if this keeps happening.
-          </AlertDescription>
+          <AlertTitle>{t("changeFailedTitle")}</AlertTitle>
+          <AlertDescription>{t("changeFailedDescription")}</AlertDescription>
         </Alert>
       )}
 
       {planChanged && (
         <Alert>
-          <AlertTitle>Your plan is updating</AlertTitle>
-          <AlertDescription>
-            New credits can take a few seconds to show up — Polar grants them
-            asynchronously, just like the balance in the sidebar.
-          </AlertDescription>
+          <AlertTitle>{t("updatingTitle")}</AlertTitle>
+          <AlertDescription>{t("updatingDescription")}</AlertDescription>
         </Alert>
       )}
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader>
-            <Badge variant="secondary">Free</Badge>
+            <Badge variant="secondary">{t("free")}</Badge>
             <CardTitle>
-              $0 <span className="text-muted-foreground">/month</span>
+              {formatLocalizedMoney(0, locale)} <span className="text-muted-foreground">{t("perMonth")}</span>
             </CardTitle>
-            <CardDescription>
-              Enough to find out whether the idea in your head plays.
-            </CardDescription>
+            <CardDescription>{t("freeDescription")}</CardDescription>
           </CardHeader>
           <CardContent>
             {plan === "free" ? (
               <Button className="w-full" variant="outline" disabled>
-                Current plan
+                {t("currentPlan")}
               </Button>
             ) : (
               <Button
@@ -331,33 +347,31 @@ export default async function PricingPage({
                   <Link href={`/checkout?products=${POLAR_PRODUCT_FREE_ID}`} />
                 }
               >
-                Get started
+                {t("getStarted")}
               </Button>
             )}
           </CardContent>
           <CardContent>
             <ItemGroup>
-              <Feature>100 credits every month</Feature>
-              <Feature>Unlimited games and revisions</Feature>
-              <Feature>Play and share every game you build</Feature>
+              <Feature>{t("monthlyCredits", { credits: formatCredits(100, locale) })}</Feature>
+              <Feature>{t("unlimitedGames")}</Feature>
+              <Feature>{t("playAndShare")}</Feature>
             </ItemGroup>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <Badge>Pro</Badge>
+            <Badge>{t("pro")}</Badge>
             <CardTitle>
-              $20 <span className="text-muted-foreground">/month</span>
+              {formatLocalizedMoney(20, locale)} <span className="text-muted-foreground">{t("perMonth")}</span>
             </CardTitle>
-            <CardDescription>
-              For the weeks where one idea turns into nine.
-            </CardDescription>
+            <CardDescription>{t("proDescription")}</CardDescription>
           </CardHeader>
           <CardContent>
             {plan === "pro" ? (
               <Button className="w-full" variant="outline" disabled>
-                Current plan
+                {t("currentPlan")}
               </Button>
             ) : plan === "max" ? (
               <PlanChangeDialog
@@ -390,15 +404,15 @@ export default async function PricingPage({
                   <Link href={`/checkout?products=${POLAR_PRODUCT_PRO_ID}`} />
                 }
               >
-                Upgrade
+                {t("upgrade")}
               </Button>
             )}
           </CardContent>
           <CardContent>
             <ItemGroup>
-              <Feature>2000 credits every month</Feature>
-              <Feature>Everything on Free</Feature>
-              <Feature>Top-ups when a month runs long</Feature>
+              <Feature>{t("monthlyCredits", { credits: formatCredits(2000, locale) })}</Feature>
+              <Feature>{t("everythingOnFree")}</Feature>
+              <Feature>{t("topUpsFeature")}</Feature>
             </ItemGroup>
           </CardContent>
           {plan === "max" && (
@@ -410,19 +424,16 @@ export default async function PricingPage({
 
         <Card>
           <CardHeader>
-            <Badge>Max</Badge>
+            <Badge>{t("max")}</Badge>
             <CardTitle>
-              $50 <span className="text-muted-foreground">/month</span>
+              {formatLocalizedMoney(50, locale)} <span className="text-muted-foreground">{t("perMonth")}</span>
             </CardTitle>
-            <CardDescription>
-              For teams that build every day and never want to watch the
-              balance.
-            </CardDescription>
+            <CardDescription>{t("maxDescription")}</CardDescription>
           </CardHeader>
           <CardContent>
             {plan === "max" ? (
               <Button className="w-full" variant="outline" disabled>
-                Current plan
+                {t("currentPlan")}
               </Button>
             ) : plan === "pro" ? (
               <PlanChangeDialog
@@ -459,15 +470,15 @@ export default async function PricingPage({
                   <Link href={`/checkout?products=${POLAR_PRODUCT_MAX_ID}`} />
                 }
               >
-                Upgrade
+                {t("upgrade")}
               </Button>
             )}
           </CardContent>
           <CardContent>
             <ItemGroup>
-              <Feature>5500 credits every month</Feature>
-              <Feature>Everything on Pro</Feature>
-              <Feature>10% more credits per dollar than Pro</Feature>
+              <Feature>{t("monthlyCredits", { credits: formatCredits(5500, locale) })}</Feature>
+              <Feature>{t("everythingOnPro")}</Feature>
+              <Feature>{t("moreCreditsThanPro")}</Feature>
             </ItemGroup>
           </CardContent>
           {/**
@@ -503,31 +514,40 @@ export default async function PricingPage({
 
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">
-          <h2 className="text-lg font-medium">Credit top-ups</h2>
-          <p className="text-sm text-muted-foreground">
-            A refill for a heavy month, bought as often as you need it, on top
-            of Pro or Max.
-          </p>
+          <h2 className="text-lg font-medium">{t("topUpsTitle")}</h2>
+          <p className="text-sm text-muted-foreground">{t("topUpsDescription")}</p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
           <TopUpCard
-            price="$10"
-            credits={1000}
+            price={formatLocalizedMoney(10, locale)}
             productId={POLAR_PRODUCT_TOPUP_ID}
             hasPaidPlan={hasPaidPlan}
+            badgeLabel={t("topUp")}
+            oneTimeLabel={t("oneTime")}
+            creditDescription={t("topUpCredits", { credits: formatCredits(1000, locale) })}
+            buyLabel={t("buyCredits")}
+            eligibilityLabel={t("topUpEligibility")}
           />
           <TopUpCard
-            price="$25"
-            credits={2500}
+            price={formatLocalizedMoney(25, locale)}
             productId={POLAR_PRODUCT_TOPUP_2500_ID}
             hasPaidPlan={hasPaidPlan}
+            badgeLabel={t("topUp")}
+            oneTimeLabel={t("oneTime")}
+            creditDescription={t("topUpCredits", { credits: formatCredits(2500, locale) })}
+            buyLabel={t("buyCredits")}
+            eligibilityLabel={t("topUpEligibility")}
           />
           <TopUpCard
-            price="$50"
-            credits={5000}
+            price={formatLocalizedMoney(50, locale)}
             productId={POLAR_PRODUCT_TOPUP_5000_ID}
             hasPaidPlan={hasPaidPlan}
+            badgeLabel={t("topUp")}
+            oneTimeLabel={t("oneTime")}
+            creditDescription={t("topUpCredits", { credits: formatCredits(5000, locale) })}
+            buyLabel={t("buyCredits")}
+            eligibilityLabel={t("topUpEligibility")}
           />
         </div>
       </div>

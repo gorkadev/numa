@@ -213,6 +213,9 @@ these semantics in T1 rather than weakening them without asking.
     - [x] Settings personal/dialog/catalog unit (`b0a2230`, `084c713`)
     - [x] Settings security/passkey/session unit (`2749aec`)
   - [ ] T4c: pricing, checkout-facing copy, billing settings
+    - [x] Pricing plan cards, top-ups, alerts, and locale-aware amounts
+    - [ ] Pricing FAQ and plan-change preview/dialog copy
+    - [ ] Billing settings and sidebar upgrade nudge
   - [ ] T4d: games, play, chat composer/thread
   - [ ] T4e: errors, empty states, tooltips, metadata, remaining inventory
   Checks per slice: typecheck, lint, relevant render checks; track missing
@@ -442,6 +445,16 @@ these semantics in T1 rather than weakening them without asking.
   localization policy in T4e's error sweep. Independent precommit Security
   audit found no missing Settings keys or placeholder mismatch; typecheck,
   lint (0 errors/30 warnings), build, and diff check passed.
+- [ ] T4c started: read-only inventory mapped pricing, plan-change dialog,
+  billing settings, and upgrade card. Checkout route is Polar-owned protocol
+  and must not be translated. Split pricing because the server page alone is
+  606 lines; keep each reviewable unit under 400 diff lines. First pricing
+  unit translated plan cards, top-ups, alerts and locale-aware USD amounts/
+  credit counts, preserving product IDs, checkout links and business values;
+  both catalogs match. Independent typecheck/lint (0 errors/30 warnings)/build
+  and diff check passed. Anonymous pricing smoke redirected to sign-in (307),
+  so authenticated render remains T5; FAQ and plan-change copy remain for the
+  next unit. Work-unit commit to be recorded after creation.
 - [ ] T5 not started.
 
 ## Next step
