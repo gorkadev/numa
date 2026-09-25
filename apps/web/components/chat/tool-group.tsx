@@ -207,15 +207,29 @@ function localizedToolLabel(
   part: ToolPart,
   t: ReturnType<typeof useTranslations<"ChatActivity">>
 ): string {
-  const name = getToolName(part)
+  const phase =
+    toolError(part) !== null ? "failed" : isSettled(part) ? "done" : "active"
+  const label = localizedToolCallLabel(
+    getToolName(part),
+    toolPath(part.input),
+    phase,
+    t
+  )
+
+  return label ?? toolLabel(part)
+}
+
+/** Localized display-only label for a known call; callers keep unknown fallbacks unchanged. */
+export function localizedToolCallLabel(
+  name: string,
+  path: string | null | undefined,
+  phase: "active" | "done" | "failed",
+  t: ReturnType<typeof useTranslations<"ChatActivity">>
+): string | null {
   const translationKey =
     TOOL_TRANSLATION_KEYS[name as keyof typeof TOOL_TRANSLATION_KEYS]
 
-  if (!translationKey || !TOOL_LABELS[name]) return toolLabel(part)
-
-  const phase =
-    toolError(part) !== null ? "failed" : isSettled(part) ? "done" : "active"
-  const path = toolPath(part.input)
+  if (!translationKey || !TOOL_LABELS[name]) return null
 
   return t(
     `toolLabels.${translationKey}.${phase}` as never,

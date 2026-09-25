@@ -6,6 +6,7 @@ import {
   Tick02Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
+import { useTranslations } from "next-intl"
 import {
   Marker,
   MarkerContent,
@@ -25,24 +26,26 @@ import type {
  * `"running"` never reaches this: a running record shows its `activity`
  * one-liner instead, both here and in `SubagentPanel`'s run list.
  */
-export function subagentStatusLabel(status: SubagentRunStatus): string {
+export function subagentStatusKey(
+  status: SubagentRunStatus
+): `status${Capitalize<SubagentRunStatus>}` {
   switch (status) {
     case "done":
-      return "Done"
+      return "statusDone"
     case "partial":
-      return "Stopped partway"
+      return "statusPartial"
     case "blocked":
-      return "Needs input"
+      return "statusBlocked"
     case "error":
-      return "Failed"
+      return "statusError"
     case "aborted":
-      return "Cancelled"
+      return "statusAborted"
     case "skipped":
-      return "Skipped"
+      return "statusSkipped"
     case "unavailable":
-      return "Unavailable"
+      return "statusUnavailable"
     case "running":
-      return "Running"
+      return "statusRunning"
   }
 }
 
@@ -78,6 +81,7 @@ export type SubagentEntryProps = {
  * "it worked".
  */
 export function SubagentEntry({ record, onSelect }: SubagentEntryProps) {
+  const t = useTranslations("ChatAgents")
   const running = record.status === "running"
   const errored = record.status === "error"
 
@@ -99,7 +103,7 @@ export function SubagentEntry({ record, onSelect }: SubagentEntryProps) {
       </MarkerIcon>
       <MarkerContent className={running ? "shimmer" : undefined}>
         {record.displayName} ·{" "}
-        {running ? record.activity : subagentStatusLabel(record.status)}
+        {running ? record.activity : t(subagentStatusKey(record.status))}
       </MarkerContent>
     </Marker>
   )

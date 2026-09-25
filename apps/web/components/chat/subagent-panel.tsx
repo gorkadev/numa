@@ -29,7 +29,9 @@ import {
 import { Spinner } from "@workspace/ui/components/spinner"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { subagentStatusLabel } from "@/components/chat/subagent-entry"
+import {
+  subagentStatusKey,
+} from "@/components/chat/subagent-entry"
 import { SubagentRunDetail } from "@/components/chat/subagent-run-detail"
 import type { SubagentRunRecord } from "@/lib/games/harness/records"
 
@@ -74,6 +76,7 @@ export function SubagentRunRow({
   selected?: boolean
   onSelect: (agentId: string) => void
 }) {
+  const t = useTranslations("ChatAgents")
   const running = record.status === "running"
   const failed = record.status === "error"
 
@@ -118,7 +121,7 @@ export function SubagentRunRow({
         <span
           className={cn("text-xs text-muted-foreground", running && "shimmer")}
         >
-          {running ? record.activity : subagentStatusLabel(record.status)}
+          {running ? record.activity : t(subagentStatusKey(record.status))}
         </span>
         <HugeiconsIcon
           icon={ArrowRight01Icon}
