@@ -193,7 +193,9 @@ export function SettingsDialog({
                 <SidebarGroup key={group.label} className="py-1">
                   <SidebarGroupLabel>
                     {t(
-                      group.label === "Personal" ? "personalGroup" : "billingGroup"
+                      group.label === "Personal"
+                        ? "personalGroup"
+                        : "billingGroup"
                     )}
                   </SidebarGroupLabel>
                   <SidebarGroupContent>
@@ -305,10 +307,7 @@ export function SettingsDialog({
                           </ItemDescription>
                         </ItemContent>
                         <ItemActions className="w-full sm:w-auto">
-                          <LocaleSwitcher
-                            presentation="control-only"
-                            describedBy="settings-language-description"
-                          />
+                          <LocaleSwitcher describedBy="settings-language-description" />
                         </ItemActions>
                       </SettingsRow>
                     </SettingsRows>

@@ -6,7 +6,7 @@
 - Route: delegated for routing and multi-file writes; bounded verification after each work unit
 - Created: 2026-09-23
 - Branch: `feat/new-flow` (worktree `/Users/gorka/workspace/worktrees/numa`)
-- Status: T1–T4 complete; T5 in progress
+- Status: T1–T4 and T4f complete; T5 pending runtime evidence
 
 ## Objective
 
@@ -242,6 +242,16 @@ these semantics in T1 rather than weakening them without asking.
   Checks per slice: typecheck, lint, relevant render checks; track missing
   keys and untranslated/hardcoded strings. The earlier ~49-file estimate
   is a forecast, not a verified exhaustive inventory.
+- [x] **T4f — Repair language control in Preferences.** User screenshot
+  shows duplicated `Idioma` and a detached native select with excess spacing.
+  Compose a single language settings row using existing `Item`-based
+  SettingsRows/SettingsRow/ItemContent/ItemActions and the shared Select
+  primitive. Preserve the public AuthPage switcher and existing server-action
+  persistence, pending, refresh and error semantics. Route: bounded writer
+  (two nontrivial files), independent verification and one work-unit commit.
+  Checks: typecheck, scoped web lint, build, markup/translation/accessibility
+  audit; authenticated visual interaction remains T5 under no-credentials
+  constraint.
 - [ ] **T5 — Final verification and close.** Run root `pnpm typecheck`,
   `pnpm lint`, `pnpm --filter web build`, verify both locales and the full
   matrices, inspect dynamic/static rendering and caching consequences of
@@ -644,6 +654,18 @@ these semantics in T1 rather than weakening them without asking.
   `XXXXX-XXXXX` is a format hint, deliberately locale-invariant, not English
   prose. Brand, product names, shortcuts, IDs, paths, provider order
   descriptions and user/agent content are excluded from translation.
+- [x] T4f preferences language row corrected in `44df8c5`: `SettingsRows`
+  now contains one `Item`-based language row with title/description and the
+  shared Select action; a 6-unit margin separates it from theme previews.
+  AuthPage retains its visible switcher label, while the settings control has
+  an accessible name and associated description. Locale action, pending
+  guard, refresh-after-success, toast-on-failure and en/es values are intact.
+  Independent sequential web build/typecheck/lint (0 errors, 29 warnings),
+  structural/accessibility audit and diff check passed; browser selection,
+  focus, portal-in-dialog layering and authenticated visual comparison to the
+  user's screenshot remain pending T5. No credentials or localhost server
+  were used by the verifier; build reported `.env.local` as an environment
+  source without exposing values.
 - [ ] T5 in progress. Independent sequential checks on `e5f3bea` plus this
   ODD edit: root `pnpm typecheck` passed (3/3 tasks); root `pnpm lint` failed
   in `packages/db` because that package has no `eslint.config.js` (known
@@ -697,6 +719,9 @@ these semantics in T1 rather than weakening them without asking.
 
 ## Next step
 
+T4f source and structural checks are complete; the user is checking the
+rendered Preferences row and the wider locale matrix. Record their actual
+outcomes as user-reported evidence without calling them independent tests.
 T5 remains open for independently observed runtime matrices, a client-bundle
 secret audit and quantitative baseline/current authenticated shell latency
 and SQL counts. Root lint's missing packages/db ESLint config is a pre-existing

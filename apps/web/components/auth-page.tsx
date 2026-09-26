@@ -29,7 +29,6 @@ import { toast } from "@workspace/ui/components/toast"
 
 import { Spinner } from "@/components/localized-spinner"
 import { authClient } from "@/lib/auth-client"
-import { LocaleSwitcher } from "@/components/locale-switcher"
 import { useTranslations } from "next-intl"
 
 /**
@@ -314,9 +313,6 @@ export function AuthPage({ error }: { error?: string }) {
               </div>
             </CardContent>
           </Card>
-          <div className="mx-auto max-w-xs">
-            <LocaleSwitcher />
-          </div>
         </div>
       </div>
     </div>

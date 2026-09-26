@@ -7,6 +7,7 @@ import { toast } from "@workspace/ui/components/toast"
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -20,12 +21,15 @@ const LOCALE_LABELS: Record<(typeof routing.locales)[number], string> = {
   es: "Español",
 }
 
+const items = routing.locales.map((locale) => ({
+  value: locale,
+  label: LOCALE_LABELS[locale],
+}))
+
 export function LocaleSwitcher({
-  presentation = "labeled",
   describedBy,
 }: {
   /** Auth pages keep the visible label; settings supplies its own row content. */
-  presentation?: "labeled" | "control-only"
   describedBy?: string
 }) {
   const locale = useLocale()
@@ -48,37 +52,31 @@ export function LocaleSwitcher({
     })
   }
 
-  const select = (
+  return(
     <Select
       value={locale}
       onValueChange={(value) => {
         if (value) changeLocale(value)
       }}
+    items={items}
     >
       <SelectTrigger
         aria-label={t("language")}
         aria-describedby={describedBy}
-        className={presentation === "control-only" ? "w-full sm:w-auto" : ""}
         disabled={pending}
+        className="w-full sm:w-auto"
       >
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
-        {routing.locales.map((option) => (
-          <SelectItem key={option} value={option}>
-            {LOCALE_LABELS[option]}
-          </SelectItem>
-        ))}
+        <SelectGroup>
+          {items.map((item) => (
+            <SelectItem key={item.value} value={item.value}>
+              {item.label}
+            </SelectItem>
+          ))}
+        </SelectGroup>
       </SelectContent>
     </Select>
-  )
-
-  if (presentation === "control-only") return select
-
-  return (
-    <label className="flex items-center justify-between gap-4 text-sm">
-      <span>{t("language")}</span>
-      {select}
-    </label>
   )
 }
