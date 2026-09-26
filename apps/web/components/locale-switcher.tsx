@@ -4,6 +4,13 @@ import { useLocale, useTranslations } from "next-intl"
 import { useRouter } from "next/navigation"
 import { useTransition } from "react"
 import { toast } from "@workspace/ui/components/toast"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/select"
 
 import { routing } from "@/i18n/routing"
 import { setLocalePreference } from "@/lib/locale-actions"
@@ -13,7 +20,14 @@ const LOCALE_LABELS: Record<(typeof routing.locales)[number], string> = {
   es: "Español",
 }
 
-export function LocaleSwitcher() {
+export function LocaleSwitcher({
+  presentation = "labeled",
+  describedBy,
+}: {
+  /** Auth pages keep the visible label; settings supplies its own row content. */
+  presentation?: "labeled" | "control-only"
+  describedBy?: string
+}) {
   const locale = useLocale()
   const t = useTranslations("Shell")
   const router = useRouter()
@@ -34,22 +48,37 @@ export function LocaleSwitcher() {
     })
   }
 
+  const select = (
+    <Select
+      value={locale}
+      onValueChange={(value) => {
+        if (value) changeLocale(value)
+      }}
+    >
+      <SelectTrigger
+        aria-label={t("language")}
+        aria-describedby={describedBy}
+        className={presentation === "control-only" ? "w-full sm:w-auto" : ""}
+        disabled={pending}
+      >
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {routing.locales.map((option) => (
+          <SelectItem key={option} value={option}>
+            {LOCALE_LABELS[option]}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
+
+  if (presentation === "control-only") return select
+
   return (
     <label className="flex items-center justify-between gap-4 text-sm">
       <span>{t("language")}</span>
-      <select
-        aria-label={t("language")}
-        className="rounded-md border border-border bg-background px-3 py-2"
-        disabled={pending}
-        value={locale}
-        onChange={(event) => changeLocale(event.currentTarget.value)}
-      >
-        {routing.locales.map((option) => (
-          <option key={option} value={option}>
-            {LOCALE_LABELS[option]}
-          </option>
-        ))}
-      </select>
+      {select}
     </label>
   )
 }

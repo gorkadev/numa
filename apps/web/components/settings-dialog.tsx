@@ -31,6 +31,12 @@ import {
   TabsList,
   TabsTrigger,
 } from "@workspace/ui/components/tabs"
+import {
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemTitle,
+} from "@workspace/ui/components/item"
 
 import type { BillingSummary } from "@/lib/polar/plan"
 import {
@@ -41,7 +47,11 @@ import {
 import { BillingSection } from "@/components/settings/billing-section"
 import { ProfileSection } from "@/components/settings/profile-section"
 import { SecuritySection } from "@/components/settings/security-section"
-import { SettingsHeading } from "@/components/settings/settings-group"
+import {
+  SettingsHeading,
+  SettingsRow,
+  SettingsRows,
+} from "@/components/settings/settings-group"
 import { ThemePicker } from "@/components/settings/theme-picker"
 import { LocaleSwitcher } from "@/components/locale-switcher"
 import { useTranslations } from "next-intl"
@@ -280,19 +290,28 @@ export function SettingsDialog({
                 {shownSection === "general" && (
                   <>
                     <section className="flex flex-col gap-4">
-                    <SettingsHeading
-                      title={t("theme")}
-                      description={t("themeDescription")}
-                    />
+                      <SettingsHeading
+                        title={t("theme")}
+                        description={t("themeDescription")}
+                      />
                       <ThemePicker />
                     </section>
-                    <section className="flex flex-col gap-4">
-                    <SettingsHeading
-                      title={t("language")}
-                      description={t("languageDescription")}
-                    />
-                      <LocaleSwitcher />
-                    </section>
+                    <SettingsRows className="mt-6">
+                      <SettingsRow>
+                        <ItemContent>
+                          <ItemTitle>{t("language")}</ItemTitle>
+                          <ItemDescription id="settings-language-description">
+                            {t("languageDescription")}
+                          </ItemDescription>
+                        </ItemContent>
+                        <ItemActions className="w-full sm:w-auto">
+                          <LocaleSwitcher
+                            presentation="control-only"
+                            describedBy="settings-language-description"
+                          />
+                        </ItemActions>
+                      </SettingsRow>
+                    </SettingsRows>
                   </>
                 )}
 
