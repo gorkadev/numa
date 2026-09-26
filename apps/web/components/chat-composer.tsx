@@ -1,8 +1,9 @@
 "use client"
 
+import { useEffect, useRef, useState } from "react"
 import type { FormEvent, KeyboardEvent, ReactNode } from "react"
 import { useTranslations } from "next-intl"
-import { ArrowUp02Icon, StopIcon } from "@hugeicons/core-free-icons"
+import { ArrowUp02Icon, Mic01Icon, StopIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   InputGroup,
@@ -13,6 +14,37 @@ import {
 import { Spinner } from "@/components/localized-spinner"
 import { ModelPicker } from "@/components/model-picker"
 import type { TierId } from "@/lib/ai/model-catalog"
+
+type SpeechRecognitionResultLike = {
+  isFinal: boolean
+  [index: number]: { transcript: string }
+}
+
+type SpeechRecognitionEventLike = {
+  resultIndex: number
+  results: ArrayLike<SpeechRecognitionResultLike>
+}
+
+type SpeechRecognitionLike = {
+  lang: string
+  continuous: boolean
+  interimResults: boolean
+  onstart: (() => void) | null
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null
+  onerror: ((event: { error: string }) => void) | null
+  onend: (() => void) | null
+  start: () => void
+  stop: () => void
+  abort: () => void
+}
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike
+
+type RecognitionSession = {
+  recognition: SpeechRecognitionLike
+  active: boolean
+  finalResultIndexes: Set<number>
+}
 
 type ChatComposerProps = {
   value: string
@@ -67,12 +99,141 @@ export function ChatComposer({
   tasksSlot,
 }: ChatComposerProps) {
   const t = useTranslations("GameComposer")
+  const [recognitionSupported, setRecognitionSupported] = useState<boolean | null>(null)
+  const [listening, setListening] = useState(false)
+  const [dictationStatus, setDictationStatus] = useState("")
+  const draftRef = useRef(value)
+  const sessionRef = useRef<RecognitionSession | null>(null)
+  const mountedRef = useRef(false)
   const trimmed = value.trim()
+
+  useEffect(() => {
+    mountedRef.current = true
+
+    return () => {
+      mountedRef.current = false
+      const session = sessionRef.current
+      sessionRef.current = null
+      if (session) {
+        session.active = false
+        session.recognition.abort()
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    draftRef.current = value
+  }, [value])
+
+  function stopDictation() {
+    const session = sessionRef.current
+    if (!session) return
+
+    session.active = false
+    sessionRef.current = null
+    setListening(false)
+    setDictationStatus(t("dictationStopped"))
+    try {
+      session.recognition.stop()
+    } catch {
+      // The session is already inactive; a late stop error cannot restore it.
+    }
+  }
+
+  function startDictation() {
+    if (sessionRef.current) return
+
+    const speechWindow = window as Window & {
+      SpeechRecognition?: SpeechRecognitionConstructor
+      webkitSpeechRecognition?: SpeechRecognitionConstructor
+    }
+    const Recognition = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition
+
+    if (!Recognition) {
+      setRecognitionSupported(false)
+      setDictationStatus(t("dictationUnavailable"))
+      return
+    }
+
+    setRecognitionSupported(true)
+
+    try {
+      const recognition = new Recognition()
+      const session: RecognitionSession = {
+        recognition,
+        active: true,
+        finalResultIndexes: new Set(),
+      }
+      const isCurrentSession = () =>
+        mountedRef.current && session.active && sessionRef.current === session
+
+      recognition.lang = document.documentElement.lang || "en"
+      recognition.continuous = true
+      recognition.interimResults = true
+      recognition.onstart = () => {
+        if (!isCurrentSession()) return
+        setListening(true)
+        setDictationStatus(t("dictationListening"))
+      }
+      recognition.onresult = (event) => {
+        if (!isCurrentSession()) return
+
+        for (let index = event.resultIndex; index < event.results.length; index += 1) {
+          const result = event.results[index]
+          if (!result || !result.isFinal || session.finalResultIndexes.has(index)) continue
+
+          session.finalResultIndexes.add(index)
+          const transcript = result[0]?.transcript
+          if (!transcript) continue
+
+          const currentDraft = draftRef.current
+          const separator = currentDraft && !/\s$/.test(currentDraft) ? " " : ""
+          const nextDraft = `${currentDraft}${separator}${transcript}`
+          draftRef.current = nextDraft
+          onValueChange(nextDraft)
+        }
+      }
+      recognition.onerror = (event) => {
+        if (!isCurrentSession()) return
+
+        session.active = false
+        sessionRef.current = null
+        setListening(false)
+        setDictationStatus(
+          event.error === "not-allowed" || event.error === "service-not-allowed"
+            ? t("dictationPermissionError")
+            : event.error === "audio-capture"
+              ? t("dictationMicrophoneError")
+              : t("dictationError")
+        )
+      }
+      recognition.onend = () => {
+        if (!isCurrentSession()) return
+
+        session.active = false
+        sessionRef.current = null
+        setListening(false)
+        setDictationStatus(t("dictationStopped"))
+      }
+
+      sessionRef.current = session
+      setListening(true)
+      setDictationStatus(t("dictationStarting"))
+      recognition.start()
+    } catch {
+      const session = sessionRef.current
+      if (session) session.active = false
+      sessionRef.current = null
+      setListening(false)
+      setDictationStatus(t("dictationError"))
+    }
+  }
   const stoppable = pending && Boolean(onStop)
 
   function submit() {
     if (pending || !trimmed) return
 
+    stopDictation()
     onSubmit(trimmed)
   }
 
@@ -121,13 +282,28 @@ export function ChatComposer({
             value={value}
             disabled={pending}
             placeholder={placeholder ?? t("placeholder")}
-            onChange={(event) => onValueChange(event.target.value)}
+            onChange={(event) => {
+              const nextValue = event.target.value
+              draftRef.current = nextValue
+              onValueChange(nextValue)
+            }}
             onKeyDown={handleKeyDown}
           />
           <InputGroupAddon align="block-end">
             {tierId && onTierChange ? (
               <ModelPicker value={tierId} onValueChange={onTierChange} />
             ) : null}
+            <InputGroupButton
+              type="button"
+              onClick={() => (sessionRef.current ? stopDictation() : startDictation())}
+              aria-label={listening ? t("stopDictation") : t("startDictation")}
+              disabled={recognitionSupported === false || pending}
+              aria-pressed={listening}
+              size="icon-sm"
+              variant="ghost"
+            >
+              <HugeiconsIcon icon={Mic01Icon} />
+            </InputGroupButton>
             {/**
              * One button, two meanings: while an answer streams it stops the
              * turn instead of sending it. It switches to `type="button"` so
@@ -152,6 +328,11 @@ export function ChatComposer({
             </InputGroupButton>
           </InputGroupAddon>
         </InputGroup>
+        {dictationStatus || recognitionSupported === false ? (
+          <p role="status" aria-live="polite" className="text-sm text-muted-foreground mt-2">
+            {dictationStatus || t("dictationUnavailable")}
+          </p>
+        ) : null}
         {error ? <p className="text-sm text-destructive mt-2">{error}</p> : null}
       </div>
     </form>
