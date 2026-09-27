@@ -47,6 +47,7 @@ import {
 import { BillingSection } from "@/components/settings/billing-section"
 import { ProfileSection } from "@/components/settings/profile-section"
 import { SecuritySection } from "@/components/settings/security-section"
+import { KeyboardShortcutsSection } from "@/components/settings/keyboard-shortcuts-section"
 import {
   SettingsHeading,
   SettingsRow,
@@ -61,6 +62,7 @@ const SECTION_LABEL_KEYS = {
   account: "profileTab",
   security: "securityTab",
   billing: "billingTab",
+  shortcuts: "shortcutsTab",
 } as const satisfies Record<SectionId, string>
 
 /**
@@ -319,6 +321,8 @@ export function SettingsDialog({
                 {shownSection === "security" && <SecuritySection />}
 
                 {shownSection === "billing" && <BillingSection active={open} />}
+
+                {shownSection === "shortcuts" && <KeyboardShortcutsSection />}
               </div>
             </TabsContent>
           </Tabs>
