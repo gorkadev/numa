@@ -5,6 +5,30 @@
     "close": "Close",
     "closeToast": "Close toast"
   },
+  "Profile": {
+    "title": "Profile",
+    "edit": "Edit",
+    "sample": "Sample data — not your actual usage",
+    "exampleHandle": "Profile handle unavailable",
+    "games": "Example games",
+    "tokens": "Example tokens",
+    "days": "Example active days",
+    "integrations": "Connected integrations",
+    "activity": "Activity",
+    "daily": "Daily",
+    "weekly": "Weekly",
+    "cumulative": "Cumulative",
+    "less": "Less",
+    "more": "More",
+    "units": "tokens",
+    "statistics": "Activity statistics",
+    "activeDays": "Active days",
+    "average": "Daily average",
+    "peak": "Peak day",
+    "mostUsed": "Most-used integrations",
+    "exampleIntegration": "Integration preview",
+    "notConnected": "Example only — no integration is linked"
+  },
   "Home": {
     "emptyTitle": "What should we build today?",
     "emptyDescription": "Build your own racers, shooters, puzzles and whole worlds using your own words. If you can describe it, you can play it."
@@ -288,6 +312,7 @@
     "searchGamesAndActions": "Search games and actions...",
     "noResults": "No results found.",
     "actions": "Actions",
+    "profile": "Profile",
     "settings": "Settings",
     "switchAccount": "Switch account",
     "loadingAccounts": "Loading accounts…",

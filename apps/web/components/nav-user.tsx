@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl"
 import {
   Logout01Icon,
   Settings02Icon,
+  UserIcon,
   Tick02Icon,
   UnfoldMoreIcon,
   UserAdd01Icon,
@@ -286,6 +287,13 @@ export function NavUser() {
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
+              <DropdownMenuItem
+                disabled={isActionPending}
+                onClick={() => router.push("/profile")}
+              >
+                <HugeiconsIcon icon={UserIcon} />
+                {t("profile")}
+              </DropdownMenuItem>
               <DropdownMenuItem
                 disabled={isActionPending}
                 onClick={() => openSettings()}

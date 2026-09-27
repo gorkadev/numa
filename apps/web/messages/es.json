@@ -5,6 +5,30 @@
     "close": "Cerrar",
     "closeToast": "Cerrar notificación"
   },
+  "Profile": {
+    "title": "Perfil",
+    "edit": "Editar",
+    "sample": "Datos de ejemplo; no reflejan tu uso real",
+    "exampleHandle": "Identificador de perfil no disponible",
+    "games": "Juegos de ejemplo",
+    "tokens": "Tokens de ejemplo",
+    "days": "Días activos de ejemplo",
+    "integrations": "Integraciones conectadas",
+    "activity": "Actividad",
+    "daily": "Diario",
+    "weekly": "Semanal",
+    "cumulative": "Acumulado",
+    "less": "Menos",
+    "more": "Más",
+    "units": "tokens",
+    "statistics": "Estadísticas de actividad",
+    "activeDays": "Días activos",
+    "average": "Media diaria",
+    "peak": "Día de mayor actividad",
+    "mostUsed": "Integraciones más usadas",
+    "exampleIntegration": "Vista previa de integración",
+    "notConnected": "Solo ejemplo; no hay ninguna integración vinculada"
+  },
   "Home": {
     "emptyTitle": "¿Qué creamos hoy?",
     "emptyDescription": "Crea tus propios juegos de carreras, disparos, rompecabezas y mundos enteros con tus propias palabras. Si puedes describirlo, puedes jugarlo."
@@ -288,6 +312,7 @@
     "searchGamesAndActions": "Buscar juegos y acciones...",
     "noResults": "No se encontraron resultados.",
     "actions": "Acciones",
+    "profile": "Perfil",
     "settings": "Ajustes",
     "switchAccount": "Cambiar de cuenta",
     "loadingAccounts": "Cargando cuentas…",
