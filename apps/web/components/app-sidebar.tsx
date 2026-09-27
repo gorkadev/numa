@@ -113,7 +113,7 @@ export function AppSidebar({
   const { state, setOpenMobile } = useSidebar()
   const [searchOpen, setSearchOpen] = useState(false)
 
-  const newGameHint = isMac ? "⇧⌘O" : "Ctrl Shift O"
+  const newGameHint = isMac ? "⌘⇧O" : "Ctrl ⇧ O"
   const searchHint = isMac ? "⌘K" : "Ctrl K"
   /** Bound by `SidebarProvider`, so this hint only mirrors it. */
   const toggleHint = isMac ? "⌘B" : "Ctrl B"

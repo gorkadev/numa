@@ -1,9 +1,18 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
-import type { FormEvent, KeyboardEvent, ReactNode } from "react"
+import {
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react"
 import { useTranslations } from "next-intl"
-import { ArrowUp02Icon, Mic01Icon, StopIcon } from "@hugeicons/core-free-icons"
+import {
+  ArrowUp02Icon,
+  AudioWave01FreeIcons,
+  Cancel01Icon,
+  StopIcon,
+} from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   InputGroup,
@@ -11,81 +20,36 @@ import {
   InputGroupButton,
   InputGroupTextarea,
 } from "@workspace/ui/components/input-group"
+import { LiveWaveform } from "@workspace/ui/components/live-waveform"
+import { Kbd } from "@workspace/ui/components/kbd"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@workspace/ui/components/tooltip"
+import { useComposerShortcuts } from "@/components/chat/use-composer-shortcuts"
+import { useSpeechDictation } from "@/components/chat/use-speech-dictation"
+import { useIsMac } from "@/hooks/use-is-mac"
 import { Spinner } from "@/components/localized-spinner"
 import { ModelPicker } from "@/components/model-picker"
 import type { TierId } from "@/lib/ai/model-catalog"
-
-type SpeechRecognitionResultLike = {
-  isFinal: boolean
-  [index: number]: { transcript: string }
-}
-
-type SpeechRecognitionEventLike = {
-  resultIndex: number
-  results: ArrayLike<SpeechRecognitionResultLike>
-}
-
-type SpeechRecognitionLike = {
-  lang: string
-  continuous: boolean
-  interimResults: boolean
-  onstart: (() => void) | null
-  onresult: ((event: SpeechRecognitionEventLike) => void) | null
-  onerror: ((event: { error: string }) => void) | null
-  onend: (() => void) | null
-  start: () => void
-  stop: () => void
-  abort: () => void
-}
-
-type SpeechRecognitionConstructor = new () => SpeechRecognitionLike
-
-type RecognitionSession = {
-  recognition: SpeechRecognitionLike
-  active: boolean
-  finalResultIndexes: Set<number>
-}
 
 type ChatComposerProps = {
   value: string
   onValueChange: (value: string) => void
   onSubmit: (value: string) => void
-  /**
-   * Cancels the answer in flight. Passing it turns the submit button into a
-   * stop button while `pending`; leaving it out keeps the button a spinner,
-   * which is what a composer with nothing to cancel — the home screen's game
-   * creation — should show.
-   */
+  /** Cancels an answer in flight; without it, pending shows a spinner. */
   onStop?: () => void
   pending?: boolean
   error?: string | null
   placeholder?: string
-  /**
-   * The selected tier, and the way to change it. Both are passed straight
-   * through to the picker — the composer is presentational, so the tier is
-   * the caller's state for the same reason the text is.
-   *
-   * Optional together: a composer whose caller has nowhere to send the choice
-   * shows no picker rather than a control that decides nothing.
-   */
   tierId?: TierId
   onTierChange?: (tierId: TierId) => void
-  /**
-   * Rendered directly above the `InputGroup`, visually merged into it (the
-   * caller decides whether to render anything at all — this component stays
-   * presentational and owns no task-list state or derivation of its own).
-   * `task-strip.tsx`'s `TaskStrip` is the one caller today: it rounds its own
-   * top corners to match `InputGroup`'s, and `InputGroup` squares its top
-   * corners in turn whenever this is present, so the two read as one card.
-   */
+  /** Optional content visually merged above the input group. */
   tasksSlot?: ReactNode
 }
 
-/**
- * Presentational composer: it owns no state and no transport. Every caller
- * decides what submitting means — creating a game, sending a message — so the
- * same UI can sit on the empty home screen and inside an open thread.
- */
+/** Shared controlled composer for the home screen and active chat thread. */
 export function ChatComposer({
   value,
   onValueChange,
@@ -99,166 +63,51 @@ export function ChatComposer({
   tasksSlot,
 }: ChatComposerProps) {
   const t = useTranslations("GameComposer")
-  const [recognitionSupported, setRecognitionSupported] = useState<boolean | null>(null)
-  const [listening, setListening] = useState(false)
-  const [dictationStatus, setDictationStatus] = useState("")
-  const draftRef = useRef(value)
-  const sessionRef = useRef<RecognitionSession | null>(null)
-  const mountedRef = useRef(false)
+  const isMac = useIsMac()
+  const dictationHint = isMac ? "⌃⇧D" : "Ctrl ⇧ D"
+  const dictation = useSpeechDictation(value, onValueChange)
+  const {
+    phase,
+    status,
+    supported,
+    waveformFailed,
+    waveformError,
+    start,
+    stop,
+    discard,
+    active,
+    hasSession,
+    setDraft,
+  } = dictation
+  const [modelOpen, setModelOpen] = useState(false)
+  const pickerAvailable = Boolean(tierId && onTierChange && !active)
+
+  useComposerShortcuts({
+    phase, supported, pending, modelOpen, pickerAvailable,
+    start, stop, discard, setModelOpen,
+  })
+
   const trimmed = value.trim()
-
-  useEffect(() => {
-    mountedRef.current = true
-
-    return () => {
-      mountedRef.current = false
-      const session = sessionRef.current
-      sessionRef.current = null
-      if (session) {
-        session.active = false
-        session.recognition.abort()
-      }
-    }
-  }, [])
-
-  useEffect(() => {
-    draftRef.current = value
-  }, [value])
-
-  function stopDictation() {
-    const session = sessionRef.current
-    if (!session) return
-
-    session.active = false
-    sessionRef.current = null
-    setListening(false)
-    setDictationStatus(t("dictationStopped"))
-    try {
-      session.recognition.stop()
-    } catch {
-      // The session is already inactive; a late stop error cannot restore it.
-    }
-  }
-
-  function startDictation() {
-    if (sessionRef.current) return
-
-    const speechWindow = window as Window & {
-      SpeechRecognition?: SpeechRecognitionConstructor
-      webkitSpeechRecognition?: SpeechRecognitionConstructor
-    }
-    const Recognition = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition
-
-    if (!Recognition) {
-      setRecognitionSupported(false)
-      setDictationStatus(t("dictationUnavailable"))
-      return
-    }
-
-    setRecognitionSupported(true)
-
-    try {
-      const recognition = new Recognition()
-      const session: RecognitionSession = {
-        recognition,
-        active: true,
-        finalResultIndexes: new Set(),
-      }
-      const isCurrentSession = () =>
-        mountedRef.current && session.active && sessionRef.current === session
-
-      recognition.lang = document.documentElement.lang || "en"
-      recognition.continuous = true
-      recognition.interimResults = true
-      recognition.onstart = () => {
-        if (!isCurrentSession()) return
-        setListening(true)
-        setDictationStatus(t("dictationListening"))
-      }
-      recognition.onresult = (event) => {
-        if (!isCurrentSession()) return
-
-        for (let index = event.resultIndex; index < event.results.length; index += 1) {
-          const result = event.results[index]
-          if (!result || !result.isFinal || session.finalResultIndexes.has(index)) continue
-
-          session.finalResultIndexes.add(index)
-          const transcript = result[0]?.transcript
-          if (!transcript) continue
-
-          const currentDraft = draftRef.current
-          const separator = currentDraft && !/\s$/.test(currentDraft) ? " " : ""
-          const nextDraft = `${currentDraft}${separator}${transcript}`
-          draftRef.current = nextDraft
-          onValueChange(nextDraft)
-        }
-      }
-      recognition.onerror = (event) => {
-        if (!isCurrentSession()) return
-
-        session.active = false
-        sessionRef.current = null
-        setListening(false)
-        setDictationStatus(
-          event.error === "not-allowed" || event.error === "service-not-allowed"
-            ? t("dictationPermissionError")
-            : event.error === "audio-capture"
-              ? t("dictationMicrophoneError")
-              : t("dictationError")
-        )
-      }
-      recognition.onend = () => {
-        if (!isCurrentSession()) return
-
-        session.active = false
-        sessionRef.current = null
-        setListening(false)
-        setDictationStatus(t("dictationStopped"))
-      }
-
-      sessionRef.current = session
-      setListening(true)
-      setDictationStatus(t("dictationStarting"))
-      recognition.start()
-    } catch {
-      const session = sessionRef.current
-      if (session) session.active = false
-      sessionRef.current = null
-      setListening(false)
-      setDictationStatus(t("dictationError"))
-    }
-  }
   const stoppable = pending && Boolean(onStop)
 
   function submit() {
-    if (pending || !trimmed) return
-
-    stopDictation()
+    if (pending || active || hasSession() || !trimmed) return
     onSubmit(trimmed)
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-
     submit()
   }
 
-  /**
-   * Enter sends, Shift+Enter writes a new line — the convention every chat the
-   * player has used already follows, and the composer is a message box before
-   * it is a form.
-   *
-   * `isComposing` is the load-bearing part: while an IME candidate window is
-   * open, Enter commits the candidate rather than the message. Without the
-   * guard, writing anything in Japanese, Chinese or Korean would fire a send on
-   * the first accepted word.
-   */
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key !== "Enter" || event.shiftKey) return
-    if (event.nativeEvent.isComposing) return
-
+    if (
+      event.key !== "Enter" ||
+      event.shiftKey ||
+      event.nativeEvent.isComposing
+    )
+      return
     event.preventDefault()
-
     submit()
   }
 
@@ -267,54 +116,107 @@ export function ChatComposer({
       <div className="flex w-full flex-col">
         {tasksSlot}
         <InputGroup>
-          {/**
-           * The control grows with what is typed — `field-sizing-content` on
-           * the base textarea — so it needs a ceiling of its own, or a message
-           * of a few paragraphs pushes the composer past the viewport and
-           * takes the send button with it. Past the cap the textarea scrolls
-           * internally instead, which keeps the whole message readable without
-           * the layout moving.
-           */}
           <InputGroupTextarea
             className="max-h-48 resize-none overflow-y-auto py-3"
             name="prompt"
             rows={3}
             value={value}
-            disabled={pending}
+            disabled={pending || active}
             placeholder={placeholder ?? t("placeholder")}
             onChange={(event) => {
-              const nextValue = event.target.value
-              draftRef.current = nextValue
-              onValueChange(nextValue)
+              const next = event.target.value
+              setDraft(next)
+              onValueChange(next)
             }}
             onKeyDown={handleKeyDown}
           />
-          <InputGroupAddon align="block-end">
-            {tierId && onTierChange ? (
-              <ModelPicker value={tierId} onValueChange={onTierChange} />
+          <InputGroupAddon align="block-end" className="justify-start">
+            {!active && tierId && onTierChange ? (
+              <ModelPicker
+                value={tierId}
+                onValueChange={onTierChange}
+                open={modelOpen}
+                onOpenChange={setModelOpen}
+              />
             ) : null}
-            <InputGroupButton
-              type="button"
-              onClick={() => (sessionRef.current ? stopDictation() : startDictation())}
-              aria-label={listening ? t("stopDictation") : t("startDictation")}
-              disabled={recognitionSupported === false || pending}
-              aria-pressed={listening}
-              size="icon-sm"
-              variant="ghost"
-            >
-              <HugeiconsIcon icon={Mic01Icon} />
-            </InputGroupButton>
-            {/**
-             * One button, two meanings: while an answer streams it stops the
-             * turn instead of sending it. It switches to `type="button"` so
-             * the click cancels rather than resubmitting the form.
-             */}
+            {active ? (
+              <div className="flex min-w-0 flex-1 items-center gap-1">
+                <Tooltip>
+                  <TooltipTrigger render={
+                    <InputGroupButton
+                      type="button"
+                      onClick={discard}
+                      aria-keyshortcuts="Escape"
+                      aria-label={t("discardDictation")}
+                      size="icon-sm"
+                      variant="ghost"
+                      className="shrink-0"
+                    >
+                      <HugeiconsIcon icon={Cancel01Icon} />
+                    </InputGroupButton>
+                  } />
+                  <TooltipContent>{t("discardDictation")} <Kbd>Esc</Kbd></TooltipContent>
+                </Tooltip>
+                {waveformFailed ? (
+                  <div
+                    className="min-w-0 flex-1 border-b border-dotted border-muted-foreground/40"
+                    aria-hidden="true"
+                  />
+                ) : (
+                  <LiveWaveform
+                    className="min-w-0 flex-1"
+                    height={32}
+                    mode="scrolling"
+                    active={phase === "recording"}
+                    processing={phase === "finishing"}
+                    onError={waveformError}
+                    aria-label={status}
+                    fadeEdges={true}
+                  />
+                )}
+                <Tooltip>
+                  <TooltipTrigger render={
+                    <InputGroupButton
+                      type="button"
+                      onClick={stop}
+                      aria-keyshortcuts={phase === "recording" ? "Control+Shift+D" : undefined}
+                      aria-label={t("stopDictation")}
+                      disabled={phase === "finishing"}
+                      size="icon-sm"
+                      variant="ghost"
+                      className="shrink-0"
+                    >
+                      <HugeiconsIcon icon={StopIcon} />
+                    </InputGroupButton>
+                  } />
+                  <TooltipContent>{t("stopDictation")} <Kbd>{dictationHint}</Kbd></TooltipContent>
+                </Tooltip>
+              </div>
+            ) : (
+              <Tooltip>
+                <TooltipTrigger render={
+                  <InputGroupButton
+                    type="button"
+                    onClick={start}
+                    aria-keyshortcuts={supported !== false && !pending ? "Control+Shift+D" : undefined}
+                    aria-label={t("startDictation")}
+                    disabled={supported === false || pending}
+                    size="icon-sm"
+                    variant="ghost"
+                    className="ml-auto"
+                  >
+                    <HugeiconsIcon icon={AudioWave01FreeIcons} />
+                  </InputGroupButton>
+                } />
+                <TooltipContent>{t("startDictation")} <Kbd>{dictationHint}</Kbd></TooltipContent>
+              </Tooltip>
+            )}
             <InputGroupButton
               type={stoppable ? "button" : "submit"}
               onClick={stoppable ? onStop : undefined}
               aria-label={stoppable ? t("stopGenerating") : t("sendMessage")}
-              disabled={stoppable ? false : pending || !trimmed}
-              className="ml-auto rounded-full"
+              disabled={active || (stoppable ? false : pending || !trimmed)}
+              className="shrink-0 rounded-full"
               variant={stoppable ? "destructive" : "default"}
               size="icon-sm"
             >
@@ -328,12 +230,15 @@ export function ChatComposer({
             </InputGroupButton>
           </InputGroupAddon>
         </InputGroup>
-        {dictationStatus || recognitionSupported === false ? (
-          <p role="status" aria-live="polite" className="text-sm text-muted-foreground mt-2">
-            {dictationStatus || t("dictationUnavailable")}
-          </p>
+        {status || supported === false ? (
+          <span role="status" aria-live="polite" className="sr-only">
+            {status || t("dictationUnavailable")}
+            {waveformFailed ? ` ${t("dictationWaveformUnavailable")}` : ""}
+          </span>
         ) : null}
-        {error ? <p className="text-sm text-destructive mt-2">{error}</p> : null}
+        {error ? (
+          <p className="mt-2 text-sm text-destructive">{error}</p>
+        ) : null}
       </div>
     </form>
   )

@@ -81,7 +81,7 @@ export function NavUser() {
   const { data: session, isPending } = authClient.useSession()
   const { openSettings } = useSettingsDialog()
   const isMac = useIsMac()
-  const settingsHint = isMac ? "⌘⇧," : "Ctrl Shift ,"
+  const settingsHint = isMac ? "⌘⇧," : "Ctrl ⇧ ,"
 
   const [accounts, setAccounts] = useState<DeviceSession[]>([])
   const [accountListState, setAccountListState] = useState<
