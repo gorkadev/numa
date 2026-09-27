@@ -3,7 +3,7 @@ import { APIError } from "better-auth/api"
 import { dash } from "@better-auth/infra"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
 import { nextCookies } from "better-auth/next-js"
-import { lastLoginMethod, multiSession, twoFactor } from "better-auth/plugins"
+import { lastLoginMethod, multiSession, twoFactor, username } from "better-auth/plugins"
 import { getAuthenticatorName, passkey } from "@better-auth/passkey"
 import { db, schema } from "@workspace/db"
 
@@ -280,8 +280,9 @@ export const auth = betterAuth({
     passkeyPlugin,
     multiSessionPlugin,
     lastLoginMethodPlugin,
-    nextCookies(),
+    username({ displayUsername: false }),
     dash(),
+    nextCookies(),
   ],
   appName: "numa",
 })
