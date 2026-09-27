@@ -24,7 +24,7 @@ Add a Profile option to the sidebar user menu and a signed-in profile page inspi
 - `apps/web/app/[locale]/(app)/profile/page.tsx` and `apps/web/components/profile-page.tsx`: session identity, sample summary, 365/366-day year-to-date heatmap, functional daily/weekly/cumulative toggle, two detail cards; numeric values derive from same sample series.
 - `apps/web/messages/en.json`, `apps/web/messages/es.json`: translated additions, existing shortcut edits preserved.
 - `packages/ui/src/components/heatmap-calendar.tsx`: minimal fixes for four type diagnostics at original lines 224 and 426, no replacement of untracked file.
-- Delegated checks: `pnpm --filter web typecheck` passed; targeted ESLint passed; both locale JSON files parsed. Parent spot check: `pnpm --filter web typecheck` and `git diff --check` passed. Browser interaction and screenshot comparison pending. No commit performed.
+- Delegated checks: `pnpm --filter web typecheck` passed; targeted ESLint passed; both locale JSON files parsed. Parent spot check: `pnpm --filter web typecheck` and `git diff --check` passed. Browser interaction and screenshot comparison pending. Source units are committed; visual acceptance remains open.
 
 ## Next step
-Work-unit commits `5a23348`, `d2220ba`, `1655ca0`, `9f02254`, and `598ada3` created. Browser validation remains pending; push authorized but awaiting remote confirmation. No PR requested.
+Work-unit commits `5a23348`, `d2220ba`, `1655ca0`, `9f02254`, and `598ada3` created. Browser validation remains pending; push outcome is reported separately from this task document. No PR requested.
