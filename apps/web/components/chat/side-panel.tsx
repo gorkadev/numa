@@ -4,6 +4,8 @@ import { useCallback, useRef, useState, useSyncExternalStore } from "react"
 
 import Link from "next/link"
 
+import { useTranslations } from "next-intl"
+
 import {
   Cancel01Icon,
   RefreshIcon,
@@ -19,7 +21,6 @@ import {
   DrawerTitle,
 } from "@workspace/ui/components/drawer"
 import { ItemGroup } from "@workspace/ui/components/item"
-import { Spinner } from "@workspace/ui/components/spinner"
 import { useIsMobile } from "@workspace/ui/hooks/use-mobile"
 import { cn } from "@workspace/ui/lib/utils"
 
@@ -29,6 +30,7 @@ import {
   SubagentRunRow,
 } from "@/components/chat/subagent-panel"
 import { SubagentRunDetail } from "@/components/chat/subagent-run-detail"
+import { Spinner } from "@/components/localized-spinner"
 import type { SubagentRunRecord } from "@/lib/games/harness/records"
 
 export type SidePanelTab = "preview" | "agents"
@@ -137,6 +139,7 @@ function AgentsTabBody({
   selectedRunId: string | null
   onSelectRun: (agentId: string | null) => void
 }) {
+  const t = useTranslations("ChatAgents")
   const selected =
     records.find((record) => record.agentId === selectedRunId) ?? null
 
@@ -166,7 +169,7 @@ function AgentsTabBody({
             <SubagentRunDetail record={selected} />
           ) : (
             <p className="text-sm text-muted-foreground">
-              Select a run to see its details.
+              {t("selectRun")}
             </p>
           )}
         </div>
@@ -239,6 +242,7 @@ export function SidePanel({
   onClose,
   layoutRef,
 }: SidePanelProps) {
+  const t = useTranslations("ChatAgents")
   const isMobile = useIsMobile()
   const [storedWidth, persistWidth] = useStoredWidth()
   const [dragging, setDragging] = useState(false)
@@ -363,7 +367,7 @@ export function SidePanel({
       <div
         role="separator"
         aria-orientation="vertical"
-        aria-label="Resize side panel"
+        aria-label={t("resizeSidePanel")}
         aria-valuenow={Math.round(widthPercent)}
         aria-valuemin={MIN_WIDTH_PERCENT}
         aria-valuemax={MAX_WIDTH_PERCENT}
@@ -389,7 +393,7 @@ export function SidePanel({
         <header className="flex h-10 shrink-0 items-center gap-1 px-2">
           <div
             role="tablist"
-            aria-label="Side panel"
+            aria-label={t("sidePanel")}
             className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto"
           >
             {previewToken ? (
@@ -402,7 +406,7 @@ export function SidePanel({
                 className={tabTriggerClassName}
                 onClick={() => onActiveTabChange("preview")}
               >
-                Preview
+                {t("previewTab")}
               </button>
             ) : null}
             {hasRuns ? (
@@ -418,7 +422,7 @@ export function SidePanel({
                 )}
                 onClick={() => onActiveTabChange("agents")}
               >
-                Agents
+                {t("agentsTab")}
                 {runningCount > 0 ? (
                   <Spinner className="size-3" />
                 ) : (
@@ -435,8 +439,8 @@ export function SidePanel({
                 <Button
                   aria-label={
                     previewPhase === "failed" || previewPhase === "timeout"
-                      ? "Retry preview"
-                      : "Reload preview"
+                      ? t("retryPreview")
+                      : t("reloadPreview")
                   }
                   disabled={
                     previewPhase === "starting" || previewPhase === "slow"
@@ -454,7 +458,7 @@ export function SidePanel({
                  * underneath stays exactly where the reader left it.
                  */}
                 <Button
-                  aria-label="Open in full-screen play view"
+                  aria-label={t("openFullScreenPlay")}
                   render={
                     <a
                       href={`/games/${gameId}/play`}
@@ -470,7 +474,7 @@ export function SidePanel({
               </>
             ) : null}
             <Button
-              aria-label="Close panel"
+              aria-label={t("closePanel")}
               onClick={onClose}
               size="icon-sm"
               variant="ghost"
@@ -543,6 +547,8 @@ function MobilePreviewDrawer({
   previewToken?: string
   onOpenChange: (open: boolean) => void
 }) {
+  const t = useTranslations("ChatAgents")
+
   return (
     <Drawer
       open={open}
@@ -552,11 +558,11 @@ function MobilePreviewDrawer({
     >
       <DrawerContent>
         <DrawerHeader className="pb-4">
-          <DrawerTitle>Preview</DrawerTitle>
+          <DrawerTitle>{t("previewTab")}</DrawerTitle>
           <DrawerDescription>
             {previewToken
-              ? "Play your game full-screen. The chat stays right where you left it."
-              : "Nothing to play yet — send a message in the chat to build the game first."}
+              ? t("mobilePreviewDescription")
+              : t("emptyPreviewDescription")}
           </DrawerDescription>
         </DrawerHeader>
         <div className="px-6 pb-6">
@@ -565,11 +571,11 @@ function MobilePreviewDrawer({
               className="w-full"
               render={<Link href={`/games/${gameId}/play`} />}
             >
-              Play
+              {t("play")}
             </Button>
           ) : (
             <Button className="w-full" disabled>
-              Play
+              {t("play")}
             </Button>
           )}
         </div>

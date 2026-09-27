@@ -8,7 +8,7 @@ import { getGame } from "@/lib/games/queries"
 export default async function GamePage({
   params,
   searchParams,
-}: PageProps<"/games/[id]">) {
+}: PageProps<"/[locale]/games/[id]">) {
   const { id } = await params
 
   /**

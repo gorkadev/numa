@@ -31,6 +31,12 @@ import {
   TabsList,
   TabsTrigger,
 } from "@workspace/ui/components/tabs"
+import {
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemTitle,
+} from "@workspace/ui/components/item"
 
 import type { BillingSummary } from "@/lib/polar/plan"
 import {
@@ -41,8 +47,21 @@ import {
 import { BillingSection } from "@/components/settings/billing-section"
 import { ProfileSection } from "@/components/settings/profile-section"
 import { SecuritySection } from "@/components/settings/security-section"
-import { SettingsHeading } from "@/components/settings/settings-group"
+import {
+  SettingsHeading,
+  SettingsRow,
+  SettingsRows,
+} from "@/components/settings/settings-group"
 import { ThemePicker } from "@/components/settings/theme-picker"
+import { LocaleSwitcher } from "@/components/locale-switcher"
+import { useTranslations } from "next-intl"
+
+const SECTION_LABEL_KEYS = {
+  general: "preferencesTab",
+  account: "profileTab",
+  security: "securityTab",
+  billing: "billingTab",
+} as const satisfies Record<SectionId, string>
 
 /**
  * A settings surface shaped like the ChatGPT / Claude.ai settings modal: a
@@ -107,16 +126,21 @@ export function SettingsDialog({
    * wrong section first and only then correct it, which is the flash again.
    */
   void billing
-
+  const t = useTranslations("Settings")
+  const common = useTranslations("Common")
   const [shownSection, setShownSection] = useState(section)
 
   if (open && section !== shownSection) setShownSection(section)
 
   const activeSection = SECTIONS.find((entry) => entry.id === shownSection)!
+  const sectionLabel = t(SECTION_LABEL_KEYS[activeSection.id])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="overflow-hidden p-0 md:max-h-[560px] md:max-w-[760px] lg:max-w-[880px]">
+      <DialogContent
+        closeLabel={common("close")}
+        className="overflow-hidden p-0 md:max-h-[560px] md:max-w-[760px] lg:max-w-[880px]"
+      >
         {/**
          * `min-w-0` is load-bearing, not tidiness. This is a grid item of
          * `DialogContent`, and grid and flex items both default to
@@ -159,15 +183,21 @@ export function SettingsDialog({
                     />
                   </InputGroupAddon>
                   <InputGroupInput
-                    placeholder="Search..."
-                    aria-label="Search settings"
+                    placeholder={t("searchPlaceholder")}
+                    aria-label={t("searchAccessibleLabel")}
                   />
                 </InputGroup>
               </div>
 
               {SECTION_GROUPS.map((group) => (
                 <SidebarGroup key={group.label} className="py-1">
-                  <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+                  <SidebarGroupLabel>
+                    {t(
+                      group.label === "Personal"
+                        ? "personalGroup"
+                        : "billingGroup"
+                    )}
+                  </SidebarGroupLabel>
                   <SidebarGroupContent>
                     <SidebarMenu>
                       {group.sections.map((entry) => (
@@ -177,7 +207,7 @@ export function SettingsDialog({
                             onClick={() => onSectionChange(entry.id)}
                           >
                             <HugeiconsIcon icon={entry.icon} strokeWidth={2} />
-                            <span>{entry.label}</span>
+                            <span>{t(SECTION_LABEL_KEYS[entry.id])}</span>
                           </SidebarMenuButton>
                         </SidebarMenuItem>
                       ))}
@@ -206,7 +236,7 @@ export function SettingsDialog({
              */}
             <div className="flex flex-col gap-3 border-b border-border p-6">
               <div className="flex flex-col gap-1.5">
-                <DialogTitle>{activeSection.label}</DialogTitle>
+                <DialogTitle>{sectionLabel}</DialogTitle>
                 {/**
                  * `Popup` needs exactly one description for assistive tech;
                  * the mobile switcher below stands in for the visible nav, so
@@ -214,7 +244,7 @@ export function SettingsDialog({
                  * on screen.
                  */}
                 <DialogDescription className="sr-only">
-                  {activeSection.label} settings.
+                  {t("tabDescription", { section: sectionLabel })}
                 </DialogDescription>
               </div>
 
@@ -247,7 +277,7 @@ export function SettingsDialog({
                       className="flex-none px-3"
                     >
                       <HugeiconsIcon icon={entry.icon} strokeWidth={2} />
-                      {entry.label}
+                      {t(SECTION_LABEL_KEYS[entry.id])}
                     </TabsTrigger>
                   ))}
                 </TabsList>
@@ -260,13 +290,28 @@ export function SettingsDialog({
             >
               <div className="p-6">
                 {shownSection === "general" && (
-                  <section className="flex flex-col gap-4">
-                    <SettingsHeading
-                      title="Theme"
-                      description="Main color of the interface"
-                    />
-                    <ThemePicker />
-                  </section>
+                  <>
+                    <section className="flex flex-col gap-4">
+                      <SettingsHeading
+                        title={t("theme")}
+                        description={t("themeDescription")}
+                      />
+                      <ThemePicker />
+                    </section>
+                    <SettingsRows className="mt-6">
+                      <SettingsRow>
+                        <ItemContent>
+                          <ItemTitle>{t("language")}</ItemTitle>
+                          <ItemDescription id="settings-language-description">
+                            {t("languageDescription")}
+                          </ItemDescription>
+                        </ItemContent>
+                        <ItemActions className="w-full sm:w-auto">
+                          <LocaleSwitcher describedBy="settings-language-description" />
+                        </ItemActions>
+                      </SettingsRow>
+                    </SettingsRows>
+                  </>
                 )}
 
                 {shownSection === "account" && <ProfileSection />}

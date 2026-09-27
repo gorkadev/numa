@@ -8,7 +8,7 @@ import {
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useRouter } from "next/navigation"
-import { format } from "date-fns"
+import { useFormatter, useTranslations } from "next-intl"
 import {
   Avatar,
   AvatarFallback,
@@ -24,8 +24,9 @@ import {
   ItemTitle,
 } from "@workspace/ui/components/item"
 import { Skeleton } from "@workspace/ui/components/skeleton"
-import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
+
+import { Spinner } from "@/components/localized-spinner"
 
 import { authClient } from "@/lib/auth-client"
 import { initials } from "@/lib/format/initials"
@@ -41,10 +42,6 @@ type LinkedAccount = NonNullable<
 const PROVIDERS: Record<string, { label: string; icon: typeof GithubIcon }> = {
   github: { label: "GitHub", icon: GithubIcon },
   google: { label: "Google", icon: GoogleIcon },
-}
-
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Please try again."
 }
 
 function ProfileSkeleton() {
@@ -66,6 +63,8 @@ function ProfileSkeleton() {
 }
 
 export function ProfileSection() {
+  const t = useTranslations("Settings")
+  const format = useFormatter()
   const router = useRouter()
   const {
     data: session,
@@ -104,14 +103,14 @@ export function ProfileSection() {
         return false
       }
       if (error) {
-        setAccountsError(error.message ?? "Please try again.")
+        setAccountsError(t("genericError"))
         return false
       }
       setAccounts(data ?? [])
       return true
-    } catch (error) {
+    } catch {
       if (mountedRef.current && requestId === accountsRequestId.current) {
-        setAccountsError(errorMessage(error))
+        setAccountsError(t("genericError"))
       }
       return false
     } finally {
@@ -143,15 +142,15 @@ export function ProfileSection() {
       if (error) {
         toast.add({
           type: "error",
-          title: "Could not save your name",
-          description: error.message,
+          title: t("couldNotSaveName"),
+          description: t("genericError"),
         })
       }
-    } catch (error) {
+    } catch {
       toast.add({
         type: "error",
-        title: "Could not save your name",
-        description: errorMessage(error),
+        title: t("couldNotSaveName"),
+        description: t("genericError"),
       })
     } finally {
       if (mountedRef.current) setSavingName(false)
@@ -165,15 +164,15 @@ export function ProfileSection() {
       if (error) {
         toast.add({
           type: "error",
-          title: "Could not remove your picture",
-          description: error.message,
+          title: t("couldNotRemovePicture"),
+          description: t("genericError"),
         })
       }
-    } catch (error) {
+    } catch {
       toast.add({
         type: "error",
-        title: "Could not remove your picture",
-        description: errorMessage(error),
+        title: t("couldNotRemovePicture"),
+        description: t("genericError"),
       })
     } finally {
       if (mountedRef.current) setRemovingImage(false)
@@ -190,18 +189,18 @@ export function ProfileSection() {
       if (error) {
         toast.add({
           type: "error",
-          title: "Could not sign out",
-          description: error.message,
+          title: t("couldNotSignOut"),
+          description: t("genericError"),
         })
         return
       }
       navigating = true
       router.push("/sign-in")
-    } catch (error) {
+    } catch {
       toast.add({
         type: "error",
-        title: "Could not sign out",
-        description: errorMessage(error),
+        title: t("couldNotSignOut"),
+        description: t("genericError"),
       })
     } finally {
       if (!navigating && mountedRef.current) {
@@ -217,8 +216,8 @@ export function ProfileSection() {
       <SettingsGroup>
         <SettingsRow>
           <ItemContent>
-            <ItemTitle>Could not load your profile</ItemTitle>
-            <ItemDescription>{sessionError.message}</ItemDescription>
+            <ItemTitle>{t("couldNotLoadProfile")}</ItemTitle>
+            <ItemDescription>{t("genericError")}</ItemDescription>
           </ItemContent>
           <ItemActions>
             <Button
@@ -226,7 +225,7 @@ export function ProfileSection() {
               size="sm"
               onClick={() => void refetchSession()}
             >
-              Retry
+              {t("retry")}
             </Button>
           </ItemActions>
         </SettingsRow>
@@ -240,11 +239,11 @@ export function ProfileSection() {
       <SettingsGroup>
         <SettingsRow>
           <ItemContent>
-            <ItemTitle>Profile picture</ItemTitle>
+            <ItemTitle>{t("profilePicture")}</ItemTitle>
             <ItemDescription>
               {user.image
-                ? "Taken from the account you signed in with."
-                : "Your initials are used while you have no picture."}
+                ? t("pictureFromProvider")
+                : t("initialsInsteadOfPicture")}
             </ItemDescription>
           </ItemContent>
           <ItemActions>
@@ -255,7 +254,7 @@ export function ProfileSection() {
                 disabled={removingImage}
                 onClick={removeImage}
               >
-                {removingImage && <Spinner />}Remove
+                {removingImage && <Spinner />}{t("remove")}
               </Button>
             )}
             <Avatar>
@@ -271,12 +270,13 @@ export function ProfileSection() {
         </SettingsRow>
         <SettingsRow>
           <ItemContent>
-            <ItemTitle>Full name</ItemTitle>
+            <ItemTitle>{t("fullName")}</ItemTitle>
           </ItemContent>
           <ItemActions>
             {savingName && <Spinner className="size-4" />}
             <Input
               className="h-8 w-52"
+              aria-label={t("fullName")}
               value={name}
               disabled={savingName}
               onChange={(event) => setName(event.target.value)}
@@ -293,9 +293,9 @@ export function ProfileSection() {
         </SettingsRow>
         <SettingsRow>
           <ItemContent>
-            <ItemTitle>Email</ItemTitle>
+            <ItemTitle>{t("email")}</ItemTitle>
             <ItemDescription>
-              Managed by the account you sign in with.
+              {t("emailManagedByProvider")}
             </ItemDescription>
           </ItemContent>
           <ItemActions>
@@ -306,8 +306,8 @@ export function ProfileSection() {
 
       {(accountsLoading || accountsError || accounts.length > 0) && (
         <SettingsGroup
-          title="Connected accounts"
-          description="The providers you can sign in to Numa with"
+          title={t("connectedAccounts")}
+          description={t("connectedAccountsDescription")}
         >
           {accountsLoading ? (
             <SettingsRow size="sm">
@@ -320,7 +320,7 @@ export function ProfileSection() {
           ) : accountsError ? (
             <SettingsRow size="sm">
               <ItemContent>
-                <ItemTitle>Could not load connected accounts</ItemTitle>
+                <ItemTitle>{t("couldNotLoadConnectedAccounts")}</ItemTitle>
                 <ItemDescription>{accountsError}</ItemDescription>
               </ItemContent>
               <ItemActions>
@@ -329,7 +329,7 @@ export function ProfileSection() {
                   size="sm"
                   onClick={() => void loadAccounts()}
                 >
-                  Retry
+                  {t("retry")}
                 </Button>
               </ItemActions>
             </SettingsRow>
@@ -352,8 +352,7 @@ export function ProfileSection() {
                       {provider?.label ?? account.providerId}
                     </ItemTitle>
                     <ItemDescription>
-                      Connected{" "}
-                      {format(new Date(account.createdAt), "d MMM yyyy")}
+                      {t("connectedAt", { date: format.dateTime(new Date(account.createdAt), { day: "numeric", month: "short", year: "numeric" }) })}
                     </ItemDescription>
                   </ItemContent>
                 </SettingsRow>
@@ -366,8 +365,8 @@ export function ProfileSection() {
       <SettingsGroup>
         <SettingsRow>
           <ItemContent>
-            <ItemTitle>Sign out</ItemTitle>
-            <ItemDescription>End your session on this device.</ItemDescription>
+            <ItemTitle>{t("signOut")}</ItemTitle>
+            <ItemDescription>{t("endSessionOnDevice")}</ItemDescription>
           </ItemContent>
           <ItemActions>
             <Button
@@ -381,7 +380,7 @@ export function ProfileSection() {
               ) : (
                 <HugeiconsIcon icon={Logout01Icon} strokeWidth={2} />
               )}
-              Sign out
+              {t("signOut")}
             </Button>
           </ItemActions>
         </SettingsRow>

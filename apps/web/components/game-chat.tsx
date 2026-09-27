@@ -5,6 +5,7 @@ import { useRef, useState } from "react"
 import type { UIMessage } from "ai"
 import { BotIcon, PanelRightIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
+import { useTranslations } from "next-intl"
 import { Button } from "@workspace/ui/components/button"
 
 import { ChatThread } from "@/components/chat/chat-thread"
@@ -58,6 +59,8 @@ export function GameChat({
   /** The tier the home screen's picker was on, when the game came from there. */
   initialTierId?: TierId
 }) {
+  const t = useTranslations("ChatAgents")
+
   /**
    * The preview's revision, owned here because the panel and the thread are
    * siblings: the thread is the only side that sees the agent's stream, and
@@ -215,7 +218,7 @@ export function GameChat({
             >
               <HugeiconsIcon icon={PanelRightIcon} strokeWidth={2} />
               <span className="sr-only">
-                {previewPressed ? "Hide preview" : "Show preview"}
+                {previewPressed ? t("hidePreview") : t("showPreview")}
               </span>
             </Button>
           ) : null}
@@ -242,12 +245,13 @@ export function GameChat({
               aria-pressed={agentsPressed}
             >
               <HugeiconsIcon icon={BotIcon} strokeWidth={2} />
-              <span className="sr-only">Sub-agent runs</span>
+              <span className="sr-only">{t("panelTitle")}</span>
             </Button>
           ) : null}
           <GameMenu gameId={gameId} title={title} pinned={pinned} />
         </header>
         <ChatThread
+          key={gameId}
           gameId={gameId}
           initialMessages={initialMessages}
           initialSessions={initialSessions}

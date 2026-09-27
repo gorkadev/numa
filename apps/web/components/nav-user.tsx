@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
 import {
   Logout01Icon,
   Settings02Icon,
@@ -36,8 +37,9 @@ import {
   useSidebar,
 } from "@workspace/ui/components/sidebar"
 import { Skeleton } from "@workspace/ui/components/skeleton"
-import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
+
+import { Spinner } from "@/components/localized-spinner"
 
 import { authClient } from "@/lib/auth-client"
 import { initials } from "@/lib/format/initials"
@@ -74,11 +76,12 @@ type DeviceSession = NonNullable<
  */
 export function NavUser() {
   const router = useRouter()
+  const t = useTranslations("Shell")
   const { isMobile, state } = useSidebar()
   const { data: session, isPending } = authClient.useSession()
   const { openSettings } = useSettingsDialog()
   const isMac = useIsMac()
-  const settingsHint = isMac ? "⌘⇧," : "Ctrl Shift ,"
+  const settingsHint = isMac ? "⌘⇧," : "Ctrl ⇧ ,"
 
   const [accounts, setAccounts] = useState<DeviceSession[]>([])
   const [accountListState, setAccountListState] = useState<
@@ -147,20 +150,19 @@ export function NavUser() {
       if (error) {
         toast.add({
           type: "error",
-          title: "Could not switch account",
-          description: error.message,
+          title: t("couldNotSwitchAccount"),
+          description: t("pleaseTryAgain"),
         })
         return
       }
 
       window.location.assign("/")
       navigating = true
-    } catch (error) {
+    } catch {
       toast.add({
         type: "error",
-        title: "Could not switch account",
-        description:
-          error instanceof Error ? error.message : "Please try again.",
+        title: t("couldNotSwitchAccount"),
+        description: t("pleaseTryAgain"),
       })
     } finally {
       if (!navigating) {
@@ -213,20 +215,19 @@ export function NavUser() {
       if (error) {
         toast.add({
           type: "error",
-          title: "Could not sign out",
-          description: error.message,
+          title: t("couldNotSignOut"),
+          description: t("pleaseTryAgain"),
         })
         return
       }
 
       navigating = true
       router.push("/sign-in")
-    } catch (error) {
+    } catch {
       toast.add({
         type: "error",
-        title: "Could not sign out",
-        description:
-          error instanceof Error ? error.message : "Please try again.",
+        title: t("couldNotSignOut"),
+        description: t("pleaseTryAgain"),
       })
     } finally {
       if (!navigating) {
@@ -290,24 +291,24 @@ export function NavUser() {
                 onClick={() => openSettings()}
               >
                 <HugeiconsIcon icon={Settings02Icon} />
-                Settings
+                {t("settings")}
                 <DropdownMenuShortcut>{settingsHint}</DropdownMenuShortcut>
               </DropdownMenuItem>
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger disabled={isActionPending}>
                   <HugeiconsIcon icon={UserSwitchIcon} />
-                  Switch account
+                  {t("switchAccount")}
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent className="min-w-56">
                   {accountListState === "loading" ||
                   accountListState === "idle" ? (
                     <DropdownMenuItem disabled>
                       <Spinner />
-                      Loading accounts…
+                      {t("loadingAccounts")}
                     </DropdownMenuItem>
                   ) : accountListState === "error" ? (
                     <DropdownMenuItem onClick={loadAccounts}>
-                      Retry loading accounts
+                      {t("retryLoadingAccounts")}
                     </DropdownMenuItem>
                   ) : (
                     switchableAccounts.map(
@@ -369,7 +370,7 @@ export function NavUser() {
                     onClick={() => router.push("/sign-in")}
                   >
                     <HugeiconsIcon icon={UserAdd01Icon} />
-                    Add account
+                    {t("addAccount")}
                   </DropdownMenuItem>
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
@@ -381,7 +382,7 @@ export function NavUser() {
               onClick={signOut}
             >
               {signingOut ? <Spinner /> : <HugeiconsIcon icon={Logout01Icon} />}
-              Sign out
+              {t("signOut")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

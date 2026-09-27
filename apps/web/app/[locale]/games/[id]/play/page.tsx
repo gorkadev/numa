@@ -2,6 +2,7 @@ import { cache } from "react"
 
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
+import { getTranslations } from "next-intl/server"
 
 import { GamePlayView } from "@/components/game-play-view"
 import { signPreviewToken } from "@/lib/games/preview-token"
@@ -25,16 +26,23 @@ const loadGame = cache((id: string) => getGame(id))
 
 export async function generateMetadata({
   params,
-}: PageProps<"/games/[id]/play">): Promise<Metadata> {
-  const { id } = await params
-  const game = await loadGame(id)
+}: PageProps<"/[locale]/games/[id]/play">): Promise<Metadata> {
+  const { id, locale } = await params
+  const [game, t] = await Promise.all([
+    loadGame(id),
+    getTranslations({ locale, namespace: "GamePreview" }),
+  ])
 
-  return { title: game ? `Play · ${game.title}` : "Play" }
+  return {
+    title: game
+      ? t("playTitle", { gameTitle: game.title })
+      : t("playTitleFallback"),
+  }
 }
 
 export default async function PlayPage({
   params,
-}: PageProps<"/games/[id]/play">) {
+}: PageProps<"/[locale]/games/[id]/play">) {
   const { id } = await params
 
   /**

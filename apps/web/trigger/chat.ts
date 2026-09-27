@@ -270,6 +270,15 @@ function writeCreditsExhausted(balance: number | null): void {
   })
 }
 
+/** Tells the browser a turn belongs to a game that no longer exists. */
+function writeGameUnavailable(): void {
+  chat.response.write({
+    type: "data-game-unavailable",
+    data: { reason: "missing-game" },
+    transient: true,
+  })
+}
+
 /**
  * One game owns one chat, so the chat id is the game id.
  *
@@ -418,7 +427,7 @@ export const gameChat = chat.agent({
      * fact rather than an unknown — the row is gone — so it is refused.
      */
     if (!userId) {
-      writeCreditsExhausted(null)
+      writeGameUnavailable()
 
       throw new Error("This game no longer exists")
     }

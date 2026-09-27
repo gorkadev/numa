@@ -16,6 +16,7 @@ import { Button } from "@workspace/ui/components/button"
 import { Checkbox } from "@workspace/ui/components/checkbox"
 import { Field, FieldLabel } from "@workspace/ui/components/field"
 import { Textarea } from "@workspace/ui/components/textarea"
+import { useFormatter, useTranslations } from "next-intl"
 
 /**
  * Filename for the downloaded recovery codes. Not user-configurable — a
@@ -30,11 +31,11 @@ const DOWNLOAD_FILENAME = "numa-recovery-codes.txt"
  * themselves — one per line, matching the textarea above it so copy/paste
  * and download always agree.
  */
-function buildDownloadContent(codes: string[]): string {
+function buildDownloadContent(codes: string[], title: string, generatedAt: string, description: string): string {
   const header = [
-    "Numa two-factor recovery codes",
-    `Generated on ${new Date().toLocaleString()}`,
-    "Each code can be used once, in place of a code from your authenticator app.",
+    title,
+    generatedAt,
+    description,
     "",
   ].join("\n")
 
@@ -66,12 +67,15 @@ function buildDownloadContent(codes: string[]): string {
 export function RecoveryCodes({
   codes,
   onDone,
-  doneLabel = "Done",
+  doneLabel,
 }: {
   codes: string[]
   onDone: () => void
   doneLabel?: string
 }) {
+  const t = useTranslations("Settings")
+  const format = useFormatter()
+  const finalDoneLabel = doneLabel ?? t("done")
   const [acknowledged, setAcknowledged] = useState(false)
   const [copied, setCopied] = useState(false)
 
@@ -82,7 +86,12 @@ export function RecoveryCodes({
   }
 
   function downloadCodes() {
-    const blob = new Blob([buildDownloadContent(codes)], {
+    const blob = new Blob([buildDownloadContent(
+      codes,
+      t("recoveryCodesFileTitle"),
+      t("recoveryCodesGeneratedAt", { date: format.dateTime(new Date(), { dateStyle: "medium", timeStyle: "short" }) }),
+      t("recoveryCodesFileDescription")
+    )], {
       type: "text/plain",
     })
     const url = URL.createObjectURL(blob)
@@ -99,9 +108,9 @@ export function RecoveryCodes({
     <div className="flex flex-col gap-4">
       <Alert variant="destructive">
         <HugeiconsIcon icon={AlertCircleIcon} />
-        <AlertTitle>Save these recovery codes somewhere safe</AlertTitle>
+        <AlertTitle>{t("saveRecoveryCodesTitle")}</AlertTitle>
         <AlertDescription>
-          You won&apos;t be able to see them again. Each code can be used once.
+          {t("recoveryCodesDescription")}
         </AlertDescription>
       </Alert>
 
@@ -110,18 +119,18 @@ export function RecoveryCodes({
         value={codes.join("\n")}
         rows={codes.length}
         className="resize-none font-mono text-sm"
-        aria-label="Recovery codes"
+        aria-label={t("recoveryCodesAccessibleLabel")}
         onFocus={(event) => event.target.select()}
       />
 
       <div className="flex gap-2">
         <Button type="button" variant="outline" onClick={copyCodes}>
           <HugeiconsIcon icon={Copy01Icon} strokeWidth={2} />
-          {copied ? "Copied" : "Copy"}
+          {copied ? t("copied") : t("copy")}
         </Button>
         <Button type="button" variant="outline" onClick={downloadCodes}>
           <HugeiconsIcon icon={Download04Icon} strokeWidth={2} />
-          Download
+          {t("download")}
         </Button>
       </div>
 
@@ -132,7 +141,7 @@ export function RecoveryCodes({
           onCheckedChange={setAcknowledged}
         />
         <FieldLabel htmlFor="recovery-codes-ack" className="font-normal">
-          I have saved these recovery codes.
+          {t("recoveryCodesAcknowledgement")}
         </FieldLabel>
       </Field>
 
@@ -142,7 +151,7 @@ export function RecoveryCodes({
         disabled={!acknowledged}
         className="self-end"
       >
-        {doneLabel}
+        {finalDoneLabel}
       </Button>
     </div>
   )

@@ -205,7 +205,7 @@ function ToastIcon({ type }: { type: string | undefined }) {
   )
 }
 
-function ToastList() {
+function ToastList({ closeLabel }: { closeLabel: string }) {
   const { toasts } = ToastPrimitive.useToastManager()
 
   return toasts.map((toastItem) => (
@@ -217,23 +217,28 @@ function ToastList() {
           <ToastDescription />
         </div>
         <ToastAction />
-        <ToastClose />
+        <ToastClose aria-label={closeLabel} />
       </ToastContent>
     </Toast>
   ))
 }
 
+type ToasterProps = ToastPrimitive.Provider.Props & {
+  closeLabel?: string
+}
+
 function Toaster({
   children,
   toastManager = toast,
+  closeLabel = "Close toast",
   ...props
-}: ToastPrimitive.Provider.Props) {
+}: ToasterProps) {
   return (
     <ToastProvider toastManager={toastManager} {...props}>
       {children}
       <ToastPortal>
         <ToastViewport>
-          <ToastList />
+          <ToastList closeLabel={closeLabel} />
         </ToastViewport>
       </ToastPortal>
     </ToastProvider>
