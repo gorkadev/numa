@@ -325,7 +325,8 @@
     "pleaseTryAgain": "Inténtalo de nuevo.",
     "language": "Idioma",
     "credits": "Créditos",
-    "free": "Gratis"
+    "free": "Gratis",
+    "planUnavailable": "Plan no disponible"
   },
   "Auth": {
     "lastUsed": "Usado recientemente",
@@ -377,7 +378,7 @@
     "personalGroup": "Personal",
     "billingGroup": "Facturación",
     "preferencesTab": "Preferencias",
-    "profileTab": "Perfil",
+    "profileTab": "Cuenta",
     "securityTab": "Seguridad y acceso",
     "billingTab": "Plan y créditos",
     "shortcutsTab": "Atajos de teclado",

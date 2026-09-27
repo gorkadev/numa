@@ -409,7 +409,7 @@ export function AppSidebar({
           <SidebarMenu>
             <CreditsButton {...billing} className={MENU_ICON} />
           </SidebarMenu>
-          <NavUser />
+          <NavUser plan={billing.plan} />
         </SidebarFooter>
       </Sidebar>
     </>
