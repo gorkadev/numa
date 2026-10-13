@@ -11,7 +11,9 @@ import {
 } from "@workspace/ui/components/input-group"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { ModelPicker } from "@/components/model-picker"
+import { TemplatePicker } from "@/components/template-picker"
 import type { TierId } from "@/lib/ai/model-catalog"
+import type { TemplateId } from "@/lib/games/templates/catalog"
 
 type ChatComposerProps = {
   value: string
@@ -38,6 +40,13 @@ type ChatComposerProps = {
   tierId?: TierId
   onTierChange?: (tierId: TierId) => void
   /**
+   * The template selected before creating a game. Optional together so an
+   * existing game's composer cannot offer a choice that is immutable after
+   * creation.
+   */
+  templateId?: TemplateId
+  onTemplateChange?: (templateId: TemplateId) => void
+  /**
    * Rendered directly above the `InputGroup`, visually merged into it (the
    * caller decides whether to render anything at all — this component stays
    * presentational and owns no task-list state or derivation of its own).
@@ -63,6 +72,8 @@ export function ChatComposer({
   placeholder = "Describe the game you want to build…",
   tierId,
   onTierChange,
+  templateId,
+  onTemplateChange,
   tasksSlot,
 }: ChatComposerProps) {
   const trimmed = value.trim()
@@ -125,6 +136,13 @@ export function ChatComposer({
           <InputGroupAddon align="block-end">
             {tierId && onTierChange ? (
               <ModelPicker value={tierId} onValueChange={onTierChange} />
+            ) : null}
+            {templateId && onTemplateChange ? (
+              <TemplatePicker
+                value={templateId}
+                onValueChange={onTemplateChange}
+                disabled={pending}
+              />
             ) : null}
             {/**
              * One button, two meanings: while an answer streams it stops the

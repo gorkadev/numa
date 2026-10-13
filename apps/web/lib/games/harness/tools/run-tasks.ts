@@ -13,6 +13,7 @@ import {
   workerInstructions,
   type WorkerFocus,
 } from "@/lib/games/instructions/roles/worker"
+import { readGameTemplateBuildContext } from "@/lib/games/templates/context"
 import {
   mergeSkills,
   ROLE_DEFAULT_SKILLS,
@@ -249,19 +250,33 @@ function describeSchedulerError(error: unknown): string {
  * here and to `runSubagent`'s own `skills` input, so the record it stamps
  * and the prompt it actually ran with never drift apart.
  */
-function buildInstructions(displayName: string, focus: WorkerFocus, skills: SkillName[]): string {
+function buildInstructions(
+  displayName: string,
+  focus: WorkerFocus,
+  skills: SkillName[],
+  templateContext: string
+): string {
   return [
     workerInstructions(displayName, focus),
     runtimeInstructions.content,
+    templateContext,
     engineApiIndex,
     skillBodies(skills),
   ].join("\n\n")
 }
 
 function buildPrompt(task: TaskSpec): string {
+  const acceptance = task.acceptance ?? []
   return `## Task: ${task.title}
 
 ${task.goal}
+
+## Acceptance criteria
+${
+  acceptance.length > 0
+    ? acceptance.map((criterion) => `- ${criterion}`).join("\n")
+    : "- No explicit criteria were stored for this historical task. State what you could actually check."
+}
 
 Files you own for this task — write only within these:
 ${task.owns.map((path) => `- ${path}`).join("\n")}`
@@ -322,7 +337,10 @@ function renderOutcomes(outcomes: TaskOutcome[]): string {
  * calling this tool once per task or emitting parallel tool calls; one call
  * with a batch is enough.
  */
-export function createRunTasksTool(gameId: string): Tool {
+export function createRunTasksTool(
+  gameId: string,
+  options: { onStart?: () => void } = {}
+): Tool {
   return tool({
     description: [
       "Dispatch the tasks a plan's own task list broke the build into, each against its own worker.",
@@ -365,6 +383,14 @@ export function createRunTasksTool(gameId: string): Tool {
        * this is true.
        */
       const correctivePass = turnState.verifyCalls > 0
+
+      if (!turnState.tryStartPostVerifyRunTasks()) {
+        yield {
+          error:
+            "Verification has already started and this turn already used its one corrective run_tasks call. Run the forced second verify or report the current blocked result; no further task dispatch is allowed this turn.",
+        }
+        return
+      }
 
       if (taskIds && tasksInput) {
         yield {
@@ -412,6 +438,8 @@ export function createRunTasksTool(gameId: string): Tool {
         }
         return
       }
+
+      options.onStart?.()
 
       const indexById = new Map(tasks.map((task, index) => [task.id, index]))
       const outcomes: (TaskOutcome | undefined)[] = new Array(tasks.length)
@@ -475,6 +503,7 @@ export function createRunTasksTool(gameId: string): Tool {
       async function runOneTask(task: TaskSpec): Promise<void> {
         const role = ROLES[task.role]
         const skills = mergeSkills(ROLE_DEFAULT_SKILLS[task.role], task.skills)
+        const { templateContext } = await readGameTemplateBuildContext(gameId)
 
         const run = runSubagent({
           role,
@@ -488,7 +517,7 @@ export function createRunTasksTool(gameId: string): Tool {
            * same-turn id reuse impossible to collide on.
            */
           agentId: `${task.id}:${randomUUID().slice(0, 8)}`,
-          instructions: buildInstructions(role.displayName, task.role, skills),
+          instructions: buildInstructions(role.displayName, task.role, skills, templateContext),
           skills,
           /**
            * Scoped file tools plus `load_skill` (design.md's role catalogue:

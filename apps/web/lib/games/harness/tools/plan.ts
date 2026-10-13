@@ -9,12 +9,20 @@ import { z } from "zod"
 
 import { engineApiIndex } from "@/lib/games/instructions/engine-index"
 import { plannerInstructions } from "@/lib/games/instructions/roles/planner"
+import { readGameTemplateBuildContext } from "@/lib/games/templates/context"
 import { runtimeInstructions } from "@/lib/games/instructions/runtime"
 import { skillBodies, skillIndex } from "@/lib/games/skills/registry"
 import { createGameTools } from "@/lib/games/tools"
 
 import { renderEnvelope, type SubagentEnvelope } from "../envelope"
-import { planTasksSchema, validatePlanTasks } from "../plan-validation"
+import {
+  planAssessmentSchema,
+  planTasksSchema,
+  validatePlanAssessment,
+  validatePlanTasks,
+  type PlanAssessment,
+  type PlanAssetCatalog,
+} from "../plan-validation"
 import { writePlan } from "../plan-store"
 import { ROLES } from "../roles"
 import { runSubagent, type RunSubagentResult, type SubagentProgress } from "../run-subagent"
@@ -46,16 +54,27 @@ function plannerReadTools(gameId: string): ToolSet {
   )
 }
 
-function buildPlannerInstructions(): string {
-  return [
-    plannerInstructions,
-    runtimeInstructions.content,
-    engineApiIndex,
-    skillBodies(PLANNER_PUSHED_SKILLS),
-    skillIndex(PLANNER_PUSHED_SKILLS),
-  ]
-    .filter((section) => section.length > 0)
-    .join("\n\n")
+async function buildPlannerInstructions(gameId: string): Promise<{
+  instructions: string
+  assetCatalog: PlanAssetCatalog
+}> {
+  const { templateContext, isFreshGameBuild, assetCatalog } =
+    await readGameTemplateBuildContext(gameId)
+
+  return {
+    instructions: [
+      plannerInstructions,
+      runtimeInstructions.content,
+      templateContext,
+      `## Game state\nThis is a factual ${isFreshGameBuild ? "fresh" : "existing"} game build: ${isFreshGameBuild ? "no successful game-file writes are persisted" : "successful game-file writes are already persisted"}. This fact does not prescribe a task count.`,
+      engineApiIndex,
+      skillBodies(PLANNER_PUSHED_SKILLS),
+      skillIndex(PLANNER_PUSHED_SKILLS),
+    ]
+      .filter((section) => section.length > 0)
+      .join("\n\n"),
+    assetCatalog,
+  }
 }
 
 /**
@@ -65,7 +84,7 @@ function buildPlannerInstructions(): string {
  * `run-subagent.ts`'s own `buildRunHooks`/`takeServed` uses to move a value
  * from an inner callback back up to its caller.
  */
-type SubmittedPlan = { design: string; tasks: TaskSpec[] }
+type SubmittedPlan = { design: string; tasks: TaskSpec[]; assessment: PlanAssessment }
 
 /**
  * The plan's own task list, in the shape a browser-side reader needs to draw
@@ -104,7 +123,8 @@ function planTaskSummaries(submission: SubmittedPlan | undefined): PlanTaskSumma
  * sandbox.
  */
 function buildSubmitPlanTool(
-  gameId: string
+  gameId: string,
+  assetCatalog: PlanAssetCatalog
 ): { tool: Tool; takeSubmission: () => SubmittedPlan | undefined } {
   let submission: SubmittedPlan | undefined
 
@@ -113,6 +133,7 @@ function buildSubmitPlanTool(
       "Submit the finished plan: a short design and the list of tasks that carry it out. Call this exactly once you are confident in the plan — this is the only way your work reaches the agent that dispatched you.",
       "At most 6 tasks. Each task's role is one of gameplay, visuals or audio; its owns lists the files it may write (a directory ending in \"/\" owns everything under it), and none of them may fall under engine/, vendor/ or .numa/. dependsOn may only name another task in this same submission, and must never form a cycle.",
       "Two tasks whose owns overlap must have a dependsOn between them, or neither may declare that overlap at all.",
+      "Every submission includes an explicit assessment: classification is cohesive (exactly one task) or substantial (2–6 tasks plus a final integration task); rationale explains the actual cohesion or boundaries. Substantial tasks each need observable acceptance criteria. A fresh selected-template build also needs an asset receipt with declared eager model ids.",
       "A rejected submission comes back as an error explaining exactly what to fix — correct it and call this again.",
     ].join(" "),
     inputSchema: z.object({
@@ -123,18 +144,19 @@ function buildSubmitPlanTool(
           "The plan's design, in markdown: what you are building and why, in enough detail for a worker who has read nothing else about this turn to follow it."
         ),
       tasks: planTasksSchema,
+      assessment: planAssessmentSchema,
     }),
-    execute: async ({ design, tasks }) => {
-      const error = validatePlanTasks(tasks)
+    execute: async ({ design, tasks, assessment }) => {
+      const taskError = validatePlanTasks(tasks)
+      if (taskError) return { error: taskError }
 
-      if (error) {
-        return { error }
-      }
+      const assessmentError = validatePlanAssessment(tasks, assessment, assetCatalog)
+      if (assessmentError) return { error: assessmentError }
 
-      await writePlan(gameId, design, tasks)
-      submission = { design, tasks }
+      await writePlan(gameId, design, tasks, assessment, assetCatalog.requiresAssetReceipt === true)
+      submission = { design, tasks, assessment }
 
-      return { ok: true, taskCount: tasks.length }
+      return { ok: true, taskCount: tasks.length, assessment }
     },
   })
 
@@ -199,8 +221,8 @@ function buildEnvelope(
   return {
     ...envelope,
     status: "done",
-    summary: `Plan submitted: ${submission.tasks.length} task(s). ${JSON.stringify(taskList)}`,
-    artifacts: [".numa/design.md", ".numa/tasks.json"],
+    summary: `Plan submitted: ${submission.tasks.length} task(s). ${JSON.stringify({ tasks: taskList, assessment: submission.assessment })}`,
+    artifacts: [".numa/design.md", ".numa/tasks.json", ".numa/plan.json"],
   }
 }
 
@@ -211,7 +233,10 @@ function buildEnvelope(
  * tool builder (`explore.ts`, `run-tasks.ts`, `verify.ts`): it closes over a
  * `gameId` that only exists once a chat does.
  */
-export function createPlanTool(gameId: string): Tool {
+export function createPlanTool(
+  gameId: string,
+  options: { onStart?: () => void } = {}
+): Tool {
   return tool({
     description: [
       "Dispatch a planning sub-agent that turns a build request into a design and a task list, written to the sandbox, before any game file is touched.",
@@ -243,7 +268,10 @@ export function createPlanTool(gameId: string): Tool {
       void,
       void
     > {
-      const { tool: submitPlanTool, takeSubmission } = buildSubmitPlanTool(gameId)
+      options.onStart?.()
+
+      const { instructions, assetCatalog } = await buildPlannerInstructions(gameId)
+      const { tool: submitPlanTool, takeSubmission } = buildSubmitPlanTool(gameId, assetCatalog)
 
       const tools: ToolSet = {
         ...plannerReadTools(gameId),
@@ -253,7 +281,7 @@ export function createPlanTool(gameId: string): Tool {
 
       const run = runSubagent({
         role: ROLES.planner,
-        instructions: buildPlannerInstructions(),
+        instructions,
         tools,
         prompt: brief,
         abortSignal,

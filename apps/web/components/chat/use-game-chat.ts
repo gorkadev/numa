@@ -14,6 +14,12 @@ import {
   mintGameChatAccessToken,
   startGameChatSession,
 } from "@/lib/games/chat-actions"
+import {
+  readGameProgress,
+  reduceGameBuildProgress,
+  withoutGameProgress,
+  type GameBuildProgressEvent,
+} from "@/lib/games/build-progress"
 import { readGameRevision } from "@/lib/games/revision"
 import type { AskPlayerOutput } from "@/lib/games/tools"
 import { readTurnCredits } from "@/lib/games/turn-credits"
@@ -68,6 +74,24 @@ export function useGameChat({
   onRevision?: (revision: number) => void
 }) {
   const [input, setInput] = useState("")
+  const reconnectAttempt = useRef({
+    gameId: null as string | null,
+    id: 0,
+    receivedPhase: false,
+  })
+  const progressTurn = useRef(0)
+  const statusTransition = useRef<{
+    gameId: string
+    status: "submitted" | "streaming" | "ready" | "error" | null
+  }>({ gameId, status: null })
+  const [buildProgress, setBuildProgress] = useState<ReturnType<
+    typeof reduceGameBuildProgress
+  >>(null)
+  const dispatchBuildProgress = useCallback((event: GameBuildProgressEvent) => {
+    if (event.type === "submit") progressTurn.current += 1
+    setBuildProgress((current) => reduceGameBuildProgress(current, event))
+  }, [])
+  const threadMessages = useMemo(() => withoutGameProgress(initialMessages), [initialMessages])
 
   /**
    * The tier the next turn is sent with. It lives here rather than in the
@@ -86,7 +110,7 @@ export function useGameChat({
    * read it off yet.
    */
   const [tierId, setTierId] = useState<TierId>(
-    () => readThreadTier(initialMessages) ?? initialTierId ?? DEFAULT_TIER_ID
+    () => readThreadTier(threadMessages) ?? initialTierId ?? DEFAULT_TIER_ID
   )
 
   /**
@@ -120,7 +144,7 @@ export function useGameChat({
    * resume happens on mount, so nothing arriving later can change the answer.
    */
   const [resumedHeadId] = useState(() => {
-    const last = initialMessages.at(-1)
+    const last = threadMessages.at(-1)
 
     return last?.role === "assistant" ? last.id : undefined
   })
@@ -178,7 +202,7 @@ export function useGameChat({
     resumeStream,
   } = useChat({
     id: gameId,
-    messages: initialMessages,
+    messages: threadMessages,
     transport: chatTransport,
     /**
      * Restarts the agent once every pending tool call has an answer.
@@ -240,38 +264,77 @@ export function useGameChat({
       const credits = readTurnCredits(part)
 
       if (credits !== null) publishTurnCredits(credits)
+
+      const phase = readGameProgress(part)
+
+      if (phase !== null) {
+        if (reconnectAttempt.current.gameId === gameId) {
+          reconnectAttempt.current.receivedPhase = true
+        }
+        dispatchBuildProgress({ type: "server-phase", phase })
+      }
     },
   })
 
   const pending = status === "submitted" || status === "streaming"
   const [reconnecting, setReconnecting] = useState(false)
 
+  useEffect(() => {
+    const previous = statusTransition.current
+
+    if (previous.gameId !== gameId) {
+      statusTransition.current = { gameId, status }
+      return
+    }
+
+    statusTransition.current = { gameId, status }
+    const wasActive = previous.status === "submitted" || previous.status === "streaming"
+    const turn = progressTurn.current
+
+    if (wasActive && status === "ready") {
+      queueMicrotask(() => {
+        if (statusTransition.current.gameId === gameId && progressTurn.current === turn) {
+          dispatchBuildProgress({ type: "finish" })
+        }
+      })
+    }
+
+    if (status === "error" || error) {
+      queueMicrotask(() => {
+        if (statusTransition.current.gameId === gameId) {
+          dispatchBuildProgress({ type: "error" })
+        }
+      })
+    }
+  }, [dispatchBuildProgress, error, gameId, status])
+
+  useEffect(() => {
+    progressTurn.current += 1
+    queueMicrotask(() => dispatchBuildProgress({ type: "disconnect" }))
+  }, [dispatchBuildProgress, gameId])
+
   /**
    * Reconnects to a turn that is still streaming when the thread mounts —
    * exactly once per chat, which is the whole point of doing it here rather
    * than through `useChat`'s `resume` (see the comment on that option above).
    *
-   * The ref survives StrictMode's simulated unmount, so the effect's second
-   * run finds the chat already resumed and leaves the first reconnect alone.
-   * It records the chat id rather than a boolean because `useChat` builds a
-   * new chat when the id changes without a remount, and that one needs its
-   * own reconnect. A brand-new game has nothing to reconnect to, so it is
-   * gated on there being history.
+   * The chat id, rather than a boolean, scopes the one reconnect attempt to
+   * its current game. Cleanup invalidates that attempt before a remount or a
+   * new game can receive its late callback. A brand-new game has nothing to
+   * reconnect to, so it is gated on there being history.
    *
-   * `reconnecting` deliberately covers only this initial call. The attempt id
-   * lets a late resolution from an earlier game leave the current game's state
-   * alone, while not invalidating the in-flight call during StrictMode's second
-   * effect run.
+   * `reconnecting` deliberately covers only this initial call. A reconnect
+   * without a fresh server phase clears its fallback label when it settles.
    */
   const resumedChatId = useRef<string | null>(null)
-  const reconnectAttempt = useRef({ gameId: null as string | null, id: 0 })
-  const hasHistory = initialMessages.length > 0
+  const hasHistory = threadMessages.length > 0
 
   useEffect(() => {
     if (reconnectAttempt.current.gameId !== gameId) {
       reconnectAttempt.current = {
         gameId,
         id: reconnectAttempt.current.id + 1,
+        receivedPhase: false,
       }
       setReconnecting(false)
     }
@@ -282,21 +345,43 @@ export function useGameChat({
     resumedChatId.current = gameId
     const attempt = reconnectAttempt.current.id + 1
 
-    reconnectAttempt.current.id = attempt
+    reconnectAttempt.current = { gameId, id: attempt, receivedPhase: false }
     setReconnecting(true)
+    dispatchBuildProgress({ type: "reconnect-start" })
 
     void (async () => {
       try {
         await resumeStream()
-      } finally {
-        const currentAttempt = reconnectAttempt.current
 
+        const currentAttempt = reconnectAttempt.current
         if (currentAttempt.gameId === gameId && currentAttempt.id === attempt) {
+          if (!currentAttempt.receivedPhase) {
+            dispatchBuildProgress({ type: "reconnect-end" })
+          }
+          setReconnecting(false)
+        }
+      } catch {
+        const currentAttempt = reconnectAttempt.current
+        if (currentAttempt.gameId === gameId && currentAttempt.id === attempt) {
+          dispatchBuildProgress({ type: "disconnect" })
           setReconnecting(false)
         }
       }
     })()
-  }, [gameId, hasHistory, resumeStream])
+
+    return () => {
+      const currentAttempt = reconnectAttempt.current
+
+      if (currentAttempt.gameId === gameId && currentAttempt.id === attempt) {
+        reconnectAttempt.current = {
+          gameId,
+          id: attempt + 1,
+          receivedPhase: currentAttempt.receivedPhase,
+        }
+        resumedChatId.current = null
+      }
+    }
+  }, [dispatchBuildProgress, gameId, hasHistory, resumeStream])
 
   /**
    * The metadata records the choice on the message itself, which is what the
@@ -306,6 +391,7 @@ export function useGameChat({
    * cannot disagree.
    */
   function handleSubmit(text: string) {
+    dispatchBuildProgress({ type: "submit" })
     sendMessage({ text, metadata: outgoingMetadata(tierId) })
     setInput("")
   }
@@ -331,12 +417,15 @@ export function useGameChat({
 
     sentInitialPrompt.current = true
 
-    if (initialMessages.length === 0) {
-      sendMessage({ text: initialPrompt, metadata: outgoingMetadata(tierId) })
+    if (threadMessages.length === 0) {
+      queueMicrotask(() => {
+        dispatchBuildProgress({ type: "submit" })
+        sendMessage({ text: initialPrompt, metadata: outgoingMetadata(tierId) })
+      })
     }
 
     window.history.replaceState(null, "", `/games/${gameId}`)
-  }, [gameId, initialMessages.length, initialPrompt, tierId, sendMessage])
+  }, [dispatchBuildProgress, gameId, initialPrompt, sendMessage, threadMessages.length, tierId])
 
   /**
    * A stable per-call answer handler, built once around `addToolOutput`
@@ -353,11 +442,24 @@ export function useGameChat({
     [addToolOutput]
   )
 
+  const stopBuild = useCallback(() => {
+    const reconnect = reconnectAttempt.current
+    reconnectAttempt.current = {
+      ...reconnect,
+      id: reconnect.id + 1,
+    }
+    progressTurn.current += 1
+    setReconnecting(false)
+    dispatchBuildProgress({ type: "abort" })
+    stop()
+  }, [dispatchBuildProgress, stop])
+
   return {
     messages,
     status,
     error,
-    stop,
+    buildProgress,
+    stop: stopBuild,
     onAnswer,
     send: handleSubmit,
     tierId,

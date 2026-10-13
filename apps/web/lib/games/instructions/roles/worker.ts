@@ -32,7 +32,7 @@ You cannot delegate: there is no tool here that dispatches another agent, and th
 
 Read a file before editing it if you did not write it this turn — the sandbox keeps files between turns, so what is on disk may not match what the task description assumes.
 
-Your final response is your whole result: a short, plain-language summary of what you changed and why, addressed to the agent that dispatched you. Name the files you touched.
+Your final response is your whole result: a short, plain-language summary of what you changed and why, addressed to the agent that dispatched you. Name the files you touched. Then include an Acceptance criteria checked: line naming the criteria you actually checked, and an Acceptance criteria unverified: line naming every criterion you could not verify. A claim that you implemented something is not verification; do not mark a criterion checked unless you observed it.
 
 ${WORKER_FOCUS[focus]}`
 }

@@ -1,9 +1,15 @@
 import { DaytonaFileNotFoundError } from "@daytona/sdk"
-import { z } from "zod"
-
 import { GAME_DIR, getGameSandbox } from "@/lib/daytona/utils"
 
-import { taskSpecSchema, type TaskSpec } from "./task-spec"
+import {
+  parsePlanTasksArtifact,
+  parseStoredPlanArtifact,
+  PLAN_READINESS_POLICY_VERSION,
+  type AssetReceipt,
+  type PlanAssessment,
+  type StoredPlan,
+} from "./plan-validation"
+import type { TaskSpec } from "./task-spec"
 
 /**
  * Where a submitted plan's own artifacts live inside the game directory
@@ -17,6 +23,7 @@ import { taskSpecSchema, type TaskSpec } from "./task-spec"
 const PLAN_DIR = ".numa"
 const DESIGN_RELATIVE = `${PLAN_DIR}/design.md`
 const TASKS_RELATIVE = `${PLAN_DIR}/tasks.json`
+const PLAN_RELATIVE = `${PLAN_DIR}/plan.json`
 
 /**
  * Writes a submitted plan's two artifacts to the game's sandbox, the design
@@ -36,7 +43,9 @@ const TASKS_RELATIVE = `${PLAN_DIR}/tasks.json`
 export async function writePlan(
   gameId: string,
   design: string,
-  tasks: TaskSpec[]
+  tasks: TaskSpec[],
+  assessment: PlanAssessment,
+  requiresAssetReceipt: boolean
 ): Promise<void> {
   const { sandbox } = await getGameSandbox(gameId)
 
@@ -51,9 +60,22 @@ export async function writePlan(
     Buffer.from(JSON.stringify(tasks, null, 2), "utf-8"),
     `${GAME_DIR}/${TASKS_RELATIVE}`
   )
+
+  await sandbox.fs.uploadFile(
+    Buffer.from(JSON.stringify({
+      assessment,
+      ...(requiresAssetReceipt && assessment.assetReceipt
+        ? { readinessPolicyVersion: PLAN_READINESS_POLICY_VERSION }
+        : {}),
+    }, null, 2), "utf-8"),
+    `${GAME_DIR}/${PLAN_RELATIVE}`
+  )
 }
 
-const tasksFileSchema = z.array(taskSpecSchema)
+/** Re-export pure parsers for callers that need no sandbox. */
+export const parsePlanTasks = parsePlanTasksArtifact
+export const parseStoredPlan = parseStoredPlanArtifact
+export type { StoredPlan }
 
 /**
  * Reads back the plan `submit_plan` last accepted for this game, so
@@ -88,10 +110,23 @@ export async function readPlanTasks(gameId: string): Promise<TaskSpec[] | undefi
     throw error
   }
 
+  return parsePlanTasksArtifact(raw.toString("utf-8"))
+}
+
+/** Reads only receipts explicitly enrolled in the host-owned readiness policy. */
+export async function readPlanAssetReceipt(gameId: string): Promise<AssetReceipt | undefined> {
+  const { sandbox } = await getGameSandbox(gameId)
+
+  let raw: Buffer
   try {
-    const parsed = tasksFileSchema.safeParse(JSON.parse(raw.toString("utf-8")))
-    return parsed.success ? parsed.data : undefined
-  } catch {
-    return undefined
+    raw = await sandbox.fs.downloadFile(`${GAME_DIR}/${PLAN_RELATIVE}`)
+  } catch (error) {
+    if (error instanceof DaytonaFileNotFoundError) return undefined
+    throw error
   }
+
+  const plan = parseStoredPlanArtifact(raw.toString("utf-8"))
+  return plan?.readinessPolicyVersion === PLAN_READINESS_POLICY_VERSION
+    ? plan.assessment.assetReceipt
+    : undefined
 }

@@ -31,7 +31,19 @@ logo.svg        the numa mark, used by that welcome screen
 engine/         the game toolkit: engine, input, controls, physics, models,
                 lighting, anim, hud, sound, fx, state, math
 vendor/three/   Three.js r185 and its addons, served locally
+TEMPLATE.md     selected template descriptor, when a template is selected
+ASSETS.json     selected template asset inventory, when a template is selected
 \`\`\`
+
+A selected starter template may also add local assets plus visible root-level
+\`TEMPLATE.md\` and \`ASSETS.json\` contract files. No-template games receive none
+of them. When present, read \`TEMPLATE.md\` before planning or building a fresh
+game and use \`ASSETS.json\` as the local asset inventory and provenance record.
+For fresh selected-template plans with an accepted asset receipt, ensure the
+implementation follows the injected selected-template readiness contract:
+initialize the verification flag before eager loading and signal ready only
+when required loads and playable UI succeed. This does not prescribe task count
+and does not apply to no-template or historical no-receipt turns.
 
 \`engine/\` and \`vendor/\` are the platform, not the game. Read them freely,
 import from them, build on top of them — but do not rewrite or delete them:

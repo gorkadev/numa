@@ -8,6 +8,10 @@ import { Button } from "@workspace/ui/components/button"
 import { ChatComposer } from "@/components/chat-composer"
 import { DEFAULT_TIER_ID, type TierId } from "@/lib/ai/model-catalog"
 import { createGame } from "@/lib/games/actions"
+import {
+  DEFAULT_TEMPLATE_ID,
+  type TemplateId,
+} from "@/lib/games/templates/catalog"
 import { suggestions } from "@/lib/games/suggestions"
 
 /**
@@ -22,6 +26,7 @@ import { suggestions } from "@/lib/games/suggestions"
 export function NewGameComposer() {
   const [value, setValue] = useState("")
   const [tierId, setTierId] = useState<TierId>(DEFAULT_TIER_ID)
+  const [templateId, setTemplateId] = useState<TemplateId>(DEFAULT_TEMPLATE_ID)
   const [state, formAction, pending] = useActionState(createGame, null)
 
   /**
@@ -34,6 +39,7 @@ export function NewGameComposer() {
     const formData = new FormData()
     formData.set("prompt", prompt)
     formData.set("tier", tierId)
+    formData.set("template", templateId)
 
     startTransition(() => {
       formAction(formData)
@@ -48,6 +54,8 @@ export function NewGameComposer() {
         onSubmit={handleSubmit}
         tierId={tierId}
         onTierChange={setTierId}
+        templateId={templateId}
+        onTemplateChange={setTemplateId}
         pending={pending}
         error={state?.error ?? null}
       />

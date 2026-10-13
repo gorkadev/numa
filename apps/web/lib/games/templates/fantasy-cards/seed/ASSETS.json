@@ -1,0 +1,344 @@
+{
+  "template": {
+    "id": "fantasy-cards",
+    "version": 1
+  },
+  "assetRoot": "assets/fantasy-cards",
+  "models": [
+    {
+      "id": "card-back",
+      "path": "assets/fantasy-cards/0_Card_Back.gltf",
+      "bufferPath": "assets/fantasy-cards/0_Card_back.bin",
+      "atlasPath": "assets/fantasy-cards/Cards_Atlas.png"
+    },
+    {
+      "id": "card-container",
+      "path": "assets/fantasy-cards/0_Card_Container.gltf",
+      "bufferPath": "assets/fantasy-cards/0_Card_Container.bin"
+    },
+    {
+      "id": "card-front",
+      "path": "assets/fantasy-cards/0_Card_Front.gltf",
+      "bufferPath": "assets/fantasy-cards/0_Card_Front.bin",
+      "atlasPath": "assets/fantasy-cards/Cards_Atlas.png"
+    },
+    {
+      "id": "card-mask",
+      "path": "assets/fantasy-cards/0_Card_Mask.gltf",
+      "bufferPath": "assets/fantasy-cards/0_Card_Mask.bin"
+    },
+    {
+      "id": "beehive",
+      "path": "assets/fantasy-cards/10_Beehive.gltf",
+      "bufferPath": "assets/fantasy-cards/10_Beehive.bin",
+      "atlasPath": "assets/fantasy-cards/Cards_Atlas.png"
+    },
+    {
+      "id": "polinization",
+      "path": "assets/fantasy-cards/11_Polinization.gltf",
+      "bufferPath": "assets/fantasy-cards/11_Polinization.bin",
+      "atlasPath": "assets/fantasy-cards/Cards_Atlas.png"
+    },
+    {
+      "id": "mimic",
+      "path": "assets/fantasy-cards/12_Mimic.gltf",
+      "bufferPath": "assets/fantasy-cards/12_Mimic.bin",
+      "atlasPath": "assets/fantasy-cards/Cards_Atlas.png"
+    },
+    {
+      "id": "seamonster",
+      "path": "assets/fantasy-cards/13_SeaMonster.gltf",
+      "bufferPath": "assets/fantasy-cards/13_SeaMonster.bin",
+      "atlasPath": "assets/fantasy-cards/Cards_Atlas.png"
+    },
+    {
+      "id": "coin",
+      "path": "assets/fantasy-cards/14_Coin.gltf",
+      "bufferPath": "assets/fantasy-cards/14_Coin.bin",
+      "atlasPath": "assets/fantasy-cards/Cards_Atlas.png"
+    },
+    {
+      "id": "cult",
+      "path": "assets/fantasy-cards/15_Cult.gltf",
+      "bufferPath": "assets/fantasy-cards/15_Cult.bin",
+      "atlasPath": "assets/fantasy-cards/Cards_Atlas.png"
+    },
+    {
+      "id": "belltowers",
+      "path": "assets/fantasy-cards/16_Belltowers.gltf",
+      "bufferPath": "assets/fantasy-cards/16_Belltowers.bin",
+      "atlasPath": "assets/fantasy-cards/Cards_Atlas.png"
+    },
+    {
+      "id": "rebirth",
+      "path": "assets/fantasy-cards/17_Rebirth.gltf",
+      "bufferPath": "assets/fantasy-cards/17_Rebirth.bin",
+      "atlasPath": "assets/fantasy-cards/Cards_Atlas.png"
+    },
+    {
+      "id": "waterdragon",
+      "path": "assets/fantasy-cards/18_WaterDragon.gltf",
+      "bufferPath": "assets/fantasy-cards/18_WaterDragon.bin",
+      "atlasPath": "assets/fantasy-cards/Cards_Atlas.png"
+    },
+    {
+      "id": "oceantreasure",
+      "path": "assets/fantasy-cards/19_OceanTreasure.gltf",
+      "bufferPath": "assets/fantasy-cards/19_OceanTreasure.bin",
+      "atlasPath": "assets/fantasy-cards/Cards_Atlas.png"
+    },
+    {
+      "id": "fireball",
+      "path": "assets/fantasy-cards/1_Fireball.gltf",
+      "bufferPath": "assets/fantasy-cards/1_Fireball.bin",
+      "atlasPath": "assets/fantasy-cards/Cards_Atlas.png"
+    },
+    {
+      "id": "element-fire",
+      "path": "assets/fantasy-cards/20_Element_Fire.gltf",
+      "bufferPath": "assets/fantasy-cards/20_Element_Fire.bin",
+      "atlasPath": "assets/fantasy-cards/Cards_Atlas.png"
+    },
+    {
+      "id": "element-lightning",
+      "path": "assets/fantasy-cards/21_Element_Lightning.gltf",
+      "bufferPath": "assets/fantasy-cards/21_Element_Lightning.bin",
+      "atlasPath": "assets/fantasy-cards/Cards_Atlas.png"
+    },
+    {
+      "id": "element-air",
+      "path": "assets/fantasy-cards/22_Element_Air.gltf",
+      "bufferPath": "assets/fantasy-cards/22_Element_Air.bin",
+      "atlasPath": "assets/fantasy-cards/Cards_Atlas.png"
+    },
+    {
+      "id": "element-water",
+      "path": "assets/fantasy-cards/23_Element_Water.gltf",
+      "bufferPath": "assets/fantasy-cards/23_Element_Water.bin",
+      "atlasPath": "assets/fantasy-cards/Cards_Atlas.png"
+    },
+    {
+      "id": "element-dark",
+      "path": "assets/fantasy-cards/24_Element_Dark.gltf",
+      "bufferPath": "assets/fantasy-cards/24_Element_Dark.bin",
+      "atlasPath": "assets/fantasy-cards/Cards_Atlas.png"
+    },
+    {
+      "id": "element-earth",
+      "path": "assets/fantasy-cards/25_Element_Earth.gltf",
+      "bufferPath": "assets/fantasy-cards/25_Element_Earth.bin",
+      "atlasPath": "assets/fantasy-cards/Cards_Atlas.png"
+    },
+    {
+      "id": "bloodring",
+      "path": "assets/fantasy-cards/26_BloodRing.gltf",
+      "bufferPath": "assets/fantasy-cards/26_BloodRing.bin",
+      "atlasPath": "assets/fantasy-cards/Cards_Atlas.png"
+    },
+    {
+      "id": "book",
+      "path": "assets/fantasy-cards/27_Book.gltf",
+      "bufferPath": "assets/fantasy-cards/27_Book.bin",
+      "atlasPath": "assets/fantasy-cards/Cards_Atlas.png"
+    },
+    {
+      "id": "rolldice",
+      "path": "assets/fantasy-cards/28_RollDice.gltf",
+      "bufferPath": "assets/fantasy-cards/28_RollDice.bin",
+      "atlasPath": "assets/fantasy-cards/Cards_Atlas.png"
+    },
+    {
+      "id": "block",
+      "path": "assets/fantasy-cards/29_Block.gltf",
+      "bufferPath": "assets/fantasy-cards/29_Block.bin",
+      "atlasPath": "assets/fantasy-cards/Cards_Atlas.png"
+    },
+    {
+      "id": "trenchcoatmushrooms",
+      "path": "assets/fantasy-cards/2_TrenchcoatMushrooms.gltf",
+      "bufferPath": "assets/fantasy-cards/2_TrenchcoatMushrooms.bin",
+      "atlasPath": "assets/fantasy-cards/Cards_Atlas.png"
+    },
+    {
+      "id": "wizard",
+      "path": "assets/fantasy-cards/30_Wizard.gltf",
+      "bufferPath": "assets/fantasy-cards/30_Wizard.bin",
+      "atlasPath": "assets/fantasy-cards/Cards_Atlas.png"
+    },
+    {
+      "id": "monk",
+      "path": "assets/fantasy-cards/3_Monk.gltf",
+      "bufferPath": "assets/fantasy-cards/3_Monk.bin",
+      "atlasPath": "assets/fantasy-cards/Cards_Atlas.png"
+    },
+    {
+      "id": "market",
+      "path": "assets/fantasy-cards/4_Market.gltf",
+      "bufferPath": "assets/fantasy-cards/4_Market.bin",
+      "atlasPath": "assets/fantasy-cards/Cards_Atlas.png"
+    },
+    {
+      "id": "steal",
+      "path": "assets/fantasy-cards/5_Steal.gltf",
+      "bufferPath": "assets/fantasy-cards/5_Steal.bin",
+      "atlasPath": "assets/fantasy-cards/Cards_Atlas.png"
+    },
+    {
+      "id": "king",
+      "path": "assets/fantasy-cards/6_King.gltf",
+      "bufferPath": "assets/fantasy-cards/6_King.bin",
+      "atlasPath": "assets/fantasy-cards/Cards_Atlas.png"
+    },
+    {
+      "id": "stinktrap",
+      "path": "assets/fantasy-cards/7_StinkTrap.gltf",
+      "bufferPath": "assets/fantasy-cards/7_StinkTrap.bin",
+      "atlasPath": "assets/fantasy-cards/Cards_Atlas.png"
+    },
+    {
+      "id": "lightningwizard",
+      "path": "assets/fantasy-cards/8_LightningWizard.gltf",
+      "bufferPath": "assets/fantasy-cards/8_LightningWizard.bin",
+      "atlasPath": "assets/fantasy-cards/Cards_Atlas.png"
+    },
+    {
+      "id": "hypnosis",
+      "path": "assets/fantasy-cards/9_Hypnosis.gltf",
+      "bufferPath": "assets/fantasy-cards/9_Hypnosis.bin",
+      "atlasPath": "assets/fantasy-cards/Cards_Atlas.png"
+    }
+  ],
+  "sharedAssets": [
+    {
+      "id": "cards-atlas",
+      "path": "assets/fantasy-cards/Cards_Atlas.png",
+      "usedBy": [
+        "card-back",
+        "card-front",
+        "beehive",
+        "polinization",
+        "mimic",
+        "seamonster",
+        "coin",
+        "cult",
+        "belltowers",
+        "rebirth",
+        "waterdragon",
+        "oceantreasure",
+        "fireball",
+        "element-fire",
+        "element-lightning",
+        "element-air",
+        "element-water",
+        "element-dark",
+        "element-earth",
+        "bloodring",
+        "book",
+        "rolldice",
+        "block",
+        "trenchcoatmushrooms",
+        "wizard",
+        "monk",
+        "market",
+        "steal",
+        "king",
+        "stinktrap",
+        "lightningwizard",
+        "hypnosis"
+      ]
+    }
+  ],
+  "licenseEvidence": {
+    "path": "assets/fantasy-cards/License.txt",
+    "license": "CC0-1.0",
+    "sourcePack": "3D Card Kit - Fantasy by Quaternius"
+  },
+  "provenance": {
+    "three": {
+      "vendor/three/addons/loaders/GLTFLoader.js": {
+        "sourceUrl": "https://raw.githubusercontent.com/mrdoob/three.js/r185/examples/jsm/loaders/GLTFLoader.js",
+        "sha256": "97642d720f16cc9a0c9844934198e4d0c023bea8e89576d0f7545d03b2d103d2"
+      },
+      "vendor/three/addons/utils/SkeletonUtils.js": {
+        "sourceUrl": "https://raw.githubusercontent.com/mrdoob/three.js/r185/examples/jsm/utils/SkeletonUtils.js",
+        "sha256": "b1632a703206c3d830de9fcbe515696770d04b71a15ee6b50afa6d2c3298c86f"
+      }
+    }
+  },
+  "verification": {
+    "requiredSelectors": [
+      "[data-numa-ready='true']",
+      "[data-numa-player-card]",
+      "[data-numa-location]",
+      "[data-numa-action='primary']",
+      "[data-numa-action='end-turn']",
+      "[data-numa-action='reset']"
+    ],
+    "touchViewport": { "width": 390, "height": 844 },
+    "scenarios": [
+      {
+        "name": "initial-player-turn-is-safe",
+        "actions": [],
+        "assertions": [
+          { "path": "ready", "equals": true },
+          { "path": "phase", "equals": "player-turn" },
+          { "path": "moveCount", "equals": 0 },
+          { "path": "hiddenInformation.opponentMovesVisible", "equals": false }
+        ]
+      },
+      {
+        "name": "player-selects-card-and-location",
+        "actions": [
+          { "type": "click", "selector": "[data-numa-player-card]" },
+          { "type": "click", "selector": "[data-numa-location]" }
+        ],
+        "assertions": [
+          { "path": "selection.cardSelected", "equals": true },
+          { "path": "selection.locationSelected", "equals": true }
+        ]
+      },
+      {
+        "name": "primary-action-commits-a-move",
+        "actions": [
+          { "type": "click", "selector": "[data-numa-action='primary']" }
+        ],
+        "assertions": [
+          { "path": "lastAction", "equals": "primary" },
+          { "path": "phase", "equals": "awaiting-end-turn" },
+          { "path": "moveCount", "equals": 1 },
+          { "path": "hiddenInformation.opponentMovesVisible", "equals": false }
+        ]
+      },
+      {
+        "name": "end-turn-changes-public-phase",
+        "actions": [
+          { "type": "click", "selector": "[data-numa-action='end-turn']" }
+        ],
+        "assertions": [
+          { "path": "lastAction", "equals": "end-turn" },
+          { "path": "phase", "equals": "opponent-turn" },
+          { "path": "moveCount", "equals": 1 },
+          { "path": "hiddenInformation.opponentMovesVisible", "equals": false }
+        ]
+      },
+      {
+        "name": "reset-restores-initial-public-state",
+        "actions": [
+          { "type": "click", "selector": "[data-numa-action='reset']" }
+        ],
+        "assertions": [
+          { "path": "phase", "equals": "player-turn" },
+          { "path": "moveCount", "equals": 0 },
+          { "path": "resetCount", "equals": 1 },
+          { "path": "hiddenInformation.opponentMovesVisible", "equals": false }
+        ]
+      }
+    ]
+  },
+  "vendor": {
+    "threeRevision": "r185",
+    "commonRuntimeDependencies": [
+      "vendor/three/addons/utils/BufferGeometryUtils.js"
+    ]
+  }
+}

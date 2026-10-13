@@ -1,6 +1,11 @@
 import { DaytonaFileNotFoundError } from "@daytona/sdk"
 
 import {
+  readGameTemplateAssetVerificationPolicy,
+  readGameTemplateVerification,
+} from "@/lib/games/templates/context"
+
+import {
   MAX_ERROR_CHARS,
   VERIFY_SCRIPT_PATH,
   VERIFY_SCRIPT_PY,
@@ -41,17 +46,27 @@ const LAST_JSON_RELATIVE = `${VERIFY_DIR}/last.json`
 const SCREENSHOT_RELATIVE = `${VERIFY_DIR}/screenshot.jpg`
 
 /**
- * The check's own execution budget — the "60 s check" half of task 6.3's
- * "90 s + 60 s check budget" (the 90 s half is `ROLES.verifier.timeoutMs`,
- * `harness/roles.ts`). The unit 5 spike measured a 7.6–8.5 s band on the
- * real game template, so this leaves wide margin for a slower game or a
- * loaded sandbox rather than being tuned to the spike's own numbers.
+ * A live Cube World browser check timed out on software Chromium. Paired
+ * desktop/touch verification can take longer under WebGL load, but must
+ * remain bounded.
  */
-const CHECK_TIMEOUT_SECONDS = 60
+const CHECK_TIMEOUT_SECONDS = 120
 
 function parseErrorList(value: unknown): string[] {
   if (!Array.isArray(value)) return []
   return value.filter((entry): entry is string => typeof entry === "string")
+}
+
+function parseTemplateFailures(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return ["Template verification result was malformed: templateFailures must be an array."]
+  }
+
+  if (value.some((entry) => typeof entry !== "string")) {
+    return ["Template verification result was malformed: templateFailures entries must be strings."]
+  }
+
+  return value.map((message) => `Template verification: ${message}`)
 }
 
 /**
@@ -114,6 +129,10 @@ export async function runGameCheck(
   }
 
   const { sandbox: running } = await startGameServer(sandbox.id)
+  const [verification, assetPolicy] = await Promise.all([
+    readGameTemplateVerification(gameId),
+    readGameTemplateAssetVerificationPolicy(gameId),
+  ])
 
   await running.process.executeCommand(`mkdir -p ${GAME_DIR}/${VERIFY_DIR}`)
   await running.fs.uploadFile(Buffer.from(VERIFY_SCRIPT_PY, "utf8"), VERIFY_SCRIPT_PATH)
@@ -126,6 +145,8 @@ export async function runGameCheck(
       VERIFY_BASELINE_JSON: JSON.stringify(baseline),
       VERIFY_LAST_JSON_PATH: `${GAME_DIR}/${LAST_JSON_RELATIVE}`,
       VERIFY_SCREENSHOT_PATH: `${GAME_DIR}/${SCREENSHOT_RELATIVE}`,
+      VERIFY_TEMPLATE_VERIFICATION_JSON: JSON.stringify(verification ?? null),
+      VERIFY_TEMPLATE_ASSET_POLICY_JSON: JSON.stringify(assetPolicy ?? null),
     },
     CHECK_TIMEOUT_SECONDS
   )
@@ -161,9 +182,11 @@ export async function runGameCheck(
   const record = typeof parsed === "object" && parsed !== null ? (parsed as Record<string, unknown>) : {}
   const newErrors = parseErrorList(record.newErrors)
   const preExisting = parseErrorList(record.preExisting)
+  const templateFailures = parseTemplateFailures(record.templateFailures)
 
   const findings: VerifyFinding[] = [
     ...newErrors.map((message) => ({ message, severity: "error" as const })),
+    ...templateFailures.map((message) => ({ message, severity: "error" as const })),
     ...preExisting.map((message) => ({
       message: `${message} (pre-existing, not caused by this turn)`,
       severity: "warning" as const,
@@ -179,7 +202,7 @@ export async function runGameCheck(
   }
 
   return {
-    status: newErrors.length > 0 ? "fail" : "pass",
+    status: newErrors.length > 0 || templateFailures.length > 0 ? "fail" : "pass",
     findings,
     screenshot,
   }

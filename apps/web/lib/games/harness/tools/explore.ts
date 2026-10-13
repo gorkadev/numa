@@ -5,12 +5,32 @@ import { runtimeInstructions } from "@/lib/games/instructions/runtime"
 import { explorerInstructions } from "@/lib/games/instructions/roles/explorer"
 import { createGameTools } from "@/lib/games/tools"
 
-import { renderEnvelope } from "../envelope"
+import { renderEnvelope, type SubagentEnvelope } from "../envelope"
 import { runSubagent, type RunSubagentResult, type SubagentProgress } from "../run-subagent"
 import { ROLES } from "../roles"
+import { turnState } from "../turn-state"
 
 /** The only tools an explorer run may call — see `explorerTools` below. */
 const EXPLORER_TOOL_NAMES: readonly string[] = ["read_file", "list_files"]
+const MAX_EXPLORE_CALLS_PER_TURN = 2
+
+export type ExploreResult = RunSubagentResult | { envelope: SubagentEnvelope }
+
+/** Pure, explicit cap boundary for routing tests and the dispatch guard. */
+export function canExploreThisTurn(callsStarted: number): boolean {
+  return callsStarted < MAX_EXPLORE_CALLS_PER_TURN
+}
+
+function refusedExploreResult(): ExploreResult {
+  return {
+    envelope: {
+      agent: "explorer",
+      status: "blocked",
+      summary:
+        "Explore has already run twice this turn. Use the investigation already returned, read one specific file, or proceed with a bounded task; no further explorer dispatch is allowed this turn.",
+    },
+  }
+}
 
 /**
  * The explorer's own tool set: read-only, a subset of `createGameTools`'s
@@ -89,7 +109,12 @@ export function createExploreTool(gameId: string): Tool {
     execute: async function* (
       { question },
       { abortSignal }
-    ): AsyncGenerator<SubagentProgress | RunSubagentResult, void, void> {
+    ): AsyncGenerator<SubagentProgress | ExploreResult, void, void> {
+      if (!canExploreThisTurn(turnState.exploreCalls) || !turnState.tryStartExplore()) {
+        yield refusedExploreResult()
+        return
+      }
+
       const run = runSubagent({
         role: ROLES.explorer,
         instructions: `${explorerInstructions}\n\n${runtimeInstructions.content}`,

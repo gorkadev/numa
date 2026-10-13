@@ -314,6 +314,15 @@ export const games = pgTable(
     title: text("title").notNull(),
 
     /**
+     * The immutable starter kit selected when this game was created. The app
+     * validates the untrusted form value against its catalog before writing it;
+     * the database retains the stable id and version rather than a mutable
+     * display label or client-provided version.
+     */
+    templateId: text("template_id").notNull().default("none"),
+    templateVersion: integer("template_version").notNull().default(1),
+
+    /**
      * The game's entire chat thread, stored in the AI SDK's `UIMessage` shape —
      * the format `useChat` renders and posts — so a turn is a whole-document
      * rewrite rather than an append to a messages table. One game owns exactly

@@ -7,7 +7,7 @@ import { db } from "@workspace/db"
 import { games } from "@workspace/db/schema"
 import { eq } from "drizzle-orm"
 
-import { readRuntimeSeed } from "@/lib/games/runtime-seed"
+import { readGameSeed } from "@/lib/games/templates/seed"
 
 import { daytona } from "./client"
 
@@ -122,15 +122,15 @@ async function createSandboxForGame(gameId: string): Promise<Sandbox> {
 /**
  * Provisions the sandbox that will host one game and records it on the row.
  *
- * Called once per game, from the chat agent's `onChatStart`. Everything under
- * `lib/games/runtime/` is copied in verbatim, so the sandbox is servable from
- * the very first moment: an empty directory would make a preview URL 404 until
- * the model produced its first file, and "not built yet" is a much worse
- * signal than a placeholder page.
+ * Called once per game, from the chat agent's `onChatStart`. The common runtime
+ * and exactly the template version stored on the game row are copied before the
+ * first model turn, so the sandbox is servable from the very first moment: an
+ * empty directory would make a preview URL 404 until the model produced its
+ * first file, and "not built yet" is a much worse signal than a placeholder
+ * page.
  *
- * The whole folder is copied rather than a hardcoded `index.html` so that
- * seeding a new file into every future game is a matter of dropping it in that
- * folder — no list here to keep in sync with what is actually on disk.
+ * The common runtime and each template seed are directory-backed rather than a
+ * hardcoded file list, so an approved seed remains its own source of truth.
  *
  * The sandbox id is written last, after the seed lands. That ordering is what
  * makes a null `sandboxId` mean "no usable sandbox": persisting the id first
@@ -144,7 +144,23 @@ async function createSandboxForGame(gameId: string): Promise<Sandbox> {
 export async function createGameSandbox(
   gameId: string
 ): Promise<SandboxResult> {
-  const { folders, files } = await readRuntimeSeed()
+  const [game] = await db
+    .select({
+      templateId: games.templateId,
+      templateVersion: games.templateVersion,
+    })
+    .from(games)
+    .where(eq(games.id, gameId))
+    .limit(1)
+
+  if (!game) {
+    throw new Error(`Game ${gameId} does not exist`)
+  }
+
+  const { folders, files } = await readGameSeed(
+    game.templateId,
+    game.templateVersion
+  )
   const sandbox = await createSandboxForGame(gameId)
 
   await sandbox.fs.createFolder(GAME_DIR, "755")

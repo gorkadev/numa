@@ -10,6 +10,11 @@ import { and, eq } from "drizzle-orm"
 import { DEFAULT_TIER_ID, isTierId } from "@/lib/ai/model-catalog"
 import { resolveUtilityModel } from "@/lib/ai/model-registry"
 import { deleteGameSandboxes } from "@/lib/daytona/utils"
+import {
+  DEFAULT_TEMPLATE_ID,
+  getTemplate,
+  isTemplateId,
+} from "@/lib/games/templates/catalog"
 import { ensureBillingCustomer } from "@/lib/polar/customers"
 import { requireSession } from "@/lib/session"
 
@@ -85,6 +90,16 @@ export async function createGame(
   const tier = formData.get("tier")
   const tierId = isTierId(tier) ? tier : DEFAULT_TIER_ID
 
+  /**
+   * The selection is untrusted form data, so unknown ids resolve to the safe
+   * no-template entry. The catalog, not a client-supplied version, decides
+   * exactly what immutable id/version pair is stored on the game.
+   */
+  const templateId = formData.get("template")
+  const template = getTemplate(
+    isTemplateId(templateId) ? templateId : DEFAULT_TEMPLATE_ID
+  )
+
   const title = await generateTitle(prompt)
 
   /**
@@ -123,7 +138,12 @@ export async function createGame(
 
   const [game] = await db
     .insert(games)
-    .values({ userId: user.id, title })
+    .values({
+      userId: user.id,
+      title,
+      templateId: template.id,
+      templateVersion: template.version,
+    })
     .returning({ id: games.id })
 
   if (!game) {
@@ -147,7 +167,8 @@ export async function createGame(
    *
    * The tier goes the same way, and for the same reason it is not a column:
    * the first turn has to be sent with what the home screen was showing, and
-   * after that the thread's own picker owns the choice.
+   * after that the thread's own picker owns the choice. The template does not
+   * travel: it is already persisted with the game, and it is immutable.
    *
    * `redirect` throws a control-flow exception, so nothing below it runs.
    */

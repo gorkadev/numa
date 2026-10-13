@@ -1,0 +1,1525 @@
+{
+  "template": {
+    "id": "cube-world",
+    "version": 1
+  },
+  "assetRoot": "assets/cube-world",
+  "models": [
+    {
+      "id": "player",
+      "path": "assets/cube-world/Character_Male_1.gltf",
+      "category": "player",
+      "animations": [
+        {
+          "name": "Death",
+          "category": "death"
+        },
+        {
+          "name": "Duck",
+          "category": "reaction"
+        },
+        {
+          "name": "HitReact",
+          "category": "reaction"
+        },
+        {
+          "name": "Idle",
+          "category": "idle"
+        },
+        {
+          "name": "Idle_Attack",
+          "category": "attack"
+        },
+        {
+          "name": "Idle_Hold",
+          "category": "idle"
+        },
+        {
+          "name": "Jump",
+          "category": "jump"
+        },
+        {
+          "name": "Jump_Idle",
+          "category": "jump"
+        },
+        {
+          "name": "Jump_Land",
+          "category": "jump"
+        },
+        {
+          "name": "No",
+          "category": "emote"
+        },
+        {
+          "name": "Punch",
+          "category": "attack"
+        },
+        {
+          "name": "Run",
+          "category": "locomotion"
+        },
+        {
+          "name": "Run_Attack",
+          "category": "attack"
+        },
+        {
+          "name": "Run_Hold",
+          "category": "locomotion"
+        },
+        {
+          "name": "Walk",
+          "category": "locomotion"
+        },
+        {
+          "name": "Walk_Hold",
+          "category": "locomotion"
+        },
+        {
+          "name": "Wave",
+          "category": "emote"
+        },
+        {
+          "name": "Yes",
+          "category": "emote"
+        }
+      ]
+    },
+    {
+      "id": "goblin",
+      "path": "assets/cube-world/Goblin.gltf",
+      "category": "enemy",
+      "animations": [
+        {
+          "name": "Attack",
+          "category": "attack"
+        },
+        {
+          "name": "Death",
+          "category": "death"
+        },
+        {
+          "name": "HitRecieve",
+          "category": "reaction"
+        },
+        {
+          "name": "Idle",
+          "category": "idle"
+        },
+        {
+          "name": "Jump",
+          "category": "jump"
+        },
+        {
+          "name": "Run",
+          "category": "locomotion"
+        },
+        {
+          "name": "Walk",
+          "category": "locomotion"
+        }
+      ]
+    },
+    {
+      "id": "grass-block",
+      "path": "assets/cube-world/Block_Grass.gltf",
+      "category": "terrain"
+    },
+    {
+      "id": "tree",
+      "path": "assets/cube-world/Tree_1.gltf",
+      "category": "vegetation"
+    },
+    {
+      "id": "crystal",
+      "path": "assets/cube-world/Crystal_Small.gltf",
+      "category": "collectible"
+    },
+    {
+      "id": "animals-cat",
+      "path": "assets/cube-world/Animals/Cat.gltf",
+      "category": "animal",
+      "animations": [
+        {
+          "name": "Death",
+          "category": "death"
+        },
+        {
+          "name": "Headbutt",
+          "category": "attack"
+        },
+        {
+          "name": "Idle",
+          "category": "idle"
+        },
+        {
+          "name": "Idle_Eating",
+          "category": "idle"
+        },
+        {
+          "name": "Jump_Loop",
+          "category": "jump"
+        },
+        {
+          "name": "Jump_Start",
+          "category": "jump"
+        },
+        {
+          "name": "Run",
+          "category": "locomotion"
+        },
+        {
+          "name": "Walk",
+          "category": "locomotion"
+        }
+      ]
+    },
+    {
+      "id": "animals-chick",
+      "path": "assets/cube-world/Animals/Chick.gltf",
+      "category": "animal",
+      "animations": [
+        {
+          "name": "Attack",
+          "category": "attack"
+        },
+        {
+          "name": "Death",
+          "category": "death"
+        },
+        {
+          "name": "Idle",
+          "category": "idle"
+        },
+        {
+          "name": "Idle_Peck",
+          "category": "idle"
+        },
+        {
+          "name": "Run",
+          "category": "locomotion"
+        }
+      ]
+    },
+    {
+      "id": "animals-chicken",
+      "path": "assets/cube-world/Animals/Chicken.gltf",
+      "category": "animal",
+      "animations": [
+        {
+          "name": "Attack",
+          "category": "attack"
+        },
+        {
+          "name": "Death",
+          "category": "death"
+        },
+        {
+          "name": "Idle",
+          "category": "idle"
+        },
+        {
+          "name": "Idle_Peck",
+          "category": "idle"
+        },
+        {
+          "name": "Run",
+          "category": "locomotion"
+        }
+      ]
+    },
+    {
+      "id": "animals-dog",
+      "path": "assets/cube-world/Animals/Dog.gltf",
+      "category": "animal",
+      "animations": [
+        {
+          "name": "Death",
+          "category": "death"
+        },
+        {
+          "name": "Headbutt",
+          "category": "attack"
+        },
+        {
+          "name": "Idle",
+          "category": "idle"
+        },
+        {
+          "name": "Idle_Eating",
+          "category": "idle"
+        },
+        {
+          "name": "Jump_Loop",
+          "category": "jump"
+        },
+        {
+          "name": "Jump_Start",
+          "category": "jump"
+        },
+        {
+          "name": "Run",
+          "category": "locomotion"
+        },
+        {
+          "name": "Walk",
+          "category": "locomotion"
+        }
+      ]
+    },
+    {
+      "id": "animals-horse",
+      "path": "assets/cube-world/Animals/Horse.gltf",
+      "category": "animal",
+      "animations": [
+        {
+          "name": "Death",
+          "category": "death"
+        },
+        {
+          "name": "Headbutt",
+          "category": "attack"
+        },
+        {
+          "name": "Idle",
+          "category": "idle"
+        },
+        {
+          "name": "Idle_Eating",
+          "category": "idle"
+        },
+        {
+          "name": "Jump_Loop",
+          "category": "jump"
+        },
+        {
+          "name": "Jump_Start",
+          "category": "jump"
+        },
+        {
+          "name": "Run",
+          "category": "locomotion"
+        },
+        {
+          "name": "Walk",
+          "category": "locomotion"
+        }
+      ]
+    },
+    {
+      "id": "animals-pig",
+      "path": "assets/cube-world/Animals/Pig.gltf",
+      "category": "animal",
+      "animations": [
+        {
+          "name": "Death",
+          "category": "death"
+        },
+        {
+          "name": "Headbutt",
+          "category": "attack"
+        },
+        {
+          "name": "Idle",
+          "category": "idle"
+        },
+        {
+          "name": "Idle_Eating",
+          "category": "idle"
+        },
+        {
+          "name": "Jump_Loop",
+          "category": "jump"
+        },
+        {
+          "name": "Jump_Start",
+          "category": "jump"
+        },
+        {
+          "name": "Run",
+          "category": "locomotion"
+        },
+        {
+          "name": "Walk",
+          "category": "locomotion"
+        }
+      ]
+    },
+    {
+      "id": "animals-raccoon",
+      "path": "assets/cube-world/Animals/Raccoon.gltf",
+      "category": "animal",
+      "animations": [
+        {
+          "name": "Death",
+          "category": "death"
+        },
+        {
+          "name": "Headbutt",
+          "category": "attack"
+        },
+        {
+          "name": "Idle",
+          "category": "idle"
+        },
+        {
+          "name": "Idle_Eating",
+          "category": "idle"
+        },
+        {
+          "name": "Jump_Loop",
+          "category": "jump"
+        },
+        {
+          "name": "Jump_Start",
+          "category": "jump"
+        },
+        {
+          "name": "Run",
+          "category": "locomotion"
+        },
+        {
+          "name": "Walk",
+          "category": "locomotion"
+        }
+      ]
+    },
+    {
+      "id": "animals-sheep",
+      "path": "assets/cube-world/Animals/Sheep.gltf",
+      "category": "animal",
+      "animations": [
+        {
+          "name": "Death",
+          "category": "death"
+        },
+        {
+          "name": "Headbutt",
+          "category": "attack"
+        },
+        {
+          "name": "Idle",
+          "category": "idle"
+        },
+        {
+          "name": "Idle_Eating",
+          "category": "idle"
+        },
+        {
+          "name": "Jump_Loop",
+          "category": "jump"
+        },
+        {
+          "name": "Jump_Start",
+          "category": "jump"
+        },
+        {
+          "name": "Run",
+          "category": "locomotion"
+        },
+        {
+          "name": "Walk",
+          "category": "locomotion"
+        }
+      ]
+    },
+    {
+      "id": "animals-wolf",
+      "path": "assets/cube-world/Animals/Wolf.gltf",
+      "category": "animal",
+      "animations": [
+        {
+          "name": "Death",
+          "category": "death"
+        },
+        {
+          "name": "Headbutt",
+          "category": "attack"
+        },
+        {
+          "name": "Idle",
+          "category": "idle"
+        },
+        {
+          "name": "Idle_Eating",
+          "category": "idle"
+        },
+        {
+          "name": "Jump_Loop",
+          "category": "jump"
+        },
+        {
+          "name": "Jump_Start",
+          "category": "jump"
+        },
+        {
+          "name": "Run",
+          "category": "locomotion"
+        },
+        {
+          "name": "Walk",
+          "category": "locomotion"
+        }
+      ]
+    },
+    {
+      "id": "blocks-block-blank",
+      "path": "assets/cube-world/Blocks/Block_Blank.gltf",
+      "category": "terrain"
+    },
+    {
+      "id": "blocks-block-brick",
+      "path": "assets/cube-world/Blocks/Block_Brick.gltf",
+      "category": "terrain"
+    },
+    {
+      "id": "blocks-block-cheese",
+      "path": "assets/cube-world/Blocks/Block_Cheese.gltf",
+      "category": "terrain"
+    },
+    {
+      "id": "blocks-block-coal",
+      "path": "assets/cube-world/Blocks/Block_Coal.gltf",
+      "category": "terrain"
+    },
+    {
+      "id": "blocks-block-crate",
+      "path": "assets/cube-world/Blocks/Block_Crate.gltf",
+      "category": "terrain"
+    },
+    {
+      "id": "blocks-block-crystal",
+      "path": "assets/cube-world/Blocks/Block_Crystal.gltf",
+      "category": "terrain"
+    },
+    {
+      "id": "blocks-block-diamond",
+      "path": "assets/cube-world/Blocks/Block_Diamond.gltf",
+      "category": "terrain"
+    },
+    {
+      "id": "blocks-block-dirt",
+      "path": "assets/cube-world/Blocks/Block_Dirt.gltf",
+      "category": "terrain"
+    },
+    {
+      "id": "blocks-block-grey-bricks",
+      "path": "assets/cube-world/Blocks/Block_GreyBricks.gltf",
+      "category": "terrain"
+    },
+    {
+      "id": "blocks-block-ice",
+      "path": "assets/cube-world/Blocks/Block_Ice.gltf",
+      "category": "terrain"
+    },
+    {
+      "id": "blocks-block-metal",
+      "path": "assets/cube-world/Blocks/Block_Metal.gltf",
+      "category": "terrain"
+    },
+    {
+      "id": "blocks-block-snow",
+      "path": "assets/cube-world/Blocks/Block_Snow.gltf",
+      "category": "terrain"
+    },
+    {
+      "id": "blocks-block-stone",
+      "path": "assets/cube-world/Blocks/Block_Stone.gltf",
+      "category": "terrain"
+    },
+    {
+      "id": "blocks-block-wood-planks",
+      "path": "assets/cube-world/Blocks/Block_WoodPlanks.gltf",
+      "category": "terrain"
+    },
+    {
+      "id": "characters-character-female-1",
+      "path": "assets/cube-world/Characters/Character_Female_1.gltf",
+      "category": "character",
+      "animations": [
+        {
+          "name": "Death",
+          "category": "death"
+        },
+        {
+          "name": "Duck",
+          "category": "reaction"
+        },
+        {
+          "name": "HitReact",
+          "category": "reaction"
+        },
+        {
+          "name": "Idle",
+          "category": "idle"
+        },
+        {
+          "name": "Idle_Attack",
+          "category": "attack"
+        },
+        {
+          "name": "Idle_Hold",
+          "category": "idle"
+        },
+        {
+          "name": "Jump",
+          "category": "jump"
+        },
+        {
+          "name": "Jump_Idle",
+          "category": "jump"
+        },
+        {
+          "name": "Jump_Land",
+          "category": "jump"
+        },
+        {
+          "name": "No",
+          "category": "emote"
+        },
+        {
+          "name": "Punch",
+          "category": "attack"
+        },
+        {
+          "name": "Run",
+          "category": "locomotion"
+        },
+        {
+          "name": "Run_Attack",
+          "category": "attack"
+        },
+        {
+          "name": "Run_Hold",
+          "category": "locomotion"
+        },
+        {
+          "name": "Walk",
+          "category": "locomotion"
+        },
+        {
+          "name": "Walk_Hold",
+          "category": "locomotion"
+        },
+        {
+          "name": "Wave",
+          "category": "emote"
+        },
+        {
+          "name": "Yes",
+          "category": "emote"
+        }
+      ]
+    },
+    {
+      "id": "characters-character-female-2",
+      "path": "assets/cube-world/Characters/Character_Female_2.gltf",
+      "category": "character",
+      "animations": [
+        {
+          "name": "Death",
+          "category": "death"
+        },
+        {
+          "name": "Duck",
+          "category": "reaction"
+        },
+        {
+          "name": "HitReact",
+          "category": "reaction"
+        },
+        {
+          "name": "Idle",
+          "category": "idle"
+        },
+        {
+          "name": "Idle_Attack",
+          "category": "attack"
+        },
+        {
+          "name": "Idle_Hold",
+          "category": "idle"
+        },
+        {
+          "name": "Jump",
+          "category": "jump"
+        },
+        {
+          "name": "Jump_Idle",
+          "category": "jump"
+        },
+        {
+          "name": "Jump_Land",
+          "category": "jump"
+        },
+        {
+          "name": "No",
+          "category": "emote"
+        },
+        {
+          "name": "Punch",
+          "category": "attack"
+        },
+        {
+          "name": "Run",
+          "category": "locomotion"
+        },
+        {
+          "name": "Run_Attack",
+          "category": "attack"
+        },
+        {
+          "name": "Run_Hold",
+          "category": "locomotion"
+        },
+        {
+          "name": "Walk",
+          "category": "locomotion"
+        },
+        {
+          "name": "Walk_Hold",
+          "category": "locomotion"
+        },
+        {
+          "name": "Wave",
+          "category": "emote"
+        },
+        {
+          "name": "Yes",
+          "category": "emote"
+        }
+      ]
+    },
+    {
+      "id": "characters-character-male-2",
+      "path": "assets/cube-world/Characters/Character_Male_2.gltf",
+      "category": "character",
+      "animations": [
+        {
+          "name": "Death",
+          "category": "death"
+        },
+        {
+          "name": "Duck",
+          "category": "reaction"
+        },
+        {
+          "name": "HitReact",
+          "category": "reaction"
+        },
+        {
+          "name": "Idle",
+          "category": "idle"
+        },
+        {
+          "name": "Idle_Attack",
+          "category": "attack"
+        },
+        {
+          "name": "Idle_Hold",
+          "category": "idle"
+        },
+        {
+          "name": "Jump",
+          "category": "jump"
+        },
+        {
+          "name": "Jump_Idle",
+          "category": "jump"
+        },
+        {
+          "name": "Jump_Land",
+          "category": "jump"
+        },
+        {
+          "name": "No",
+          "category": "emote"
+        },
+        {
+          "name": "Punch",
+          "category": "attack"
+        },
+        {
+          "name": "Run",
+          "category": "locomotion"
+        },
+        {
+          "name": "Run_Attack",
+          "category": "attack"
+        },
+        {
+          "name": "Run_Hold",
+          "category": "locomotion"
+        },
+        {
+          "name": "Walk",
+          "category": "locomotion"
+        },
+        {
+          "name": "Walk_Hold",
+          "category": "locomotion"
+        },
+        {
+          "name": "Wave",
+          "category": "emote"
+        },
+        {
+          "name": "Yes",
+          "category": "emote"
+        }
+      ]
+    },
+    {
+      "id": "enemies-demon",
+      "path": "assets/cube-world/Enemies/Demon.gltf",
+      "category": "enemy",
+      "animations": [
+        {
+          "name": "Attack",
+          "category": "attack"
+        },
+        {
+          "name": "Death",
+          "category": "death"
+        },
+        {
+          "name": "HitRecieve",
+          "category": "reaction"
+        },
+        {
+          "name": "Idle",
+          "category": "idle"
+        },
+        {
+          "name": "Jump",
+          "category": "jump"
+        },
+        {
+          "name": "Run",
+          "category": "locomotion"
+        },
+        {
+          "name": "Walk",
+          "category": "locomotion"
+        }
+      ]
+    },
+    {
+      "id": "enemies-giant",
+      "path": "assets/cube-world/Enemies/Giant.gltf",
+      "category": "enemy",
+      "animations": [
+        {
+          "name": "Attack",
+          "category": "attack"
+        },
+        {
+          "name": "Death",
+          "category": "death"
+        },
+        {
+          "name": "HitRecieve",
+          "category": "reaction"
+        },
+        {
+          "name": "Idle",
+          "category": "idle"
+        },
+        {
+          "name": "Jump",
+          "category": "jump"
+        },
+        {
+          "name": "Run",
+          "category": "locomotion"
+        },
+        {
+          "name": "Walk",
+          "category": "locomotion"
+        }
+      ]
+    },
+    {
+      "id": "enemies-hedgehog",
+      "path": "assets/cube-world/Enemies/Hedgehog.gltf",
+      "category": "enemy",
+      "animations": [
+        {
+          "name": "Attack",
+          "category": "attack"
+        },
+        {
+          "name": "Death",
+          "category": "death"
+        },
+        {
+          "name": "Idle",
+          "category": "idle"
+        }
+      ]
+    },
+    {
+      "id": "enemies-skeleton",
+      "path": "assets/cube-world/Enemies/Skeleton.gltf",
+      "category": "enemy",
+      "animations": [
+        {
+          "name": "Attack",
+          "category": "attack"
+        },
+        {
+          "name": "Death",
+          "category": "death"
+        },
+        {
+          "name": "HitRecieve",
+          "category": "reaction"
+        },
+        {
+          "name": "Idle",
+          "category": "idle"
+        },
+        {
+          "name": "Jump",
+          "category": "jump"
+        },
+        {
+          "name": "Run",
+          "category": "locomotion"
+        },
+        {
+          "name": "Walk",
+          "category": "locomotion"
+        }
+      ]
+    },
+    {
+      "id": "enemies-skeleton-armor",
+      "path": "assets/cube-world/Enemies/Skeleton_Armor.gltf",
+      "category": "enemy",
+      "animations": [
+        {
+          "name": "Attack",
+          "category": "attack"
+        },
+        {
+          "name": "Death",
+          "category": "death"
+        },
+        {
+          "name": "HitRecieve",
+          "category": "reaction"
+        },
+        {
+          "name": "Idle",
+          "category": "idle"
+        },
+        {
+          "name": "Jump",
+          "category": "jump"
+        },
+        {
+          "name": "Run",
+          "category": "locomotion"
+        },
+        {
+          "name": "Walk",
+          "category": "locomotion"
+        }
+      ]
+    },
+    {
+      "id": "enemies-wizard",
+      "path": "assets/cube-world/Enemies/Wizard.gltf",
+      "category": "enemy",
+      "animations": [
+        {
+          "name": "Attack",
+          "category": "attack"
+        },
+        {
+          "name": "Death",
+          "category": "death"
+        },
+        {
+          "name": "HitRecieve",
+          "category": "reaction"
+        },
+        {
+          "name": "Idle",
+          "category": "idle"
+        },
+        {
+          "name": "Jump",
+          "category": "jump"
+        },
+        {
+          "name": "Run",
+          "category": "locomotion"
+        },
+        {
+          "name": "Walk",
+          "category": "locomotion"
+        }
+      ]
+    },
+    {
+      "id": "enemies-yeti",
+      "path": "assets/cube-world/Enemies/Yeti.gltf",
+      "category": "enemy",
+      "animations": [
+        {
+          "name": "Attack",
+          "category": "attack"
+        },
+        {
+          "name": "Death",
+          "category": "death"
+        },
+        {
+          "name": "HitRecieve",
+          "category": "reaction"
+        },
+        {
+          "name": "Idle",
+          "category": "idle"
+        },
+        {
+          "name": "Jump",
+          "category": "jump"
+        },
+        {
+          "name": "Run",
+          "category": "locomotion"
+        },
+        {
+          "name": "Walk",
+          "category": "locomotion"
+        }
+      ]
+    },
+    {
+      "id": "enemies-zombie",
+      "path": "assets/cube-world/Enemies/Zombie.gltf",
+      "category": "enemy",
+      "animations": [
+        {
+          "name": "Attack",
+          "category": "attack"
+        },
+        {
+          "name": "Death",
+          "category": "death"
+        },
+        {
+          "name": "HitRecieve",
+          "category": "reaction"
+        },
+        {
+          "name": "Idle",
+          "category": "idle"
+        },
+        {
+          "name": "Jump",
+          "category": "jump"
+        },
+        {
+          "name": "Run",
+          "category": "locomotion"
+        },
+        {
+          "name": "Walk",
+          "category": "locomotion"
+        }
+      ]
+    },
+    {
+      "id": "environment-bamboo",
+      "path": "assets/cube-world/Environment/Bamboo.gltf",
+      "category": "vegetation"
+    },
+    {
+      "id": "environment-bamboo-mid",
+      "path": "assets/cube-world/Environment/Bamboo_Mid.gltf",
+      "category": "vegetation"
+    },
+    {
+      "id": "environment-bamboo-small",
+      "path": "assets/cube-world/Environment/Bamboo_Small.gltf",
+      "category": "vegetation"
+    },
+    {
+      "id": "environment-bush",
+      "path": "assets/cube-world/Environment/Bush.gltf",
+      "category": "vegetation"
+    },
+    {
+      "id": "environment-button",
+      "path": "assets/cube-world/Environment/Button.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "environment-cart",
+      "path": "assets/cube-world/Environment/Cart.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "environment-chest-closed",
+      "path": "assets/cube-world/Environment/Chest_Closed.gltf",
+      "category": "structure"
+    },
+    {
+      "id": "environment-chest-open",
+      "path": "assets/cube-world/Environment/Chest_Open.gltf",
+      "category": "structure"
+    },
+    {
+      "id": "environment-crystal-big",
+      "path": "assets/cube-world/Environment/Crystal_Big.gltf",
+      "category": "collectible"
+    },
+    {
+      "id": "environment-dead-tree-1",
+      "path": "assets/cube-world/Environment/DeadTree_1.gltf",
+      "category": "vegetation"
+    },
+    {
+      "id": "environment-dead-tree-2",
+      "path": "assets/cube-world/Environment/DeadTree_2.gltf",
+      "category": "vegetation"
+    },
+    {
+      "id": "environment-dead-tree-3",
+      "path": "assets/cube-world/Environment/DeadTree_3.gltf",
+      "category": "vegetation"
+    },
+    {
+      "id": "environment-door-closed",
+      "path": "assets/cube-world/Environment/Door_Closed.gltf",
+      "category": "structure"
+    },
+    {
+      "id": "environment-fence-center",
+      "path": "assets/cube-world/Environment/Fence_Center.gltf",
+      "category": "structure"
+    },
+    {
+      "id": "environment-fence-corner",
+      "path": "assets/cube-world/Environment/Fence_Corner.gltf",
+      "category": "structure"
+    },
+    {
+      "id": "environment-fence-end",
+      "path": "assets/cube-world/Environment/Fence_End.gltf",
+      "category": "structure"
+    },
+    {
+      "id": "environment-fence-t",
+      "path": "assets/cube-world/Environment/Fence_T.gltf",
+      "category": "structure"
+    },
+    {
+      "id": "environment-flowers-1",
+      "path": "assets/cube-world/Environment/Flowers_1.gltf",
+      "category": "vegetation"
+    },
+    {
+      "id": "environment-flowers-2",
+      "path": "assets/cube-world/Environment/Flowers_2.gltf",
+      "category": "vegetation"
+    },
+    {
+      "id": "environment-grass-big",
+      "path": "assets/cube-world/Environment/Grass_Big.gltf",
+      "category": "vegetation"
+    },
+    {
+      "id": "environment-grass-small",
+      "path": "assets/cube-world/Environment/Grass_Small.gltf",
+      "category": "vegetation"
+    },
+    {
+      "id": "environment-key",
+      "path": "assets/cube-world/Environment/Key.gltf",
+      "category": "collectible"
+    },
+    {
+      "id": "environment-lever-left",
+      "path": "assets/cube-world/Environment/Lever_Left.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "environment-lever-right",
+      "path": "assets/cube-world/Environment/Lever_Right.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "environment-mushroom",
+      "path": "assets/cube-world/Environment/Mushroom.gltf",
+      "category": "vegetation"
+    },
+    {
+      "id": "environment-plant-2",
+      "path": "assets/cube-world/Environment/Plant_2.gltf",
+      "category": "vegetation"
+    },
+    {
+      "id": "environment-plant-3",
+      "path": "assets/cube-world/Environment/Plant_3.gltf",
+      "category": "vegetation"
+    },
+    {
+      "id": "environment-rail-corner",
+      "path": "assets/cube-world/Environment/Rail_Corner.gltf",
+      "category": "structure"
+    },
+    {
+      "id": "environment-rail-incline",
+      "path": "assets/cube-world/Environment/Rail_Incline.gltf",
+      "category": "structure"
+    },
+    {
+      "id": "environment-rail-straight",
+      "path": "assets/cube-world/Environment/Rail_Straight.gltf",
+      "category": "structure"
+    },
+    {
+      "id": "environment-rock1",
+      "path": "assets/cube-world/Environment/Rock1.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "environment-rock2",
+      "path": "assets/cube-world/Environment/Rock2.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "environment-tree-2",
+      "path": "assets/cube-world/Environment/Tree_2.gltf",
+      "category": "vegetation"
+    },
+    {
+      "id": "environment-tree-3",
+      "path": "assets/cube-world/Environment/Tree_3.gltf",
+      "category": "vegetation"
+    },
+    {
+      "id": "pixel-blocks-block-blank",
+      "path": "assets/cube-world/Pixel-Blocks/Block_Blank.gltf",
+      "category": "pixel-terrain"
+    },
+    {
+      "id": "pixel-blocks-block-square",
+      "path": "assets/cube-world/Pixel-Blocks/Block_Square.gltf",
+      "category": "pixel-terrain"
+    },
+    {
+      "id": "pixel-blocks-bricks-dark",
+      "path": "assets/cube-world/Pixel-Blocks/Bricks_Dark.gltf",
+      "category": "pixel-terrain"
+    },
+    {
+      "id": "pixel-blocks-bricks-grey",
+      "path": "assets/cube-world/Pixel-Blocks/Bricks_Grey.gltf",
+      "category": "pixel-terrain"
+    },
+    {
+      "id": "pixel-blocks-bricks-red",
+      "path": "assets/cube-world/Pixel-Blocks/Bricks_Red.gltf",
+      "category": "pixel-terrain"
+    },
+    {
+      "id": "pixel-blocks-bricks-yellow",
+      "path": "assets/cube-world/Pixel-Blocks/Bricks_Yellow.gltf",
+      "category": "pixel-terrain"
+    },
+    {
+      "id": "pixel-blocks-coal",
+      "path": "assets/cube-world/Pixel-Blocks/Coal.gltf",
+      "category": "pixel-terrain"
+    },
+    {
+      "id": "pixel-blocks-diamond",
+      "path": "assets/cube-world/Pixel-Blocks/Diamond.gltf",
+      "category": "pixel-terrain"
+    },
+    {
+      "id": "pixel-blocks-dirt",
+      "path": "assets/cube-world/Pixel-Blocks/Dirt.gltf",
+      "category": "pixel-terrain"
+    },
+    {
+      "id": "pixel-blocks-exclamation",
+      "path": "assets/cube-world/Pixel-Blocks/Exclamation.gltf",
+      "category": "pixel-terrain"
+    },
+    {
+      "id": "pixel-blocks-grass",
+      "path": "assets/cube-world/Pixel-Blocks/Grass.gltf",
+      "category": "pixel-terrain"
+    },
+    {
+      "id": "pixel-blocks-ice",
+      "path": "assets/cube-world/Pixel-Blocks/Ice.gltf",
+      "category": "pixel-terrain"
+    },
+    {
+      "id": "pixel-blocks-leaves",
+      "path": "assets/cube-world/Pixel-Blocks/Leaves.gltf",
+      "category": "pixel-terrain"
+    },
+    {
+      "id": "pixel-blocks-question-mark",
+      "path": "assets/cube-world/Pixel-Blocks/QuestionMark.gltf",
+      "category": "pixel-terrain"
+    },
+    {
+      "id": "pixel-blocks-snow",
+      "path": "assets/cube-world/Pixel-Blocks/Snow.gltf",
+      "category": "pixel-terrain"
+    },
+    {
+      "id": "pixel-blocks-stone",
+      "path": "assets/cube-world/Pixel-Blocks/Stone.gltf",
+      "category": "pixel-terrain"
+    },
+    {
+      "id": "pixel-blocks-wood",
+      "path": "assets/cube-world/Pixel-Blocks/Wood.gltf",
+      "category": "pixel-terrain"
+    },
+    {
+      "id": "pixel-blocks-wood-planks",
+      "path": "assets/cube-world/Pixel-Blocks/WoodPlanks.gltf",
+      "category": "pixel-terrain"
+    },
+    {
+      "id": "tools-axe-diamond",
+      "path": "assets/cube-world/Tools/Axe_Diamond.gltf",
+      "category": "tool"
+    },
+    {
+      "id": "tools-axe-gold",
+      "path": "assets/cube-world/Tools/Axe_Gold.gltf",
+      "category": "tool"
+    },
+    {
+      "id": "tools-axe-stone",
+      "path": "assets/cube-world/Tools/Axe_Stone.gltf",
+      "category": "tool"
+    },
+    {
+      "id": "tools-axe-wood",
+      "path": "assets/cube-world/Tools/Axe_Wood.gltf",
+      "category": "tool"
+    },
+    {
+      "id": "tools-pickaxe-diamond",
+      "path": "assets/cube-world/Tools/Pickaxe_Diamond.gltf",
+      "category": "tool"
+    },
+    {
+      "id": "tools-pickaxe-gold",
+      "path": "assets/cube-world/Tools/Pickaxe_Gold.gltf",
+      "category": "tool"
+    },
+    {
+      "id": "tools-pickaxe-stone",
+      "path": "assets/cube-world/Tools/Pickaxe_Stone.gltf",
+      "category": "tool"
+    },
+    {
+      "id": "tools-pickaxe-wood",
+      "path": "assets/cube-world/Tools/Pickaxe_Wood.gltf",
+      "category": "tool"
+    },
+    {
+      "id": "tools-shovel-diamond",
+      "path": "assets/cube-world/Tools/Shovel_Diamond.gltf",
+      "category": "tool"
+    },
+    {
+      "id": "tools-shovel-gold",
+      "path": "assets/cube-world/Tools/Shovel_Gold.gltf",
+      "category": "tool"
+    },
+    {
+      "id": "tools-shovel-stone",
+      "path": "assets/cube-world/Tools/Shovel_Stone.gltf",
+      "category": "tool"
+    },
+    {
+      "id": "tools-shovel-wood",
+      "path": "assets/cube-world/Tools/Shovel_Wood.gltf",
+      "category": "tool"
+    },
+    {
+      "id": "tools-sword-diamond",
+      "path": "assets/cube-world/Tools/Sword_Diamond.gltf",
+      "category": "tool"
+    },
+    {
+      "id": "tools-sword-gold",
+      "path": "assets/cube-world/Tools/Sword_Gold.gltf",
+      "category": "tool"
+    },
+    {
+      "id": "tools-sword-stone",
+      "path": "assets/cube-world/Tools/Sword_Stone.gltf",
+      "category": "tool"
+    },
+    {
+      "id": "tools-sword-wood",
+      "path": "assets/cube-world/Tools/Sword_Wood.gltf",
+      "category": "tool"
+    }
+  ],
+  "licenseRisk": {
+    "status": "missing-local-evidence",
+    "sourcePack": "Cube World - Aug 2023",
+    "exposureAccepted": true,
+    "note": "The local source pack contains no bundled LICENSE, README, ATTRIBUTION, NOTICE, or COPYING evidence."
+  },
+  "provenance": {
+    "three": {
+      "vendor/three/addons/loaders/GLTFLoader.js": {
+        "sourceUrl": "https://raw.githubusercontent.com/mrdoob/three.js/r185/examples/jsm/loaders/GLTFLoader.js",
+        "sha256": "97642d720f16cc9a0c9844934198e4d0c023bea8e89576d0f7545d03b2d103d2"
+      },
+      "vendor/three/addons/utils/SkeletonUtils.js": {
+        "sourceUrl": "https://raw.githubusercontent.com/mrdoob/three.js/r185/examples/jsm/utils/SkeletonUtils.js",
+        "sha256": "b1632a703206c3d830de9fcbe515696770d04b71a15ee6b50afa6d2c3298c86f"
+      }
+    }
+  },
+  "verification": {
+    "requiredSelectors": [
+      "[data-numa-ready='true']",
+      "[data-numa-action='collect']",
+      "[data-numa-action='engage']",
+      "[data-numa-action='attack']",
+      "[data-numa-action='reset']"
+    ],
+    "touchViewport": {
+      "width": 390,
+      "height": 844
+    },
+    "scenarios": [
+      {
+        "name": "initial-explore-state",
+        "actions": [],
+        "assertions": [
+          {
+            "path": "ready",
+            "equals": true
+          },
+          {
+            "path": "phase",
+            "equals": "explore"
+          },
+          {
+            "path": "crystalCount",
+            "equals": 0
+          },
+          {
+            "path": "enemyDefeated",
+            "equals": false
+          }
+        ]
+      },
+      {
+        "name": "collects-one-crystal",
+        "actions": [
+          {
+            "type": "click",
+            "selector": "[data-numa-action='collect']"
+          }
+        ],
+        "assertions": [
+          {
+            "path": "crystalCount",
+            "equals": 1
+          },
+          {
+            "path": "lastAction",
+            "equals": "collect"
+          }
+        ]
+      },
+      {
+        "name": "engages-the-goblin",
+        "actions": [
+          {
+            "type": "click",
+            "selector": "[data-numa-action='engage']"
+          }
+        ],
+        "assertions": [
+          {
+            "path": "phase",
+            "equals": "encounter"
+          },
+          {
+            "path": "lastAction",
+            "equals": "engage"
+          }
+        ]
+      },
+      {
+        "name": "attacks-to-victory",
+        "actions": [
+          {
+            "type": "click",
+            "selector": "[data-numa-action='attack']"
+          }
+        ],
+        "assertions": [
+          {
+            "path": "phase",
+            "equals": "victory"
+          },
+          {
+            "path": "enemyDefeated",
+            "equals": true
+          },
+          {
+            "path": "lastAction",
+            "equals": "attack"
+          }
+        ]
+      },
+      {
+        "name": "reset-restores-explore-state",
+        "actions": [
+          {
+            "type": "click",
+            "selector": "[data-numa-action='reset']"
+          }
+        ],
+        "assertions": [
+          {
+            "path": "phase",
+            "equals": "explore"
+          },
+          {
+            "path": "crystalCount",
+            "equals": 0
+          },
+          {
+            "path": "enemyDefeated",
+            "equals": false
+          },
+          {
+            "path": "resetCount",
+            "equals": 1
+          }
+        ]
+      }
+    ]
+  },
+  "vendor": {
+    "threeRevision": "r185",
+    "commonRuntimeDependencies": [
+      "vendor/three/addons/utils/BufferGeometryUtils.js"
+    ]
+  }
+}

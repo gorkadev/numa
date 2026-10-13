@@ -5,6 +5,7 @@ import {
   isToolUIPart,
   stepCountIs,
   streamText,
+  type Instructions,
   type ToolSet,
   type UIMessage,
 } from "ai"
@@ -28,8 +29,10 @@ import { createLoadSkillTool } from "@/lib/games/harness/tools/load-skill"
 import { createPlanTool } from "@/lib/games/harness/tools/plan"
 import { createRunTasksTool } from "@/lib/games/harness/tools/run-tasks"
 import { createVerifyTool } from "@/lib/games/harness/tools/verify"
-import { turnState } from "@/lib/games/harness/turn-state"
+import { turnState, type TurnVerifyOutcome } from "@/lib/games/harness/turn-state"
+import { extendTerminalInstructions } from "@/lib/games/harness/terminal-instructions"
 import { gameInstructions } from "@/lib/games/instructions"
+import { gameProgressChunk, withoutGameProgress } from "@/lib/games/build-progress"
 import { gameRevisionChunk } from "@/lib/games/revision"
 import { loadGameThread, saveGameThread } from "@/lib/games/thread"
 import { createGameTools } from "@/lib/games/tools"
@@ -80,7 +83,7 @@ const MUTATING_TOOLS = new Set(["write_file", "replace_text", "delete_file"])
 type RunTasksOutput = { outcomes?: { wroteFiles?: unknown }[] }
 
 /** Whether a finished `run_tasks` call wrote, edited or deleted a file. */
-function runTasksWroteFiles(output: unknown): boolean {
+export function runTasksWroteFiles(output: unknown): boolean {
   if (typeof output !== "object" || output === null) return false
 
   const outcomes = (output as RunTasksOutput).outcomes
@@ -103,7 +106,7 @@ function runTasksWroteFiles(output: unknown): boolean {
  * tool part is checked separately, through its own stored result shape
  * (`RunTasksOutput` above) rather than `MUTATING_TOOLS`.
  */
-function changedGameFiles(message: UIMessage | undefined): boolean {
+export function changedGameFiles(message: UIMessage | undefined): boolean {
   if (!message) return false
 
   return message.parts.some((part) => {
@@ -123,6 +126,122 @@ function changedGameFiles(message: UIMessage | undefined): boolean {
     }
 
     return false
+  })
+}
+
+type PriorToolResult = { toolName?: unknown; result?: unknown; output?: unknown }
+type PriorStep = { toolResults?: unknown }
+
+/**
+ * Reads AI SDK prepareStep history structurally so both direct game writes and
+ * dispatched worker writes drive the same routing guard on later steps.
+ */
+export function priorStepsChangedGameFiles(steps: unknown): boolean {
+  if (!Array.isArray(steps)) return false
+
+  return steps.some((step) => {
+    if (typeof step !== "object" || step === null) return false
+    const toolResults = (step as PriorStep).toolResults
+    if (!Array.isArray(toolResults)) return false
+
+    return toolResults.some((toolResult) => {
+      if (typeof toolResult !== "object" || toolResult === null) return false
+      const { toolName, result, output } = toolResult as PriorToolResult
+      const value = result ?? output
+
+      if (typeof toolName !== "string") return false
+      if (MUTATING_TOOLS.has(toolName)) {
+        return typeof value !== "object" || value === null || !("error" in value)
+      }
+      return toolName === "run_tasks" && runTasksWroteFiles(value)
+    })
+  })
+}
+
+export type GameVerificationTerminalStatus = "completed" | "blocked" | "unchanged"
+
+/** Pure completion classification shared by persistence and routing checks. */
+export function gameVerificationTerminalStatus(
+  outcome: TurnVerifyOutcome,
+  changedFiles: boolean,
+  unfinishedTaskIds: readonly string[],
+  interrupted = false
+): GameVerificationTerminalStatus {
+  if (!changedFiles) return "unchanged"
+  return !interrupted && outcome === "pass" && unfinishedTaskIds.length === 0 ? "completed" : "blocked"
+}
+
+export function finalResponseInstruction(
+  outcome: TurnVerifyOutcome,
+  unfinishedTaskIds: readonly string[]
+): string {
+  if (outcome === "pass" && unfinishedTaskIds.length === 0) {
+    return "Verification passed and no dispatched tasks remain unfinished; concise success language is allowed."
+  }
+  if (unfinishedTaskIds.length > 0) {
+    return `Do not claim success. Work remains unfinished: ${unfinishedTaskIds.join(", ")}.`
+  }
+  return `Do not claim verified success. Verification is ${outcome === "not-run" ? "not run" : outcome}.`
+}
+
+export type GameVerificationData = {
+  outcome: TurnVerifyOutcome
+  changedGameFiles: boolean
+  unfinishedTaskIds: string[]
+  status: GameVerificationTerminalStatus
+}
+
+/** Builds the identical host-owned stream and persistence payload for a completed turn. */
+export function createGameVerificationData(
+  outcome: TurnVerifyOutcome,
+  changedFiles: boolean,
+  unfinishedTaskIds: Iterable<string>,
+  interrupted = false
+): GameVerificationData {
+  const unfinished = [...unfinishedTaskIds]
+  return {
+    outcome,
+    changedGameFiles: changedFiles,
+    unfinishedTaskIds: unfinished,
+    status: gameVerificationTerminalStatus(outcome, changedFiles, unfinished, interrupted),
+  }
+}
+
+type MessageWithParts = { role?: unknown; parts?: unknown[] }
+type GameVerificationPart = { type?: unknown }
+
+function isGameVerificationPart(part: unknown): boolean {
+  return typeof part === "object" && part !== null && (part as GameVerificationPart).type === "data-game-verification"
+}
+
+/** Replaces any existing terminal record and removes duplicates before persistence. */
+export function withGameVerification<T>(messages: readonly T[], data: GameVerificationData): T[] {
+  if ((messages[messages.length - 1] as MessageWithParts | undefined)?.role !== "assistant") return [...messages]
+  const lastAssistantIndex = [...messages]
+    .map((message, index) => ({ message, index }))
+    .reverse()
+    .find(({ message }) => {
+      const candidate = message as MessageWithParts
+      return candidate?.role === "assistant" && Array.isArray(candidate.parts)
+    })?.index
+
+  if (lastAssistantIndex === undefined) return [...messages]
+
+  return messages.map((message, index) => {
+    if (index !== lastAssistantIndex) return message
+    const candidate = message as MessageWithParts
+    let replaced = false
+    const parts = (candidate.parts ?? []).flatMap((part) => {
+      if (!isGameVerificationPart(part)) return [part]
+      if (replaced) return []
+      replaced = true
+      return [{ type: "data-game-verification", data }]
+    })
+
+    return {
+      ...candidate,
+      parts: replaced ? parts : [...parts, { type: "data-game-verification", data }],
+    } as T
   })
 }
 
@@ -181,6 +300,25 @@ function activeToolNames<T extends ToolSet>(tools: T): (keyof T & string)[] {
   return Object.keys(tools).filter(
     (name) => HARNESS_PHASES || !PHASE_TOOLS.has(name)
   ) as (keyof T & string)[]
+}
+
+export type HarnessRoutingState = {
+  changedGameFiles: boolean
+  outcome: TurnVerifyOutcome
+  verifyCalls: number
+  postVerifyRunTasksCalls: number
+}
+
+/** Pure phase router: verification is a host-enforced state machine, not a prompt suggestion. */
+export function routeHarnessTools(state: HarnessRoutingState): string[] | undefined {
+  if (state.outcome === "pass" || state.outcome === "refused") return []
+
+  if (state.outcome === "fail" || state.outcome === "unavailable") {
+    if (state.verifyCalls >= 2) return []
+    return state.postVerifyRunTasksCalls === 0 ? ["run_tasks"] : ["verify"]
+  }
+
+  return state.changedGameFiles ? ["verify"] : undefined
 }
 
 /**
@@ -351,9 +489,15 @@ export const gameChat = chat.agent({
   tools: ({ chatId }) => ({
     ...createGameTools(chatId, { readBudgetGuard: orchestratorReadBudgetGuard }),
     explore: createExploreTool(chatId),
-    plan: createPlanTool(chatId),
-    run_tasks: createRunTasksTool(chatId),
-    verify: createVerifyTool(chatId),
+    plan: createPlanTool(chatId, {
+      onStart: () => chat.response.write(gameProgressChunk("planning")),
+    }),
+    run_tasks: createRunTasksTool(chatId, {
+      onStart: () => chat.response.write(gameProgressChunk("building")),
+    }),
+    verify: createVerifyTool(chatId, {
+      onStart: () => chat.response.write(gameProgressChunk("verifying")),
+    }),
     load_skill: createLoadSkillTool(),
   }),
 
@@ -459,6 +603,7 @@ export const gameChat = chat.agent({
    * first turn.
    */
   onChatStart: async ({ chatId }) => {
+    chat.response.write(gameProgressChunk("workspace"))
     await createGameSandbox(chatId)
   },
 
@@ -508,7 +653,7 @@ export const gameChat = chat.agent({
 
     await saveGameThread({
       gameId: chatId,
-      messages: withThreadTier(uiMessages, clientData?.tier),
+      messages: withoutGameProgress(withThreadTier(uiMessages, clientData?.tier)),
     })
   },
 
@@ -535,6 +680,10 @@ export const gameChat = chat.agent({
     stopped,
     error,
   }) => {
+    if (!stopped && !error) {
+      writer.write(gameProgressChunk("finalizing"))
+    }
+
     /**
      * What the turn cost, sent before the balance in Polar has moved.
      *
@@ -575,7 +724,16 @@ export const gameChat = chat.agent({
       )
     }
 
-    if (!changedGameFiles(responseMessage)) return
+    const currentTurn = turnState.isCurrentTurn(turn)
+    const verificationData = createGameVerificationData(
+      currentTurn ? turnState.verifyOutcome : "not-run",
+      changedGameFiles(responseMessage),
+      currentTurn ? turnState.unfinishedTaskIds : [],
+      Boolean(stopped || error)
+    )
+    if (responseMessage) writer.write({ type: "data-game-verification", data: verificationData })
+
+    if (!verificationData.changedGameFiles) return
 
     writer.write(gameRevisionChunk(Date.now()))
   },
@@ -609,6 +767,7 @@ export const gameChat = chat.agent({
     runId,
     finishReason,
     stopped,
+    error,
   }) => {
     const modelId = orchestratorEntryId()
 
@@ -640,9 +799,22 @@ export const gameChat = chat.agent({
      * spent on the sidebar, so the thread can still answer "what did this turn
      * take?" after a reload. See `lib/ai/message-meta.ts`.
      */
+    const currentTurn = turnState.isCurrentTurn(turn)
+    const verificationData = createGameVerificationData(
+      currentTurn ? turnState.verifyOutcome : "not-run",
+      changedGameFiles(uiMessages[uiMessages.length - 1]?.role === "assistant" ? uiMessages[uiMessages.length - 1] : undefined),
+      currentTurn ? turnState.unfinishedTaskIds : [],
+      Boolean(stopped || error)
+    )
+
     await saveGameThread({
       gameId: chatId,
-      messages: withTurnMeta(withThreadTier(uiMessages, clientData?.tier), cost),
+      messages: withoutGameProgress(
+        withTurnMeta(
+          withThreadTier(currentTurn ? withGameVerification(uiMessages, verificationData) : uiMessages, clientData?.tier),
+          cost
+        )
+      ),
       chatAccessToken,
       lastEventId,
     })
@@ -765,9 +937,57 @@ export const gameChat = chat.agent({
 
         const base = (await injectedPrepareStep?.(options)) as Record<string, unknown> | undefined
 
-        if (options.stepNumber < LAST_ORCHESTRATOR_STEP_INDEX) return base
+        const routedTools = HARNESS_PHASES
+          ? routeHarnessTools({
+              changedGameFiles: priorStepsChangedGameFiles(options.steps),
+              outcome: turnState.verifyOutcome,
+              verifyCalls: turnState.verifyCalls,
+              postVerifyRunTasksCalls: turnState.postVerifyRunTasksCalls,
+            })
+          : undefined
+        const mustFinalize = options.stepNumber >= LAST_ORCHESTRATOR_STEP_INDEX || routedTools?.length === 0
 
-        return { ...base, toolChoice: "none", activeTools: [] }
+        if (mustFinalize) {
+          const instruction = finalResponseInstruction(
+            turnState.verifyOutcome,
+            [...turnState.unfinishedTaskIds]
+          )
+          return {
+            ...base,
+            instructions: extendTerminalInstructions(
+               gameInstructions,
+               base?.instructions as Instructions | undefined,
+               base?.system as Instructions | undefined,
+               instruction
+             ),
+            toolChoice: "none",
+            activeTools: [],
+          }
+        }
+
+        if (routedTools && routedTools.length === 1) {
+          const toolName = routedTools[0]
+          return {
+            ...base,
+            ...(toolName === "run_tasks" ? {
+              instructions: extendTerminalInstructions(
+                gameInstructions,
+                base?.instructions as Instructions | undefined,
+                base?.system as Instructions | undefined,
+                finalResponseInstruction(turnState.verifyOutcome, [...turnState.unfinishedTaskIds])
+              ),
+            } : {}),
+            activeTools: routedTools,
+            // A failed/unavailable first check may end honestly without a fix;
+            // all verify routes remain mandatory once a check is required.
+            toolChoice:
+              toolName === "run_tasks"
+                ? "auto"
+                : { type: "tool", toolName },
+          }
+        }
+
+        return base
       },
     })
   },

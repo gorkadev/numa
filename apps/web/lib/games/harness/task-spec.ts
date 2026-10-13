@@ -51,6 +51,13 @@ export const taskSpecSchema = z.object({
     .describe(
       `Extra skills to push into this worker's instructions on top of its role's defaults, when this task needs one its role does not already carry. One or more of: ${ALL_SKILL_NAMES.join(", ")}.`
     ),
+  acceptance: z
+    .array(z.string().min(1).max(300))
+    .max(6)
+    .optional()
+    .describe(
+      "Bounded, observable acceptance criteria for this task. Historical stored tasks may omit this field; selected-template first-build plans must provide at least one criterion per task."
+    ),
 })
 
 export type TaskSpec = z.infer<typeof taskSpecSchema>

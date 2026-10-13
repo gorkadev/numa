@@ -42,7 +42,7 @@ function toFindings(findings: VerifyFinding[]): Finding[] {
 }
 
 function findingsSummary(findings: Finding[]): string {
-  if (findings.length === 0) return "No console errors."
+  if (findings.length === 0) return "No deterministic browser findings."
   return findings.map((finding) => `[${finding.severity}] ${finding.message}`).join("\n")
 }
 
@@ -64,13 +64,12 @@ function unfinishedTasksNote(): string {
 }
 
 /** The required first line of a verifier reply (`instructions/roles/verifier.ts`), case-insensitive since it costs nothing to accept either. */
-const VERDICT_LINE_PATTERN = /^VERDICT:\s*(pass|fail)\b/i
+const VERDICT_LINE_PATTERN = /^VERDICT:[ \t]*(pass|fail)[ \t]*(?:\r?\n|$)/i
 
 /**
  * Splits the verifier's raw reply into its required verdict and the text
  * that follows it. `verdict` is `undefined` for a reply that skipped the
- * required first line — treated the same as "pass" below, never as a
- * reason to fail a build on a malformed reply the model itself produced.
+ * required first line — inconclusive rather than a passing review.
  */
 function parseVerifierReply(reply: string): { verdict: "pass" | "fail" | undefined; text: string } {
   const match = reply.match(VERDICT_LINE_PATTERN)
@@ -128,7 +127,7 @@ function refusedResult(): RunVerifyResult {
  * still exercises `RunSubagentInput.prompt`'s `string` arm.
  */
 function buildVerifierPrompt(findings: Finding[], screenshot: Buffer | undefined): ModelMessage[] {
-  const text = `The code-decided console check found:\n${findingsSummary(findings)}\n\nLook at the attached screenshot of the running game, if one is included, and report only NEW visual problems you can see — do not repeat or comment on the console findings above.`
+  const text = `The code-decided browser check found:\n${findingsSummary(findings)}\n\nFor selected templates this includes declared hooks, trusted interaction scenarios, adapter assertions, local asset failures, and touch readiness; for no-template games it remains the console/screenshot check. Look at the attached screenshot, if included, and report only NEW visual problems — do not repeat or comment on the code findings above.`
 
   const content: UserContent = screenshot
     ? [
@@ -151,11 +150,14 @@ function buildVerifierPrompt(findings: Finding[], screenshot: Buffer | undefined
  * code-decided outcome and every code-decided finding survive into the final
  * envelope untouched, whatever the verifier's own reply says.
  */
-export function createVerifyTool(gameId: string): Tool {
+export function createVerifyTool(
+  gameId: string,
+  options: { onStart?: () => void } = {}
+): Tool {
   return tool({
     description: [
       "Run the deterministic, headless-browser check of the game exactly as it exists right now, then have a reviewer look at a screenshot for anything the console check cannot see.",
-      "The pass/fail result is decided by code from real browser console errors and cannot be argued with or talked out of — call this only after run_tasks has actually applied every change you want checked, never before.",
+      "The pass/fail result is decided by code from browser errors and, for selected templates, declared trusted interaction scenarios. It cannot be argued with or talked out of — call this only after run_tasks has actually applied every change you want checked, never before.",
       "At most 2 calls per turn: an initial check, and if it fails, exactly one more call after dispatching a corrective run_tasks pass. A third call this turn is refused outright.",
     ].join(" "),
     inputSchema: z.object({}),
@@ -171,19 +173,37 @@ export function createVerifyTool(gameId: string): Tool {
       { abortSignal }
     ): AsyncGenerator<SubagentProgress | RunVerifyResult, void, void> {
       if (turnState.verifyCalls >= MAX_VERIFY_CALLS_PER_TURN) {
-        yield refusedResult()
+        const result = refusedResult()
+        turnState.recordVerifyOutcome(result.outcome)
+        yield result
         return
       }
 
       turnState.verifyCalls += 1
+      options.onStart?.()
 
-      const baseline = await baselineForThisTurn(gameId)
-      const check = await runGameCheck(gameId, baseline)
+      let check: Awaited<ReturnType<typeof runGameCheck>>
+      try {
+        const baseline = await baselineForThisTurn(gameId)
+        check = await runGameCheck(gameId, baseline)
+      } catch (error) {
+        const result: RunVerifyResult = {
+          outcome: "unavailable",
+          envelope: {
+            agent: "verifier",
+            status: "unavailable",
+            summary: `Verify result: UNAVAILABLE. The browser check could not start: ${error instanceof Error ? error.message : String(error)}${unfinishedTasksNote()}`,
+          },
+        }
+        turnState.recordVerifyOutcome(result.outcome)
+        yield result
+        return
+      }
 
       if (check.status === "unavailable") {
         const findings = toFindings(check.findings)
 
-        yield {
+        const result: RunVerifyResult = {
           outcome: "unavailable",
           envelope: {
             agent: "verifier",
@@ -192,30 +212,41 @@ export function createVerifyTool(gameId: string): Tool {
             findings,
           },
         }
+        turnState.recordVerifyOutcome(result.outcome)
+        yield result
         return
       }
 
       const codeFindings = toFindings(check.findings)
 
-      const run = runSubagent({
-        role: ROLES.verifier,
-        instructions: verifierInstructions,
-        tools: {},
-        prompt: buildVerifierPrompt(codeFindings, check.screenshot),
-        abortSignal,
-      })
-
-      let next = await run.next()
-
-      while (!next.done) {
-        yield next.value
-        next = await run.next()
+      let result: RunSubagentResult | undefined
+      try {
+        const run = runSubagent({
+          role: ROLES.verifier,
+          instructions: verifierInstructions,
+          tools: {},
+          prompt: buildVerifierPrompt(codeFindings, check.screenshot),
+          abortSignal,
+        })
+        let next = await run.next()
+        while (!next.done) {
+          yield next.value
+          next = await run.next()
+        }
+        result = next.value
+      } catch {
+        // The reviewer may abort or fail after the browser check completed.
       }
 
-      const result: RunSubagentResult = next.value
-      const { verdict: reviewerVerdict, text: reviewerText } = parseVerifierReply(
-        result.envelope.summary.trim()
-      )
+      const reviewerAvailable = result?.envelope.status === "done"
+      const { verdict: reviewerVerdict, text: reviewerText } = reviewerAvailable
+        ? parseVerifierReply(result!.envelope.summary.trim())
+        : { verdict: undefined, text: "" }
+      const reviewerFailure = !reviewerAvailable
+        ? "Visual reviewer unavailable or aborted."
+        : !reviewerVerdict
+          ? "Visual reviewer returned no valid VERDICT line."
+          : undefined
 
       /**
        * The model may only ADD a finding, never clear one (task 6.4): every
@@ -238,19 +269,24 @@ export function createVerifyTool(gameId: string): Tool {
       })()
 
       const outcome: VerifyOutcome =
-        check.status === "fail" ? "fail" : reviewerVerdict === "fail" ? "fail" : check.status
+        check.status === "fail" || reviewerVerdict === "fail"
+          ? "fail"
+          : reviewerFailure ? "unavailable" : "pass"
 
-      yield {
+      const finalResult: RunVerifyResult = {
         outcome,
         envelope: {
-          ...result.envelope,
+          agent: "verifier",
+          status: reviewerFailure ? "unavailable" : outcome === "pass" ? "done" : "blocked",
           summary: `Verify result: ${outcome.toUpperCase()}. ${findingsSummary(codeFindings)}${
-            reviewerText.length > 0 ? `\nReviewer: ${reviewerText}` : ""
+            reviewerFailure ? `\nReviewer: ${reviewerFailure}` : reviewerText.length > 0 ? `\nReviewer: ${reviewerText}` : ""
           }${unfinishedTasksNote()}`,
           findings,
         },
-        record: result.record,
+        record: result?.record,
       }
+      turnState.recordVerifyOutcome(finalResult.outcome)
+      yield finalResult
     },
     /**
      * The orchestrator's model sees the envelope only — the code-decided

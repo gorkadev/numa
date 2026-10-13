@@ -4,6 +4,8 @@ import { DEFAULT_TIER_ID, type TierId } from "@/lib/ai/model-catalog"
 import type { ModelEntryId, ServedCall, Slot } from "@/lib/ai/model-registry"
 import type { AgentUsageEntry } from "@/lib/ai/pricing"
 
+export type TurnVerifyOutcome = "not-run" | "pass" | "fail" | "unavailable" | "refused"
+
 /**
  * The per-turn state every dispatch tool and hook reads and writes.
  *
@@ -61,6 +63,12 @@ type TurnStateData = {
   tier: TierId
   ledger: AgentUsageEntry[]
   verifyCalls: number
+  /** Explorer dispatches started this turn; capped at two. */
+  exploreCalls: number
+  /** Any run_tasks call after verification started, regardless of input form. */
+  postVerifyRunTasksCalls: number
+  /** The last terminal verifier outcome, reset before every turn. */
+  verifyOutcome: TurnVerifyOutcome
   /**
    * How many times the orchestrator's own unscoped `read_file` has been
    * called this turn — `trigger/chat.ts`'s per-turn read budget, reset
@@ -95,6 +103,10 @@ export const turnState = {
   get turn(): number {
     return local.turn
   },
+  /** A failed pre-start hook must not inherit the previous turn's verification. */
+  isCurrentTurn(turn: number): boolean {
+    return local.turn === turn && local.deadline > 0
+  },
   /** Epoch milliseconds; `run-subagent.ts` (unit 2a) times a role out at
    * `min(role.timeoutMs, deadline - now - 60s)`. */
   get deadline(): number {
@@ -128,6 +140,38 @@ export const turnState = {
   },
   set verifyCalls(value: number) {
     local.verifyCalls = value
+  },
+
+  get exploreCalls(): number {
+    return local.exploreCalls
+  },
+
+  /** Starts one of the two permitted explorer calls, or refuses it without dispatching a worker. */
+  tryStartExplore(): boolean {
+    if (local.exploreCalls >= 2) return false
+    local.exploreCalls += 1
+    return true
+  },
+
+  /** Starts the sole corrective run_tasks call once verification has begun. */
+  tryStartPostVerifyRunTasks(): boolean {
+    if (local.verifyCalls === 0) return true
+    if (local.postVerifyRunTasksCalls >= 1) return false
+    local.postVerifyRunTasksCalls += 1
+    return true
+  },
+
+  get postVerifyRunTasksCalls(): number {
+    return local.postVerifyRunTasksCalls
+  },
+
+  get verifyOutcome(): TurnVerifyOutcome {
+    return local.verifyOutcome
+  },
+
+  /** Records exactly the terminal result of a verify tool invocation. */
+  recordVerifyOutcome(outcome: TurnVerifyOutcome): void {
+    local.verifyOutcome = outcome
   },
 
   get orchestratorReadCalls(): number {
@@ -215,6 +259,9 @@ export const turnState = {
       tier: DEFAULT_TIER_ID,
       ledger: [],
       verifyCalls: 0,
+      exploreCalls: 0,
+      postVerifyRunTasksCalls: 0,
+      verifyOutcome: "not-run",
       orchestratorReadCalls: 0,
       unavailable: new Set(),
       served: {},
@@ -235,6 +282,9 @@ export const turnState = {
     local.tier = tier
     local.ledger = []
     local.verifyCalls = 0
+    local.exploreCalls = 0
+    local.postVerifyRunTasksCalls = 0
+    local.verifyOutcome = "not-run"
     local.orchestratorReadCalls = 0
     local.unavailable = new Set()
     local.served = {}

@@ -240,6 +240,198 @@ export function findUnresolvedOwnershipOverlap(
  * (e.g. a Node script constructing task lists by hand) without a live
  * sandbox or database connection.
  */
+export const assetReceiptSchema = z
+  .object({
+    eagerModelIds: z.array(z.string().min(1)).min(1).max(6),
+    lazyModelIds: z.array(z.string().min(1)).optional(),
+    eagerSharedAssetIds: z.array(z.string().min(1)),
+  })
+  .strict()
+
+const cohesiveAssessmentSchema = z
+  .object({
+    classification: z.literal("cohesive"),
+    rationale: z.string().min(1).max(1200),
+    assetReceipt: assetReceiptSchema.optional(),
+  })
+  .strict()
+
+const substantialAssessmentSchema = z
+  .object({
+    classification: z.literal("substantial"),
+    rationale: z.string().min(1).max(1200),
+    integrationTaskId: z.string().min(1),
+    assetReceipt: assetReceiptSchema.optional(),
+  })
+  .strict()
+
+/** The planner's explicit, auditable judgment about task cohesion and asset selection. */
+export const planAssessmentSchema = z.discriminatedUnion("classification", [
+  cohesiveAssessmentSchema,
+  substantialAssessmentSchema,
+])
+
+export type AssetReceipt = z.infer<typeof assetReceiptSchema>
+export type PlanAssessment = z.infer<typeof planAssessmentSchema>
+export const PLAN_READINESS_POLICY_VERSION = 1 as const
+export type StoredPlan = {
+  assessment: PlanAssessment
+  readinessPolicyVersion?: typeof PLAN_READINESS_POLICY_VERSION
+}
+export type PlanAssetCatalog = {
+  modelIds: readonly string[]
+  sharedAssetIds: readonly string[]
+  /** A fresh build with a selected starter template must record selected eager assets. */
+  requiresAssetReceipt?: boolean
+}
+
+const tasksFileSchema = z.array(taskSpecSchema)
+const planFileSchema = z.object({
+  assessment: planAssessmentSchema,
+  readinessPolicyVersion: z.literal(PLAN_READINESS_POLICY_VERSION).optional(),
+}).strict()
+
+/** Parses the unchanged historical task-array artifact without runtime services. */
+export function parsePlanTasksArtifact(contents: string): TaskSpec[] | undefined {
+  try {
+    const parsed = tasksFileSchema.safeParse(JSON.parse(contents))
+    return parsed.success ? parsed.data : undefined
+  } catch {
+    return undefined
+  }
+}
+
+/** Parses additive plan metadata; undefined represents a historical plan. */
+export function parseStoredPlanArtifact(contents: string): StoredPlan | undefined {
+  try {
+    const parsed = planFileSchema.safeParse(JSON.parse(contents))
+    return parsed.success ? parsed.data : undefined
+  } catch {
+    return undefined
+  }
+}
+
+type PersistedToolPart = { type?: unknown; state?: unknown; output?: unknown }
+const MUTATING_TOOL_PART_TYPES = new Set([
+  "tool-write_file",
+  "tool-replace_text",
+  "tool-delete_file",
+])
+
+/** Pure persisted-history check shared by template context and focused tests. */
+export function hasSuccessfulGameFileWrites(messages: unknown): boolean {
+  if (!Array.isArray(messages)) return false
+
+  return messages.some((message) => {
+    const parts = typeof message === "object" && message !== null
+      ? (message as { parts?: unknown }).parts
+      : undefined
+    if (!Array.isArray(parts)) return false
+
+    return parts.some((part) => {
+      if (typeof part !== "object" || part === null) return false
+      const record = part as PersistedToolPart
+      if (record.state !== "output-available") return false
+      if (MUTATING_TOOL_PART_TYPES.has(String(record.type))) {
+        return typeof record.output !== "object" || record.output === null || !("error" in record.output)
+      }
+      if (record.type !== "tool-run_tasks" || typeof record.output !== "object" || record.output === null) {
+        return false
+      }
+      const outcomes = (record.output as { outcomes?: unknown }).outcomes
+      return Array.isArray(outcomes) && outcomes.some((outcome) => {
+        if (typeof outcome !== "object" || outcome === null) return false
+        const result = outcome as { wroteFiles?: unknown }
+        return result.wroteFiles === true
+      })
+    })
+  })
+}
+
+function reachesTask(tasks: readonly TaskSpec[], fromId: string, targetId: string): boolean {
+  const byId = new Map(tasks.map((task) => [task.id, task]))
+  const visited = new Set<string>()
+
+  function visit(id: string): boolean {
+    if (id === targetId) return true
+    if (visited.has(id)) return false
+    visited.add(id)
+    return byId.get(id)?.dependsOn.some(visit) ?? false
+  }
+
+  return visit(fromId)
+}
+
+function findDuplicate(values: readonly string[]): string | undefined {
+  const seen = new Set<string>()
+  return values.find((value) => (seen.has(value) ? true : (seen.add(value), false)))
+}
+
+/** Validates the assessment independently from template choice or prompt wording. */
+export function validatePlanAssessment(
+  tasks: readonly TaskSpec[],
+  assessment: PlanAssessment,
+  assets: PlanAssetCatalog
+): string | undefined {
+  if (assessment.classification === "cohesive") {
+    if (tasks.length !== 1) return "A cohesive plan must contain exactly one task."
+  } else {
+    if (tasks.length < 2 || tasks.length > MAX_PLAN_TASKS) {
+      return "A substantial plan must contain 2–6 tasks."
+    }
+
+    const withoutAcceptance = tasks.find((task) => !task.acceptance || task.acceptance.length === 0)
+    if (withoutAcceptance) {
+      return `Substantial task "${withoutAcceptance.id}" needs at least one explicit acceptance criterion.`
+    }
+
+    const integrationIndex = tasks.findIndex((task) => task.id === assessment.integrationTaskId)
+    if (integrationIndex === -1) {
+      return `integrationTaskId "${assessment.integrationTaskId}" must name a task in this plan.`
+    }
+    if (integrationIndex !== tasks.length - 1) {
+      return `Integration task "${assessment.integrationTaskId}" must be the final task.`
+    }
+
+    const disconnected = tasks.slice(0, integrationIndex).find(
+      (task) => !reachesTask(tasks, assessment.integrationTaskId, task.id)
+    )
+    if (disconnected) {
+      return `Integration task "${assessment.integrationTaskId}" has no dependency path to earlier task "${disconnected.id}".`
+    }
+  }
+
+  const receipt = assessment.assetReceipt
+  if (!receipt) {
+    return assets.requiresAssetReceipt
+      ? "A fresh build with a selected template requires an assetReceipt."
+      : undefined
+  }
+
+  const eagerDuplicate = findDuplicate(receipt.eagerModelIds)
+  if (eagerDuplicate) return `assetReceipt.eagerModelIds repeats "${eagerDuplicate}".`
+  const lazyDuplicate = receipt.lazyModelIds && findDuplicate(receipt.lazyModelIds)
+  if (lazyDuplicate) return `assetReceipt.lazyModelIds repeats "${lazyDuplicate}".`
+  const sharedDuplicate = findDuplicate(receipt.eagerSharedAssetIds)
+  if (sharedDuplicate) return `assetReceipt.eagerSharedAssetIds repeats "${sharedDuplicate}".`
+
+  const knownModels = new Set(assets.modelIds)
+  const unknownModel = [...receipt.eagerModelIds, ...(receipt.lazyModelIds ?? [])].find(
+    (id) => !knownModels.has(id)
+  )
+  if (unknownModel) return `assetReceipt names unknown model id "${unknownModel}".`
+
+  const eagerModels = new Set(receipt.eagerModelIds)
+  const overlappingModel = receipt.lazyModelIds?.find((id) => eagerModels.has(id))
+  if (overlappingModel) return `assetReceipt lists model "${overlappingModel}" as both eager and lazy.`
+
+  const knownSharedAssets = new Set(assets.sharedAssetIds)
+  const unknownSharedAsset = receipt.eagerSharedAssetIds.find((id) => !knownSharedAssets.has(id))
+  if (unknownSharedAsset) return `assetReceipt names unknown shared asset id "${unknownSharedAsset}".`
+
+  return undefined
+}
+
 export function validatePlanTasks(tasks: readonly TaskSpec[]): string | undefined {
   const cycle = findDependencyCycle(tasks)
 

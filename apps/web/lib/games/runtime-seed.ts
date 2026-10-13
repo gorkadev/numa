@@ -23,7 +23,7 @@ export type RuntimeSeed = {
 }
 
 /**
- * The on-disk source of the seed.
+ * The on-disk source of the common seed.
  *
  * Anchored on `process.cwd()` rather than on this module's own location,
  * because this code runs from two different places. Next.js executes it from
@@ -39,56 +39,98 @@ export type RuntimeSeed = {
  */
 const RUNTIME_DIR = path.join(process.cwd(), "lib", "games", "runtime")
 
+function compareSeedPaths(left: string, right: string): number {
+  const depthDifference = left.split("/").length - right.split("/").length
+  return depthDifference || left.localeCompare(right)
+}
+
 /**
- * Reads the runtime folder into memory, recursing into subdirectories.
+ * Reads a seed directory into memory, recursing into subdirectories.
  *
- * The folder is the single source of truth for what a game starts with: adding
- * a file to it is the whole act of seeding it into every future sandbox, with
- * no registry to update and no code to touch. That is worth a directory walk
- * on sandbox creation, which happens once per game.
- *
- * Empty directories are reported too. A folder that exists on disk with
- * nothing in it is a deliberate slot — `assets/`, say — and a sandbox that
- * silently lacked it would make the first write into it fail.
+ * Empty directories are retained so a seed can deliberately reserve a place
+ * for a later game write. Paths are sorted before reading, making the upload
+ * order independent of the host filesystem's directory enumeration order.
  */
-export async function readRuntimeSeed(): Promise<RuntimeSeed> {
-  const entries = await readdir(RUNTIME_DIR, {
+export async function readSeedDirectory(
+  directory: string
+): Promise<RuntimeSeed> {
+  const entries = await readdir(directory, {
     recursive: true,
     withFileTypes: true,
   })
 
   const folders: string[] = []
-  const reads: Promise<RuntimeSeedFile>[] = []
+  const filePaths: string[] = []
 
   for (const entry of entries) {
-    /**
-     * `parentPath` is absolute, so the relative path has to be derived from it
-     * rather than from `entry.name`, which is only the basename — without this
-     * every nested file would flatten into the root of the game directory.
-     */
     const absolute = path.join(entry.parentPath, entry.name)
-    /**
-     * Normalised to forward slashes: the destination is a path in a Linux
-     * sandbox, not on whatever machine happens to be reading this folder.
-     */
     const relativePath = path
-      .relative(RUNTIME_DIR, absolute)
+      .relative(directory, absolute)
       .split(path.sep)
       .join("/")
 
     if (entry.isDirectory()) {
       folders.push(relativePath)
     } else if (entry.isFile()) {
-      reads.push(
-        readFile(absolute).then((contents) => ({ relativePath, contents }))
-      )
+      filePaths.push(relativePath)
+    }
+  }
+
+  const files = await Promise.all(
+    filePaths.sort((a, b) => a.localeCompare(b)).map(async (relativePath) => ({
+      relativePath,
+      contents: await readFile(path.join(directory, relativePath)),
+    }))
+  )
+
+  return {
+    folders: folders.sort(compareSeedPaths),
+    files,
+  }
+}
+
+/**
+ * Merges seed layers predictably. Folders are de-duplicated, while a repeated
+ * file destination is accepted only when its bytes are identical; two layers
+ * silently writing different bytes to the same destination would make a
+ * template's starting state depend on merge order.
+ */
+export function mergeRuntimeSeeds(...seeds: RuntimeSeed[]): RuntimeSeed {
+  const folders = new Set<string>()
+  const files = new Map<string, Buffer>()
+
+  for (const seed of seeds) {
+    for (const folder of seed.folders) {
+      if (files.has(folder)) {
+        throw new Error(`Seed destination is both a file and folder: ${folder}`)
+      }
+      folders.add(folder)
+    }
+
+    for (const { relativePath, contents } of seed.files) {
+      if (folders.has(relativePath)) {
+        throw new Error(
+          `Seed destination is both a folder and file: ${relativePath}`
+        )
+      }
+
+      const existing = files.get(relativePath)
+      if (existing && !existing.equals(contents)) {
+        throw new Error(`Conflicting seed file destination: ${relativePath}`)
+      }
+      if (!existing) files.set(relativePath, contents)
     }
   }
 
   return {
-    // Shallow before deep: creating `assets/sprites` before `assets` would ask
-    // the sandbox to create a directory whose parent is not there yet.
-    folders: folders.sort((a, b) => a.split("/").length - b.split("/").length),
-    files: await Promise.all(reads),
+    folders: [...folders].sort(compareSeedPaths),
+    files: [...files.entries()]
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([relativePath, contents]) => ({ relativePath, contents })),
   }
+}
+
+/** Reads the common runtime folder into memory. */
+export function readRuntimeSeed(): Promise<RuntimeSeed> {
+  return readSeedDirectory(RUNTIME_DIR)
 }

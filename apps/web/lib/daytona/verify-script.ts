@@ -86,17 +86,24 @@ export const VERIFY_SCRIPT_PY = `import asyncio
 import json
 import os
 import sys
+from urllib.parse import urlparse
 
 from playwright.async_api import async_playwright
 
 MAX_ERRORS = ${MAX_CONSOLE_ERRORS}
 MAX_ERROR_CHARS = ${MAX_ERROR_CHARS}
 RENDER_WAIT_SECONDS = ${RENDER_WAIT_SECONDS}
+INITIAL_READY_TIMEOUT_SECONDS = 20
+ADAPTER_ASSERTION_TIMEOUT_SECONDS = 3
+ADAPTER_POLL_SECONDS = 0.1
 
 GAME_PORT = os.environ.get("VERIFY_GAME_PORT", "3000")
 GAME_URL = "http://127.0.0.1:" + GAME_PORT + "/index.html"
 LAST_JSON_PATH = os.environ["VERIFY_LAST_JSON_PATH"]
 SCREENSHOT_PATH = os.environ["VERIFY_SCREENSHOT_PATH"]
+TEMPLATE_VERIFICATION = json.loads(os.environ.get("VERIFY_TEMPLATE_VERIFICATION_JSON", "null"))
+TEMPLATE_ASSET_POLICY = json.loads(os.environ.get("VERIFY_TEMPLATE_ASSET_POLICY_JSON", "null"))
+HAS_TEMPLATE_POLICY = TEMPLATE_VERIFICATION or TEMPLATE_ASSET_POLICY
 
 CHROMIUM_ARGS = ${CHROMIUM_ARGS}
 
@@ -105,13 +112,97 @@ def cap(message):
     return str(message)[:MAX_ERROR_CHARS]
 
 
+def is_local(url):
+    return url.startswith("http://127.0.0.1:" + GAME_PORT + "/")
+
+
+def local_gltf_path(url):
+    if not is_local(url):
+        return None
+    path = urlparse(url).path.lstrip("/")
+    return path if path.endswith(".gltf") else None
+
+
+def initial_asset_policy_failures(requested_paths):
+    if not TEMPLATE_ASSET_POLICY:
+        return []
+
+    requested = sorted(set(requested_paths))
+    declared = sorted(set(path.lstrip("/") for path in TEMPLATE_ASSET_POLICY["eagerModelPaths"]))
+    failures = []
+    if len(requested) > 6:
+        failures.append("initial page requested " + str(len(requested)) + " glTF models; at most 6 eager models are allowed")
+    if requested != declared:
+        failures.append(
+            "initial glTF paths differ from the accepted receipt (requested: "
+            + (", ".join(requested) or "none")
+            + "; declared: " + (", ".join(declared) or "none") + ")"
+        )
+    return failures
+
+
+async def adapter_value(page, path):
+    # The manifest schema permits only dotted identifier paths, so this fixed
+    # expression cannot execute repository, model, or player supplied code.
+    return await page.evaluate(
+        "(path) => path.split('.').reduce((value, key) => value == null ? undefined : value[key], window.__NUMA_VERIFY__)",
+        path,
+    )
+
+
+async def assert_adapter_equals(page, scenario_name, assertion, failures):
+    deadline = asyncio.get_running_loop().time() + ADAPTER_ASSERTION_TIMEOUT_SECONDS
+    actual = await adapter_value(page, assertion["path"])
+    while actual != assertion["equals"] and asyncio.get_running_loop().time() < deadline:
+        await asyncio.sleep(ADAPTER_POLL_SECONDS)
+        actual = await adapter_value(page, assertion["path"])
+    if actual != assertion["equals"]:
+        failures.append(
+            scenario_name + ": __NUMA_VERIFY__." + assertion["path"]
+            + " expected " + json.dumps(assertion["equals"])
+            + " but got " + json.dumps(actual)
+        )
+
+
+async def run_template_contract(page, failures):
+    if not TEMPLATE_VERIFICATION:
+        return
+
+    try:
+        for selector in TEMPLATE_VERIFICATION["requiredSelectors"]:
+            await page.wait_for_selector(selector, state="attached", timeout=6000)
+    except Exception as error:
+        failures.append("required selector missing: " + cap(error))
+        return
+
+    for scenario in TEMPLATE_VERIFICATION["scenarios"]:
+        try:
+            for action in scenario["actions"]:
+                if action["type"] == "click":
+                    # Scenarios assert the public adapter after each click; waiting for
+                    # incidental page navigations can time out after the click
+                    # already changed game state (especially under WebGL load).
+                    await page.locator(action["selector"]).first.click(timeout=6000, no_wait_after=True)
+                elif action["type"] == "waitFor":
+                    await page.wait_for_selector(action["selector"], state="attached", timeout=6000)
+            for assertion in scenario["assertions"]:
+                await assert_adapter_equals(page, scenario["name"], assertion, failures)
+        except Exception as error:
+            failures.append(scenario["name"] + ": " + cap(error))
+
+
 async def main():
     baseline = set(json.loads(os.environ.get("VERIFY_BASELINE_JSON", "[]")))
     current = []
+    template_failures = []
 
     async with async_playwright() as playwright:
         browser = await playwright.chromium.launch(headless=True, args=CHROMIUM_ARGS)
         page = await browser.new_page()
+        initial_gltf_paths = set()
+        initial_gltf_pending = set()
+        initial_gltf_failed = set()
+        initial_phase = True
 
         def on_console(message):
             if message.type == "error":
@@ -120,14 +211,99 @@ async def main():
         def on_page_error(error):
             current.append(cap(error))
 
+        def on_request(request):
+            path = local_gltf_path(request.url)
+            if initial_phase and path:
+                initial_gltf_pending.add(request)
+
+        def on_request_finished(request):
+            initial_gltf_pending.discard(request)
+
+        def on_response(response):
+            if HAS_TEMPLATE_POLICY and is_local(response.url) and response.status >= 400:
+                template_failures.append("local asset HTTP " + str(response.status) + ": " + response.url)
+            gltf_path = local_gltf_path(response.url)
+            if initial_phase and gltf_path:
+                if 200 <= response.status < 300:
+                    initial_gltf_paths.add(gltf_path)
+                else:
+                    initial_gltf_failed.add(gltf_path)
+
+        def on_request_failed(request):
+            initial_gltf_pending.discard(request)
+            gltf_path = local_gltf_path(request.url)
+            if initial_phase and gltf_path:
+                initial_gltf_failed.add(gltf_path)
+            if HAS_TEMPLATE_POLICY and is_local(request.url):
+                failure = request.failure or "request failed"
+                template_failures.append("local asset request failed: " + request.url + " (" + str(failure) + ")")
+
         page.on("console", on_console)
         page.on("pageerror", on_page_error)
+        page.on("request", on_request)
+        page.on("requestfinished", on_request_finished)
+        page.on("response", on_response)
+        page.on("requestfailed", on_request_failed)
 
-        await page.goto(GAME_URL, wait_until="load")
-        await asyncio.sleep(RENDER_WAIT_SECONDS)
+        # Template readiness below, not the browser load event, is the
+        # authoritative signal. A busy WebGL page can miss Playwright's
+        # default 30s load deadline even when it becomes playable shortly after.
+        await page.goto(GAME_URL, wait_until="commit" if TEMPLATE_ASSET_POLICY else "load")
+        if TEMPLATE_ASSET_POLICY:
+            # Network quiet alone cannot establish that application JS will not
+            # schedule another eager fetch. The game must explicitly signal that
+            # its initial loading phase is complete before scenarios can begin.
+            try:
+                await page.wait_for_function("window.__NUMA_VERIFY_READY__ === true", timeout=INITIAL_READY_TIMEOUT_SECONDS * 1000)
+                await page.wait_for_load_state("networkidle", timeout=INITIAL_READY_TIMEOUT_SECONDS * 1000)
+                deadline = asyncio.get_running_loop().time() + INITIAL_READY_TIMEOUT_SECONDS
+                while initial_gltf_pending and asyncio.get_running_loop().time() < deadline:
+                    await asyncio.sleep(ADAPTER_POLL_SECONDS)
+                if initial_gltf_pending:
+                    template_failures.append("initial glTF requests did not settle before timeout")
+            except Exception:
+                template_failures.append("initial asset readiness could not be established before timeout")
+            if initial_gltf_failed:
+                template_failures.append("initial glTF requests failed: " + ", ".join(sorted(initial_gltf_failed)))
+            if not initial_gltf_pending and not any("readiness" in failure for failure in template_failures):
+                template_failures.extend(initial_asset_policy_failures(initial_gltf_paths))
+        else:
+            await asyncio.sleep(RENDER_WAIT_SECONDS)
+        initial_phase = False
+        await run_template_contract(page, template_failures)
 
+        # Release the desktop WebGL renderer before loading a second scene.
+        # Software Chromium can stall when both pages render concurrently.
         os.makedirs(os.path.dirname(SCREENSHOT_PATH), exist_ok=True)
         await page.screenshot(path=SCREENSHOT_PATH, type="jpeg", quality=80)
+        await page.close()
+
+        if TEMPLATE_VERIFICATION:
+            viewport = TEMPLATE_VERIFICATION["touchViewport"]
+            touch_page = await browser.new_page(
+                viewport={"width": viewport["width"], "height": viewport["height"]},
+                has_touch=True,
+            )
+            def on_touch_console(message):
+                if message.type == "error":
+                    template_failures.append("touch page console error: " + cap(message.text))
+
+            def on_touch_page_error(error):
+                template_failures.append("touch page error: " + cap(error))
+
+            touch_page.on("console", on_touch_console)
+            touch_page.on("pageerror", on_touch_page_error)
+            touch_page.on("response", on_response)
+            touch_page.on("requestfailed", on_request_failed)
+            await touch_page.goto(GAME_URL, wait_until="commit" if TEMPLATE_ASSET_POLICY else "load")
+            if TEMPLATE_ASSET_POLICY:
+                try:
+                    await touch_page.wait_for_function("window.__NUMA_VERIFY_READY__ === true", timeout=INITIAL_READY_TIMEOUT_SECONDS * 1000)
+                    await touch_page.wait_for_load_state("networkidle", timeout=INITIAL_READY_TIMEOUT_SECONDS * 1000)
+                except Exception:
+                    template_failures.append("touch asset readiness could not be established before timeout")
+            await run_template_contract(touch_page, template_failures)
+            await touch_page.close()
 
         await browser.close()
 
@@ -142,6 +318,7 @@ async def main():
     print(json.dumps({
         "newErrors": new_errors,
         "preExisting": pre_existing,
+        "templateFailures": template_failures[:MAX_ERRORS],
     }))
 
 

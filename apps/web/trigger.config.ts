@@ -26,10 +26,15 @@ export default defineConfig({
   // places depending on where it ran.
   legacyDevProcessCwdBehaviour: false,
   build: {
-    // Nothing imports the sandbox runtime files, so the bundler cannot see
-    // them — they are data copied into each new sandbox, not modules. This
-    // glob is what puts them beside the deployed task, at the same path they
-    // have in the repo.
-    extensions: [additionalFiles({ files: ["./lib/games/runtime/**"] })],
+    // Nothing imports the sandbox runtime or template seed files, so the
+    // bundler cannot see them — they are data copied into each new sandbox, not
+    // modules. Template contracts use visible root-level TEMPLATE.md and
+    // ASSETS.json names, so this ordinary recursive glob includes them without
+    // depending on hidden-file matching semantics.
+    extensions: [
+      additionalFiles({
+        files: ["./lib/games/runtime/**", "./lib/games/templates/**"],
+      }),
+    ],
   },
 })

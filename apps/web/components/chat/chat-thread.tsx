@@ -27,6 +27,7 @@ import { TaskStrip } from "@/components/chat/task-strip"
 import { Thinking } from "@/components/chat/thinking"
 import { useGameChat } from "@/components/chat/use-game-chat"
 import type { TierId } from "@/lib/ai/model-catalog"
+import { gameBuildProgressLabel } from "@/lib/games/build-progress"
 import type { SubagentRunRecord } from "@/lib/games/harness/records"
 import { deriveTaskStrip, shouldShowTaskStrip } from "@/lib/games/plan-tasks"
 import { collectThreadSubagentRuns } from "@/lib/games/tool-parts"
@@ -90,6 +91,7 @@ export function ChatThread({
   const {
     messages,
     error,
+    buildProgress,
     stop,
     onAnswer,
     send,
@@ -143,6 +145,7 @@ export function ChatThread({
    */
   const taskStripTasks = useMemo(() => deriveTaskStrip(messages), [messages])
   const showTaskStrip = shouldShowTaskStrip(taskStripTasks, pending)
+  const buildProgressLabel = gameBuildProgressLabel(buildProgress)
 
   const onSelectRun = useCallback(
     (agentId: string) => {
@@ -244,8 +247,15 @@ export function ChatThread({
           pending={pending}
           placeholder="Ask for a change…"
           tasksSlot={
-            showTaskStrip && taskStripTasks ? (
-              <TaskStrip tasks={taskStripTasks} />
+            showTaskStrip || buildProgressLabel ? (
+              <div className="flex flex-col gap-2">
+                {showTaskStrip && taskStripTasks ? <TaskStrip tasks={taskStripTasks} /> : null}
+                {buildProgressLabel ? (
+                  <p aria-live="polite" role="status" className="text-sm text-muted-foreground">
+                    {buildProgressLabel}
+                  </p>
+                ) : null}
+              </div>
             ) : undefined
           }
         />
