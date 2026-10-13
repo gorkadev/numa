@@ -1,4 +1,4 @@
-import { googleVertex } from "@ai-sdk/google-vertex"
+import { createGoogleVertex, googleVertex } from "@ai-sdk/google-vertex"
 import type { LanguageModel } from "ai"
 
 import type { ModelEntry, ModelEntryId, ProviderId } from "./model-registry"
@@ -23,9 +23,18 @@ import type { ModelEntry, ModelEntryId, ProviderId } from "./model-registry"
  * table fails typecheck, which is the enforcement decision 18 promises: a
  * provider not yet installed cannot silently reach a role.
  */
+// Keep the EU override lazy and Argon-only; other models retain SDK defaults.
+let argonVertex: ReturnType<typeof createGoogleVertex> | undefined
+
 const PROVIDERS: Record<ProviderId, (providerModelId: string) => LanguageModel> =
   {
-    "google-vertex": googleVertex,
+    "google-vertex": (providerModelId) => {
+      if (providerModelId === "gemini-4-argon") {
+        argonVertex ??= createGoogleVertex({ location: "eu" })
+        return argonVertex(providerModelId)
+      }
+      return googleVertex(providerModelId)
+    },
   }
 
 /**
