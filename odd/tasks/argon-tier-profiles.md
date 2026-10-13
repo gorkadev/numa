@@ -25,11 +25,11 @@ Title generation: gemini-3.5-flash-lite / minimal. No dynamic reasoning selectio
 - [x] AP-1 Recover, verify, and checkpoint existing template changes — commit `58b2762`.
   - Route: delegated read-only exploration and independent verifier; parent staging/commit. Trigger: large existing multi-file diff, historical recovery, command checks.
   - Engram 228/238 and the local template document reconciled. Old work saved independently; GT-11 remains blocked.
-- [ ] AP-2 Implement explicit effort profiles, compatible provider upgrade, and scheduled Argon pricing — in progress, verification passed; commit pending.
+- [x] AP-2 Implement explicit effort profiles, compatible provider upgrade, and scheduled Argon pricing — verified and committed as `51530b7`.
   - Route: delegated test-first writer. Trigger: multi-file runtime, pricing, dependency and test changes.
   - Tests cover exact nine profiles and title, effort propagation in streaming/non-streaming candidate calls, active-ID/rate coverage, no active 3.1 Pro, legacy metadata, UTC pricing cutoff, cache/reasoning accounting, and immutable snapshot/version behavior.
   - A separate read-only incident verifier diagnosed the dependency split before repair. Commit only after independent verification and parent spot check.
-- [ ] AP-3 Record final verification and work-unit delivery evidence.
+- [x] AP-3 Record final verification and work-unit delivery evidence — verified source work-unit `51530b7`; final tracking checkpoint follows.
   - Route: parent bookkeeping with delegated checks where needed. Retain independent verification results, commit identities, and all skipped/pending live checks; commit final evidence.
 
 ## AP-1 evidence
@@ -54,7 +54,12 @@ Title generation: gemini-3.5-flash-lite / minimal. No dynamic reasoning selectio
 - Parent spot check: both `git diff --check` and `git diff --cached --check` PASS; read back the primitive frozen snapshot and both `turnPricing.snapshot` callers. No unexpected source mutation.
 - Full prior document mirrors were saved at Engram 349 and 228 by bookkeeping worker `mv748fge-e-66mv` and read back by the parent. This document is re-mirrored after updates.
 - Live model availability, credentials/region, streaming/tool multi-turn execution, and long-decode E2E are intentionally untested. No increased output budgets or dynamic reasoning are introduced.
-- AP-2 work-unit commit: pending.
+- AP-2 work-unit commit: `51530b7` — `feat(ai): adopt Argon tier profiles with explicit reasoning`.
+- AP-2 rollback boundary: this source work unit's registry, pricing, SDK manifests/lockfile, turn cost/version wiring and tests; it is independent of old template checkpoint `58b2762`.
+- Working tree was clean immediately after AP-2 commit. No push, PR, merge, schema application, paid model or Daytona/browser command occurred.
+- AP-3 evidence: all selected deterministic checks and independent source verification passed; registry/snapshot caller readback and working/staged diff spot checks passed. Final bookkeeping is passive documentation with no meaningful RED; its structural check is `git diff --check`.
+- Production build and repository-wide suites were not run; the applicable focused checks above passed. DB lint remains unavailable because of the inherited flat-config gap. Node's test-runner deprecation warning is non-blocking.
+- Delivery remains local. Functional live validation and the old template acceptance/license gaps are explicitly not claimed as complete.
 
 ## Next step
-Commit the independently verified AP-2 unit, then record its identity and final delivery evidence in AP-3. Preserve every skipped live API/build/template acceptance check and the inherited GT-11 limitations.
+The approved source/configuration work is locally verified and committed. Next functional validation, requiring separate authorization, is a bounded live Argon streaming/tool-call check; inherited template GT-11 remains a separate blocked feature. Publishing is a separate user decision.
