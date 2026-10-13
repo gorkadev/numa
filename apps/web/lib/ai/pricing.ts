@@ -30,7 +30,27 @@ import type { ModelEntryId, Slot } from "./model-registry"
  * stored `cost_micro_usd` re-derivable later: without it, a row is a number
  * nobody can reproduce, and the whole ledger becomes anecdote.
  */
-export const RATE_TABLE_VERSION = "2026-09-15"
+export const RATE_TABLE_VERSION = "2026-10-13-argon-intro"
+const STANDARD_RATE_VERSION = "2026-12-01-argon-standard"
+const ARGON_CUTOFF = Date.parse("2026-12-01T00:00:00Z")
+
+/** Capture once at turn start, before any model calls; never retain a mutable Date. */
+export type PricingSnapshot = Readonly<{
+  capturedAt: number
+  rateVersion: string
+  argonStandard: boolean
+}>
+
+export function capturePricingSnapshot(at: Date = new Date()): PricingSnapshot {
+  const capturedAt = at.getTime()
+  if (!Number.isFinite(capturedAt)) throw new Error("Invalid pricing timestamp")
+  const argonStandard = capturedAt >= ARGON_CUTOFF
+  return Object.freeze({
+    capturedAt,
+    argonStandard,
+    rateVersion: argonStandard ? STANDARD_RATE_VERSION : RATE_TABLE_VERSION,
+  })
+}
 
 /**
  * USD per 1M tokens. `cachedInput` is what a cache *read* costs; cache writes
@@ -61,6 +81,14 @@ type ModelRate = {
   }
 }
 
+const FLASH_RATE: ModelRate = { input: 0.75, output: 3.75, cachedInput: 0.075 }
+const LITE_RATE: ModelRate = { input: 0.3, output: 2.5, cachedInput: 0.03 }
+// Official standard USD/M, including thinking; no long-context surcharge.
+// https://ai.google.dev/gemini-api/docs/pricing
+// https://cloud.google.com/blog/products/ai-machine-learning/gemini-4-argon-available-on-google-cloud
+const ARGON_INTRO: ModelRate = { input: 2, output: 10, cachedInput: 0.10 }
+const ARGON_STANDARD: ModelRate = { input: 4, output: 20, cachedInput: 0.20 }
+
 const RATES: Record<ModelEntryId, ModelRate> = {
   /**
    * VERIFIED against the Vertex AI pricing page (Standard table, Global
@@ -75,36 +103,12 @@ const RATES: Record<ModelEntryId, ModelRate> = {
    * `RATE_TABLE_VERSION` is bumped with them, or every row written afterwards
    * records half of what the turn actually cost.
    */
-  "gemini-3.8-flash": {
-    input: 0.75,
-    output: 3.75,
-    cachedInput: 0.075,
-  },
+  "flash-high": FLASH_RATE,
+  "flash-medium": FLASH_RATE,
 
-  /**
-   * VERIFIED against the Vertex AI pricing page (Standard table, Global
-   * region), confirmed 2026-09-11, and tiered by prompt size: 2.00 / 12.00 for
-   * a request up to 200K input tokens, 4.00 / 18.00 above it. `cachedInput` is
-   * tiered too — 0.20 up to 200K, 0.40 above (`longContext.cachedInput`).
-   *
-   * The tier is chosen by the size of the *request*, not by the length of the
-   * reply — which is the trap. A long thread crosses 200K on its own, without
-   * anybody doing anything different, and from that turn onward doubles its own
-   * input rate and raises its output rate by half. The cost of a conversation
-   * on this model is therefore not linear in its length, and the jump is
-   * invisible unless it is recorded.
-   */
-  "gemini-3.1-pro-preview": {
-    input: 2.0,
-    output: 12.0,
-    cachedInput: 0.2,
-    longContext: {
-      threshold: 200_000,
-      input: 4.0,
-      output: 18.0,
-      cachedInput: 0.4,
-    },
-  },
+  "argon-medium": ARGON_INTRO,
+  "argon-high": ARGON_INTRO,
+  "argon-low": ARGON_INTRO,
 
   /**
    * VERIFIED against the Vertex AI pricing page (Standard table, Global
@@ -112,11 +116,8 @@ const RATES: Record<ModelEntryId, ModelRate> = {
    * placeholder that had priced a cached read (0.20) higher than a fresh one
    * (0.10).
    */
-  "gemini-3.5-flash-lite": {
-    input: 0.3,
-    output: 2.5,
-    cachedInput: 0.03,
-  },
+  "lite-medium": LITE_RATE,
+  "lite-minimal": LITE_RATE,
 }
 
 /**
@@ -167,11 +168,15 @@ export function turnUsageTokens(usage: LanguageModelUsage): Tokens {
 export function turnCostMicroUsd({
   modelId,
   usage,
+  snapshot = capturePricingSnapshot(),
 }: {
   modelId: ModelEntryId
   usage: LanguageModelUsage
+  snapshot?: PricingSnapshot
 }): number {
-  const rate = RATES[modelId]
+  const rate = snapshot.argonStandard && RATES[modelId] === ARGON_INTRO
+    ? ARGON_STANDARD
+    : RATES[modelId]
   const { inputTokens, outputTokens, cachedInputTokens } =
     turnUsageTokens(usage)
 
@@ -260,11 +265,13 @@ function creditsFromMicroUsd(costMicroUsd: number): number {
 export function turnCreditCost({
   modelId,
   usage,
+  snapshot = capturePricingSnapshot(),
 }: {
   modelId: ModelEntryId
   usage: LanguageModelUsage
+  snapshot?: PricingSnapshot
 }): number {
-  return creditsFromMicroUsd(turnCostMicroUsd({ modelId, usage }))
+  return creditsFromMicroUsd(turnCostMicroUsd({ modelId, usage, snapshot }))
 }
 
 /**
@@ -312,6 +319,7 @@ export type AgentUsageEntry = {
  * requirement.
  */
 export type TurnCost = {
+  rateVersion: string
   tier: TierId
   tokens: Tokens
   costMicroUsd: number
@@ -340,14 +348,18 @@ const ZERO_TOKENS: Tokens = {
  * less than a cent each time but never gains it back; converting once after
  * the sum is the only order that cannot overcharge by accumulated rounding.
  */
-export function priceTurn(tier: TierId, entries: AgentUsageEntry[]): TurnCost {
+export function priceTurn(
+  tier: TierId,
+  entries: AgentUsageEntry[],
+  snapshot: PricingSnapshot = capturePricingSnapshot()
+): TurnCost {
   const breakdown = entries.map((entry) => {
     const { usage, ...rest } = entry
 
     return {
       ...rest,
       ...turnUsageTokens(usage),
-      costMicroUsd: turnCostMicroUsd({ modelId: entry.modelId, usage }),
+      costMicroUsd: turnCostMicroUsd({ modelId: entry.modelId, usage, snapshot }),
     }
   })
 
@@ -367,6 +379,7 @@ export function priceTurn(tier: TierId, entries: AgentUsageEntry[]): TurnCost {
   )
 
   return {
+    rateVersion: snapshot.rateVersion,
     tier,
     tokens,
     costMicroUsd,

@@ -21,7 +21,7 @@ import {
   type FallbackHooks,
   type ModelEntryId,
 } from "@/lib/ai/model-registry"
-import { priceTurn } from "@/lib/ai/pricing"
+import { capturePricingSnapshot, priceTurn, type PricingSnapshot } from "@/lib/ai/pricing"
 import { createGameSandbox } from "@/lib/daytona/utils"
 import { HARNESS_PHASES } from "@/lib/games/harness/flags"
 import { createExploreTool } from "@/lib/games/harness/tools/explore"
@@ -47,6 +47,9 @@ import { getCreditBalance } from "@/lib/polar/balance"
  * short.
  */
 const TURN_DEADLINE_MS = 3300_000
+
+// Run-local like turnState; initialized on every boot, frozen anew per turn.
+const turnPricing = chat.local<{ snapshot: PricingSnapshot }>({ id: "turnPricing" })
 
 /**
  * A turn is a loop, not a single answer: read the file, edit it, check the
@@ -464,6 +467,7 @@ export const gameChat = chat.agent({
    */
   onBoot: async () => {
     turnState.init()
+    turnPricing.init({ snapshot: capturePricingSnapshot() })
   },
 
   /**
@@ -649,6 +653,7 @@ export const gameChat = chat.agent({
      * provider and the ledger both key off, so every later read of
      * `turnState.tier` this turn agrees with what actually ran.
      */
+    turnPricing.snapshot = capturePricingSnapshot()
     turnState.reset(turn, Date.now() + TURN_DEADLINE_MS, resolveTier(clientData?.tier))
 
     await saveGameThread({
@@ -720,7 +725,7 @@ export const gameChat = chat.agent({
       })
 
       writer.write(
-        turnCreditsChunk(priceTurn(turnState.tier, turnState.ledgerFor(turn)))
+        turnCreditsChunk(priceTurn(turnState.tier, turnState.ledgerFor(turn), turnPricing.snapshot))
       )
     }
 
@@ -790,7 +795,7 @@ export const gameChat = chat.agent({
      * still hold the PREVIOUS turn's ledger, and this call would re-price and
      * re-bill it a second time.
      */
-    const cost = priceTurn(turnState.tier, turnState.ledgerFor(turn))
+    const cost = priceTurn(turnState.tier, turnState.ledgerFor(turn), turnPricing.snapshot)
 
     /**
      * The reply is stored carrying what it cost. `withTurnMeta` is the durable

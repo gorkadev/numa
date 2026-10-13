@@ -39,15 +39,15 @@ export type Slot = "strong" | "mid" | "light"
  */
 export type ProviderId = "google-vertex"
 
-/**
- * Opaque, stable ids. The three initial ids equal today's `GameModelId`
- * values on purpose, so existing `turn_usage.model_id` rows and the legacy
- * mapping in `model-catalog.ts` stay trivially valid.
- */
+/** Opaque execution IDs distinguish provider-model + effort; history is unchanged. */
 export type ModelEntryId =
-  | "gemini-3.1-pro-preview"
-  | "gemini-3.8-flash"
-  | "gemini-3.5-flash-lite"
+  | "argon-medium"
+  | "argon-high"
+  | "argon-low"
+  | "flash-high"
+  | "flash-medium"
+  | "lite-medium"
+  | "lite-minimal"
 
 /**
  * `ai`'s `ProviderOptions` type is not re-exported from the `ai` package
@@ -72,36 +72,34 @@ export type ModelEntry = {
   displayName: string
 }
 
-/**
- * The registry in this change contains only the three existing Gemini models
- * on the installed Vertex provider. No entry sets `providerOptions` yet.
- * Adding any other provider or model is out of scope for this change; each
- * rate card lives beside `RATES` in `./pricing.ts`, keyed by these same ids.
- */
+function entry(
+  id: ModelEntryId,
+  providerModelId: string,
+  name: string,
+  effort: "minimal" | "low" | "medium" | "high"
+): ModelEntry {
+  return {
+    id,
+    provider: "google-vertex",
+    providerModelId,
+    displayName: `${name} (${effort})`,
+    providerOptions: { googleVertex: { thinkingConfig: { thinkingLevel: effort } } },
+  }
+}
+
 const REGISTRY: Record<ModelEntryId, ModelEntry> = {
-  "gemini-3.1-pro-preview": {
-    id: "gemini-3.1-pro-preview",
-    provider: "google-vertex",
-    providerModelId: "gemini-3.1-pro-preview",
-    displayName: "Gemini 3.1 Pro",
-  },
-  "gemini-3.8-flash": {
-    id: "gemini-3.8-flash",
-    provider: "google-vertex",
-    providerModelId: "gemini-3.8-flash",
-    displayName: "Gemini 3.8 Flash",
-  },
-  "gemini-3.5-flash-lite": {
-    id: "gemini-3.5-flash-lite",
-    provider: "google-vertex",
-    providerModelId: "gemini-3.5-flash-lite",
-    displayName: "Gemini 3.5 Flash Lite",
-  },
+  "argon-medium": entry("argon-medium", "gemini-4-argon", "Gemini 4 Argon", "medium"),
+  "argon-high": entry("argon-high", "gemini-4-argon", "Gemini 4 Argon", "high"),
+  "argon-low": entry("argon-low", "gemini-4-argon", "Gemini 4 Argon", "low"),
+  "flash-high": entry("flash-high", "gemini-3.8-flash", "Gemini 3.8 Flash", "high"),
+  "flash-medium": entry("flash-medium", "gemini-3.8-flash", "Gemini 3.8 Flash", "medium"),
+  "lite-medium": entry("lite-medium", "gemini-3.5-flash-lite", "Gemini 3.5 Flash Lite", "medium"),
+  "lite-minimal": entry("lite-minimal", "gemini-3.5-flash-lite", "Gemini 3.5 Flash Lite", "minimal"),
 }
 
 /**
  * A slot's candidates, primary first. In this change every list holds exactly
- * one entry — there are only three models to draw from — but `resolveModel`
+ * one entry, but `resolveModel`
  * already tries the whole list in order through `createFallbackModel`
  * (decision 19, unit 1c): adding a peer only changes the list here, nothing
  * in `resolveModel` or its callers.
@@ -116,34 +114,26 @@ export type SlotCandidates = readonly [ModelEntryId, ...ModelEntryId[]]
 type TierProfile = Record<Slot, SlotCandidates>
 
 /**
- * One profile per tier, mapping each slot to its candidates.
- *
- * Invariant: each tier's `strong` entry equals the legacy model that maps to
- * it in `LEGACY_MODEL_TIER` — `gemini-3.1-pro-preview` → `pro`,
- * `gemini-3.8-flash` → `balanced`, `gemini-3.5-flash-lite` → `fast`. That
- * keeps every existing thread's orchestrator on the same concrete model it
- * ran before this change, so unit 1a re-prices nothing.
- *
- * `balanced.strong` is not pro: the orchestrator runs `strong` on every turn,
- * tweaks included, and making the default tier's baseline pro would price
- * every default-tier turn at pro rates. Profiles are monotone — no slot of a
- * lower tier is stronger than the same slot of a higher tier.
+ * Approved static profiles, not an inferred capability ordering. In particular
+ * pro.mid uses high effort while pro.strong uses medium. Effort levels do not
+ * establish cross-model rankings. Legacy metadata still maps to the same tier,
+ * but future execution uses this table; stored ledger rows are never rewritten.
  */
 const TIER_PROFILES: Record<TierId, TierProfile> = {
   pro: {
-    strong: ["gemini-3.1-pro-preview"],
-    mid: ["gemini-3.8-flash"],
-    light: ["gemini-3.5-flash-lite"],
+    strong: ["argon-medium"],
+    mid: ["argon-high"],
+    light: ["argon-low"],
   },
   balanced: {
-    strong: ["gemini-3.8-flash"],
-    mid: ["gemini-3.8-flash"],
-    light: ["gemini-3.5-flash-lite"],
+    strong: ["argon-medium"],
+    mid: ["argon-low"],
+    light: ["flash-high"],
   },
   fast: {
-    strong: ["gemini-3.5-flash-lite"],
-    mid: ["gemini-3.5-flash-lite"],
-    light: ["gemini-3.5-flash-lite"],
+    strong: ["flash-high"],
+    mid: ["flash-medium"],
+    light: ["lite-medium"],
   },
 }
 
@@ -158,7 +148,7 @@ const TIER_PROFILES: Record<TierId, TierProfile> = {
 export type UtilityTask = "title"
 
 const UTILITY_MODELS: Record<UtilityTask, SlotCandidates> = {
-  title: ["gemini-3.5-flash-lite"],
+  title: ["lite-minimal"],
 }
 
 export type ResolvedModel = {
@@ -231,9 +221,10 @@ const NOOP_HOOKS: FallbackHooks = {
 export function resolveModel(
   tier: TierId,
   slot: Slot,
-  hooks: FallbackHooks = NOOP_HOOKS
+  hooks: FallbackHooks = NOOP_HOOKS,
+  factory: typeof providerModel = providerModel
 ): ResolvedModel {
-  return resolveCandidates(TIER_PROFILES[tier][slot], hooks)
+  return resolveCandidates(TIER_PROFILES[tier][slot], hooks, factory)
 }
 
 /**
@@ -243,20 +234,22 @@ export function resolveModel(
  */
 export function resolveUtilityModel(
   task: UtilityTask,
-  hooks: FallbackHooks = NOOP_HOOKS
+  hooks: FallbackHooks = NOOP_HOOKS,
+  factory: typeof providerModel = providerModel
 ): ResolvedModel {
-  return resolveCandidates(UTILITY_MODELS[task], hooks)
+  return resolveCandidates(UTILITY_MODELS[task], hooks, factory)
 }
 
 function resolveCandidates(
   candidateIds: SlotCandidates,
-  hooks: FallbackHooks
+  hooks: FallbackHooks,
+  factory: typeof providerModel
 ): ResolvedModel {
   const primary = REGISTRY[candidateIds[0]]
 
   const candidates = candidateIds.map((id) => ({
     entry: REGISTRY[id],
-    model: providerModel(REGISTRY[id]) as ConcreteLanguageModel,
+    model: factory(REGISTRY[id]) as ConcreteLanguageModel,
   }))
 
   return { candidates: candidateIds, primary, model: createFallbackModel(candidates, hooks) }

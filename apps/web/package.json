@@ -16,9 +16,9 @@
     "perf:trace": "node --env-file=.env.local scripts/perf-trace.ts"
   },
   "dependencies": {
-    "@ai-sdk/google-vertex": "^5.0.76",
-    "@ai-sdk/otel": "^1.0.93",
-    "@ai-sdk/react": "^4.0.96",
+    "@ai-sdk/google-vertex": "^5.0.111",
+    "@ai-sdk/otel": "^1.0.139",
+    "@ai-sdk/react": "^4.0.142",
     "@better-auth/infra": "^0.4.9",
     "@better-auth/passkey": "^1.7.5",
     "@daytona/sdk": "^0.211.2",
@@ -28,7 +28,7 @@
     "@trigger.dev/sdk": "4.5.16",
     "@workspace/db": "workspace:*",
     "@workspace/ui": "workspace:*",
-    "ai": "^7.0.93",
+    "ai": "^7.0.139",
     "better-auth": "^1.7.5",
     "date-fns": "^4.4.0",
     "drizzle-orm": "^0.45.2",

@@ -55,9 +55,8 @@ export const TIERS: readonly Tier[] = [
 /**
  * What a game is built with until somebody chooses otherwise — the balanced
  * option, not the cheapest, because the first turn is the one that decides
- * whether the player keeps going. It is also the tier whose `strong` slot is
- * NOT the pro model (see `model-registry.ts`'s tier profiles), so the default
- * never bills a tweak at pro rates.
+ * whether the player keeps going. Its execution profile is defined only in
+ * `model-registry.ts`, and may share concrete entries with other tiers.
  */
 export const DEFAULT_TIER_ID: TierId = "balanced"
 
@@ -98,9 +97,9 @@ export type LegacyModelId = z.infer<typeof legacyModelIdSchema>
 
 /**
  * The fixed, deterministic mapping from a legacy model id to the tier it
- * becomes. Each tier's `strong` entry in the registry equals the legacy model
- * that maps to it here, so a thread that predates tiers keeps running the same
- * concrete model it always did — see `message-model.ts`'s `readThreadTier`.
+ * becomes. This preserves the historical tier choice, not an executable
+ * provider model; future turns use the tier's current approved profile.
+ * See `message-model.ts`'s `readThreadTier`.
  */
 export const LEGACY_MODEL_TIER: Record<LegacyModelId, TierId> = {
   "gemini-3.1-pro-preview": "pro",

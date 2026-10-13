@@ -4,7 +4,7 @@ import { turnUsage } from "@workspace/db/schema"
 import { eq } from "drizzle-orm"
 
 import type { ModelEntryId } from "@/lib/ai/model-registry"
-import { RATE_TABLE_VERSION, type TurnCost } from "@/lib/ai/pricing"
+import { type TurnCost } from "@/lib/ai/pricing"
 import { ingestTurnCredits } from "@/lib/polar/events"
 
 /**
@@ -157,7 +157,7 @@ export async function recordTurnUsage({
          * they can never drift apart: a row always says which rates — and which
          * markup — explain it.
          */
-        rateVersion: RATE_TABLE_VERSION,
+        rateVersion: cost.rateVersion,
         /**
          * The per-agent detail behind the totals above: which tier the turn
          * ran on, and, per run, its role, concrete model entry and priced

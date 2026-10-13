@@ -391,7 +391,7 @@ Explicit templates give the player predictable control, reduce agent guesswork, 
 - DB lint remains unavailable due to the pre-existing missing flat config. No new database push, live model call, Daytona game creation, or browser execution occurred.
 - GT-11 remains blocked, including Fantasy's durable FAIL and Cube's unavailable verification, later real-click failures, and poor visibility. The accepted Cube license risk is unchanged.
 - This is preservation of previously implemented source, not new behavior development: there is no meaningful retroactive RED; the source checks above verify the checkpoint without inventing TDD evidence.
-- Checkpoint commit identity will be recorded after creation; historical uncommitted notes above describe the original September execution.
+- Recovery checkpoint commit: `58b2762` — `feat(games): add versioned starter kits and build verification` (220 files). Historical uncommitted notes above describe the original September execution; this checkpoint does not close GT-11.
 
 ## Next step
 
