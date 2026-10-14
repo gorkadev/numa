@@ -129,6 +129,15 @@
     "playTitleFallback": "Play"
   },
   "ChatActivity": {
+    "buildProgress": {
+      "submit": "Starting build…",
+      "reconnecting": "Reconnecting to build…",
+      "workspace": "Preparing workspace…",
+      "planning": "Planning build…",
+      "building": "Building game…",
+      "verifying": "Verifying game…",
+      "finalizing": "Finalizing build…"
+    },
     "placeholder": "Ask for a change…",
     "scrollToEnd": "Scroll to end",
     "turnErrorTitle": "That turn did not go through",
@@ -220,6 +229,21 @@
     "sendMessage": "Send message",
     "stopGenerating": "Stop generating",
     "openModelPicker": "Choose model tier",
+    "openTemplatePicker": "Choose game template",
+    "templates": {
+      "none": {
+        "label": "No template",
+        "tagline": "Start from the standard game runtime."
+      },
+      "fantasy-cards": {
+        "label": "Fantasy Cards",
+        "tagline": "Start with a fantasy card game foundation."
+      },
+      "cube-world": {
+        "label": "Cube World",
+        "tagline": "Start with a small 3D adventure kit; the local pack has no bundled license evidence."
+      }
+    },
     "startDictation": "Start dictation",
     "stopDictation": "Stop dictation",
     "discardDictation": "Discard dictation",
@@ -393,12 +417,13 @@
       "appearanceDescription": "When you are not typing in a text field.",
       "toggleTheme": "Toggle light and dark theme",
       "composerGroup": "Composer",
-      "composerDescription": "Enter and Shift+Enter work in the message text area. Dictation and model shortcuts work outside dialogs and menus when available.",
+      "composerDescription": "Enter and Shift+Enter work in the message text area. Dictation, model and template shortcuts work outside dialogs and menus when available.",
       "sendMessage": "Send message from the text area",
       "newLine": "Insert a new line in the text area",
       "dictation": "Start or stop dictation when available",
       "discardDictation": "Discard active dictation (outside dialogs and menus; not with model picker open)",
-      "modelPicker": "Open model picker when available"
+      "modelPicker": "Open model picker when available",
+      "templatePicker": "Open template picker when available"
     },
     "tabDescription": "{section} settings.",
     "theme": "Theme",

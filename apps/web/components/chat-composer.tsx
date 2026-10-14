@@ -98,11 +98,13 @@ export function ChatComposer({
     setDraft,
   } = dictation
   const [modelOpen, setModelOpen] = useState(false)
+  const [templateOpen, setTemplateOpen] = useState(false)
+  const templatePickerAvailable = Boolean(templateId && onTemplateChange && !active && !pending)
   const pickerAvailable = Boolean(tierId && onTierChange && !active)
 
   useComposerShortcuts({
-    phase, supported, pending, modelOpen, pickerAvailable,
-    start, stop, discard, setModelOpen,
+    phase, supported, pending, modelOpen, pickerAvailable, templatePickerAvailable,
+    start, stop, discard, setModelOpen, setTemplateOpen,
   })
 
   const trimmed = value.trim()
@@ -161,6 +163,8 @@ export function ChatComposer({
               <TemplatePicker
                 value={templateId}
                 onValueChange={onTemplateChange}
+                open={templateOpen}
+                onOpenChange={setTemplateOpen}
                 disabled={pending}
               />
             ) : null}

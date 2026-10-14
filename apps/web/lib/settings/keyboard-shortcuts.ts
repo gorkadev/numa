@@ -24,6 +24,7 @@ export const SHORTCUT_GROUPS = [
       { label: "dictation", keys: ["ctrl", "shift", "D"] },
       { label: "discardDictation", keys: ["Esc"] },
       { label: "modelPicker", keys: ["ctrl", "shift", "M"] },
+      { label: "templatePicker", keys: ["ctrl", "shift", "V"] },
     ],
   },
 ] as const

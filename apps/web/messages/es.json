@@ -129,6 +129,15 @@
     "playTitleFallback": "Jugar"
   },
   "ChatActivity": {
+    "buildProgress": {
+      "submit": "Iniciando la compilación…",
+      "reconnecting": "Reconectando con la compilación…",
+      "workspace": "Preparando el espacio de trabajo…",
+      "planning": "Planificando la compilación…",
+      "building": "Compilando el juego…",
+      "verifying": "Verificando el juego…",
+      "finalizing": "Finalizando la compilación…"
+    },
     "placeholder": "Pide un cambio…",
     "scrollToEnd": "Ir al final",
     "turnErrorTitle": "No se pudo completar el turno",
@@ -220,6 +229,21 @@
     "sendMessage": "Enviar mensaje",
     "stopGenerating": "Detener la generación",
     "openModelPicker": "Elegir nivel de modelo",
+    "openTemplatePicker": "Elegir plantilla de juego",
+    "templates": {
+      "none": {
+        "label": "Sin plantilla",
+        "tagline": "Empieza con el entorno de ejecución estándar del juego."
+      },
+      "fantasy-cards": {
+        "label": "Cartas de fantasía",
+        "tagline": "Empieza con una base para un juego de cartas de fantasía."
+      },
+      "cube-world": {
+        "label": "Mundo de cubos",
+        "tagline": "Empieza con un pequeño kit de aventuras 3D; el paquete local no incluye documentación que acredite su licencia."
+      }
+    },
     "startDictation": "Iniciar dictado",
     "stopDictation": "Detener dictado",
     "discardDictation": "Descartar dictado",
@@ -393,12 +417,13 @@
       "appearanceDescription": "Cuando no estás escribiendo en un campo de texto.",
       "toggleTheme": "Alternar entre tema claro y oscuro",
       "composerGroup": "Editor de mensajes",
-      "composerDescription": "Intro y Mayús+Intro funcionan en el campo de texto. Los atajos de dictado y modelo funcionan fuera de diálogos y menús cuando están disponibles.",
+      "composerDescription": "Intro y Mayús+Intro funcionan en el campo de texto. Los atajos de dictado, modelo y plantilla funcionan fuera de diálogos y menús cuando están disponibles.",
       "sendMessage": "Enviar mensaje desde el campo de texto",
       "newLine": "Insertar una línea nueva en el campo de texto",
       "dictation": "Iniciar o detener el dictado si está disponible",
       "discardDictation": "Descartar el dictado activo (fuera de diálogos y menús; no con el selector de modelo abierto)",
-      "modelPicker": "Abrir el selector de modelo si está disponible"
+      "modelPicker": "Abrir el selector de modelo si está disponible",
+      "templatePicker": "Abrir el selector de plantilla si está disponible"
     },
     "tabDescription": "Ajustes de {section}.",
     "theme": "Tema",

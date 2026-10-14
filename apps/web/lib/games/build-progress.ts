@@ -84,17 +84,13 @@ export function reduceGameBuildProgress(
   }
 }
 
-export function gameBuildProgressLabel(progress: GameBuildProgress): string | null {
+export function gameBuildProgressLabelKey(
+  progress: GameBuildProgress
+): `buildProgress.${"submit" | "reconnecting" | GameBuildPhase}` | null {
   if (progress === null) return null
 
-  if (progress.kind === "submit") return "Starting build…"
-  if (progress.kind === "reconnecting") return "Reconnecting to build…"
+  if (progress.kind === "submit") return "buildProgress.submit"
+  if (progress.kind === "reconnecting") return "buildProgress.reconnecting"
 
-  return {
-    workspace: "Preparing workspace…",
-    planning: "Planning build…",
-    building: "Building game…",
-    verifying: "Verifying game…",
-    finalizing: "Finalizing build…",
-  }[progress.phase]
+  return `buildProgress.${progress.phase}`
 }
