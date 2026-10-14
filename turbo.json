@@ -17,7 +17,8 @@
       "env": [
         "DATABASE_URL",
         "DATABASE_URL_UNPOOLED",
-        "NEON_BRANCH"
+        "NEON_BRANCH",
+        "GOOGLE_VERTEX_PROJECT"
       ]
     },
     "lint": {
@@ -41,7 +42,8 @@
       "env": [
         "DATABASE_URL",
         "DATABASE_URL_UNPOOLED",
-        "NEON_BRANCH"
+        "NEON_BRANCH",
+        "GOOGLE_VERTEX_PROJECT"
       ]
     }
   }

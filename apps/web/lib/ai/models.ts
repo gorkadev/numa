@@ -30,7 +30,13 @@ const PROVIDERS: Record<ProviderId, (providerModelId: string) => LanguageModel> 
   {
     "google-vertex": (providerModelId) => {
       if (providerModelId === "gemini-4-argon") {
-        argonVertex ??= createGoogleVertex({ location: "eu" })
+        // Empty apiKey suppresses the express env key; standard OAuth uses
+        // GOOGLE_VERTEX_PROJECT and deployment-provided credentials.
+        argonVertex ??= createGoogleVertex({
+          location: "eu",
+          apiKey: "",
+          project: process.env.GOOGLE_VERTEX_PROJECT,
+        })
         return argonVertex(providerModelId)
       }
       return googleVertex(providerModelId)
