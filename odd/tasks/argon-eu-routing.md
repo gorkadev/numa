@@ -8,7 +8,7 @@ Branch feat/game-templates; AR-1 base f7647b6, AR-2 base bf98b91. Single writer,
 
 ## Tasks
 - [x] AR-1 Add regional Argon factory — ebd6806; final evidence bf98b91. Offline verified, but real use revealed express auth ignores location.
-- [ ] AR-2 Select standard OAuth for Argon, configure/forward project, verify and commit (in progress).
+- [x] AR-2 Select standard OAuth for Argon, configure/forward project, verify and commit — ec0287f.
   - Delegated writer mandatory (source/test/config); ASSESS requires independent verifier. Parent owns commits/progress.
   - Test-first RED/GREEN: API-key suppression, explicit project to URL/OAuth, EU routing; preserve defaults/cache/efforts. No unsafe casts.
   - Checks: five-file focused AI tests via tsx, web typecheck, targeted ESLint, working/staged diff checks, dotenv ignore check.
@@ -25,7 +25,7 @@ Branch feat/game-templates; AR-1 base f7647b6, AR-2 base bf98b91. Single writer,
 - Read-only clarification mv8knaj0-j-43z8: wrapper forwards explicit options.project to GoogleAuth but not environment-loaded GOOGLE_VERTEX_PROJECT. Missing independent project discovery may be tolerated or error; not live-tested. Correct by explicit project from existing env for Argon, not a global alias.
 - Writer mv8koadp-k-yw8m observed explicit-project RED9pass2fail then GREEN11; project from existing env now forwarded both to factory URL and GoogleAuth.projectId. Types/diff PASS; new lint environment warning resolved by mv8kqk5r-l-gqst adding only project to Turbo build/dev env. All writer checks PASS with no lint warnings.
 - Final independent mv8kry8t-m-j7o6 PASS11tests/types/lint/working+stageddiff/ignore/Turbo JSON assertions. Source+Turbo index/worktree hashes match. Explicit project is cached by GoogleAuth before discovery, so it no longer depends on temporary GOOGLE_CLOUD_PROJECT. No additional network calls; corrected candidate offline verified, not live-tested. No full build/suite, running-worker or deployment verification.
-- Parent source spot read confirmed minimal eu/empty-apiKey/explicit-project settings; local commit pending. Documentation-only closure has no meaningful RED; structural diff checks apply.
+- Parent source spot read confirmed minimal eu/empty-apiKey/explicit-project settings; working/staged diff spot checks PASS. Work-unit ec0287f (`fix(ai): use standard Vertex authentication for Argon`),4files/155diff lines; tree clean immediately after commit. Ignored dotenv not committed. Documentation-only closure has no meaningful RED; structural diff checks apply.
 
 ## Next step
-Record local verified work-unit commit. User must restart Next and Trigger to load project configuration, then retry one app message. Exact final candidate and running workers have not been live-tested; deployment credentials remain unverified.
+Local implementation is verified and committed. User must restart Next and Trigger to load project configuration, then retry one app message. Exact final candidate and running workers have not been live-tested; deployment credentials remain unverified.
