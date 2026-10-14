@@ -1,6 +1,7 @@
 "use server"
 
 import { refresh } from "next/cache"
+import { getTranslations } from "next-intl/server"
 import { redirect } from "next/navigation"
 import { db } from "@workspace/db"
 import { games } from "@workspace/db/schema"
@@ -75,11 +76,12 @@ export async function createGame(
   formData: FormData
 ): Promise<CreateGameState> {
   const { user } = await requireSession()
+  const t = await getTranslations("GameComposer")
 
   const prompt = String(formData.get("prompt") ?? "").trim()
 
   if (!prompt) {
-    return { error: "Describe the game you want to build." }
+    return { error: t("errorPromptRequired") }
   }
 
   /**
@@ -147,7 +149,7 @@ export async function createGame(
     .returning({ id: games.id })
 
   if (!game) {
-    return { error: "The game could not be created. Try again." }
+    return { error: t("errorCreateFailed") }
   }
 
   /**
@@ -205,15 +207,16 @@ export async function renameGame(
   title: string
 ): Promise<RenameGameState> {
   const { user } = await requireSession()
+  const t = await getTranslations("GameMenu")
 
   const name = title.trim().slice(0, TITLE_MAX_LENGTH)
 
   if (!name) {
-    return { error: "A game needs a name." }
+    return { error: t("errorNameRequired") }
   }
 
   if (!UUID.test(id)) {
-    return { error: "That game no longer exists." }
+    return { error: t("errorGameNotFound") }
   }
 
   const [game] = await db
@@ -223,7 +226,7 @@ export async function renameGame(
     .returning({ id: games.id })
 
   if (!game) {
-    return { error: "That game no longer exists." }
+    return { error: t("errorGameNotFound") }
   }
 
   /**
@@ -251,9 +254,10 @@ export async function setGamePinned(
   pinned: boolean
 ): Promise<SetGamePinnedState> {
   const { user } = await requireSession()
+  const t = await getTranslations("GameMenu")
 
   if (!UUID.test(id)) {
-    return { error: "That game no longer exists." }
+    return { error: t("errorGameNotFound") }
   }
 
   const [game] = await db
@@ -263,7 +267,7 @@ export async function setGamePinned(
     .returning({ id: games.id })
 
   if (!game) {
-    return { error: "That game no longer exists." }
+    return { error: t("errorGameNotFound") }
   }
 
   /**
@@ -298,9 +302,10 @@ export async function deleteGame(
   { viewing = false }: { viewing?: boolean } = {}
 ): Promise<DeleteGameState> {
   const { user } = await requireSession()
+  const t = await getTranslations("GameMenu")
 
   if (!UUID.test(id)) {
-    return { error: "That game no longer exists." }
+    return { error: t("errorGameNotFound") }
   }
 
   const [game] = await db
@@ -310,14 +315,14 @@ export async function deleteGame(
     .limit(1)
 
   if (!game) {
-    return { error: "That game no longer exists." }
+    return { error: t("errorGameNotFound") }
   }
 
   try {
     await deleteGameSandboxes(game.id, game.sandboxId)
   } catch {
     return {
-      error: "The game's sandbox could not be deleted. Try again in a moment.",
+      error: t("errorSandboxDeleteFailed"),
     }
   }
 

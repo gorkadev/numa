@@ -7,6 +7,7 @@ import {
   BotIcon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
+import { useTranslations } from "next-intl"
 import { Button } from "@workspace/ui/components/button"
 import {
   Drawer,
@@ -25,10 +26,13 @@ import {
   ItemMedia,
   ItemTitle,
 } from "@workspace/ui/components/item"
-import { Spinner } from "@workspace/ui/components/spinner"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { subagentStatusLabel } from "@/components/chat/subagent-entry"
+import { Spinner } from "@/components/localized-spinner"
+
+import {
+  subagentStatusKey,
+} from "@/components/chat/subagent-entry"
 import { SubagentRunDetail } from "@/components/chat/subagent-run-detail"
 import type { SubagentRunRecord } from "@/lib/games/harness/records"
 
@@ -73,6 +77,7 @@ export function SubagentRunRow({
   selected?: boolean
   onSelect: (agentId: string) => void
 }) {
+  const t = useTranslations("ChatAgents")
   const running = record.status === "running"
   const failed = record.status === "error"
 
@@ -117,7 +122,7 @@ export function SubagentRunRow({
         <span
           className={cn("text-xs text-muted-foreground", running && "shimmer")}
         >
-          {running ? record.activity : subagentStatusLabel(record.status)}
+          {running ? record.activity : t(subagentStatusKey(record.status))}
         </span>
         <HugeiconsIcon
           icon={ArrowRight01Icon}
@@ -171,6 +176,8 @@ export function SubagentPanelBody({
   onSelectRun: (agentId: string | null) => void
   className?: string
 }) {
+  const t = useTranslations("ChatAgents")
+
   return (
     <div
       className={cn(
@@ -191,12 +198,12 @@ export function SubagentPanelBody({
               strokeWidth={2}
               data-icon="inline-start"
             />
-            All runs
+            {t("allRuns")}
           </Button>
           <SubagentRunDetail record={selected} />
         </div>
       ) : records.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No sub-agent runs yet.</p>
+        <p className="text-sm text-muted-foreground">{t("noRuns")}</p>
       ) : (
         <ItemGroup>
           {records.map((record) => (
@@ -213,8 +220,8 @@ export function SubagentPanelBody({
 }
 
 /** The title every shell renders; the mobile drawer also shows the longer description below it. */
-const PANEL_TITLE = "Sub-agent runs"
-const PANEL_DESCRIPTION = "Every sub-agent this thread has dispatched."
+const PANEL_TITLE_KEY = "panelTitle"
+const PANEL_DESCRIPTION_KEY = "panelDescription"
 
 /**
  * The mobile half of `subagent-view`'s panel: opened from the thread header
@@ -252,6 +259,7 @@ export function SubagentPanel({
   selectedRunId,
   onSelectRun,
 }: SubagentPanelProps) {
+  const t = useTranslations("ChatAgents")
   const isMobile = useIsMobile()
   const selected =
     records.find((record) => record.agentId === selectedRunId) ?? null
@@ -274,8 +282,8 @@ export function SubagentPanel({
          * drawer needs it restated here.
          */}
         <DrawerHeader className="pb-4">
-          <DrawerTitle>{PANEL_TITLE}</DrawerTitle>
-          <DrawerDescription>{PANEL_DESCRIPTION}</DrawerDescription>
+          <DrawerTitle>{t(PANEL_TITLE_KEY)}</DrawerTitle>
+          <DrawerDescription>{t(PANEL_DESCRIPTION_KEY)}</DrawerDescription>
         </DrawerHeader>
         <SubagentPanelBody
           records={records}

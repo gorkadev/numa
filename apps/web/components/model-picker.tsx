@@ -1,6 +1,14 @@
 "use client"
 
+import { Kbd } from "@workspace/ui/components/kbd"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@workspace/ui/components/tooltip"
+import { useIsMac } from "@/hooks/use-is-mac"
 import { ArrowDown01Icon, GridIcon } from "@hugeicons/core-free-icons"
+import { useTranslations } from "next-intl"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   DropdownMenu,
@@ -23,6 +31,8 @@ type ModelPickerProps = {
   value: TierId
   onValueChange: (value: TierId) => void
   disabled?: boolean
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
 /**
@@ -43,20 +53,40 @@ export function ModelPicker({
   value,
   onValueChange,
   disabled = false,
+  open,
+  onOpenChange,
 }: ModelPickerProps) {
+  const t = useTranslations("GameComposer")
+  const isMac = useIsMac()
+  const modelHint = isMac ? "⌃⇧M" : "Ctrl ⇧ M"
   const selected = getTier(value)
+  const tierLabel = (id: TierId) => t(`tiers.${id}.label`)
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <InputGroupButton type="button" disabled={disabled} size="sm">
-            <HugeiconsIcon icon={GridIcon} />
-            {selected.label}
-            <HugeiconsIcon icon={ArrowDown01Icon} />
-          </InputGroupButton>
-        }
-      />
+    <DropdownMenu open={open} onOpenChange={onOpenChange}>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <DropdownMenuTrigger
+              render={
+                <InputGroupButton
+                  type="button"
+                  disabled={disabled}
+                  size="sm"
+                  aria-keyshortcuts={!disabled ? "Control+Shift+M" : undefined}
+                >
+                  <HugeiconsIcon icon={GridIcon} />
+                  {tierLabel(selected.id)}
+                  <HugeiconsIcon icon={ArrowDown01Icon} />
+                </InputGroupButton>
+              }
+            />
+          }
+        />
+        <TooltipContent>
+          {t("openModelPicker")} <Kbd>{modelHint}</Kbd>
+        </TooltipContent>
+      </Tooltip>
       {/**
        * Wide enough for a tagline to breathe: the descriptions are the reason
        * the menu exists — the labels alone do not say which tier to pick.
@@ -92,8 +122,10 @@ export function ModelPicker({
                */}
               <Item size="xs">
                 <ItemContent>
-                  <ItemTitle>{tier.label}</ItemTitle>
-                  <ItemDescription>{tier.tagline}</ItemDescription>
+                  <ItemTitle>{tierLabel(tier.id)}</ItemTitle>
+                  <ItemDescription>
+                    {t(`tiers.${tier.id}.tagline`)}
+                  </ItemDescription>
                 </ItemContent>
               </Item>
             </DropdownMenuRadioItem>

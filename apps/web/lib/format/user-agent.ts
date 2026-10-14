@@ -68,19 +68,29 @@ export function deviceKind(userAgent: string | null | undefined): DeviceKind {
 
 /**
  * Formats a user agent as `"<Browser> on <OS>"`, degrading to whichever half
- * is recognizable and to `"Unknown device"` when neither is.
+ * is recognizable and to `"Unknown device"` when neither is. Presentation
+ * strings can be localized without translating browser or platform names.
  *
  * A null user agent is not an error: `session.userAgent` is nullable in the
  * schema, and a session created by a client that sent no header is still a
  * real session the user may want to revoke.
  */
-export function describeUserAgent(userAgent: string | null | undefined) {
-  if (!userAgent) return "Unknown device"
+export function describeUserAgent(
+  userAgent: string | null | undefined,
+  presentation: {
+    unknownDevice?: string
+    formatBrowserPlatform?: (browser: string, platform: string) => string
+  } = {}
+) {
+  const unknownDevice = presentation.unknownDevice ?? "Unknown device"
+  if (!userAgent) return unknownDevice
 
   const browser = match(BROWSERS, userAgent)
   const platform = match(PLATFORMS, userAgent)
 
-  if (browser && platform) return `${browser} on ${platform}`
+  if (browser && platform) {
+    return presentation.formatBrowserPlatform?.(browser, platform) ?? `${browser} on ${platform}`
+  }
 
-  return browser ?? platform ?? "Unknown device"
+  return browser ?? platform ?? unknownDevice
 }

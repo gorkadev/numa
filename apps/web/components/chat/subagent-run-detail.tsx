@@ -9,6 +9,7 @@ import {
   Tick02Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
+import { useLocale, useTranslations } from "next-intl"
 import { Badge } from "@workspace/ui/components/badge"
 import { Bubble, BubbleContent } from "@workspace/ui/components/bubble"
 import { Button } from "@workspace/ui/components/button"
@@ -20,7 +21,8 @@ import { Separator } from "@workspace/ui/components/separator"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { Markdown } from "@/components/chat/markdown"
-import { subagentStatusLabel } from "@/components/chat/subagent-entry"
+import { subagentStatusKey } from "@/components/chat/subagent-entry"
+import { localizedToolCallLabel } from "@/components/chat/tool-group"
 import type { SubagentRunRecord } from "@/lib/games/harness/records"
 import { describeToolCall } from "@/lib/games/tool-parts"
 
@@ -51,6 +53,7 @@ const CLAMP_HEIGHT_PX = 160
  * content's true full height in either state, so it is what gets compared.
  */
 function ExpandableText({ text }: { text: string }) {
+  const t = useTranslations("ChatAgents")
   const [open, setOpen] = useState(false)
   const [overflows, setOverflows] = useState(false)
   const textRef = useRef<HTMLDivElement>(null)
@@ -100,7 +103,7 @@ function ExpandableText({ text }: { text: string }) {
             <CollapsibleTrigger
               render={
                 <Button variant="ghost" size="sm" className="-ms-2.5">
-                  {open ? "Show less" : "Show more"}
+                  {open ? t("showLess") : t("showMore")}
                   <HugeiconsIcon
                     icon={open ? ArrowUp01Icon : ArrowDown01Icon}
                     strokeWidth={2}
@@ -128,6 +131,9 @@ function ExpandableText({ text }: { text: string }) {
  * "keeps updating while it runs" behavior the spec asks for.
  */
 export function SubagentRunDetail({ record }: SubagentRunDetailProps) {
+  const t = useTranslations("ChatAgents")
+  const activityT = useTranslations("ChatActivity")
+  const locale = useLocale()
   const running = record.status === "running"
 
   return (
@@ -145,14 +151,14 @@ export function SubagentRunDetail({ record }: SubagentRunDetailProps) {
       </div>
 
       <div className="flex flex-col gap-1">
-        <span className="text-xs text-muted-foreground">Status</span>
+        <span className="text-xs text-muted-foreground">{t("statusLabel")}</span>
         <span className={running ? "shimmer" : undefined}>
-          {running ? record.activity : subagentStatusLabel(record.status)}
+          {running ? record.activity : t(subagentStatusKey(record.status))}
         </span>
       </div>
 
       <div className="flex flex-col gap-1">
-        <span className="text-xs text-muted-foreground">Model</span>
+        <span className="text-xs text-muted-foreground">{t("modelLabel")}</span>
         <span>{record.modelName}</span>
       </div>
 
@@ -164,18 +170,18 @@ export function SubagentRunDetail({ record }: SubagentRunDetailProps) {
        */}
       {record.prompt ? (
         <div className="flex flex-col gap-1">
-          <span className="text-xs text-muted-foreground">Input</span>
+          <span className="text-xs text-muted-foreground">{t("inputLabel")}</span>
           <ExpandableText text={record.prompt} />
         </div>
       ) : null}
 
       <div className="flex flex-col gap-1">
-        <span className="text-xs text-muted-foreground">Output</span>
+        <span className="text-xs text-muted-foreground">{t("outputLabel")}</span>
         {record.summary ? (
           <ExpandableText text={record.summary} />
         ) : (
           <p className="text-sm text-muted-foreground">
-            {running ? "Waiting for the run to finish…" : "No output."}
+            {running ? t("pendingOutput") : t("emptyOutput")}
           </p>
         )}
       </div>
@@ -184,10 +190,10 @@ export function SubagentRunDetail({ record }: SubagentRunDetailProps) {
 
       <div className="flex flex-col gap-2">
         <span className="text-xs text-muted-foreground">
-          Tool calls ({record.toolCalls.length})
+          {t("toolCallsLabel", { count: record.toolCalls.length })}
         </span>
         {record.toolCalls.length === 0 ? (
-          <p className="text-muted-foreground">No tool calls yet.</p>
+          <p className="text-muted-foreground">{t("emptyToolCalls")}</p>
         ) : (
           <ul className="flex flex-col gap-1.5">
             {record.toolCalls.map((call) => (
@@ -210,11 +216,17 @@ export function SubagentRunDetail({ record }: SubagentRunDetailProps) {
                   className={!call.ok ? "text-destructive" : undefined}
                   title={call.error}
                 >
-                  {describeToolCall(
+                  {localizedToolCallLabel(
                     call.toolName,
                     call.path,
-                    call.ok ? "done" : "failed"
-                  )}
+                    call.ok ? "done" : "failed",
+                    activityT
+                  ) ??
+                    describeToolCall(
+                      call.toolName,
+                      call.path,
+                      call.ok ? "done" : "failed"
+                    )}
                 </span>
               </li>
             ))}
@@ -226,10 +238,10 @@ export function SubagentRunDetail({ record }: SubagentRunDetailProps) {
 
       <div className="flex flex-col gap-2">
         <span className="text-xs text-muted-foreground">
-          Edited files ({record.edits.length})
+          {t("editedFilesLabel", { count: record.edits.length })}
         </span>
         {record.edits.length === 0 ? (
-          <p className="text-muted-foreground">No files edited yet.</p>
+          <p className="text-muted-foreground">{t("emptyFiles")}</p>
         ) : (
           <ul className="flex flex-col gap-1">
             {record.edits.map((path) => (
@@ -244,23 +256,32 @@ export function SubagentRunDetail({ record }: SubagentRunDetailProps) {
       <Separator />
 
       <div className="grid grid-cols-2 gap-x-4 gap-y-2 bg-muted p-3 rounded-2xl">
-        <TokenStat label="Input tokens" value={record.tokens.inputTokens} />
-        <TokenStat label="Output tokens" value={record.tokens.outputTokens} />
+        <TokenStat label={t("inputTokensLabel")} value={record.tokens.inputTokens} locale={locale} />
+        <TokenStat label={t("outputTokensLabel")} value={record.tokens.outputTokens} locale={locale} />
         <TokenStat
-          label="Cached input tokens"
+          label={t("cachedInputTokensLabel")}
           value={record.tokens.cachedInputTokens}
+          locale={locale}
         />
-        <TokenStat label="Reasoning tokens" value={record.tokens.reasoningTokens} />
+        <TokenStat label={t("reasoningTokensLabel")} value={record.tokens.reasoningTokens} locale={locale} />
       </div>
     </div>
   )
 }
 
-function TokenStat({ label, value }: { label: string; value: number }) {
+function TokenStat({
+  label,
+  value,
+  locale,
+}: {
+  label: string
+  value: number
+  locale: string
+}) {
   return (
     <div className="flex flex-col gap-0.5">
       <span className="text-xs text-muted-foreground">{label}</span>
-      <span className="font-mono text-sm">{value.toLocaleString()}</span>
+      <span className="font-mono text-sm">{value.toLocaleString(locale)}</span>
     </div>
   )
 }

@@ -77,6 +77,8 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").default(false).notNull(),
   image: text("image"),
+  /** Explicit locale preference; NULL preserves browser negotiation semantics. */
+  locale: text("locale"),
   /**
    * Owned by the `twoFactor` plugin in `apps/web/lib/auth.ts`. Stays false
    * after `/two-factor/enable` and only flips once the first TOTP code is

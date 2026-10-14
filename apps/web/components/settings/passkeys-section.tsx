@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react"
 import { FingerPrintIcon, MoreHorizontalIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { formatDistanceToNow } from "date-fns"
 import { getAuthenticatorName } from "@better-auth/passkey"
+import { useFormatter, useTranslations } from "next-intl"
 import { Button } from "@workspace/ui/components/button"
 import {
   Dialog,
@@ -31,8 +31,9 @@ import {
 } from "@workspace/ui/components/item"
 import { Label } from "@workspace/ui/components/label"
 import { Skeleton } from "@workspace/ui/components/skeleton"
-import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
+
+import { Spinner } from "@/components/localized-spinner"
 
 import { authClient } from "@/lib/auth-client"
 import {
@@ -45,15 +46,13 @@ type Passkey = NonNullable<
   Awaited<ReturnType<typeof authClient.passkey.listUserPasskeys>>["data"]
 >[number]
 
-function passkeyLabel(passkey: Passkey) {
-  return passkey.name || getAuthenticatorName(passkey.aaguid) || "Passkey"
-}
-
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Please try again."
+function passkeyLabel(passkey: Passkey, fallback: string) {
+  return passkey.name || getAuthenticatorName(passkey.aaguid) || fallback
 }
 
 export function PasskeysSection() {
+  const t = useTranslations("Settings")
+  const format = useFormatter()
   const [passkeys, setPasskeys] = useState<Passkey[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -73,14 +72,14 @@ export function PasskeysSection() {
       const { data, error } = await authClient.passkey.listUserPasskeys()
       if (!mountedRef.current || id !== requestId.current) return false
       if (error) {
-        setLoadError(error.message ?? "Please try again.")
+        setLoadError(t("genericError"))
         return false
       }
       setPasskeys(data ?? [])
       return true
-    } catch (error) {
+    } catch {
       if (mountedRef.current && id === requestId.current) {
-        setLoadError(errorMessage(error))
+        setLoadError(t("genericError"))
       }
       return false
     } finally {
@@ -108,19 +107,19 @@ export function PasskeysSection() {
         if (!cancelled)
           toast.add({
             type: "error",
-            title: "Could not add the passkey",
-            description: result.error.message,
+            title: t("couldNotAddPasskey"),
+            description: t("genericError"),
           })
         return
       }
       if (await loadPasskeys()) {
-        toast.add({ type: "success", title: "Passkey added" })
+        toast.add({ type: "success", title: t("passkeyAdded") })
       }
-    } catch (error) {
+    } catch {
       toast.add({
         type: "error",
-        title: "Could not add the passkey",
-        description: errorMessage(error),
+        title: t("couldNotAddPasskey"),
+        description: t("genericError"),
       })
     } finally {
       if (mountedRef.current) setAdding(false)
@@ -136,19 +135,19 @@ export function PasskeysSection() {
       if (error) {
         toast.add({
           type: "error",
-          title: "Could not remove the passkey",
-          description: error.message,
+          title: t("couldNotRemovePasskey"),
+          description: t("genericError"),
         })
         return
       }
       if (await loadPasskeys()) {
-        toast.add({ type: "success", title: "Passkey removed" })
+        toast.add({ type: "success", title: t("passkeyRemoved") })
       }
-    } catch (error) {
+    } catch {
       toast.add({
         type: "error",
-        title: "Could not remove the passkey",
-        description: errorMessage(error),
+        title: t("couldNotRemovePasskey"),
+        description: t("genericError"),
       })
     } finally {
       if (mountedRef.current) setBusyId(null)
@@ -168,19 +167,19 @@ export function PasskeysSection() {
       if (error) {
         toast.add({
           type: "error",
-          title: "Could not rename the passkey",
-          description: error.message,
+          title: t("couldNotRenamePasskey"),
+          description: t("genericError"),
         })
         return
       }
       if (await loadPasskeys()) {
-        toast.add({ type: "success", title: "Passkey renamed" })
+        toast.add({ type: "success", title: t("passkeyRenamed") })
       }
-    } catch (error) {
+    } catch {
       toast.add({
         type: "error",
-        title: "Could not rename the passkey",
-        description: errorMessage(error),
+        title: t("couldNotRenamePasskey"),
+        description: t("genericError"),
       })
     } finally {
       if (mountedRef.current) setBusyId(null)
@@ -190,8 +189,8 @@ export function PasskeysSection() {
   return (
     <section className="flex flex-col gap-3">
       <SettingsHeading
-        title="Passkeys"
-        description="Passkeys are a secure way to sign in to your Numa account"
+        title={t("passkeys")}
+        description={t("passkeysDescription")}
       />
       <SettingsRows>
         {loading ? (
@@ -214,7 +213,7 @@ export function PasskeysSection() {
         ) : loadError ? (
           <SettingsRow>
             <ItemContent>
-              <ItemTitle>Could not load passkeys</ItemTitle>
+              <ItemTitle>{t("couldNotLoadPasskeys")}</ItemTitle>
               <ItemDescription>{loadError}</ItemDescription>
             </ItemContent>
             <ItemActions>
@@ -223,7 +222,7 @@ export function PasskeysSection() {
                 size="sm"
                 onClick={() => void loadPasskeys()}
               >
-                Retry
+                {t("retry")}
               </Button>
             </ItemActions>
           </SettingsRow>
@@ -231,17 +230,11 @@ export function PasskeysSection() {
           <>
             <SettingsRow>
               <ItemContent>
-                <ItemTitle>
-                  {passkeys.length === 0
-                    ? "No passkeys registered"
-                    : passkeys.length === 1
-                      ? "1 passkey"
-                      : `${passkeys.length} passkeys`}
-                </ItemTitle>
+                <ItemTitle>{t("passkeyCount", { count: passkeys.length })}</ItemTitle>
               </ItemContent>
               <ItemActions>
                 <Button variant="ghost" disabled={adding} onClick={addPasskey}>
-                  {adding && <Spinner />}New passkey
+                  {adding && <Spinner />}{t("newPasskey")}
                 </Button>
               </ItemActions>
             </SettingsRow>
@@ -258,12 +251,9 @@ export function PasskeysSection() {
                   />
                 </ItemMedia>
                 <ItemContent>
-                  <ItemTitle>{passkeyLabel(passkey)}</ItemTitle>
+                  <ItemTitle>{passkeyLabel(passkey, t("passkeys"))}</ItemTitle>
                   <ItemDescription>
-                    Added{" "}
-                    {formatDistanceToNow(new Date(passkey.createdAt), {
-                      addSuffix: true,
-                    })}
+                    {t("addedAt", { time: format.relativeTime(new Date(passkey.createdAt)) })}
                   </ItemDescription>
                 </ItemContent>
                 <ItemActions>
@@ -276,7 +266,7 @@ export function PasskeysSection() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            aria-label={`Manage ${passkeyLabel(passkey)}`}
+                            aria-label={t("managePasskey", { name: passkeyLabel(passkey, t("passkeys")) })}
                           />
                         }
                       >
@@ -287,13 +277,13 @@ export function PasskeysSection() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-auto">
                         <DropdownMenuItem onClick={() => setRenaming(passkey)}>
-                          Rename
+                          {t("rename")}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           variant="destructive"
                           onClick={() => deletePasskey(passkey)}
                         >
-                          Remove passkey
+                          {t("removePasskey")}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -324,9 +314,11 @@ function RenamePasskeyDialog({
   onOpenChange: (open: boolean) => void
   onRename: (name: string) => void
 }) {
+  const t = useTranslations("Settings")
+  const common = useTranslations("Common")
   return (
     <Dialog open={passkey !== null} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent closeLabel={common("close")} className="sm:max-w-sm">
         <form
           onSubmit={(event) => {
             event.preventDefault()
@@ -338,14 +330,13 @@ function RenamePasskeyDialog({
           }}
         >
           <DialogHeader>
-            <DialogTitle>Rename passkey</DialogTitle>
+            <DialogTitle>{t("renamePasskey")}</DialogTitle>
             <DialogDescription>
-              Give this passkey a name you will recognize on the device it lives
-              on.
+              {t("renamePasskeyDescription")}
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-2 py-4">
-            <Label htmlFor="passkey-name">Name</Label>
+            <Label htmlFor="passkey-name">{t("name")}</Label>
             <Input
               key={passkey?.id}
               id="passkey-name"
@@ -353,14 +344,15 @@ function RenamePasskeyDialog({
               autoFocus
               required
               maxLength={64}
-              defaultValue={passkey ? passkeyLabel(passkey) : ""}
+              aria-label={t("name")}
+              defaultValue={passkey ? passkeyLabel(passkey, t("passkeys")) : ""}
             />
           </div>
           <DialogFooter>
             <DialogClose render={<Button variant="outline" />}>
-              Cancel
+              {t("cancel")}
             </DialogClose>
-            <Button type="submit">Save</Button>
+            <Button type="submit">{t("save")}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

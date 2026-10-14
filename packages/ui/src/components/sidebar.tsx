@@ -40,6 +40,9 @@ type SidebarContextProps = {
   setOpenMobile: (open: boolean) => void
   isMobile: boolean
   toggleSidebar: () => void
+  drawerTitle: string
+  drawerDescription: string
+  toggleLabel: string
 }
 
 const SidebarContext = React.createContext<SidebarContextProps | null>(null)
@@ -60,11 +63,17 @@ function SidebarProvider({
   className,
   style,
   children,
+  drawerTitle = "Sidebar",
+  drawerDescription = "Displays the mobile sidebar.",
+  toggleLabel = "Toggle Sidebar",
   ...props
 }: React.ComponentProps<"div"> & {
   defaultOpen?: boolean
   open?: boolean
   onOpenChange?: (open: boolean) => void
+  drawerTitle?: string
+  drawerDescription?: string
+  toggleLabel?: string
 }) {
   const isMobile = useIsMobile()
   const [openMobile, setOpenMobile] = React.useState(false)
@@ -122,8 +131,22 @@ function SidebarProvider({
       openMobile,
       setOpenMobile,
       toggleSidebar,
+      drawerTitle,
+      drawerDescription,
+      toggleLabel,
     }),
-    [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
+    [
+      state,
+      open,
+      setOpen,
+      isMobile,
+      openMobile,
+      setOpenMobile,
+      toggleSidebar,
+      drawerTitle,
+      drawerDescription,
+      toggleLabel,
+    ]
   )
 
   return (
@@ -162,7 +185,14 @@ function Sidebar({
   variant?: "sidebar" | "floating" | "inset"
   collapsible?: "offcanvas" | "icon" | "none"
 }) {
-  const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+  const {
+    isMobile,
+    state,
+    openMobile,
+    setOpenMobile,
+    drawerTitle,
+    drawerDescription,
+  } = useSidebar()
 
   if (collapsible === "none") {
     return (
@@ -207,9 +237,9 @@ function Sidebar({
             } as React.CSSProperties
           }
         >
-          <DrawerTitle className="sr-only">Sidebar</DrawerTitle>
+          <DrawerTitle className="sr-only">{drawerTitle}</DrawerTitle>
           <DrawerDescription className="sr-only">
-            Displays the mobile sidebar.
+            {drawerDescription}
           </DrawerDescription>
           <div className="flex h-full w-full flex-col">{children}</div>
         </DrawerContent>
@@ -268,7 +298,7 @@ function SidebarTrigger({
   onClick,
   ...props
 }: React.ComponentProps<typeof Button>) {
-  const { toggleSidebar } = useSidebar()
+  const { toggleSidebar, toggleLabel } = useSidebar()
 
   return (
     <Button
@@ -284,22 +314,22 @@ function SidebarTrigger({
       {...props}
     >
       <HugeiconsIcon icon={PanelLeftIcon} strokeWidth={2} />
-      <span className="sr-only">Toggle Sidebar</span>
+      <span className="sr-only">{toggleLabel}</span>
     </Button>
   )
 }
 
 function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
-  const { toggleSidebar } = useSidebar()
+  const { toggleSidebar, toggleLabel } = useSidebar()
 
   return (
     <button
       data-sidebar="rail"
       data-slot="sidebar-rail"
-      aria-label="Toggle Sidebar"
+      aria-label={toggleLabel}
       tabIndex={-1}
       onClick={toggleSidebar}
-      title="Toggle Sidebar"
+      title={toggleLabel}
       className={cn(
         "absolute inset-y-0 z-20 hidden w-4 transition-all ease-linear group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:start-1/2 after:w-[2px] hover:after:bg-sidebar-border sm:flex ltr:-translate-x-1/2 rtl:-translate-x-1/2",
         "in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize",

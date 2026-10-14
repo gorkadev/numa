@@ -8,11 +8,11 @@ import {
   SidebarGroup,
   SidebarHeader,
   SidebarInset,
-  SidebarProvider,
 } from "@workspace/ui/components/sidebar"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 
 import { AppSettings } from "@/components/app-settings"
+import { LocalizedSidebarProvider } from "@/components/localized-sidebar-provider"
 import { AppSidebar } from "@/components/app-sidebar"
 import { listGames } from "@/lib/games/queries"
 import { ensureBillingCustomer } from "@/lib/polar/customers"
@@ -47,13 +47,13 @@ async function AuthenticatedShell({ children }: { children: React.ReactNode }) {
   const defaultOpen = cookieStore.get("sidebar_state")?.value !== "false"
 
   return (
-    <SidebarProvider defaultOpen={defaultOpen}>
+    <LocalizedSidebarProvider defaultOpen={defaultOpen}>
       <Suspense fallback={<SidebarFallback />}>
         <AuthenticatedSidebar billing={billing} />
       </Suspense>
       <SidebarInset>{children}</SidebarInset>
       <AppSettings billing={billing} />
-    </SidebarProvider>
+    </LocalizedSidebarProvider>
   )
 }
 
@@ -109,7 +109,7 @@ function SidebarFallback() {
 
 function AuthenticatedShellFallback() {
   return (
-    <SidebarProvider>
+    <LocalizedSidebarProvider>
       <SidebarFallback />
       <SidebarInset>
         <div className="flex min-h-svh flex-col gap-6 p-6 md:p-10">
@@ -117,6 +117,6 @@ function AuthenticatedShellFallback() {
           <Skeleton className="h-40 w-full max-w-3xl" />
         </div>
       </SidebarInset>
-    </SidebarProvider>
+    </LocalizedSidebarProvider>
   )
 }

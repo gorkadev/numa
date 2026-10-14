@@ -2,13 +2,14 @@
 
 import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
 import {
   Logout01Icon,
   Settings02Icon,
+  UserIcon,
   Tick02Icon,
   UnfoldMoreIcon,
   UserAdd01Icon,
-  UserSwitchIcon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
@@ -21,7 +22,6 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuShortcut,
   DropdownMenuSub,
@@ -36,13 +36,38 @@ import {
   useSidebar,
 } from "@workspace/ui/components/sidebar"
 import { Skeleton } from "@workspace/ui/components/skeleton"
-import { Spinner } from "@workspace/ui/components/spinner"
 import { toast } from "@workspace/ui/components/toast"
+
+import { Spinner } from "@/components/localized-spinner"
 
 import { authClient } from "@/lib/auth-client"
 import { initials } from "@/lib/format/initials"
 import { useIsMac } from "@/hooks/use-is-mac"
 import { useSettingsDialog } from "@/hooks/use-settings-dialog"
+import type { BillingPlan } from "@/lib/polar/plan"
+
+function AccountIdentity({
+  name,
+  image,
+  subtitle,
+}: {
+  name: string
+  image: string | null | undefined
+  subtitle: string
+}) {
+  return (
+    <>
+      <Avatar className="size-8 shrink-0">
+        <AvatarImage src={image ?? undefined} alt={name} />
+        <AvatarFallback>{initials(name)}</AvatarFallback>
+      </Avatar>
+      <div className="grid min-w-0 flex-1 text-left leading-tight">
+        <span className="truncate font-medium">{name}</span>
+        <span className="truncate text-xs text-muted-foreground">{subtitle}</span>
+      </div>
+    </>
+  )
+}
 
 /**
  * One entry from `listDeviceSessions()`: a session cookie this browser holds
@@ -53,14 +78,9 @@ type DeviceSession = NonNullable<
 >[number]
 
 /**
- * The account row at the foot of the sidebar: the signed-in user behind one
- * menu.
- *
- * This used to also hold Clerk's `OrganizationSwitcher` — an active
- * organization, a membership list, "Create organization" — none of which
- * exists any more, because this application has no organization concept.
- * `user.id` is the only tenant boundary left, so this row is now exactly what
- * its name says: one user's account, with nothing to switch between.
+ * The sidebar account row shows the active user and plan. Better Auth's
+ * multi-session plugin lets this menu switch between signed-in accounts on
+ * this device; `user.id` remains the tenant boundary.
  *
  * "Settings" opens the settings dialog by writing `?settings=` to the URL
  * through `useSettingsDialog` rather than owning an `open` flag itself —
@@ -72,13 +92,14 @@ type DeviceSession = NonNullable<
  * prebuilt UI), so this application owns the surface itself rather than
  * leaving the menu item with nowhere to go.
  */
-export function NavUser() {
+export function NavUser({ plan }: { plan: BillingPlan }) {
   const router = useRouter()
+  const t = useTranslations("Shell")
   const { isMobile, state } = useSidebar()
   const { data: session, isPending } = authClient.useSession()
   const { openSettings } = useSettingsDialog()
   const isMac = useIsMac()
-  const settingsHint = isMac ? "⌘⇧," : "Ctrl Shift ,"
+  const settingsHint = isMac ? "⌘⇧," : "Ctrl ⇧ ,"
 
   const [accounts, setAccounts] = useState<DeviceSession[]>([])
   const [accountListState, setAccountListState] = useState<
@@ -147,20 +168,19 @@ export function NavUser() {
       if (error) {
         toast.add({
           type: "error",
-          title: "Could not switch account",
-          description: error.message,
+          title: t("couldNotSwitchAccount"),
+          description: t("pleaseTryAgain"),
         })
         return
       }
 
       window.location.assign("/")
       navigating = true
-    } catch (error) {
+    } catch {
       toast.add({
         type: "error",
-        title: "Could not switch account",
-        description:
-          error instanceof Error ? error.message : "Please try again.",
+        title: t("couldNotSwitchAccount"),
+        description: t("pleaseTryAgain"),
       })
     } finally {
       if (!navigating) {
@@ -182,6 +202,12 @@ export function NavUser() {
 
   const { user } = session
   const title = user.name || user.email
+  const planLabel = {
+    none: t("planUnavailable"),
+    free: t("free"),
+    pro: "Pro",
+    max: "Max",
+  }[plan]
 
   /**
    * The accounts to offer, with the active one guaranteed to be among them.
@@ -213,20 +239,19 @@ export function NavUser() {
       if (error) {
         toast.add({
           type: "error",
-          title: "Could not sign out",
-          description: error.message,
+          title: t("couldNotSignOut"),
+          description: t("pleaseTryAgain"),
         })
         return
       }
 
       navigating = true
       router.push("/sign-in")
-    } catch (error) {
+    } catch {
       toast.add({
         type: "error",
-        title: "Could not sign out",
-        description:
-          error instanceof Error ? error.message : "Please try again.",
+        title: t("couldNotSignOut"),
+        description: t("pleaseTryAgain"),
       })
     } finally {
       if (!navigating) {
@@ -249,16 +274,11 @@ export function NavUser() {
               />
             }
           >
-            <Avatar className="size-8">
-              <AvatarImage src={user.image ?? undefined} alt={title} />
-              <AvatarFallback>{initials(title)}</AvatarFallback>
-            </Avatar>
-            <div className="grid flex-1 text-left leading-tight">
-              <span className="truncate font-medium">{title}</span>
-              <span className="truncate text-xs text-muted-foreground">
-                {user.email}
-              </span>
-            </div>
+            <AccountIdentity
+              name={title}
+              image={user.image}
+              subtitle={planLabel}
+            />
             <HugeiconsIcon icon={UnfoldMoreIcon} className="ml-auto size-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -268,78 +288,52 @@ export function NavUser() {
             className="min-w-60"
           >
             <DropdownMenuGroup>
-              <DropdownMenuLabel className="flex items-center gap-2 px-2 py-1.5 text-foreground">
-                <Avatar className="size-8">
-                  <AvatarImage src={user.image ?? undefined} alt={title} />
-                  <AvatarFallback>{initials(title)}</AvatarFallback>
-                </Avatar>
-                <div className="grid flex-1 leading-tight">
-                  <span className="truncate text-sm font-medium">{title}</span>
-                  {user.name && (
-                    <span className="truncate text-xs text-muted-foreground">
-                      {user.email}
-                    </span>
-                  )}
-                </div>
-              </DropdownMenuLabel>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem
-                disabled={isActionPending}
-                onClick={() => openSettings()}
-              >
-                <HugeiconsIcon icon={Settings02Icon} />
-                Settings
-                <DropdownMenuShortcut>{settingsHint}</DropdownMenuShortcut>
-              </DropdownMenuItem>
               <DropdownMenuSub>
-                <DropdownMenuSubTrigger disabled={isActionPending}>
-                  <HugeiconsIcon icon={UserSwitchIcon} />
-                  Switch account
+                <DropdownMenuSubTrigger
+                  disabled={isActionPending}
+                  className="gap-2 py-2"
+                >
+                  <AccountIdentity
+                    name={title}
+                    image={user.image}
+                    subtitle={planLabel}
+                  />
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent className="min-w-56">
                   {accountListState === "loading" ||
                   accountListState === "idle" ? (
                     <DropdownMenuItem disabled>
                       <Spinner />
-                      Loading accounts…
+                      {t("loadingAccounts")}
                     </DropdownMenuItem>
                   ) : accountListState === "error" ? (
                     <DropdownMenuItem onClick={loadAccounts}>
-                      Retry loading accounts
+                      {t("retryLoadingAccounts")}
                     </DropdownMenuItem>
                   ) : (
                     switchableAccounts.map(
                       ({ session: deviceSession, user: account }) => {
                         const label = account.name || account.email
-                        const isActive =
-                          deviceSession.id === session!.session.id
-                        const isSwitching =
-                          switchingSessionId === deviceSession.id
+                        const isActive = deviceSession.id === session.session.id
+                        const isSwitching = switchingSessionId === deviceSession.id
 
                         return (
                           <DropdownMenuItem
                             key={deviceSession.id}
                             disabled={isActionPending || isActive}
                             onClick={() => {
-                              // eslint-disable-next-line react-hooks/refs -- the ref is read only after this click.
+                              // eslint-disable-next-line react-hooks/refs -- read only after click.
                               void switchAccount(
                                 deviceSession.id,
                                 deviceSession.token
                               )
                             }}
                           >
-                            <Avatar className="size-5">
-                              <AvatarImage
-                                src={account.image ?? undefined}
-                                alt={label}
-                              />
-                              <AvatarFallback className="text-[0.5rem]">
-                                {initials(label)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="truncate">{label}</span>
+                            <AccountIdentity
+                              name={label}
+                              image={account.image}
+                              subtitle={account.email}
+                            />
                             {isSwitching ? (
                               <Spinner className="ml-auto" />
                             ) : (
@@ -356,23 +350,33 @@ export function NavUser() {
                     )
                   )}
                   <DropdownMenuSeparator />
-                  {/**
-                   * Straight to the normal sign-in page: `proxy.ts` leaves
-                   * `/sign-in` public rather than bouncing a signed-in
-                   * browser away from it, and the multi-session plugin adds
-                   * the new session's cookie beside the existing one instead
-                   * of replacing it — so signing in again IS adding an
-                   * account, with no separate flow to build.
-                   */}
                   <DropdownMenuItem
                     disabled={isActionPending}
                     onClick={() => router.push("/sign-in")}
                   >
                     <HugeiconsIcon icon={UserAdd01Icon} />
-                    Add account
+                    {t("addAccount")}
                   </DropdownMenuItem>
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuItem
+                disabled={isActionPending}
+                onClick={() => router.push("/profile")}
+              >
+                <HugeiconsIcon icon={UserIcon} />
+                {t("profile")}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={isActionPending}
+                onClick={() => openSettings()}
+              >
+                <HugeiconsIcon icon={Settings02Icon} />
+                {t("settings")}
+                <DropdownMenuShortcut>{settingsHint}</DropdownMenuShortcut>
+              </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -381,7 +385,7 @@ export function NavUser() {
               onClick={signOut}
             >
               {signingOut ? <Spinner /> : <HugeiconsIcon icon={Logout01Icon} />}
-              Sign out
+              {t("signOut")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

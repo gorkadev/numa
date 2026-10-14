@@ -2,9 +2,12 @@
 
 import { useEffect, useRef, useState } from "react"
 
+import { useTranslations } from "next-intl"
+
 import { Button } from "@workspace/ui/components/button"
-import { Spinner } from "@workspace/ui/components/spinner"
 import { cn } from "@workspace/ui/lib/utils"
+
+import { Spinner } from "@/components/localized-spinner"
 
 import { PREVIEW_SANDBOX_FLAGS } from "@/lib/games/preview-sandbox"
 
@@ -110,6 +113,7 @@ export function ChatPreviewBody({
    * no-op, and reaching into `contentWindow.location` is not available to a
    * frame deliberately kept out of this origin.
    */
+  const t = useTranslations("GamePreview")
   const frameKey = `${revision}:${reloadKey}`
 
   const iframeRef = useRef<HTMLIFrameElement>(null)
@@ -215,19 +219,19 @@ export function ChatPreviewBody({
               <Spinner />
               <p className="text-sm text-muted-foreground">
                 {phase === "slow"
-                  ? "Preview is taking longer than expected."
-                  : "Starting preview…"}
+                  ? t("slowPreview")
+                  : t("startingPreview")}
               </p>
             </>
           ) : (
             <>
               <p className="text-sm text-muted-foreground">
                 {phase === "timeout"
-                  ? "Preview timed out. Try again."
-                  : "Preview could not be started. Try again."}
+                  ? t("timeoutPreview")
+                  : t("failedPreview")}
               </p>
               <Button size="sm" onClick={onRetry}>
-                Retry
+                {t("retry")}
               </Button>
             </>
           )}
@@ -245,7 +249,7 @@ export function ChatPreviewBody({
           onError={() => failAttemptRef.current(attempt.id)}
           sandbox={PREVIEW_SANDBOX_FLAGS}
           src={`/api/games/${gameId}/preview/${previewToken}/index.html?previewAttempt=${encodeURIComponent(attempt.id)}`}
-          title="Game preview"
+          title={t("iframeTitle")}
           allow={allowFullScreen ? "fullscreen" : undefined}
           allowFullScreen={allowFullScreen}
         />

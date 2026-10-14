@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState, useSyncExternalStore } from "react"
 
 import Link from "next/link"
+import { useTranslations } from "next-intl"
 
 import {
   ArrowLeft01Icon,
@@ -95,6 +96,7 @@ export function GamePlayView({
   previewToken?: string
 }) {
   /** The element the Fullscreen API expands — the whole view, toolbar included, not just the frame. */
+  const t = useTranslations("GamePreview")
   const containerRef = useRef<HTMLDivElement>(null)
   const [reloadKey, setReloadKey] = useState(0)
   const reloadInFlightRef = useRef(false)
@@ -145,15 +147,14 @@ export function GamePlayView({
          */
         <Empty className="h-full rounded-none border-none">
           <EmptyHeader>
-            <EmptyTitle>Nothing to play yet</EmptyTitle>
+            <EmptyTitle>{t("emptyTitle")}</EmptyTitle>
             <EmptyDescription>
-              {gameTitle} hasn&apos;t been built yet. Go back to the chat and
-              send a message to get started.
+              {t("emptyDescription", { gameTitle })}
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
             <Button render={<Link href={`/games/${gameId}`} />}>
-              Back to chat
+              {t("backToChat")}
             </Button>
           </EmptyContent>
         </Empty>
@@ -171,7 +172,7 @@ export function GamePlayView({
             render={
               <Link
                 href={`/games/${gameId}`}
-                aria-label="Back to chat"
+                aria-label={t("backToChat")}
                 className={cn(
                   buttonVariants({ variant: "secondary", size: "icon" }),
                   "pointer-events-auto",
@@ -182,7 +183,7 @@ export function GamePlayView({
           >
             <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} />
           </TooltipTrigger>
-          <TooltipContent side="bottom">Back to chat</TooltipContent>
+          <TooltipContent side="bottom">{t("backToChat")}</TooltipContent>
         </Tooltip>
 
         <div className="pointer-events-auto flex items-center gap-2">
@@ -195,8 +196,8 @@ export function GamePlayView({
                     size="icon"
                     aria-label={
                       previewPhase === "failed" || previewPhase === "timeout"
-                        ? "Retry preview"
-                        : "Reload"
+                        ? t("retryPreview")
+                        : t("reload")
                     }
                     disabled={
                       previewPhase === "starting" || previewPhase === "slow"
@@ -208,7 +209,11 @@ export function GamePlayView({
               >
                 <HugeiconsIcon icon={RefreshIcon} strokeWidth={2} />
               </TooltipTrigger>
-              <TooltipContent side="bottom">Reload</TooltipContent>
+              <TooltipContent side="bottom">
+                {previewPhase === "failed" || previewPhase === "timeout"
+                  ? t("retryPreview")
+                  : t("reload")}
+              </TooltipContent>
             </Tooltip>
           ) : null}
 
@@ -220,7 +225,7 @@ export function GamePlayView({
                     variant="secondary"
                     size="icon"
                     aria-label={
-                      fullscreen ? "Exit fullscreen" : "Enter fullscreen"
+                      fullscreen ? t("exitFullscreen") : t("enterFullscreen")
                     }
                     onClick={toggleFullscreen}
                     className={TOOLBAR_BUTTON_CLASS}
@@ -233,7 +238,7 @@ export function GamePlayView({
                 />
               </TooltipTrigger>
               <TooltipContent side="bottom">
-                {fullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                {fullscreen ? t("exitFullscreen") : t("enterFullscreen")}
               </TooltipContent>
             </Tooltip>
           ) : null}

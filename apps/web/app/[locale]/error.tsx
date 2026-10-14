@@ -1,6 +1,7 @@
 "use client"
 
 import { Button } from "@workspace/ui/components/button"
+import { useTranslations } from "next-intl"
 import {
   Empty,
   EmptyContent,
@@ -15,17 +16,17 @@ export default function Error({
   error: Error & { digest?: string }
   unstable_retry: () => void
 }) {
+  const t = useTranslations("Errors")
+
   return (
     <main className="flex min-h-svh items-center justify-center p-6">
       <Empty className="max-w-md">
         <EmptyHeader>
-          <EmptyTitle>Something went wrong</EmptyTitle>
-          <EmptyDescription>
-            We could not load this page. Please try again.
-          </EmptyDescription>
+          <EmptyTitle>{t("title")}</EmptyTitle>
+          <EmptyDescription>{t("description")}</EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
-          <Button onClick={unstable_retry}>Try again</Button>
+          <Button onClick={unstable_retry}>{t("retry")}</Button>
         </EmptyContent>
       </Empty>
     </main>

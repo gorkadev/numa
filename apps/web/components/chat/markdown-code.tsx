@@ -21,6 +21,7 @@ import { Button } from "@workspace/ui/components/button"
  */
 import ShikiHighlighter, { rehypeInlineCodeProperty } from "react-shiki/web"
 import { useTheme } from "next-themes"
+import { useTranslations } from "next-intl"
 
 /**
  * Re-exported so the renderer imports its plugin from the same module as the
@@ -37,6 +38,7 @@ type MarkdownCodeProps = ComponentPropsWithoutRef<"code"> & {
 }
 
 function CopyButton({ code }: { code: string }) {
+  const t = useTranslations("ChatMessages")
   const [copied, setCopied] = useState(false)
 
   /**
@@ -69,7 +71,7 @@ function CopyButton({ code }: { code: string }) {
       type="button"
       variant="ghost"
       size="icon-xs"
-      aria-label={copied ? "Copied" : "Copy code"}
+      aria-label={copied ? t("copied") : t("copyCode")}
       className="absolute top-2 right-2 z-10 bg-transparent text-muted-foreground hover:text-foreground"
       onClick={onCopy}
     >

@@ -5,6 +5,7 @@ import { useSyncExternalStore } from "react"
 import Link from "next/link"
 import { Cancel01Icon, FlashIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
+import { useLocale, useTranslations } from "next-intl"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -127,6 +128,13 @@ export function UpgradeCard({
   plan: BillingPlan
   href: string
 }) {
+  const t = useTranslations("Pricing")
+  const locale = useLocale()
+  const price = new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(20)
   const dismissed = useSyncExternalStore(
     subscribe,
     readDismissed,
@@ -157,19 +165,17 @@ export function UpgradeCard({
           <Button
             variant="ghost"
             size="icon-xs"
-            aria-label="Dismiss"
+            aria-label={t("sidebarDismiss")}
             onClick={dismiss}
           >
             <HugeiconsIcon icon={Cancel01Icon} />
           </Button>
         </CardAction>
-        <CardTitle>Upgrade to Pro</CardTitle>
-        <CardDescription>
-          2000 credits every month, twenty times the free plan.
-        </CardDescription>
+        <CardTitle>{t("sidebarUpgradeTitle")}</CardTitle>
+        <CardDescription>{t("sidebarUpgradeDescription")}</CardDescription>
       </CardHeader>
       <CardContent>
-        $20 <span className="text-muted-foreground">/month</span>
+        {price} <span className="text-muted-foreground">{t("perMonth")}</span>
       </CardContent>
       <CardFooter>
         <Button
@@ -183,7 +189,7 @@ export function UpgradeCard({
           nativeButton={false}
           render={<Link href={href} />}
         >
-          Upgrade
+          {t("upgrade")}
         </Button>
       </CardFooter>
     </Card>

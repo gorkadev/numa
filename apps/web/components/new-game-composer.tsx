@@ -1,6 +1,7 @@
 "use client"
 
 import { useActionState, useState, startTransition } from "react"
+import { useTranslations } from "next-intl"
 
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Button } from "@workspace/ui/components/button"
@@ -24,6 +25,7 @@ import { suggestions } from "@/lib/games/suggestions"
  * before, which made them decoration: buttons with nothing bound to them.
  */
 export function NewGameComposer() {
+  const t = useTranslations("GameComposer")
   const [value, setValue] = useState("")
   const [tierId, setTierId] = useState<TierId>(DEFAULT_TIER_ID)
   const [templateId, setTemplateId] = useState<TemplateId>(DEFAULT_TEMPLATE_ID)
@@ -62,7 +64,7 @@ export function NewGameComposer() {
       <div className="flex flex-wrap justify-center gap-2">
         {suggestions.map((suggestion) => (
           <Button
-            key={suggestion.label}
+            key={suggestion.id}
             type="button"
             variant="outline"
             size="sm"
@@ -75,10 +77,10 @@ export function NewGameComposer() {
              * verbatim — and once it is sent, a game exists and a turn has
              * been paid for.
              */
-            onClick={() => setValue(suggestion.prompt)}
+            onClick={() => setValue(t(`suggestions.${suggestion.id}.prompt`))}
           >
             <HugeiconsIcon icon={suggestion.icon} />
-            {suggestion.label}
+            {t(`suggestions.${suggestion.id}.label`)}
           </Button>
         ))}
       </div>

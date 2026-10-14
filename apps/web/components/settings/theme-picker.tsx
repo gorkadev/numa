@@ -1,6 +1,7 @@
 "use client"
 
 import { useTheme } from "next-themes"
+import { useTranslations } from "next-intl"
 import { Label } from "@workspace/ui/components/label"
 import {
   RadioGroup,
@@ -72,7 +73,7 @@ function ThemePreview({ mode }: { mode: "light" | "dark" }) {
 const OPTIONS = [
   {
     value: "system",
-    label: "System",
+    label: "systemTheme",
     preview: (
       <>
         <ThemePreview mode="light" />
@@ -82,8 +83,8 @@ const OPTIONS = [
       </>
     ),
   },
-  { value: "light", label: "Light", preview: <ThemePreview mode="light" /> },
-  { value: "dark", label: "Dark", preview: <ThemePreview mode="dark" /> },
+  { value: "light", label: "lightTheme", preview: <ThemePreview mode="light" /> },
+  { value: "dark", label: "darkTheme", preview: <ThemePreview mode="dark" /> },
 ]
 
 /**
@@ -104,12 +105,13 @@ const OPTIONS = [
  * hydration.
  */
 export function ThemePicker() {
+  const t = useTranslations("Settings")
   const { theme, setTheme } = useTheme()
 
   return (
     <RadioGroup
       className="grid-cols-3 gap-4"
-      aria-label="Theme"
+      aria-label={t("themeAccessibleLabel")}
       value={theme ?? null}
       onValueChange={(value) => setTheme(String(value))}
     >
@@ -119,7 +121,7 @@ export function ThemePicker() {
             {option.preview}
           </RadioGroupCard>
           <span className="text-muted-foreground group-has-data-checked:text-foreground">
-            {option.label}
+            {t(option.label)}
           </span>
         </Label>
       ))}

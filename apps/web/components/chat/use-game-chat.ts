@@ -92,6 +92,7 @@ export function useGameChat({
     setBuildProgress((current) => reduceGameBuildProgress(current, event))
   }, [])
   const threadMessages = useMemo(() => withoutGameProgress(initialMessages), [initialMessages])
+  const [failureKind, setFailureKind] = useState<ChatFailureKind>(null)
 
   /**
    * The tier the next turn is sent with. It lives here rather than in the
@@ -249,6 +250,10 @@ export function useGameChat({
 
       if (revision !== null) onRevision?.(revision)
 
+      const failure = readChatFailureKind(part)
+
+      if (failure !== null) setFailureKind(failure)
+
       /**
        * The credit cost of the turn goes straight to the sidebar rather than
        * through a prop or a callback on this component: the counter is
@@ -331,6 +336,7 @@ export function useGameChat({
 
   useEffect(() => {
     if (reconnectAttempt.current.gameId !== gameId) {
+      setFailureKind(null)
       reconnectAttempt.current = {
         gameId,
         id: reconnectAttempt.current.id + 1,
@@ -343,6 +349,7 @@ export function useGameChat({
     if (resumedChatId.current === gameId) return
 
     resumedChatId.current = gameId
+    setFailureKind(null)
     const attempt = reconnectAttempt.current.id + 1
 
     reconnectAttempt.current = { gameId, id: attempt, receivedPhase: false }
@@ -392,6 +399,7 @@ export function useGameChat({
    */
   function handleSubmit(text: string) {
     dispatchBuildProgress({ type: "submit" })
+    setFailureKind(null)
     sendMessage({ text, metadata: outgoingMetadata(tierId) })
     setInput("")
   }
@@ -437,6 +445,7 @@ export function useGameChat({
    */
   const onAnswer = useCallback(
     (toolCallId: string, output: AskPlayerOutput) => {
+      setFailureKind(null)
       addToolOutput({ tool: "ask_player", toolCallId, output })
     },
     [addToolOutput]
@@ -459,6 +468,7 @@ export function useGameChat({
     status,
     error,
     buildProgress,
+    failureKind,
     stop: stopBuild,
     onAnswer,
     send: handleSubmit,
@@ -481,4 +491,40 @@ export function useGameChat({
  */
 function outgoingMetadata(tier: TierId) {
   return { ...tierMetadata(tier), ...sentAtMetadata() }
+}
+
+type ChatFailureKind =
+  | "credits-unprovisioned"
+  | "credits-exhausted"
+  | "game-unavailable"
+  | null
+
+/** Validate transient application-owned stream data before classifying an error. */
+function readChatFailureKind(part: { type: string; data?: unknown }): ChatFailureKind {
+  if (part.type === "data-game-unavailable") {
+    if (
+      typeof part.data === "object" &&
+      part.data !== null &&
+      "reason" in part.data &&
+      part.data.reason === "missing-game"
+    ) {
+      return "game-unavailable"
+    }
+
+    return null
+  }
+
+  if (part.type !== "data-credits-exhausted") return null
+  if (typeof part.data !== "object" || part.data === null || !("balance" in part.data)) {
+    return null
+  }
+
+  const { balance } = part.data
+
+  if (balance === null) return "credits-unprovisioned"
+  if (typeof balance === "number" && Number.isFinite(balance) && balance <= 0) {
+    return "credits-exhausted"
+  }
+
+  return null
 }

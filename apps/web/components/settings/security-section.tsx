@@ -12,6 +12,7 @@ import {
 import { Skeleton } from "@workspace/ui/components/skeleton"
 
 import { authClient } from "@/lib/auth-client"
+import { useTranslations } from "next-intl"
 import { PasskeysSection } from "@/components/settings/passkeys-section"
 import { SessionsSection } from "@/components/settings/sessions-section"
 import {
@@ -27,11 +28,12 @@ import { TwoFactorStepUpDialog } from "@/components/settings/two-factor-step-up-
 type TwoFactorDialog = "none" | "setup" | "regenerate" | "disable"
 
 function SecuritySkeleton() {
+  const t = useTranslations("Settings")
   return (
     <div className="flex flex-col gap-8">
       <SettingsGroup
-        title="Two-factor authentication"
-        description="An extra step when you sign in, on top of your provider"
+        title={t("twoFactor")}
+        description={t("twoFactorDescription")}
       >
         <SettingsRow>
           <ItemContent className="gap-2">
@@ -48,6 +50,7 @@ function SecuritySkeleton() {
 }
 
 export function SecuritySection() {
+  const t = useTranslations("Settings")
   const { data: session, error, isPending, refetch } = authClient.useSession()
   const [dialog, setDialog] = useState<TwoFactorDialog>("none")
   const enrollment = useTwoFactorEnrollment()
@@ -60,15 +63,15 @@ export function SecuritySection() {
   if (isPending) return <SecuritySkeleton />
   if (error)
     return (
-      <SettingsGroup title="Security & access">
+      <SettingsGroup title={t("securityAndAccess")}>
         <SettingsRow>
           <ItemContent>
-            <ItemTitle>Could not load security settings</ItemTitle>
-            <ItemDescription>{error.message}</ItemDescription>
+            <ItemTitle>{t("couldNotLoadSecurity")}</ItemTitle>
+            <ItemDescription>{t("genericError")}</ItemDescription>
           </ItemContent>
           <ItemActions>
             <Button variant="outline" size="sm" onClick={() => void refetch()}>
-              Retry
+              {t("retry")}
             </Button>
           </ItemActions>
         </SettingsRow>
@@ -80,24 +83,24 @@ export function SecuritySection() {
   return (
     <div className="flex flex-col gap-8">
       <SettingsGroup
-        title="Two-factor authentication"
-        description="An extra step when you sign in, on top of your provider"
+        title={t("twoFactor")}
+        description={t("twoFactorDescription")}
         action={
           <Badge
             variant={twoFactorEnabled ? "default" : "secondary"}
             className="mr-4"
           >
-            {twoFactorEnabled ? "On" : "Off"}
+            {twoFactorEnabled ? t("on") : t("off")}
           </Badge>
         }
       >
         <SettingsRow>
           <ItemContent>
-            <ItemTitle>Authenticator app</ItemTitle>
+            <ItemTitle>{t("authenticatorApp")}</ItemTitle>
             <ItemDescription>
               {twoFactorEnabled
-                ? "Codes from your authenticator app are required to sign in."
-                : "Add an authenticator app for an extra step when you sign in."}
+                ? t("authenticatorRequired")
+                : t("authenticatorExtraStep")}
             </ItemDescription>
           </ItemContent>
           <ItemActions>
@@ -108,19 +111,19 @@ export function SecuritySection() {
                   size="sm"
                   onClick={() => setDialog("regenerate")}
                 >
-                  Regenerate codes
+                  {t("regenerateCodes")}
                 </Button>
                 <Button
                   variant="destructive"
                   size="sm"
                   onClick={() => setDialog("disable")}
                 >
-                  Disable
+                  {t("disable")}
                 </Button>
               </>
             ) : (
               <Button size="sm" onClick={openSetup}>
-                Enable
+                {t("enable")}
               </Button>
             )}
           </ItemActions>

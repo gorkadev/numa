@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { SidebarTrigger } from "@workspace/ui/components/sidebar"
 import { cn } from "@workspace/ui/lib/utils"
 
@@ -18,5 +19,12 @@ import { cn } from "@workspace/ui/lib/utils"
  * between renders.
  */
 export function MobileSidebarTrigger({ className }: { className?: string }) {
-  return <SidebarTrigger className={cn("md:hidden", className)} />
+  const t = useTranslations("Shell")
+
+  return (
+    <SidebarTrigger
+      aria-label={t("toggleSidebar")}
+      className={cn("md:hidden", className)}
+    />
+  )
 }

@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useFormatter, useTranslations } from "next-intl"
 import { Coins01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Badge } from "@workspace/ui/components/badge"
@@ -45,11 +46,14 @@ export function CreditsButton({
   balance,
   className,
 }: BillingSummary & { className?: string }) {
+  const t = useTranslations("Shell")
+  const format = useFormatter()
+
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
         className={className}
-        tooltip="Credits"
+        tooltip={t("credits")}
         /**
          * The same `render` handoff "New game" uses: the row IS the link, so
          * the whole hit area navigates and the browser gets a real anchor it
@@ -58,7 +62,7 @@ export function CreditsButton({
         render={<Link href="/pricing" />}
       >
         <HugeiconsIcon icon={Coins01Icon} />
-        <span>Credits</span>
+        <span>{t("credits")}</span>
         {/**
          * Nothing at all for `"none"`, because that case means the plan is
          * unknown — a user who has not been provisioned yet, or a Polar that
@@ -67,7 +71,7 @@ export function CreditsButton({
          */}
         {plan !== "none" && (
           <Badge variant={plan === "free" ? "secondary" : "default"}>
-            {plan === "max" ? "Max" : plan === "pro" ? "Pro" : "Free"}
+            {plan === "max" ? "Max" : plan === "pro" ? "Pro" : t("free")}
           </Badge>
         )}
       </SidebarMenuButton>
@@ -77,7 +81,9 @@ export function CreditsButton({
        * link text. `SidebarMenuBadge` also hides itself on the collapsed rail,
        * which is why there is no visibility class here.
        */}
-      <SidebarMenuBadge>{balance === null ? "—" : balance}</SidebarMenuBadge>
+      <SidebarMenuBadge>
+        {balance === null ? "—" : format.number(balance)}
+      </SidebarMenuBadge>
     </SidebarMenuItem>
   )
 }

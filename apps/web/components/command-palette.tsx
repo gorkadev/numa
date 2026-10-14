@@ -1,6 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { MessageCircleIcon, PencilEdit02Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import type { Game } from "@workspace/db/schema"
@@ -30,6 +31,7 @@ export function CommandPalette({
   onOpenChange: (open: boolean) => void
 }) {
   const router = useRouter()
+  const t = useTranslations("Shell")
 
   /**
    * Close first, then navigate. The other order leaves the dialog mounted
@@ -42,18 +44,23 @@ export function CommandPalette({
   }
 
   return (
-    <CommandDialog open={open} onOpenChange={onOpenChange}>
-      <CommandInput placeholder="Search games and actions..." />
+    <CommandDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={t("commandPalette")}
+      description={t("commandPaletteDescription")}
+    >
+      <CommandInput placeholder={t("searchGamesAndActions")} />
       <CommandList>
-        <CommandEmpty>No results found.</CommandEmpty>
-        <CommandGroup heading="Actions">
-          <CommandItem value="new game" onSelect={() => go("/")}>
+        <CommandEmpty>{t("noResults")}</CommandEmpty>
+        <CommandGroup heading={t("actions")}>
+          <CommandItem value={t("newGame")} onSelect={() => go("/")}>
             <HugeiconsIcon icon={PencilEdit02Icon} strokeWidth={2} />
-            New game
+            {t("newGame")}
           </CommandItem>
         </CommandGroup>
         {games.length > 0 && (
-          <CommandGroup heading="Recents">
+          <CommandGroup heading={t("recents")}>
             {games.map((game) => (
               <CommandItem
                 key={game.id}

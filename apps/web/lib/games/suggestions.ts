@@ -24,42 +24,49 @@ import {
  */
 export const suggestions = [
   {
+    id: "voxelSurvival",
     icon: CubeIcon,
     label: "Voxel survival",
     prompt:
       "Build a first-person voxel survival game: mine and place blocks in a world I can walk around, gather what I need before nightfall, and stay alive.",
   },
   {
+    id: "inkSamuraiDuel",
     icon: SwordIcon,
     label: "Ink samurai duel",
     prompt:
       "Build a one-on-one samurai duel in a black-and-white ink-wash style, where fights are won by timing a parry and the counter-strike that follows it.",
   },
   {
+    id: "comicBookFirefight",
     icon: FlashIcon,
     label: "Comic-book firefight",
     prompt:
       "Build a top-down firefight drawn like a comic book — bold outlines, halftone shading and onomatopoeia popping up on every hit — where I clear a room of enemies using cover.",
   },
   {
+    id: "realisticBattlefield",
     icon: Airplane01Icon,
     label: "Realistic battlefield",
     prompt:
       "Build a first-person battlefield sequence with a realistic look: cross open ground under fire, use cover, and take an objective.",
   },
   {
+    id: "fightFirstShooter",
     icon: Target01Icon,
     label: "Fight-first shooter",
     prompt:
       "Build an arena shooter that rewards pushing forward rather than hiding: health comes from killing, enemies pressure me constantly, and standing still is what gets me killed.",
   },
   {
+    id: "jungleExpeditionDrive",
     icon: Car01Icon,
     label: "Jungle expedition drive",
     prompt:
       "Build a driving game through dense jungle: an off-road route with mud, river crossings and steep climbs where keeping the vehicle intact matters as much as speed.",
   },
   {
+    id: "sunnyKingdomPlatformer",
     icon: GameController01Icon,
     label: "Sunny kingdom platformer",
     prompt:
