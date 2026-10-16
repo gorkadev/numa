@@ -7,7 +7,7 @@ Add a compact All / Active / Finished selector above the right sidebar Agents li
 Only sidebar filtering, a small pure filtering helper with tests, and additive ChatAgents locale entries. Preserve pre-existing dirty files, including both locale dictionaries. No status schema changes, dependencies, publishing or commits without explicit user request.
 
 ## Delivery
-One bounded work unit, forecast 150–250 authored changed lines; strategy ask-on-risk. No commit authorized; commit evidence pending explicit request.
+One bounded work unit, forecast 150–250 authored changed lines; strategy ask-on-risk. User subsequently authorized committing ALL pending work, including game templates. Implementation committed as `ccd7709` (`feat: add game templates and agent status filtering`) on `feat/agent-filter-game-templates`, 92 files including intended glTF assets. Precommit: agent tests 8/8, template tests via installed tsx 7/7, typecheck and diff check passed. Direct Node template run failed on extensionless imports; corrected runner passed. Credential/cache inspection found no blockers. No push.
 
 ## Tasks
 - [x] T1 Implement filter and deterministic tests. Route: delegated gentle-ai-worker; multi-file write trigger. Status: implemented and self-verified; no commit authorized.
@@ -33,4 +33,4 @@ Worker observed RED (missing helper module), then GREEN: 8/8 focused tests. Web 
 - Browser attempt: port 3000 responds 307 to /sign-in; Playwright/Puppeteer not locally resolvable; Orca not running/reachable. No rendered visual/responsive/keyboard verification or auth attempted. No changes made by verifier.
 
 ## Next step
-User can open an authenticated chat and inspect the Agents selector in wide/narrow layouts. T3 remains pending, not claimed complete. No commits created. RDD remains off.
+User can open an authenticated chat and inspect the Agents selector in wide/narrow layouts. T3 remains pending, not claimed complete. All requested work committed as `ccd7709`; RDD remains off. Historical no-commit notes above describe authorization at the time, superseded by the user's explicit commit-all request.
