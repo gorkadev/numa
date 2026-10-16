@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl"
 import { Kbd } from "@workspace/ui/components/kbd"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@workspace/ui/components/tooltip"
 import { useIsMac } from "@/hooks/use-is-mac"
-import { ArrowDown01Icon, GridIcon } from "@hugeicons/core-free-icons"
+import { ArrowDown01Icon, LayoutTemplateIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   DropdownMenu,
@@ -64,7 +64,7 @@ export function TemplatePicker({
                   size="sm"
                   aria-keyshortcuts={!disabled ? "Control+Shift+V" : undefined}
                 >
-                  <HugeiconsIcon icon={GridIcon} />
+                  <HugeiconsIcon icon={LayoutTemplateIcon} />
                   {t(`templates.${value}.label`)}
                   <HugeiconsIcon icon={ArrowDown01Icon} />
                 </InputGroupButton>
