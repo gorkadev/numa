@@ -459,6 +459,7 @@ export function SidePanel({
                  */}
                 <Button
                   aria-label={t("openFullScreenPlay")}
+                  nativeButton={false}
                   render={
                     <a
                       href={`/games/${gameId}/play`}
