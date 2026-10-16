@@ -1,4 +1,5 @@
-import Image from "next/image"
+import "blobatar/motion.css"
+import "blobatar/gaze.css"
 
 import {
   Empty,
@@ -11,6 +12,7 @@ import {
 
 import { MobileSidebarTrigger } from "@/components/mobile-sidebar-trigger"
 import { NewGameComposer } from "@/components/new-game-composer"
+import { NewGameAvatar } from "@/components/new-game-avatar"
 import { requireSession } from "@/lib/session"
 import { getTranslations } from "next-intl/server"
 
@@ -24,7 +26,7 @@ export default async function Page() {
       <Empty className="flex-none">
         <EmptyHeader>
           <EmptyMedia>
-            <Image src="/logo.svg" alt="Numa" width={40} height={48} priority />
+            <NewGameAvatar />
           </EmptyMedia>
           <EmptyTitle>{t("emptyTitle")}</EmptyTitle>
           <EmptyDescription>{t("emptyDescription")}</EmptyDescription>

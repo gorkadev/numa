@@ -70,6 +70,7 @@ export type ModelEntry = {
    */
   providerOptions?: ProviderOptions
   displayName: string
+  effort?: "minimal" | "low" | "medium" | "high"
 }
 
 function entry(
@@ -83,6 +84,7 @@ function entry(
     provider: "google-vertex",
     providerModelId,
     displayName: `${name} (${effort})`,
+    effort,
     providerOptions: { googleVertex: { thinkingConfig: { thinkingLevel: effort } } },
   }
 }
@@ -184,6 +186,11 @@ export function resolveTier(id: TierId | undefined): TierId {
  */
 export function entryDisplayName(id: ModelEntryId): string {
   return REGISTRY[id].displayName
+}
+
+/** Same configuration value used to construct this entry's provider options. */
+export function entryEffort(id: ModelEntryId): ModelEntry["effort"] {
+  return REGISTRY[id].effort
 }
 
 /**

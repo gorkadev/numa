@@ -68,6 +68,19 @@
     "filesDeleted": "Archivos eliminados"
   },
   "ChatAgents": {
+    "roles": {
+      "explorer": { "name": "Explorador", "specialty": "Análisis del proyecto" },
+      "planner": { "name": "Arquitecto", "specialty": "Planificación" },
+      "gameplay": { "name": "Constructor", "specialty": "Mecánicas de juego" },
+      "visuals": { "name": "Artista", "specialty": "Diseño visual" },
+      "audio": { "name": "Compositor", "specialty": "Audio y música" },
+      "verifier": { "name": "Verificador", "specialty": "Pruebas y validación" }
+    },
+    "tierLabel": "Nivel",
+    "effortLabel": "Esfuerzo de razonamiento",
+    "metadataUnavailable": "No disponible",
+    "tiers": { "pro": "Pro", "balanced": "Equilibrado", "fast": "Rápido" },
+    "efforts": { "minimal": "Mínimo", "low": "Bajo", "medium": "Medio", "high": "Alto" },
     "previewTab": "Vista previa",
     "agentsTab": "Agentes",
     "selectRun": "Selecciona una ejecución para ver sus detalles.",

@@ -7,7 +7,12 @@ import {
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip"
 import { useIsMac } from "@/hooks/use-is-mac"
-import { ArrowDown01Icon, GridIcon } from "@hugeicons/core-free-icons"
+import {
+  ArrowDown01Icon,
+  BrainCircuitIcon,
+  FlashIcon,
+  SparklesIcon,
+} from "@hugeicons/core-free-icons"
 import { useTranslations } from "next-intl"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
@@ -26,6 +31,12 @@ import {
 } from "@workspace/ui/components/item"
 
 import { TIERS, getTier, isTierId, type TierId } from "@/lib/ai/model-catalog"
+
+const TIER_ICONS = {
+  pro: BrainCircuitIcon,
+  balanced: SparklesIcon,
+  fast: FlashIcon,
+} satisfies Record<TierId, typeof BrainCircuitIcon>
 
 type ModelPickerProps = {
   value: TierId
@@ -75,7 +86,7 @@ export function ModelPicker({
                   size="sm"
                   aria-keyshortcuts={!disabled ? "Control+Shift+M" : undefined}
                 >
-                  <HugeiconsIcon icon={GridIcon} />
+                  <HugeiconsIcon icon={TIER_ICONS[selected.id]} />
                   {tierLabel(selected.id)}
                   <HugeiconsIcon icon={ArrowDown01Icon} />
                 </InputGroupButton>
@@ -122,7 +133,10 @@ export function ModelPicker({
                */}
               <Item size="xs">
                 <ItemContent>
-                  <ItemTitle>{tierLabel(tier.id)}</ItemTitle>
+                  <ItemTitle>
+                    <HugeiconsIcon icon={TIER_ICONS[tier.id]} />
+                    {tierLabel(tier.id)}
+                  </ItemTitle>
                   <ItemDescription>
                     {t(`tiers.${tier.id}.tagline`)}
                   </ItemDescription>

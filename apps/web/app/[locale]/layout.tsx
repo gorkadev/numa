@@ -5,6 +5,7 @@ import { hasLocale, NextIntlClientProvider } from "next-intl"
 import { getLocale, getMessages, getTranslations } from "next-intl/server"
 
 import "@workspace/ui/globals.css"
+import "blobatar/motion.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from "@workspace/ui/lib/utils"
 import { LocalizedToaster } from "@/components/localized-toaster"

@@ -10,7 +10,6 @@ import {
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useLocale, useTranslations } from "next-intl"
-import { Badge } from "@workspace/ui/components/badge"
 import { Bubble, BubbleContent } from "@workspace/ui/components/bubble"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -21,6 +20,8 @@ import { Separator } from "@workspace/ui/components/separator"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { Markdown } from "@/components/chat/markdown"
+import { AgentBot } from "@/components/chat/agent-bot"
+import { presentRunModel } from "@/components/chat/agent-run-presentation"
 import { subagentStatusKey } from "@/components/chat/subagent-entry"
 import { localizedToolCallLabel } from "@/components/chat/tool-group"
 import type { SubagentRunRecord } from "@/lib/games/harness/records"
@@ -135,19 +136,23 @@ export function SubagentRunDetail({ record }: SubagentRunDetailProps) {
   const activityT = useTranslations("ChatActivity")
   const locale = useLocale()
   const running = record.status === "running"
+  const model = presentRunModel(record)
 
   return (
     <div className="flex flex-col gap-4 text-sm">
-      <div>
-        <h3 className="font-heading text-base font-medium text-foreground">
-          {record.displayName}
-        </h3>
-        <p className="text-xs text-muted-foreground">{record.role}</p>
+      <div className="flex items-center gap-2">
+        <AgentBot role={record.role} status={record.status} size={40} />
+        <div>
+          <h3 className="font-heading text-base font-medium text-foreground">
+            {t(`roles.${record.role}.name`)}
+          </h3>
+          <p className="text-xs text-muted-foreground">{t(`roles.${record.role}.specialty`)}</p>
+        </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Badge variant="outline">{record.tier}</Badge>
-        <Badge variant="outline">{record.slot}</Badge>
+      <div className="flex flex-col gap-1">
+        <span className="text-xs text-muted-foreground">{t("tierLabel")}</span>
+        <span>{t(`tiers.${record.tier}`)}</span>
       </div>
 
       <div className="flex flex-col gap-1">
@@ -159,7 +164,12 @@ export function SubagentRunDetail({ record }: SubagentRunDetailProps) {
 
       <div className="flex flex-col gap-1">
         <span className="text-xs text-muted-foreground">{t("modelLabel")}</span>
-        <span>{record.modelName}</span>
+        <span>{model.modelName || t("metadataUnavailable")}</span>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <span className="text-xs text-muted-foreground">{t("effortLabel")}</span>
+        <span>{model.effort ? t(`efforts.${model.effort}`) : t("metadataUnavailable")}</span>
       </div>
 
       {/**

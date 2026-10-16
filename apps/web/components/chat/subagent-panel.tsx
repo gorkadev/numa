@@ -4,7 +4,6 @@ import {
   Alert01Icon,
   ArrowLeft01Icon,
   ArrowRight01Icon,
-  BotIcon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useTranslations } from "next-intl"
@@ -29,6 +28,7 @@ import {
 import { cn } from "@workspace/ui/lib/utils"
 
 import { Spinner } from "@/components/localized-spinner"
+import { AgentBot } from "@/components/chat/agent-bot"
 
 import {
   subagentStatusKey,
@@ -55,7 +55,7 @@ export type SubagentPanelProps = {
 /**
  * One run's row in the list, before it has been opened.
  *
- * `ItemMedia` carries the bot identity (`BotIcon`), not a status tick: the
+ * `ItemMedia` carries the specialist identity, not a status tick: the
  * status itself is already spelled out in `ItemActions`, so the icon only
  * needs to interrupt for the two states that change what the row IS —
  * still running, or failed — rather than restate every terminal status a
@@ -101,24 +101,19 @@ export function SubagentRunRow({
       data-selected={selected || undefined}
       onClick={() => onSelect(record.agentId)}
     >
-      <ItemMedia variant="icon">
-        {running ? (
-          <Spinner />
-        ) : (
-          <HugeiconsIcon
-            icon={failed ? Alert01Icon : BotIcon}
-            strokeWidth={2}
-            className={failed ? "text-destructive" : "text-muted-foreground"}
-          />
-        )}
+      <ItemMedia>
+        <AgentBot role={record.role} status={record.status} />
       </ItemMedia>
       <ItemContent>
-        <ItemTitle>{record.displayName}</ItemTitle>
+        <ItemTitle>{t(`roles.${record.role}.name`)}</ItemTitle>
         <ItemDescription className="line-clamp-1">
-          {record.role}
+          {t(`roles.${record.role}.specialty`)}
         </ItemDescription>
       </ItemContent>
       <ItemActions>
+        {running ? <Spinner /> : failed ? (
+          <HugeiconsIcon icon={Alert01Icon} strokeWidth={2} className="size-4 text-destructive" />
+        ) : null}
         <span
           className={cn("text-xs text-muted-foreground", running && "shimmer")}
         >

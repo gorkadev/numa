@@ -15,6 +15,7 @@ import {
 import { cn } from "@workspace/ui/lib/utils"
 
 import { Spinner } from "@/components/localized-spinner"
+import { AgentBot } from "@/components/chat/agent-bot"
 
 import type {
   SubagentRunRecord,
@@ -102,8 +103,9 @@ export function SubagentEntry({ record, onSelect }: SubagentEntryProps) {
           <HugeiconsIcon icon={statusIcon(record.status)} strokeWidth={2} />
         )}
       </MarkerIcon>
+      <AgentBot role={record.role} status={record.status} size={24} />
       <MarkerContent className={running ? "shimmer" : undefined}>
-        {record.displayName} ·{" "}
+        {t(`roles.${record.role}.name`)} ·{" "}
         {running ? record.activity : t(subagentStatusKey(record.status))}
       </MarkerContent>
     </Marker>

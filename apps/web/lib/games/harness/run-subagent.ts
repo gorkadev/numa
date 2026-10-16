@@ -12,6 +12,7 @@ import {
 
 import {
   entryDisplayName,
+  entryEffort,
   resolveModel,
   type FallbackHooks,
   type ServedCall,
@@ -410,6 +411,7 @@ export async function* runSubagent(
       slot: role.slot,
       modelId: servedId,
       modelName: entryDisplayName(servedId),
+      effort: entryEffort(servedId),
       status: finalStatus ?? "running",
       activity,
       steps,

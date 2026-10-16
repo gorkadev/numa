@@ -68,6 +68,19 @@
     "filesDeleted": "Files deleted"
   },
   "ChatAgents": {
+    "roles": {
+      "explorer": { "name": "Scout", "specialty": "Project analysis" },
+      "planner": { "name": "Architect", "specialty": "Planning" },
+      "gameplay": { "name": "Builder", "specialty": "Game mechanics" },
+      "visuals": { "name": "Artist", "specialty": "Visual design" },
+      "audio": { "name": "Composer", "specialty": "Audio and music" },
+      "verifier": { "name": "Tester", "specialty": "Testing and validation" }
+    },
+    "tierLabel": "Tier",
+    "effortLabel": "Reasoning effort",
+    "metadataUnavailable": "Unavailable",
+    "tiers": { "pro": "Pro", "balanced": "Balanced", "fast": "Fast" },
+    "efforts": { "minimal": "Minimal", "low": "Low", "medium": "Medium", "high": "High" },
     "previewTab": "Preview",
     "agentsTab": "Agents",
     "selectRun": "Select a run to see its details.",
