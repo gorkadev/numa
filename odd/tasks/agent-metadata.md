@@ -10,7 +10,7 @@ Remove raw tier/slot badges, hide internal slot and show labeled tier, model and
 - [ ] T3 Manual authenticated browser validation. Pending: browser automation unavailable.
 
 ## Verification evidence
-Historical implementation checks; current delivery validation and commit/push evidence remain pending the parent.
+Historical implementation checks; delivery validation now also passes the combined 12-test suite, focused ESLint, web typecheck and whitespace checks.
 - Presentation RED observed before helper existed; GREEN 3/3, parent rerun 3/3.
 - Records compatibility tests 2/2 (added after implementation; no independent RED claimed).
 - Independent combined node --test apps/web/components/chat/agent-run-presentation.test.ts apps/web/lib/games/harness/records.test.ts apps/web/components/chat/agent-bot.test.ts: 8 passed, no failures/skips.
@@ -22,5 +22,5 @@ Historical implementation checks; current delivery validation and commit/push ev
 - Not run: browser/visual checks, production build, runtime fallback integration test. Fallback stamping verified structurally, not through a runtime integration scenario.
 
 ## Delivery and next step
-Branch feat/agentbot-avatars. ask-on-risk; forecast 200-350 lines, approximately 160 authored for this unit excluding prior changes. Scoped commits and push explicitly requested by the user; execution and evidence pending the parent. RDD off; ASSESS unassessable due to untracked files, treated high and independently verified. No authority maintenance.
-Next: parent completes authorized scoped commits/push and records evidence. Manual visual check (T3) remains pending; production build/runtime integration checks remain unverified.
+Branch feat/agentbot-avatars. ask-on-risk; forecast 200-350 lines, approximately 160 authored for this unit excluding prior changes. Scoped commits and push explicitly requested by the user; committed as d8a3b49 with specialist avatars because their UI integrations share files. Published to origin/feat/agentbot-avatars. RDD off; ASSESS unassessable due to untracked files, treated high and independently verified. No authority maintenance.
+Committed work is published to origin/feat/agentbot-avatars. Manual visual check (T3) remains pending; production build/runtime integration checks remain unverified.

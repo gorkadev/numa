@@ -20,7 +20,7 @@ Give six specialists stable distinct Blobatar identities in chat entries, panel 
 - [ ] T3 Manually validate six identities and hover/running/reduced-motion behavior in authenticated browser. Pending: browser automation unavailable; do not claim visually verified.
 
 ## Verification evidence
-Historical implementation checks; current delivery validation and commit/push evidence remain pending the parent.
+Historical implementation checks; delivery validation now also passes the combined 12-test suite, focused ESLint, web typecheck and whitespace checks.
 - RED: node --test apps/web/components/chat/agent-bot.test.ts failed with missing presentation module before implementation.
 - GREEN and independent rerun: same command passes 3 tests; parent also reran, 3 passed.
 - pnpm --filter web typecheck: PASS (initial focusable typing issue resolved with boolean false).
@@ -33,8 +33,8 @@ Historical implementation checks; current delivery validation and commit/push ev
 - Independent verifier mv8sj0p3-5-ueku completed with PARTIAL solely for browser limitation; no source defects found.
 
 ## Delivery and risk
-Branch: feat/agentbot-avatars. Dependencies blobatar and @blobatar/react 2.7.0. Strategy ask-on-risk; forecast 200-350 authored diff lines, actual 154 excluding lockfile. User has now explicitly authorized scoped commits and push. Delivery execution and commit/push evidence remain pending the parent; no PR requested.
+Branch: feat/agentbot-avatars. Dependencies blobatar and @blobatar/react 2.7.0. Strategy ask-on-risk; forecast 200-350 authored diff lines, actual 154 excluding lockfile. User has now explicitly authorized scoped commits and push. Committed as d8a3b49 together with localized specialist metadata because their UI integrations share files. Published to origin/feat/agentbot-avatars; no PR requested.
 Native RDD off; no review started. ASSESS unassessable due to untracked new files; treated as high with independent verification completed. No authority maintenance attempted.
 
 ## Next step
-Parent completes authorized scoped commits/push and records evidence. Manual authenticated browser validation (T3) remains pending.
+Manual authenticated browser validation (T3) remains pending; committed work is published.
