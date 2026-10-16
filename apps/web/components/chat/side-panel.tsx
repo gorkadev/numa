@@ -21,6 +21,10 @@ import {
   DrawerTitle,
 } from "@workspace/ui/components/drawer"
 import { ItemGroup } from "@workspace/ui/components/item"
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@workspace/ui/components/toggle-group"
 import { useIsMobile } from "@workspace/ui/hooks/use-mobile"
 import { cn } from "@workspace/ui/lib/utils"
 
@@ -33,7 +37,39 @@ import { SubagentRunDetail } from "@/components/chat/subagent-run-detail"
 import { Spinner } from "@/components/localized-spinner"
 import type { SubagentRunRecord } from "@/lib/games/harness/records"
 
+import { filterAgentRuns, type AgentRunFilter } from "./agent-run-filter"
+
 export type SidePanelTab = "preview" | "agents"
+
+function AgentRunFilterControl({ value, onChange }: {
+  value: AgentRunFilter
+  onChange: (value: AgentRunFilter) => void
+}) {
+  const t = useTranslations("ChatAgents")
+
+  return (
+    <ToggleGroup
+      value={[value]}
+      onValueChange={(values) => {
+        const next = values[0]
+        if (next === "all" || next === "active" || next === "finished") {
+          onChange(next)
+        }
+      }}
+      multiple={false}
+      variant="outline"
+      size="sm"
+      spacing={1}
+      aria-label={t("filters.label")}
+    >
+      {(["all", "active", "finished"] as const).map((filter) => (
+        <ToggleGroupItem key={filter} value={filter}>
+          {t(`filters.${filter}`)}
+        </ToggleGroupItem>
+      ))}
+    </ToggleGroup>
+  )
+}
 
 /** Where a dragged width is remembered — see the block comment above `useStoredWidth` for why a per-viewer default belongs here and not in a column. */
 const WIDTH_STORAGE_KEY = "numa:side-panel-width"
@@ -140,29 +176,54 @@ function AgentsTabBody({
   onSelectRun: (agentId: string | null) => void
 }) {
   const t = useTranslations("ChatAgents")
+  const [filter, setFilter] = useState<AgentRunFilter>("all")
+  const visibleRecords = filterAgentRuns(records, filter)
+  // Selection intentionally resolves against ALL records, even when hidden.
   const selected =
     records.find((record) => record.agentId === selectedRunId) ?? null
+  const emptyMessage = filter === "all"
+    ? t("noRuns")
+    : t(filter === "active" ? "filters.emptyActive" : "filters.emptyFinished")
+  const emptyState = <p className="text-sm text-muted-foreground">{emptyMessage}</p>
 
   return (
     <>
-      <SubagentPanelBody
-        records={records}
-        selected={selected}
-        onSelectRun={onSelectRun}
-        className="px-3 pt-3 pb-3 @2xl:hidden"
-      />
+      <div className="flex min-h-0 flex-1 flex-col @2xl:hidden">
+        {!selected && (
+          <div className="px-3 pt-3 pb-2">
+            <AgentRunFilterControl value={filter} onChange={setFilter} />
+          </div>
+        )}
+        {!selected && visibleRecords.length === 0 ? (
+          <div className="px-3 pb-3">{emptyState}</div>
+        ) : (
+          <SubagentPanelBody
+            records={visibleRecords}
+            selected={selected}
+            onSelectRun={onSelectRun}
+            className="px-3 pt-3 pb-3"
+          />
+        )}
+      </div>
       <div className="hidden min-h-0 flex-1 @2xl:flex">
-        <div className="no-scrollbar w-64 shrink-0 scroll-fade overflow-y-auto overscroll-contain border-e p-2">
-          <ItemGroup>
-            {records.map((record) => (
-              <SubagentRunRow
-                key={record.agentId}
-                record={record}
-                selected={record.agentId === selectedRunId}
-                onSelect={onSelectRun}
-              />
-            ))}
-          </ItemGroup>
+        <div className="flex min-h-0 w-64 shrink-0 flex-col border-e">
+          <div className="shrink-0 p-2">
+            <AgentRunFilterControl value={filter} onChange={setFilter} />
+          </div>
+          <div className="no-scrollbar min-h-0 flex-1 scroll-fade overflow-y-auto overscroll-contain p-2">
+            {visibleRecords.length === 0 ? emptyState : (
+              <ItemGroup>
+                {visibleRecords.map((record) => (
+                  <SubagentRunRow
+                    key={record.agentId}
+                    record={record}
+                    selected={record.agentId === selectedRunId}
+                    onSelect={onSelectRun}
+                  />
+                ))}
+              </ItemGroup>
+            )}
+          </div>
         </div>
         <div className="no-scrollbar min-h-0 flex-1 scroll-fade overflow-y-auto overscroll-contain p-4">
           {selected ? (

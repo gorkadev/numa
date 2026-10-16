@@ -68,6 +68,14 @@
     "filesDeleted": "Archivos eliminados"
   },
   "ChatAgents": {
+    "filters": {
+      "label": "Filtrar ejecuciones de agentes",
+      "all": "Todas",
+      "active": "Activas",
+      "finished": "Finalizadas",
+      "emptyActive": "No hay ejecuciones de agentes activas.",
+      "emptyFinished": "No hay ejecuciones de agentes finalizadas."
+    },
     "roles": {
       "explorer": { "name": "Explorador", "specialty": "Análisis del proyecto" },
       "planner": { "name": "Arquitecto", "specialty": "Planificación" },
@@ -254,7 +262,11 @@
       },
       "cube-world": {
         "label": "Mundo de cubos",
-        "tagline": "Empieza con un pequeño kit de aventuras 3D; el paquete local no incluye documentación que acredite su licencia."
+        "tagline": "Empieza con un pequeño kit de aventuras 3D."
+      },
+      "toon-shooter": {
+        "label": "Disparos de dibujos animados",
+        "tagline": "Empieza con un kit completo de disparos 3D de dibujos animados."
       }
     },
     "startDictation": "Iniciar dictado",

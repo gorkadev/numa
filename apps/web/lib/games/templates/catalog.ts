@@ -18,7 +18,7 @@ export type GameTemplate = {
 }
 
 /** The closed set accepted from untrusted form data. */
-export const templateIdSchema = z.enum(["none", "fantasy-cards", "cube-world"])
+export const templateIdSchema = z.enum(["none", "fantasy-cards", "cube-world", "toon-shooter"])
 
 export type TemplateId = z.infer<typeof templateIdSchema>
 
@@ -39,7 +39,13 @@ export const TEMPLATES: readonly GameTemplate[] = [
     id: "cube-world",
     version: 1,
     label: "Cube World",
-    tagline: "Start with a small 3D adventure kit; the local pack has no bundled license evidence.",
+    tagline: "Start with a small 3D adventure kit.",
+  },
+  {
+    id: "toon-shooter",
+    version: 1,
+    label: "Toon Shooter",
+    tagline: "Start with a complete cartoon 3D shooter kit.",
   },
 ]
 

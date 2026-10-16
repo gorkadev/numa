@@ -5,7 +5,7 @@ import test from "node:test"
 
 import { renderTemplateModelInventory, type TemplateInventoryModel } from "./inventory"
 
-for (const [template, expectedCount] of [["cube-world", 107], ["fantasy-cards", 34]] as const) {
+for (const [template, expectedCount] of [["cube-world", 107], ["fantasy-cards", 34], ["toon-shooter", 74]] as const) {
   test(`${template} renders the complete grouped manifest inventory`, () => {
     const manifest = JSON.parse(readFileSync(join(process.cwd(), "lib/games/templates", template, "seed/ASSETS.json"), "utf8")) as { models: TemplateInventoryModel[] }
     assert.equal(manifest.models.length, expectedCount)

@@ -2,7 +2,7 @@
 
 This game was created with the immutable `cube-world@1` starter template. Read
 root-level `ASSETS.json` before selecting assets or planning a fresh build. The
-manifest lists all 107 local glTF models, including its license-risk record.
+manifest lists all 107 local glTF models.
 
 ## Local imports
 
@@ -76,8 +76,6 @@ state and increments `resetCount` to 1. The complete declared sequence runs at
 both desktop and the 390x844 touch viewport using only declarative actions and
 bounded equality polling.
 
-## License-risk record
+## Source provenance
 
-The local `Cube World - Aug 2023` source pack has no bundled LICENSE, README,
-ATTRIBUTION, NOTICE, or COPYING evidence. The user accepted exposure of this
-template with that risk. Do not infer or claim a license.
+The user confirmed that the legacy `Cube World - Aug 2023` pack is licensed.

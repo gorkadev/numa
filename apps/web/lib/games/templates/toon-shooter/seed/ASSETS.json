@@ -1,0 +1,607 @@
+{
+  "template": {
+    "id": "toon-shooter",
+    "version": 1
+  },
+  "assetRoot": "assets/toon-shooter",
+  "models": [
+    {
+      "id": "character-enemy",
+      "path": "assets/toon-shooter/Characters/Character_Enemy.gltf",
+      "category": "character",
+      "animations": [
+        {
+          "name": "Death",
+          "category": "death"
+        },
+        {
+          "name": "Duck",
+          "category": "reaction"
+        },
+        {
+          "name": "HitReact",
+          "category": "reaction"
+        },
+        {
+          "name": "Idle",
+          "category": "idle"
+        },
+        {
+          "name": "Idle_Shoot",
+          "category": "attack"
+        },
+        {
+          "name": "Jump",
+          "category": "jump"
+        },
+        {
+          "name": "Jump_Idle",
+          "category": "jump"
+        },
+        {
+          "name": "Jump_Land",
+          "category": "jump"
+        },
+        {
+          "name": "No",
+          "category": "emote"
+        },
+        {
+          "name": "Punch",
+          "category": "attack"
+        },
+        {
+          "name": "Run",
+          "category": "locomotion"
+        },
+        {
+          "name": "Run_Gun",
+          "category": "locomotion"
+        },
+        {
+          "name": "Run_Shoot",
+          "category": "attack"
+        },
+        {
+          "name": "Walk",
+          "category": "locomotion"
+        },
+        {
+          "name": "Walk_Shoot",
+          "category": "attack"
+        },
+        {
+          "name": "Wave",
+          "category": "emote"
+        },
+        {
+          "name": "Yes",
+          "category": "emote"
+        }
+      ]
+    },
+    {
+      "id": "character-hazmat",
+      "path": "assets/toon-shooter/Characters/Character_Hazmat.gltf",
+      "category": "character",
+      "animations": [
+        {
+          "name": "Death",
+          "category": "death"
+        },
+        {
+          "name": "Duck",
+          "category": "reaction"
+        },
+        {
+          "name": "HitReact",
+          "category": "reaction"
+        },
+        {
+          "name": "Idle",
+          "category": "idle"
+        },
+        {
+          "name": "Idle_Shoot",
+          "category": "attack"
+        },
+        {
+          "name": "Jump",
+          "category": "jump"
+        },
+        {
+          "name": "Jump_Idle",
+          "category": "jump"
+        },
+        {
+          "name": "Jump_Land",
+          "category": "jump"
+        },
+        {
+          "name": "No",
+          "category": "emote"
+        },
+        {
+          "name": "Punch",
+          "category": "attack"
+        },
+        {
+          "name": "Run",
+          "category": "locomotion"
+        },
+        {
+          "name": "Run_Gun",
+          "category": "locomotion"
+        },
+        {
+          "name": "Run_Shoot",
+          "category": "attack"
+        },
+        {
+          "name": "Walk",
+          "category": "locomotion"
+        },
+        {
+          "name": "Walk_Shoot",
+          "category": "attack"
+        },
+        {
+          "name": "Wave",
+          "category": "emote"
+        },
+        {
+          "name": "Yes",
+          "category": "emote"
+        }
+      ]
+    },
+    {
+      "id": "character-soldier",
+      "path": "assets/toon-shooter/Characters/Character_Soldier.gltf",
+      "category": "character",
+      "animations": [
+        {
+          "name": "Death",
+          "category": "death"
+        },
+        {
+          "name": "Duck",
+          "category": "reaction"
+        },
+        {
+          "name": "HitReact",
+          "category": "reaction"
+        },
+        {
+          "name": "Idle",
+          "category": "idle"
+        },
+        {
+          "name": "Idle_Shoot",
+          "category": "attack"
+        },
+        {
+          "name": "Jump",
+          "category": "jump"
+        },
+        {
+          "name": "Jump_Idle",
+          "category": "jump"
+        },
+        {
+          "name": "Jump_Land",
+          "category": "jump"
+        },
+        {
+          "name": "No",
+          "category": "emote"
+        },
+        {
+          "name": "Punch",
+          "category": "attack"
+        },
+        {
+          "name": "Run",
+          "category": "locomotion"
+        },
+        {
+          "name": "Run_Gun",
+          "category": "locomotion"
+        },
+        {
+          "name": "Run_Shoot",
+          "category": "attack"
+        },
+        {
+          "name": "Walk",
+          "category": "locomotion"
+        },
+        {
+          "name": "Walk_Shoot",
+          "category": "attack"
+        },
+        {
+          "name": "Wave",
+          "category": "emote"
+        },
+        {
+          "name": "Yes",
+          "category": "emote"
+        }
+      ]
+    },
+    {
+      "id": "barrier-fixed",
+      "path": "assets/toon-shooter/Environment/Barrier_Fixed.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "barrier-large",
+      "path": "assets/toon-shooter/Environment/Barrier_Large.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "barrier-single",
+      "path": "assets/toon-shooter/Environment/Barrier_Single.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "barrier-trash",
+      "path": "assets/toon-shooter/Environment/Barrier_Trash.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "beartrap-closed",
+      "path": "assets/toon-shooter/Environment/BearTrap_Closed.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "beartrap-open",
+      "path": "assets/toon-shooter/Environment/BearTrap_Open.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "brickwall-1",
+      "path": "assets/toon-shooter/Environment/BrickWall_1.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "brickwall-2",
+      "path": "assets/toon-shooter/Environment/BrickWall_2.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "cardboardboxes-1",
+      "path": "assets/toon-shooter/Environment/CardboardBoxes_1.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "cardboardboxes-2",
+      "path": "assets/toon-shooter/Environment/CardboardBoxes_2.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "cardboardboxes-3",
+      "path": "assets/toon-shooter/Environment/CardboardBoxes_3.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "cardboardboxes-4",
+      "path": "assets/toon-shooter/Environment/CardboardBoxes_4.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "container-long",
+      "path": "assets/toon-shooter/Environment/Container_Long.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "container-small",
+      "path": "assets/toon-shooter/Environment/Container_Small.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "crate",
+      "path": "assets/toon-shooter/Environment/Crate.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "debris-brokencar",
+      "path": "assets/toon-shooter/Environment/Debris_BrokenCar.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "debris-papers-1",
+      "path": "assets/toon-shooter/Environment/Debris_Papers_1.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "debris-papers-2",
+      "path": "assets/toon-shooter/Environment/Debris_Papers_2.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "debris-papers-3",
+      "path": "assets/toon-shooter/Environment/Debris_Papers_3.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "debris-pile",
+      "path": "assets/toon-shooter/Environment/Debris_Pile.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "debris-tires",
+      "path": "assets/toon-shooter/Environment/Debris_Tires.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "explodingbarrel",
+      "path": "assets/toon-shooter/Environment/ExplodingBarrel.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "explodingbarrel-spilled",
+      "path": "assets/toon-shooter/Environment/ExplodingBarrel_Spilled.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "fence",
+      "path": "assets/toon-shooter/Environment/Fence.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "fence-long",
+      "path": "assets/toon-shooter/Environment/Fence_Long.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "gascan",
+      "path": "assets/toon-shooter/Environment/GasCan.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "gastank",
+      "path": "assets/toon-shooter/Environment/GasTank.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "health",
+      "path": "assets/toon-shooter/Environment/Health.gltf",
+      "category": "collectible"
+    },
+    {
+      "id": "key",
+      "path": "assets/toon-shooter/Environment/Key.gltf",
+      "category": "collectible"
+    },
+    {
+      "id": "landmine",
+      "path": "assets/toon-shooter/Environment/Landmine.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "metalfence",
+      "path": "assets/toon-shooter/Environment/MetalFence.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "pallet",
+      "path": "assets/toon-shooter/Environment/Pallet.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "pallet-broken",
+      "path": "assets/toon-shooter/Environment/Pallet_Broken.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "pipes",
+      "path": "assets/toon-shooter/Environment/Pipes.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "sacktrench",
+      "path": "assets/toon-shooter/Environment/SackTrench.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "sacktrench-small",
+      "path": "assets/toon-shooter/Environment/SackTrench_Small.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "sign",
+      "path": "assets/toon-shooter/Environment/Sign.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "sofa",
+      "path": "assets/toon-shooter/Environment/Sofa.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "sofa-small",
+      "path": "assets/toon-shooter/Environment/Sofa_Small.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "streetlight",
+      "path": "assets/toon-shooter/Environment/StreetLight.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "structure-1",
+      "path": "assets/toon-shooter/Environment/Structure_1.gltf",
+      "category": "structure"
+    },
+    {
+      "id": "structure-2",
+      "path": "assets/toon-shooter/Environment/Structure_2.gltf",
+      "category": "structure"
+    },
+    {
+      "id": "structure-3",
+      "path": "assets/toon-shooter/Environment/Structure_3.gltf",
+      "category": "structure"
+    },
+    {
+      "id": "structure-4",
+      "path": "assets/toon-shooter/Environment/Structure_4.gltf",
+      "category": "structure"
+    },
+    {
+      "id": "tank",
+      "path": "assets/toon-shooter/Environment/Tank.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "trafficcone",
+      "path": "assets/toon-shooter/Environment/TrafficCone.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "trashcontainer",
+      "path": "assets/toon-shooter/Environment/TrashContainer.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "trashcontainer-open",
+      "path": "assets/toon-shooter/Environment/TrashContainer_Open.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "tree-1",
+      "path": "assets/toon-shooter/Environment/Tree_1.gltf",
+      "category": "vegetation"
+    },
+    {
+      "id": "tree-2",
+      "path": "assets/toon-shooter/Environment/Tree_2.gltf",
+      "category": "vegetation"
+    },
+    {
+      "id": "tree-3",
+      "path": "assets/toon-shooter/Environment/Tree_3.gltf",
+      "category": "vegetation"
+    },
+    {
+      "id": "tree-4",
+      "path": "assets/toon-shooter/Environment/Tree_4.gltf",
+      "category": "vegetation"
+    },
+    {
+      "id": "watertank-floor",
+      "path": "assets/toon-shooter/Environment/WaterTank_Floor.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "watertank-platform",
+      "path": "assets/toon-shooter/Environment/WaterTank_Platform.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "woodplanks",
+      "path": "assets/toon-shooter/Environment/WoodPlanks.gltf",
+      "category": "prop"
+    },
+    {
+      "id": "ak",
+      "path": "assets/toon-shooter/Guns/AK.gltf",
+      "category": "tool"
+    },
+    {
+      "id": "firegrenade",
+      "path": "assets/toon-shooter/Guns/FireGrenade.gltf",
+      "category": "tool"
+    },
+    {
+      "id": "grenade",
+      "path": "assets/toon-shooter/Guns/Grenade.gltf",
+      "category": "tool"
+    },
+    {
+      "id": "grenadelauncher",
+      "path": "assets/toon-shooter/Guns/GrenadeLauncher.gltf",
+      "category": "tool"
+    },
+    {
+      "id": "knife-1",
+      "path": "assets/toon-shooter/Guns/Knife_1.gltf",
+      "category": "tool"
+    },
+    {
+      "id": "knife-2",
+      "path": "assets/toon-shooter/Guns/Knife_2.gltf",
+      "category": "tool"
+    },
+    {
+      "id": "pistol",
+      "path": "assets/toon-shooter/Guns/Pistol.gltf",
+      "category": "tool"
+    },
+    {
+      "id": "revolver",
+      "path": "assets/toon-shooter/Guns/Revolver.gltf",
+      "category": "tool"
+    },
+    {
+      "id": "revolver-small",
+      "path": "assets/toon-shooter/Guns/Revolver_Small.gltf",
+      "category": "tool"
+    },
+    {
+      "id": "rocketlauncher",
+      "path": "assets/toon-shooter/Guns/RocketLauncher.gltf",
+      "category": "tool"
+    },
+    {
+      "id": "smg",
+      "path": "assets/toon-shooter/Guns/SMG.gltf",
+      "category": "tool"
+    },
+    {
+      "id": "shortcannon",
+      "path": "assets/toon-shooter/Guns/ShortCannon.gltf",
+      "category": "tool"
+    },
+    {
+      "id": "shotgun",
+      "path": "assets/toon-shooter/Guns/Shotgun.gltf",
+      "category": "tool"
+    },
+    {
+      "id": "shovel",
+      "path": "assets/toon-shooter/Guns/Shovel.gltf",
+      "category": "tool"
+    },
+    {
+      "id": "sniper",
+      "path": "assets/toon-shooter/Guns/Sniper.gltf",
+      "category": "tool"
+    },
+    {
+      "id": "sniper-2",
+      "path": "assets/toon-shooter/Guns/Sniper_2.gltf",
+      "category": "tool"
+    }
+  ],
+  "provenance": {
+    "three": {
+      "vendor/three/addons/loaders/GLTFLoader.js": {
+        "sourceUrl": "https://raw.githubusercontent.com/mrdoob/three.js/r185/examples/jsm/loaders/GLTFLoader.js",
+        "sha256": "97642d720f16cc9a0c9844934198e4d0c023bea8e89576d0f7545d03b2d103d2"
+      },
+      "vendor/three/addons/utils/SkeletonUtils.js": {
+        "sourceUrl": "https://raw.githubusercontent.com/mrdoob/three.js/r185/examples/jsm/utils/SkeletonUtils.js",
+        "sha256": "b1632a703206c3d830de9fcbe515696770d04b71a15ee6b50afa6d2c3298c86f"
+      }
+    }
+  },
+  "vendor": {
+    "threeRevision": "r185",
+    "commonRuntimeDependencies": [
+      "vendor/three/addons/utils/BufferGeometryUtils.js"
+    ]
+  }
+}
