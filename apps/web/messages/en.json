@@ -68,6 +68,14 @@
     "filesDeleted": "Files deleted"
   },
   "ChatAgents": {
+    "filters": {
+      "label": "Filter agent runs",
+      "all": "All",
+      "active": "Active",
+      "finished": "Finished",
+      "emptyActive": "No active agent runs.",
+      "emptyFinished": "No finished agent runs."
+    },
     "roles": {
       "explorer": { "name": "Scout", "specialty": "Project analysis" },
       "planner": { "name": "Architect", "specialty": "Planning" },
@@ -254,7 +262,11 @@
       },
       "cube-world": {
         "label": "Cube World",
-        "tagline": "Start with a small 3D adventure kit; the local pack has no bundled license evidence."
+        "tagline": "Start with a small 3D adventure kit."
+      },
+      "toon-shooter": {
+        "label": "Toon Shooter",
+        "tagline": "Start with a complete cartoon 3D shooter kit."
       }
     },
     "startDictation": "Start dictation",

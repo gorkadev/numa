@@ -1373,12 +1373,6 @@
       "category": "tool"
     }
   ],
-  "licenseRisk": {
-    "status": "missing-local-evidence",
-    "sourcePack": "Cube World - Aug 2023",
-    "exposureAccepted": true,
-    "note": "The local source pack contains no bundled LICENSE, README, ATTRIBUTION, NOTICE, or COPYING evidence."
-  },
   "provenance": {
     "three": {
       "vendor/three/addons/loaders/GLTFLoader.js": {

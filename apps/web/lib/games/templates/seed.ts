@@ -201,6 +201,14 @@ const TEMPLATE_SEED_DIRECTORIES: Readonly<Record<string, string | undefined>> =
       "fantasy-cards",
       "seed"
     ),
+    "toon-shooter@1": path.join(
+      process.cwd(),
+      "lib",
+      "games",
+      "templates",
+      "toon-shooter",
+      "seed"
+    ),
     "cube-world@1": path.join(
       process.cwd(),
       "lib",
