@@ -150,6 +150,8 @@ export const subagentRunRecordSchema = z.object({
   /** The concrete registry entry that served the run's most recent call so far — the primary until a fallback ever takes over. */
   modelId: z.string().min(1),
   modelName: z.string().min(1),
+  /** Actual selected entry's reasoning configuration; absent on historical records. */
+  effort: z.enum(["minimal", "low", "medium", "high"]).optional(),
   status: subagentRunStatusSchema,
   /** One-liner for "current activity" while the run is still going (design.md decision 16); the terminal `summary` once it ends. */
   activity: z.string(),
