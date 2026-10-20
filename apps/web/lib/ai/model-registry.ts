@@ -163,6 +163,14 @@ type TierProfile = Record<Slot, SlotCandidates>
  * (measured: `low` and `medium` spend thinking tokens but emit no summary
  * text), so it is what makes the thread's reasoning visible for the model that
  * writes every reply.
+ *
+ * `balanced` keeps that same division and moves only the hands off Argon.
+ * Lowering Argon's effort saves almost nothing — all three Argon entries share
+ * one rate card, so effort changes how much the model thinks, not what a token
+ * costs, and cached input dominates a turn's bill. The model family is the real
+ * cost lever, and the workers are where the tokens are: they are ~80% of a
+ * build turn's cost. `fast` is Flash end to end, because the tier itself is the
+ * cheap one.
  */
 const TIER_PROFILES: Record<TierId, TierProfile> = {
   pro: {
@@ -171,9 +179,9 @@ const TIER_PROFILES: Record<TierId, TierProfile> = {
     light: ["argon-low"],
   },
   balanced: {
-    strong: ["argon-medium"],
-    mid: ["argon-low"],
-    light: ["flash-high"],
+    strong: ["argon-high"],
+    mid: ["flash-high"],
+    light: ["lite-medium"],
   },
   fast: {
     strong: ["flash-high"],

@@ -7,18 +7,32 @@ Upgrade the compatible AI SDK provider and configure explicit, static model/reas
 | Tier | strong | mid | light |
 | --- | --- | --- | --- |
 | pro | gemini-4-argon / high | gemini-4-argon / medium | gemini-4-argon / low |
-| balanced | gemini-4-argon / medium | gemini-4-argon / low | gemini-3.8-flash / high |
+| balanced | gemini-4-argon / high | gemini-3.8-flash / high | gemini-3.5-flash-lite / medium |
 | fast | gemini-3.8-flash / high | gemini-3.8-flash / medium | gemini-3.5-flash-lite / medium |
 
 Title generation: gemini-3.5-flash-lite / minimal. No dynamic reasoning selection.
 
-Revised for `pro` only, on explicit user authorization: `strong` and `mid` swapped
-effort. The judgment roles (orchestrator, planner, verifier) hold `strong`; the
-worker roles hold `mid` and consume more tokens without deciding more. `high` is
-also the only Argon level that publishes thought summaries, so it is what makes
-the thread's reasoning visible. This also removes a within-tier inversion
-(`strong` at medium effort below `mid` at high). `balanced` and `fast` are
-unchanged and still pending review.
+Revised on explicit user authorization, in two steps.
+
+`pro`: `strong` and `mid` swapped effort. The judgment roles (orchestrator,
+planner, verifier) hold `strong`; the worker roles hold `mid` and consume more
+tokens without deciding more. `high` is also the only Argon level that publishes
+thought summaries, so it is what makes the thread's reasoning visible. This also
+removes a within-tier inversion (`strong` at medium effort below `mid` at high).
+
+`balanced` (the default tier): same division, but the hands leave Argon for
+Flash. Lowering Argon's effort saves almost nothing — all three Argon entries
+share one rate card, so effort does not change the price per token, and cached
+input dominates a turn's bill. The model family is the real cost lever and the
+workers are ~80% of a build turn's cost. Measured on a real $1.19 build turn:
+workers `argon-high` → `argon-low` saves ~5%, `argon-high` → `flash-high` saves
+~59%. `balanced.light` moves to Flash Lite accordingly, which is the one
+quality risk this table carries: Composer writes audio code on the weakest
+model in the registry. Unverified, and worth watching on the first balanced
+build that includes audio.
+
+`fast` is unchanged: Flash publishes thought summaries at any level, so the
+tier already showed reasoning.
 
 ## Scope and constraints
 - User authorized this exact table, a compatible SDK upgrade, and commits. Preserve the existing September template work separately; its source of truth remains `odd/tasks/game-template-starter-kits.md`.

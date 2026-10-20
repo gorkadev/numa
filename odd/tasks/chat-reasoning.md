@@ -88,7 +88,8 @@ text no longer opens an empty panel, and the Spanish pair is parallel
   `low` and `medium` spend thinking tokens but emit no summary text, and prompt
   complexity is not the discriminator. `TIER_PROFILES.pro` now runs
   `strong: argon-high`, `mid: argon-medium`; the two fallback tests and the
-  profile table follow.
+  profile table follow. `balanced`, the default tier, had the same defect and
+  now runs `strong: argon-high` too, so the feature is visible out of the box.
 
 Pending, honestly:
 
