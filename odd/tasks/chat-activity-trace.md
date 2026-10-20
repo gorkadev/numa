@@ -44,3 +44,11 @@ Still validate in a real thread: automatic expansion while running, collapse on 
 ## Next step
 
 Open a usable browser/runtime and verify the interaction scenarios above before checking T1 off. The code is implemented with automated checks passing apart from documented baseline issues; the feature is not fully browser-verified. No commit made; request explicit user authorization before committing.
+
+## Commits and current verification
+
+- Work-unit commit: `dd6ba02` — feat(chat): group multi-call activity into a Trace summary.
+- `pnpm --dir apps/web exec tsx --test components/chat/tool-group.test.tsx components/chat/tool-group-state.test.ts components/chat/subagent-entry.test.tsx components/chat/markdown-code.test.tsx hooks/use-highlighted-code.test.tsx lib/highlighter.test.tsx lib/games/tool-parts.test.ts lib/games/harness/records.test.ts` — 20 passed, 0 failed.
+- `pnpm --filter web typecheck` — pass.
+- Locale Prettier warns on `en.json`/`es.json`; reproduced on the branch-point blob, so it is pre-existing and not reformatted here.
+- Still open: browser interaction checks (expansion while running, collapse on settle, manual override across updates, keyboard). Orca runtime was not running, so no automation was available.

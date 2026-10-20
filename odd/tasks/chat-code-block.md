@@ -27,3 +27,11 @@ User concurrently adjusted renderer background (bg-accent/ then bg-input) and su
 ## Next step
 
 Migration is implemented, but do not declare C1 fully verified: one unexplained intermittent color mismatch and browser checks remain open. Stop repeated reruns or speculative changes; retain strict test and evidence for targeted reproduction if it recurs. Next practical check is real-browser highlighting/wrap/copy/theme/streamed growth. Commit only on explicit request.
+
+## Commits and current verification
+
+- Work-unit commit: `f039a7b` — feat(chat): migrate code rendering to the shadcn CodeBlock.
+- Wrap default resolved by user decision: wrap stays enabled, so the SSR assertion expects `aria-pressed="true"`. The component is unchanged.
+- `pnpm --dir apps/web exec tsx --test ...` (full focused suite) — 20 passed, 0 failed, including the previously intermittent alias assertion.
+- `pnpm --filter web typecheck` — pass, with no baseline diagnostics left in `apps/web/lib/highlighter.tsx`.
+- Still open: real-browser highlighting, wrap, copy, theme switching, and streamed growth.

@@ -29,3 +29,11 @@ Nonempty done/partial/blocked report uses existing safe Markdown in initially cl
 ## Pending and next step
 
 Browser unavailable: disclosure visibility, click isolation, keyboard/focus, practical sizing and manual state during streamed updates remain unverified. SSR confirms structure, not interaction. Check in a real existing/new thread before closing S1. Previous Trace/CodeBlock browser and intermittent highlighting gaps remain separate. All delegated S1 work settled; no agents running. Commit only on explicit user request.
+
+## Commits and current verification
+
+- Work-unit commit: `809ddb6` — feat(chat): show subagent work inline in the thread.
+- Related commits on the branch: `dd6ba02` (activity Trace), `f039a7b` (CodeBlock), `bd2fabf` (thread spacing), `e61fb65` (research doc).
+- `pnpm --dir apps/web exec tsx --test ...` (full focused suite) — 20 passed, 0 failed.
+- `pnpm --filter web typecheck` — pass.
+- Still open: the browser checks listed above. No browser runtime was available, so SSR structure is still the only automated evidence.
