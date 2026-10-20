@@ -10,6 +10,7 @@ import { AskPlayer, AskPlayerAnswer } from "@/components/chat/ask-player"
 import { AssistantAvatar } from "@/components/chat/assistant-avatar"
 import { Markdown } from "@/components/chat/markdown"
 import { MessageActions } from "@/components/chat/message-actions"
+import { ReasoningBlock } from "@/components/chat/reasoning-block"
 import { SubagentEntry } from "@/components/chat/subagent-entry"
 import { Thinking } from "@/components/chat/thinking"
 import { ToolGroup } from "@/components/chat/tool-group"
@@ -143,6 +144,21 @@ function ChatMessageImpl({
           }
 
           /**
+           * A run of reasoning parts reads as one trace. It keeps its place in
+           * the row, so the thinking that led to a tool call sits above it and
+           * the thinking that followed sits below.
+           */
+          if (block.kind === "reasoning") {
+            return (
+              <ReasoningBlock
+                key={block.key}
+                parts={block.parts}
+                streaming={streaming}
+              />
+            )
+          }
+
+          /**
            * An empty text block is what the start of a reply looks like: the
            * part exists before any token has landed in it. Rendering it would
            * put an empty bubble on screen for the length of the round trip.
@@ -188,14 +204,17 @@ function ChatMessageImpl({
  * Whether the last block of a run is still actively producing — the thing
  * that makes a trailing `<Thinking />` redundant rather than reassuring.
  *
- * Three cases, matching the three ways a block can be "in progress": a text
- * part still being written, a tool group with at least one unsettled call, or
- * a question the agent is waiting on the player to answer. `undefined` (no
- * block at all) and an answered question both read as "not producing" on
- * purpose — the first is the empty-run case handled in `ChatMessageImpl`
- * above, and the second is exactly the resumed-questionnaire gap `Thinking`
- * exists to cover: the run has an answer already sitting in it but nothing
- * new has streamed in since.
+ * Each kind of block has its own tell: a text part only counts once there is
+ * text on screen to watch grow, a tool group counts while any call in it is
+ * unsettled, an `ask` counts until the player answers, an `agent` block counts
+ * while any reported sub-agent run is still going, and a reasoning block counts
+ * while any of its parts is still streaming — the block exists before its
+ * first token, which is why it is checked per part rather than per block.
+ * `undefined` (no block at all) and an answered question both read as "not
+ * producing" on purpose — the first is the empty-run case handled in
+ * `ChatMessageImpl` above, and the second is exactly the resumed-questionnaire
+ * gap `Thinking` exists to cover: the run has an answer already sitting in it
+ * but nothing new has streamed in since.
  */
 function isProducing(block: PartBlock | undefined): boolean {
   if (!block) return false
@@ -210,6 +229,8 @@ function isProducing(block: PartBlock | undefined): boolean {
     return block.parts.some((part) => !isSettled(part))
   if (block.kind === "agent")
     return block.records.some((record) => record.status === "running")
+  if (block.kind === "reasoning")
+    return block.parts.some((part) => part.state === "streaming")
 
   return askPlayerAnswer(block.part, block.question) === null
 }

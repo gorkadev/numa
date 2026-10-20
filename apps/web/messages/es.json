@@ -45,6 +45,8 @@
     "continue": "Continuar",
     "youChose": "Elegiste {answer}",
     "copyMessage": "Copiar mensaje",
+    "reasoningRunning": "Pensando",
+    "reasoningFinished": "Pensamiento",
     "speakMessage": "Leer mensaje en voz alta",
     "stopSpeaking": "Detener lectura",
     "speechUnavailable": "La reproducción de voz no está disponible en este navegador",

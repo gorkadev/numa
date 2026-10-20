@@ -2,6 +2,7 @@ import {
   getToolName,
   isToolUIPart,
   type DynamicToolUIPart,
+  type ReasoningUIPart,
   type ToolUIPart,
   type UIMessage,
 } from "ai"
@@ -328,11 +329,19 @@ export function toolLabel(part: ToolPart): string {
  * gets its own `SubagentEntry` per run, not a generic marker, and consecutive
  * dispatch calls fold into one "agent" block the same way consecutive plain
  * tool calls fold into one "tools" block.
+ *
+ * Reasoning folds the same way, one block per run of consecutive reasoning
+ * parts, so a model that thinks in several stanzas reads as one trace with a
+ * line each rather than a stack of separate disclosures. It keeps whatever
+ * position it arrived in: reasoning between two tool calls splits them into
+ * two "tools" blocks, because the thinking is what separates those stretches
+ * of work.
  */
 export type PartBlock =
   | { kind: "text"; key: string; text: string; state?: "streaming" | "done" }
   | { kind: "tools"; key: string; parts: ToolPart[] }
   | { kind: "agent"; key: string; records: SubagentRunRecord[] }
+  | { kind: "reasoning"; key: string; parts: ReasoningUIPart[] }
   | {
       kind: "ask"
       key: string
@@ -374,6 +383,22 @@ export function groupParts(parts: UIMessage["parts"]): PartBlock[] {
       }
 
       blocks.push({ kind: "tools", key: part.toolCallId, parts: [part] })
+      return
+    }
+
+    if (part.type === "reasoning") {
+      const openReasoning = blocks.at(-1)
+
+      if (openReasoning?.kind === "reasoning") {
+        openReasoning.parts.push(part)
+        return
+      }
+
+      blocks.push({
+        kind: "reasoning",
+        key: part.id ?? `reasoning-${index}`,
+        parts: [part],
+      })
       return
     }
 

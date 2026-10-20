@@ -45,6 +45,8 @@
     "continue": "Continue",
     "youChose": "You chose {answer}",
     "copyMessage": "Copy message",
+    "reasoningRunning": "Thinking",
+    "reasoningFinished": "Thought",
     "speakMessage": "Read message aloud",
     "stopSpeaking": "Stop speaking",
     "speechUnavailable": "Speech playback is unavailable in this browser",
