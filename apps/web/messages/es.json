@@ -181,6 +181,8 @@
     },
     "toolGroupEdited": "Se editaron {count} archivos",
     "toolGroupRead": "Se leyeron {count} archivos",
+    "toolGroupRunning": "Ejecutando {count} pasos",
+    "toolGroupFinished": "Finalizados {count} pasos",
     "toolGroupFailed": "{failed} con error",
     "toolLabels": {
       "ask_player": {

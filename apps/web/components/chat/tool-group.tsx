@@ -4,17 +4,17 @@ import { useState } from "react"
 
 import { getToolName } from "ai"
 import { useTranslations } from "next-intl"
-import {
-  Alert01Icon,
-  ArrowDown01Icon,
-  Tick02Icon,
-} from "@hugeicons/core-free-icons"
+import { Alert01Icon, CircleCheckIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@workspace/ui/components/collapsible"
+  Trace,
+  TraceCollapsible,
+  TraceCollapsibleContent,
+  TraceCollapsibleTrigger,
+  TraceIcon,
+  TraceLine,
+  TraceTitle,
+} from "@workspace/ui/components/trace"
 import {
   Marker,
   MarkerContent,
@@ -25,7 +25,6 @@ import { cn } from "@workspace/ui/lib/utils"
 import { Spinner } from "@/components/localized-spinner"
 
 import {
-  MUTATING_TOOLS,
   TOOL_LABELS,
   isSettled,
   toolError,
@@ -34,22 +33,8 @@ import {
   type ToolPart,
 } from "@/lib/games/tool-parts"
 
-/**
- * A run of tool calls, as one line the reader can open.
- *
- * Collapsed by default once it is done, because a finished group is a fact
- * about the past — "it read nine files" — and the reply underneath is what the
- * player actually wants. Open it and every call is there, unchanged.
- *
- * While the group is still running the header shows the call in flight rather
- * than a count, so the thread reports what is happening now instead of how
- * much has happened so far.
- *
- * A group that contains a failure says so in the header and tints itself,
- * because that is the one thing summarising must never bury: a turn that
- * failed halfway looks identical to a turn that worked, once you have replaced
- * its steps with a number.
- */
+import { groupState, resolveGroupOpen, stepStatus } from "./tool-group-state"
+
 const TOOL_TRANSLATION_KEYS = {
   ask_player: "ask_player",
   read_file: "read_file",
@@ -67,81 +52,64 @@ const TOOL_TRANSLATION_KEYS = {
 
 export function ToolGroup({ parts }: { parts: ToolPart[] }) {
   const t = useTranslations("ChatActivity")
-  const [open, setOpen] = useState(false)
+  const [manualOpen, setManualOpen] = useState<boolean | null>(null)
+  const { count, failed, running, status } = groupState(parts)
 
-  const active = parts.find((part) => !isSettled(part))
-  const failed = parts.filter((part) => toolError(part) !== null).length
-
-  /**
-   * One call is not a group. Summarising it would replace a line that says
-   * what happened with a line that says how many things happened, and the
-   * answer would always be one.
-   */
   if (parts.length === 1 && parts[0]) {
     return <ToolMarker part={parts[0]} className="ps-[13px]" />
   }
 
-  const label = active
-    ? localizedToolLabel(active, t)
-    : t(
-        parts.some((part) => MUTATING_TOOLS.has(getToolName(part)))
-          ? "toolGroupEdited"
-          : "toolGroupRead",
-        { count: parts.length }
-      )
-
   return (
-    <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger
-        /**
-         * A real `<button>` underneath, not a clickable div: the trigger
-         * assumes a native button (`nativeButton` defaults true) and leaves
-         * keyboard handling to it, so rendering `Marker`'s default `div` here
-         * would produce a control the keyboard cannot reach.
-         *
-         * `ps-[13px]` lines the icon up with a bubble's text: `BubbleContent`
-         * sits its text at `px-3` (12px) plus its 1px transparent border, and
-         * a marker with no padding of its own otherwise starts flush at 0 —
-         * one pixel off from `px-3` alone, which is why this is the arbitrary
-         * value rather than the utility.
-         */
-        render={
-          <Marker
-            render={<button type="button" />}
-            className={cn(
-              "w-auto cursor-pointer ps-[13px] hover:text-foreground",
-              failed > 0 && "text-destructive"
-            )}
-          />
-        }
+    <Trace className="ps-[13px]">
+      <TraceCollapsible
+        open={resolveGroupOpen(manualOpen, running)}
+        onOpenChange={setManualOpen}
       >
-        <MarkerIcon>
-          {active ? (
-            <Spinner />
-          ) : failed > 0 ? (
-            <HugeiconsIcon icon={Alert01Icon} strokeWidth={2} />
-          ) : (
-            <HugeiconsIcon icon={Tick02Icon} strokeWidth={2} />
-          )}
-        </MarkerIcon>
-        <MarkerContent className={active ? "shimmer" : undefined}>
-          {label}
-          {!active && failed > 0
-            ? `, ${t("toolGroupFailed", { failed })}`
-            : null}
-        </MarkerContent>
-        <HugeiconsIcon
-          icon={ArrowDown01Icon}
-          strokeWidth={2}
-          className="ms-auto shrink-0 transition-transform group-data-[panel-open]/marker:rotate-180"
-        />
-      </CollapsibleTrigger>
-      <CollapsibleContent className="mt-1 flex flex-col gap-1 border-s border-border ps-3">
-        {parts.map((part) => (
-          <ToolMarker key={part.toolCallId} part={part} />
-        ))}
-      </CollapsibleContent>
-    </Collapsible>
+        <TraceCollapsibleTrigger>
+          <TraceLine status={status}>
+            <TraceIcon>
+              <ActivityIcon status={status} />
+            </TraceIcon>
+            <TraceTitle>
+              {t(running ? "toolGroupRunning" : "toolGroupFinished", { count })}
+              {failed > 0 ? `, ${t("toolGroupFailed", { failed })}` : null}
+            </TraceTitle>
+          </TraceLine>
+        </TraceCollapsibleTrigger>
+        <TraceCollapsibleContent keepMounted>
+          <Trace role="list">
+            {parts.map((part) => {
+              const label = localizedToolLabel(part, t)
+              const status = stepStatus(part)
+              // Labels already include the full safe input path. Repeating it
+              // in a disclosure would add no detail; never expose raw payloads.
+              return (
+                <TraceLine
+                  key={part.toolCallId}
+                  role="listitem"
+                  status={status}
+                >
+                  <TraceIcon>
+                    <ActivityIcon status={status} />
+                  </TraceIcon>
+                  <TraceTitle>{label}</TraceTitle>
+                </TraceLine>
+              )
+            })}
+          </Trace>
+        </TraceCollapsibleContent>
+      </TraceCollapsible>
+    </Trace>
+  )
+}
+
+function ActivityIcon({ status }: { status: "running" | "error" | undefined }) {
+  if (status === "running") return <Spinner />
+  return (
+    <HugeiconsIcon
+      icon={status === "error" ? Alert01Icon : CircleCheckIcon}
+      strokeWidth={2}
+    />
   )
 }
 
@@ -194,7 +162,7 @@ export function ToolMarker({
     <Marker className={className} aria-live={settled ? undefined : "polite"}>
       <MarkerIcon>
         {settled ? (
-          <HugeiconsIcon icon={Tick02Icon} strokeWidth={2} />
+          <HugeiconsIcon icon={CircleCheckIcon} strokeWidth={2} />
         ) : (
           <Spinner />
         )}
