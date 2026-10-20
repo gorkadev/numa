@@ -74,7 +74,10 @@ state now requires both the part's state and the row's live flag. Whitespace-onl
 text no longer opens an empty panel, and the Spanish pair is parallel
 (`Pensando` / `Pensamiento`).
 
-- RED then GREEN: 3 failing tests to 20/20 on the focused suite.
+- The first real streamed turn (fast tier) showed the reasoning text as raw
+  Markdown, asterisks included, because the content was rendered as pre-wrapped
+  plain text. It now renders through the same safe `Markdown` component as the
+  reply body; the test asserts `<strong>` rather than the literal `**`.
 - `pnpm --filter web typecheck` — clean.
 - ESLint and Prettier clean on all touched TS/TSX files.
 - Locale JSON Prettier still fails at the branch point, untouched.

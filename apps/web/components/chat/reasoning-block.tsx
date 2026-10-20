@@ -14,6 +14,7 @@ import {
   TraceTitle,
 } from "@workspace/ui/components/trace"
 
+import { Markdown } from "@/components/chat/markdown"
 import { Spinner } from "@/components/localized-spinner"
 
 import type { ReasoningUIPart } from "ai"
@@ -90,8 +91,13 @@ function ReasoningLine({ text, running }: { text: string; running: boolean }) {
   return (
     <TraceCollapsible open={open ?? running} onOpenChange={setOpen}>
       <TraceCollapsibleTrigger>{line}</TraceCollapsibleTrigger>
-      <TraceCollapsibleContent className="whitespace-pre-wrap">
-        {text}
+      {/*
+        The model writes Markdown here — bold lead-ins, lists, the occasional
+        heading. Rendering it as raw text showed the asterisks, so this uses
+        the same safe renderer as the reply body.
+      */}
+      <TraceCollapsibleContent>
+        <Markdown>{text}</Markdown>
       </TraceCollapsibleContent>
     </TraceCollapsible>
   )

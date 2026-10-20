@@ -63,7 +63,7 @@ test("thinking opens while it streams and closes once it is finished", () => {
     [
       {
         type: "reasoning",
-        text: "Checking the level file.",
+        text: "Checking **the level file**.",
         state: "streaming",
       },
     ],
@@ -72,8 +72,12 @@ test("thinking opens while it streams and closes once it is finished", () => {
 
   assert.match(running, /Thinking/)
   assert.match(running, /aria-expanded="true"/)
-  assert.match(running, /whitespace-pre-wrap/)
-  assert.match(running, /Checking the level file\./)
+  /**
+   * Reasoning arrives as Markdown. Rendered as raw text it showed the
+   * asterisks, which is what the thread looked like before this.
+   */
+  assert.match(running, /<strong>the level file<\/strong>/)
+  assert.match(running, /Checking <strong>the level file<\/strong>\./)
   assert.match(running, /data-slot="spinner"/)
 
   const finished = render([
