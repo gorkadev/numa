@@ -15,8 +15,8 @@ export const stubProvider = () =>
 
 const profiles = {
   pro: [
-    ["gemini-4-argon", "medium"],
     ["gemini-4-argon", "high"],
+    ["gemini-4-argon", "medium"],
     ["gemini-4-argon", "low"],
   ],
   balanced: [

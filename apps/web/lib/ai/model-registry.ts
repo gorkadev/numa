@@ -149,15 +149,25 @@ export type SlotCandidates = readonly [ModelEntryId, ...ModelEntryId[]]
 type TierProfile = Record<Slot, SlotCandidates>
 
 /**
- * Approved static profiles, not an inferred capability ordering. In particular
- * pro.mid uses high effort while pro.strong uses medium. Effort levels do not
- * establish cross-model rankings. Legacy metadata still maps to the same tier,
- * but future execution uses this table; stored ledger rows are never rewritten.
+ * Approved static profiles, not an inferred capability ordering. Effort levels
+ * do not establish cross-model rankings. Legacy metadata still maps to the same
+ * tier, but future execution uses this table; stored ledger rows are never
+ * rewritten.
+ *
+ * `pro` puts the effort where the judgment is. `strong` carries the roles that
+ * decide: the orchestrator (what this turn is, and who builds it), the planner
+ * (the design, the file ownership, the acceptance criteria) and the verifier's
+ * visual half. `mid` carries the workers, which execute one already-scoped task
+ * — they consume far more tokens (30 steps, 900 s) without deciding more.
+ * `high` is also the only Argon level that publishes thought summaries at all
+ * (measured: `low` and `medium` spend thinking tokens but emit no summary
+ * text), so it is what makes the thread's reasoning visible for the model that
+ * writes every reply.
  */
 const TIER_PROFILES: Record<TierId, TierProfile> = {
   pro: {
-    strong: ["argon-medium"],
-    mid: ["argon-high"],
+    strong: ["argon-high"],
+    mid: ["argon-medium"],
     light: ["argon-low"],
   },
   balanced: {

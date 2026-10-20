@@ -6,11 +6,19 @@ Upgrade the compatible AI SDK provider and configure explicit, static model/reas
 ## Approved profiles
 | Tier | strong | mid | light |
 | --- | --- | --- | --- |
-| pro | gemini-4-argon / medium | gemini-4-argon / high | gemini-4-argon / low |
+| pro | gemini-4-argon / high | gemini-4-argon / medium | gemini-4-argon / low |
 | balanced | gemini-4-argon / medium | gemini-4-argon / low | gemini-3.8-flash / high |
 | fast | gemini-3.8-flash / high | gemini-3.8-flash / medium | gemini-3.5-flash-lite / medium |
 
 Title generation: gemini-3.5-flash-lite / minimal. No dynamic reasoning selection.
+
+Revised for `pro` only, on explicit user authorization: `strong` and `mid` swapped
+effort. The judgment roles (orchestrator, planner, verifier) hold `strong`; the
+worker roles hold `mid` and consume more tokens without deciding more. `high` is
+also the only Argon level that publishes thought summaries, so it is what makes
+the thread's reasoning visible. This also removes a within-tier inversion
+(`strong` at medium effort below `mid` at high). `balanced` and `fast` are
+unchanged and still pending review.
 
 ## Scope and constraints
 - User authorized this exact table, a compatible SDK upgrade, and commits. Preserve the existing September template work separately; its source of truth remains `odd/tasks/game-template-starter-kits.md`.

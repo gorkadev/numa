@@ -82,6 +82,14 @@ text no longer opens an empty panel, and the Spanish pair is parallel
 - ESLint and Prettier clean on all touched TS/TSX files.
 - Locale JSON Prettier still fails at the branch point, untouched.
 
+- `pro` could never show it: its `strong` slot (the orchestrator, the only
+  agent whose reasoning reaches the thread) ran `argon-medium`, and Argon
+  publishes thought summaries **only** at `high`. Measured on the raw endpoint:
+  `low` and `medium` spend thinking tokens but emit no summary text, and prompt
+  complexity is not the discriminator. `TIER_PROFILES.pro` now runs
+  `strong: argon-high`, `mid: argon-medium`; the two fallback tests and the
+  profile table follow.
+
 Pending, honestly:
 
 - No turn has streamed since the change, so the end-to-end path

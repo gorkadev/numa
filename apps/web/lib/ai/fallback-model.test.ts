@@ -77,11 +77,11 @@ for (const method of ["doGenerate", "doStream"] as const) {
       [
         {
           retained: true,
-          thinkingConfig: { thinkingLevel: "medium", includeThoughts: true },
+          thinkingConfig: { thinkingLevel: "high", includeThoughts: true },
         },
         {
           retained: true,
-          thinkingConfig: { thinkingLevel: "high", includeThoughts: true },
+          thinkingConfig: { thinkingLevel: "medium", includeThoughts: true },
         },
       ]
     )
