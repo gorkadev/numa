@@ -30,7 +30,12 @@ for (const method of ["doGenerate", "doStream"] as const) {
       undefined,
       stubProvider
     ).primary
-    const peer = resolveModel("pro", "mid", undefined, stubProvider).primary
+    /**
+     * `light`, not `mid`: `pro.strong` and `pro.mid` now resolve to the same
+     * entry, and this test only proves something while the two candidates'
+     * efforts differ.
+     */
+    const peer = resolveModel("pro", "light", undefined, stubProvider).primary
     const seen: CallOptions[] = []
     const served: ServedCall[] = []
     const unavailable = new Set<string>()
@@ -81,7 +86,7 @@ for (const method of ["doGenerate", "doStream"] as const) {
         },
         {
           retained: true,
-          thinkingConfig: { thinkingLevel: "medium", includeThoughts: true },
+          thinkingConfig: { thinkingLevel: "low", includeThoughts: true },
         },
       ]
     )

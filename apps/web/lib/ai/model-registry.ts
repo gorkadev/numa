@@ -175,7 +175,7 @@ type TierProfile = Record<Slot, SlotCandidates>
 const TIER_PROFILES: Record<TierId, TierProfile> = {
   pro: {
     strong: ["argon-high"],
-    mid: ["argon-medium"],
+    mid: ["argon-high"],
     light: ["argon-low"],
   },
   balanced: {

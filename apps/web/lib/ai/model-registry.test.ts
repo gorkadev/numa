@@ -16,7 +16,7 @@ export const stubProvider = () =>
 const profiles = {
   pro: [
     ["gemini-4-argon", "high"],
-    ["gemini-4-argon", "medium"],
+    ["gemini-4-argon", "high"],
     ["gemini-4-argon", "low"],
   ],
   balanced: [
@@ -66,6 +66,11 @@ test("all nine profiles and title have explicit candidate effort and distinct ID
     },
   })
   assert.ok(!ids.has(title.id))
-  assert.equal(ids.size, 6)
+  /**
+   * Five, not six: `argon-medium` keeps its entry and its rate card for the
+   * ledger rows that already name it, but no tier places it any more — `pro.mid`
+   * moved to `argon-high` so the workers publish thought summaries.
+   */
+  assert.equal(ids.size, 5)
   assert.equal(resolveTier(undefined), "balanced")
 })

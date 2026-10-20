@@ -6,7 +6,7 @@ Upgrade the compatible AI SDK provider and configure explicit, static model/reas
 ## Approved profiles
 | Tier | strong | mid | light |
 | --- | --- | --- | --- |
-| pro | gemini-4-argon / high | gemini-4-argon / medium | gemini-4-argon / low |
+| pro | gemini-4-argon / high | gemini-4-argon / high | gemini-4-argon / low |
 | balanced | gemini-4-argon / high | gemini-3.8-flash / high | gemini-3.5-flash-lite / medium |
 | fast | gemini-3.8-flash / high | gemini-3.8-flash / medium | gemini-3.5-flash-lite / medium |
 
@@ -30,6 +30,12 @@ workers `argon-high` → `argon-low` saves ~5%, `argon-high` → `flash-high` sa
 quality risk this table carries: Composer writes audio code on the weakest
 model in the registry. Unverified, and worth watching on the first balanced
 build that includes audio.
+
+`pro.mid` then moved to `argon-high` as well: `argon-medium` publishes no
+thought summary either, so the workers would have rendered an empty trace on
+the tier the user actually runs. Measured cost of that move on the $1.19 build
+turn: ~5-7%, thinking volume only. `argon-medium` keeps its registry entry and
+rate card for ledger rows that already name it, but no tier places it now.
 
 `fast` is unchanged: Flash publishes thought summaries at any level, so the
 tier already showed reasoning.
