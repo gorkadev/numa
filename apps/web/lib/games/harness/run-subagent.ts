@@ -23,6 +23,7 @@ import { ROLE_DEFAULT_SKILLS, type SkillName } from "@/lib/games/skills/registry
 import { describeToolCall } from "@/lib/games/tool-parts"
 
 import type { EnvelopeStatus, SubagentEnvelope } from "./envelope"
+import { applyTimelineDelta, stripSummaryFromTimeline } from "./narration"
 import {
   MAX_EDITS_PER_RECORD,
   MAX_PROMPT_CHARS,
@@ -386,6 +387,14 @@ export async function* runSubagent(
 
   let toolCalls: SubagentProgress["toolCalls"] = []
   let edits: string[] = []
+  /**
+   * The run's ordered story, folded in one stream part at a time by
+   * `narration.ts` (`reasoning-delta`/`text-delta` coalesced per kind, a
+   * `tool` entry where each call settles). Never mutated in place: the
+   * accumulator hands back a new array, so a yielded snapshot owns the
+   * timeline as it stood at that tick.
+   */
+  let timeline: SubagentProgress["timeline"] = []
   let steps = 0
   let tokens: SubagentRunTokens = ZERO_RUN_TOKENS
   let activity = "starting"
@@ -417,6 +426,7 @@ export async function* runSubagent(
       steps,
       toolCalls: [...toolCalls],
       edits: [...edits],
+      timeline: [...timeline],
       tokens,
       skills,
       prompt: promptText,
@@ -464,14 +474,25 @@ export async function* runSubagent(
     })
 
     /**
-     * `fullStream` is `@deprecated` in the installed `ai@7.0.93`, in favor of
+     * `fullStream` is `@deprecated` in the installed `ai@7.0.139`, in favor of
      * the identically-shaped `stream` property — used here under the current
      * name; design.md decision 5 and the tasks artifact both name it
-     * "fullStream", the concept the SDK now exposes as `stream`. Only
-     * tool-call, tool-result, tool-error, finish-step and abort parts feed a
-     * snapshot; every other part (text/reasoning deltas, sources, files) is
-     * skipped — the envelope's `summary` comes from `result.text` once the
-     * stream ends, not from accumulating text deltas here.
+     * "fullStream", the concept the SDK now exposes as `stream`. Every part
+     * that carries something the record keeps feeds a snapshot:
+     * `tool-result`/`tool-error` extend `toolCalls` and `edits`, and
+     * `text-delta`/`reasoning-delta` accumulate into the ordered `timeline`
+     * through `narration.ts` — coalesced per kind, so a hundred deltas cost
+     * one entry and one throttled tick, not a hundred snapshots. The
+     * `*-start`/`*-end` boundaries carry no text of their own and change
+     * nothing: the entry a start opens is created by its first delta, and the
+     * next delta of another kind or the next tool entry is what closes it.
+     * `finish-step` and `abort` only move `activity`. Sources, files and the
+     * rest are skipped. The envelope's `summary` still comes from
+     * `result.text` once the stream ends, not from the timeline.
+     *
+     * Narration is accumulated AS IT ARRIVES, with no buffer waiting for a
+     * `reasoning-end` or for a step to finish, so a run that is aborted
+     * mid-thought still shows the reasoning it had produced up to the abort.
      *
      * `streamText` does NOT throw on abort: the merged signal (the caller's
      * `abortSignal`, or the `timeout` firing) closes the stream with an
@@ -498,6 +519,13 @@ export async function* runSubagent(
             { toolName: part.toolName, toolCallId: part.toolCallId, path, ok: true },
             MAX_TOOL_CALLS_PER_RECORD
           )
+          timeline = applyTimelineDelta(timeline, {
+            kind: "tool",
+            toolName: part.toolName,
+            toolCallId: part.toolCallId,
+            path,
+            ok: true,
+          })
 
           // First-seen order: a repeat write to an already-recorded path does not re-add or reorder it.
           if (path && WRITE_TOOL_NAMES.has(part.toolName) && !edits.includes(path)) {
@@ -507,24 +535,53 @@ export async function* runSubagent(
           activity = describeToolCall(part.toolName, path, "done")
           break
         }
-        case "tool-error":
-          activity = describeToolCall(
-            part.toolName,
-            toolCallPath(part.input),
-            "failed"
+        case "tool-error": {
+          const path = toolCallPath(part.input)
+          const error = summarize(part.error).slice(
+            0,
+            MAX_TOOL_CALL_ERROR_CHARS
           )
+
+          activity = describeToolCall(part.toolName, path, "failed")
           toolCalls = pushCapped(
             toolCalls,
             {
               toolName: part.toolName,
               toolCallId: part.toolCallId,
-              path: toolCallPath(part.input),
+              path,
               ok: false,
-              error: summarize(part.error).slice(0, MAX_TOOL_CALL_ERROR_CHARS),
+              error,
             },
             MAX_TOOL_CALLS_PER_RECORD
           )
+          timeline = applyTimelineDelta(timeline, {
+            kind: "tool",
+            toolName: part.toolName,
+            toolCallId: part.toolCallId,
+            path,
+            ok: false,
+            error,
+          })
           break
+        }
+        case "reasoning-delta":
+          timeline = applyTimelineDelta(timeline, {
+            kind: "reasoning",
+            text: part.text,
+          })
+          break
+        case "text-delta":
+          timeline = applyTimelineDelta(timeline, {
+            kind: "text",
+            text: part.text,
+          })
+          break
+        case "reasoning-start":
+        case "reasoning-end":
+        case "text-start":
+        case "text-end":
+          // Boundaries carry nothing on their own — see the doc comment above.
+          continue
         case "finish-step":
           activity = "thinking"
           break
@@ -573,6 +630,14 @@ export async function* runSubagent(
     status = isAbortLike(error) ? "aborted" : "error"
     summary = summarize(error)
   }
+
+  /**
+   * The record is final now, so drop the trailing `text` entries that only
+   * repeat `summary`: `result.text` IS what those deltas accumulated to, and
+   * storing both would make the final report render twice. Live snapshots
+   * above never ran this, so a run in flight kept its streaming text.
+   */
+  timeline = stripSummaryFromTimeline(timeline, summary)
 
   /**
    * Computed even when the loop above never ran at all — an immediate throw

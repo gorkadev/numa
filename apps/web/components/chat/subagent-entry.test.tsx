@@ -24,6 +24,7 @@ const record: SubagentRunRecord = {
   steps: 2,
   toolCalls: [],
   edits: [],
+  timeline: [],
   skills: [],
   tokens: {
     inputTokens: 0,
