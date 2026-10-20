@@ -5,11 +5,7 @@ import {
   type ConcreteLanguageModel,
   type FallbackHooks,
 } from "./fallback-model"
-import {
-  DEFAULT_TIER_ID,
-  isTierId,
-  type TierId,
-} from "./model-catalog"
+import { DEFAULT_TIER_ID, isTierId, type TierId } from "./model-catalog"
 import { providerModel } from "./models"
 
 export type { FallbackHooks, ServedCall } from "./fallback-model"
@@ -55,7 +51,9 @@ export type ModelEntryId =
  * depend on directly — so it is derived from `streamText`'s own parameter
  * type instead of adding an undeclared dependency for one type.
  */
-type ProviderOptions = NonNullable<Parameters<typeof streamText>[0]["providerOptions"]>
+type ProviderOptions = NonNullable<
+  Parameters<typeof streamText>[0]["providerOptions"]
+>
 
 export type ModelEntry = {
   id: ModelEntryId
@@ -85,18 +83,53 @@ function entry(
     providerModelId,
     displayName: `${name} (${effort})`,
     effort,
-    providerOptions: { googleVertex: { thinkingConfig: { thinkingLevel: effort } } },
+    providerOptions: {
+      googleVertex: {
+        thinkingConfig: {
+          thinkingLevel: effort,
+          // The model already spent effort thinking without ever returning it.
+          // `includeThoughts` is what asks Vertex to emit those thoughts as
+          // reasoning parts, which the AI SDK forwards and the thread persists.
+          includeThoughts: true,
+        },
+      },
+    },
   }
 }
 
 const REGISTRY: Record<ModelEntryId, ModelEntry> = {
-  "argon-medium": entry("argon-medium", "gemini-4-argon", "Gemini 4 Argon", "medium"),
+  "argon-medium": entry(
+    "argon-medium",
+    "gemini-4-argon",
+    "Gemini 4 Argon",
+    "medium"
+  ),
   "argon-high": entry("argon-high", "gemini-4-argon", "Gemini 4 Argon", "high"),
   "argon-low": entry("argon-low", "gemini-4-argon", "Gemini 4 Argon", "low"),
-  "flash-high": entry("flash-high", "gemini-3.8-flash", "Gemini 3.8 Flash", "high"),
-  "flash-medium": entry("flash-medium", "gemini-3.8-flash", "Gemini 3.8 Flash", "medium"),
-  "lite-medium": entry("lite-medium", "gemini-3.5-flash-lite", "Gemini 3.5 Flash Lite", "medium"),
-  "lite-minimal": entry("lite-minimal", "gemini-3.5-flash-lite", "Gemini 3.5 Flash Lite", "minimal"),
+  "flash-high": entry(
+    "flash-high",
+    "gemini-3.8-flash",
+    "Gemini 3.8 Flash",
+    "high"
+  ),
+  "flash-medium": entry(
+    "flash-medium",
+    "gemini-3.8-flash",
+    "Gemini 3.8 Flash",
+    "medium"
+  ),
+  "lite-medium": entry(
+    "lite-medium",
+    "gemini-3.5-flash-lite",
+    "Gemini 3.5 Flash Lite",
+    "medium"
+  ),
+  "lite-minimal": entry(
+    "lite-minimal",
+    "gemini-3.5-flash-lite",
+    "Gemini 3.5 Flash Lite",
+    "minimal"
+  ),
 }
 
 /**
@@ -259,5 +292,9 @@ function resolveCandidates(
     model: factory(REGISTRY[id]) as ConcreteLanguageModel,
   }))
 
-  return { candidates: candidateIds, primary, model: createFallbackModel(candidates, hooks) }
+  return {
+    candidates: candidateIds,
+    primary,
+    model: createFallbackModel(candidates, hooks),
+  }
 }
