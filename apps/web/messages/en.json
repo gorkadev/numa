@@ -50,6 +50,7 @@
     "speechUnavailable": "Speech playback is unavailable in this browser",
     "speechPlaybackFailed": "Could not play this message aloud",
     "copyCode": "Copy code",
+    "wrapLines": "Wrap lines",
     "copied": "Copied",
     "copy": "Copy",
     "turnDetails": "Turn details",
@@ -68,6 +69,25 @@
     "filesDeleted": "Files deleted"
   },
   "ChatAgents": {
+    "trace": {
+      "starting": "{role} is starting",
+      "thinking": "{role} is thinking",
+      "stopping": "{role} is stopping",
+      "running": "{role} is working: {activity}",
+      "working": "work in progress",
+      "done": "{role} finished the task",
+      "partial": "{role} stopped partway through the task",
+      "blocked": "{role} needs input to continue",
+      "error": "{role} failed to finish the task",
+      "aborted": "{role}'s run was cancelled",
+      "skipped": "{role}'s task was skipped",
+      "unavailable": "{role} is unavailable",
+      "empty": "No recorded tool calls.",
+      "callDone": "Completed a tool call{path}",
+      "callFailed": "A tool call failed{path}",
+      "report": "Final report",
+      "details": "View details"
+    },
     "filters": {
       "label": "Filter agent runs",
       "all": "All",
@@ -181,6 +201,8 @@
     },
     "toolGroupEdited": "Edited {count} files",
     "toolGroupRead": "Read {count} files",
+    "toolGroupRunning": "Running {count} steps",
+    "toolGroupFinished": "Finished {count} steps",
     "toolGroupFailed": "{failed} failed",
     "toolLabels": {
       "ask_player": {

@@ -50,6 +50,7 @@
     "speechUnavailable": "La reproducción de voz no está disponible en este navegador",
     "speechPlaybackFailed": "No se pudo leer este mensaje en voz alta",
     "copyCode": "Copiar código",
+    "wrapLines": "Ajustar líneas",
     "copied": "Copiado",
     "copy": "Copiar",
     "turnDetails": "Detalles del turno",
@@ -68,6 +69,25 @@
     "filesDeleted": "Archivos eliminados"
   },
   "ChatAgents": {
+    "trace": {
+      "starting": "{role} está empezando",
+      "thinking": "{role} está pensando",
+      "stopping": "{role} se está deteniendo",
+      "running": "{role} está trabajando: {activity}",
+      "working": "trabajo en curso",
+      "done": "{role} terminó la tarea",
+      "partial": "{role} se detuvo antes de terminar la tarea",
+      "blocked": "{role} necesita información para continuar",
+      "error": "{role} no pudo terminar la tarea",
+      "aborted": "Se canceló la ejecución de {role}",
+      "skipped": "Se omitió la tarea de {role}",
+      "unavailable": "{role} no está disponible",
+      "empty": "No hay llamadas a herramientas registradas.",
+      "callDone": "Se completó una llamada a herramienta{path}",
+      "callFailed": "Falló una llamada a herramienta{path}",
+      "report": "Informe final",
+      "details": "Ver detalles"
+    },
     "filters": {
       "label": "Filtrar ejecuciones de agentes",
       "all": "Todas",
@@ -181,6 +201,8 @@
     },
     "toolGroupEdited": "Se editaron {count} archivos",
     "toolGroupRead": "Se leyeron {count} archivos",
+    "toolGroupRunning": "Ejecutando {count} pasos",
+    "toolGroupFinished": "Finalizados {count} pasos",
     "toolGroupFailed": "{failed} con error",
     "toolLabels": {
       "ask_player": {

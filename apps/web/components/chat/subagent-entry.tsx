@@ -3,16 +3,22 @@
 import {
   Alert01Icon,
   MinusSignCircleIcon,
-  Tick02Icon,
+  CircleCheckIcon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useTranslations } from "next-intl"
+import { useState } from "react"
 import {
-  Marker,
-  MarkerContent,
-  MarkerIcon,
-} from "@workspace/ui/components/marker"
-import { cn } from "@workspace/ui/lib/utils"
+  Trace,
+  TraceCollapsible,
+  TraceCollapsibleContent,
+  TraceCollapsibleTrigger,
+  TraceIcon,
+  TraceLine,
+  TraceTitle,
+} from "@workspace/ui/components/trace"
+import { Markdown } from "@/components/chat/markdown"
+import { localizedToolCallLabel } from "@/components/chat/tool-group"
 
 import { Spinner } from "@/components/localized-spinner"
 import { AgentBot } from "@/components/chat/agent-bot"
@@ -53,7 +59,7 @@ export function subagentStatusKey(
 
 /** A tick only for `"done"`: a cancelled, partial or blocked run must not read as a success. */
 function statusIcon(status: SubagentRunStatus) {
-  if (status === "done") return Tick02Icon
+  if (status === "done") return CircleCheckIcon
   if (status === "error") return Alert01Icon
   return MinusSignCircleIcon
 }
@@ -69,45 +75,107 @@ export type SubagentEntryProps = {
   onSelect: (agentId: string) => void
 }
 
-/**
- * One inline "a sub-agent is working / worked" line inside an assistant
- * message (`subagent-view`'s Inline Entry Shimmers While Running and
- * Sub-Agents Are Presented as Named Bots requirements). `displayName ·
- * activity` while the run is in progress, using the same `shimmer` class
- * `tool-group.tsx`'s `ToolGroup` and `thinking.tsx`'s `Thinking` apply to
- * `MarkerContent` for other in-progress work; `displayName · status` in
- * plain text once the run has a terminal status.
- *
- * Errors get the same destructive tint `tool-group.tsx`'s `ToolMarker` uses
- * for a failed tool call — the one status a reader should never mistake for
- * "it worked".
- */
+/** Recorded calls are bounded history, not a reconstruction of live activity. */
 export function SubagentEntry({ record, onSelect }: SubagentEntryProps) {
   const t = useTranslations("ChatAgents")
+  const activityT = useTranslations("ChatActivity")
   const running = record.status === "running"
-  const errored = record.status === "error"
+  // Initialize once: streamed updates must not undo the reader's choice.
+  const [open, setOpen] = useState(running)
+  const role = t(`roles.${record.role}.name`)
+  const activity = record.activity
+  const title = running
+    ? activity === "starting" ||
+      activity === "thinking" ||
+      activity === "stopping"
+      ? t(`trace.${activity}`, { role })
+      : t("trace.running", { role, activity: activity || t("trace.working") })
+    : t(`trace.${record.status}`, { role })
+  const report =
+    ["done", "partial", "blocked"].includes(record.status) &&
+    record.summary.trim()
 
   return (
-    <Marker
-      render={<button type="button" />}
-      className={cn(
-        "w-fit cursor-pointer ps-[13px] hover:text-foreground",
-        errored && "text-destructive"
-      )}
-      onClick={() => onSelect(record.agentId)}
-    >
-      <MarkerIcon>
-        {running ? (
-          <Spinner />
-        ) : (
-          <HugeiconsIcon icon={statusIcon(record.status)} strokeWidth={2} />
-        )}
-      </MarkerIcon>
-      <AgentBot role={record.role} status={record.status} size={24} />
-      <MarkerContent className={running ? "shimmer" : undefined}>
-        {t(`roles.${record.role}.name`)} ·{" "}
-        {running ? record.activity : t(subagentStatusKey(record.status))}
-      </MarkerContent>
-    </Marker>
+    <Trace className="ps-[13px]">
+      <TraceCollapsible open={open} onOpenChange={setOpen}>
+        <TraceCollapsibleTrigger>
+          <TraceLine
+            status={
+              running
+                ? "running"
+                : record.status === "error"
+                  ? "error"
+                  : undefined
+            }
+          >
+            <TraceIcon>
+              {running ? (
+                <Spinner />
+              ) : (
+                <HugeiconsIcon
+                  icon={statusIcon(record.status)}
+                  strokeWidth={2}
+                />
+              )}
+            </TraceIcon>
+            <AgentBot role={record.role} status={record.status} size={24} />
+            <TraceTitle>{title}</TraceTitle>
+          </TraceLine>
+        </TraceCollapsibleTrigger>
+        <TraceCollapsibleContent keepMounted>
+          <Trace role="list">
+            {record.toolCalls.map((call) => (
+              <TraceLine
+                key={call.toolCallId}
+                role="listitem"
+                status={call.ok ? undefined : "error"}
+              >
+                <TraceIcon>
+                  <HugeiconsIcon
+                    icon={call.ok ? CircleCheckIcon : Alert01Icon}
+                    strokeWidth={2}
+                  />
+                </TraceIcon>
+                <TraceTitle>
+                  {localizedToolCallLabel(
+                    call.toolName,
+                    call.path,
+                    call.ok ? "done" : "failed",
+                    activityT
+                  ) ??
+                    t(call.ok ? "trace.callDone" : "trace.callFailed", {
+                      path: call.path ? ` ${call.path}` : "",
+                    })}
+                </TraceTitle>
+              </TraceLine>
+            ))}
+          </Trace>
+          {record.toolCalls.length === 0 && (
+            <p className="text-sm">{t("trace.empty")}</p>
+          )}
+          {report && (
+            <Trace className="mt-2">
+              <TraceCollapsible defaultOpen={false}>
+                <TraceCollapsibleTrigger>
+                  <TraceLine>
+                    <TraceTitle>{t("trace.report")}</TraceTitle>
+                  </TraceLine>
+                </TraceCollapsibleTrigger>
+                <TraceCollapsibleContent keepMounted>
+                  <Markdown>{record.summary}</Markdown>
+                </TraceCollapsibleContent>
+              </TraceCollapsible>
+            </Trace>
+          )}
+          <button
+            type="button"
+            className="mt-2 rounded-lg text-sm text-muted-foreground hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/30 focus-visible:outline-none"
+            onClick={() => onSelect(record.agentId)}
+          >
+            {t("trace.details")}
+          </button>
+        </TraceCollapsibleContent>
+      </TraceCollapsible>
+    </Trace>
   )
 }
