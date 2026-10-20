@@ -50,6 +50,7 @@
     "speechUnavailable": "La reproducción de voz no está disponible en este navegador",
     "speechPlaybackFailed": "No se pudo leer este mensaje en voz alta",
     "copyCode": "Copiar código",
+    "wrapLines": "Ajustar líneas",
     "copied": "Copiado",
     "copy": "Copiar",
     "turnDetails": "Detalles del turno",

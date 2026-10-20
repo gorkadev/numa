@@ -4,11 +4,7 @@ import { memo } from "react"
 import ReactMarkdown, { type Components } from "react-markdown"
 import remarkGfm from "remark-gfm"
 
-import {
-  MarkdownCode,
-  MarkdownPre,
-  rehypeInlineCodeProperty,
-} from "@/components/chat/markdown-code"
+import { MarkdownCode, MarkdownPre } from "@/components/chat/markdown-code"
 import { safeHttpUrl } from "@/lib/url"
 
 /**
@@ -23,6 +19,30 @@ import { safeHttpUrl } from "@/lib/url"
  * or not.
  */
 const REMARK_PLUGINS = [remarkGfm]
+// Only code directly inside pre is fenced (including language-less fences).
+// Use a structural subset of HAST so this plugin needs no extra dependency.
+type CodeTree = {
+  type: string
+  tagName?: string
+  properties?: Record<string, unknown>
+  children?: CodeTree[]
+}
+
+function rehypeInlineCodeProperty() {
+  return (tree: CodeTree) => {
+    function visit(node: CodeTree, parent?: CodeTree) {
+      if (node.type === "element" && node.tagName === "code") {
+        node.properties = {
+          ...node.properties,
+          inline: parent?.tagName !== "pre",
+        }
+      }
+      node.children?.forEach((child) => visit(child, node))
+    }
+    visit(tree)
+  }
+}
+
 const REHYPE_PLUGINS = [rehypeInlineCodeProperty]
 
 /**
@@ -98,7 +118,7 @@ function MarkdownImpl({ children }: { children: string }) {
  * Memoized on `children` alone. A message's earlier blocks stop changing the
  * moment a later one starts streaming, but the whole row still re-renders on
  * every chunk — without this, a finished block would re-run `react-markdown`
- * (and, inside it, react-shiki for every fenced block) on text that has not
+ * (and, inside it, highlighting for every fenced block) on text that has not
  * moved, for as long as anything else in the same reply is still arriving.
  */
 export const Markdown = memo(MarkdownImpl)

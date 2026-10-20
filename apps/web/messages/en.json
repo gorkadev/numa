@@ -50,6 +50,7 @@
     "speechUnavailable": "Speech playback is unavailable in this browser",
     "speechPlaybackFailed": "Could not play this message aloud",
     "copyCode": "Copy code",
+    "wrapLines": "Wrap lines",
     "copied": "Copied",
     "copy": "Copy",
     "turnDetails": "Turn details",
