@@ -59,6 +59,21 @@ arrive instead of discarding them.
   them today (`run-tasks.ts`'s `wroteAnyFile`).
 - **Collapsed by default**, except the run in progress — same rule the
   orchestrator's reasoning block already uses.
+- **The timeline reuses the thread's treatments instead of growing its own.**
+  `reasoning` is `ReasoningBlock` fed a one-entry part array (an entry already
+  IS one run of consecutive deltas, so the call site adapts the array and the
+  block keeps its meaning); `text` is the shared `Markdown`; `tool` is the line
+  the entry already drew. A finished reasoning entry is therefore a closed
+  "Thought" disclosure, exactly like the thread's — only a run's current
+  (trailing) reasoning entry is open and thinking.
+- **The timeline replaces the flat call list, and an empty timeline falls back
+  to it.** A record persisted before this work has `timeline: []` and populated
+  `toolCalls`; it keeps rendering the old list, unsynthesised, so no thread
+  looks worse than it did. `SubagentTimeline` renders nothing at all for an
+  empty array rather than an empty shell.
+- **Static, not a scroller.** No `MessageScroller`, no auto-scroll, nothing
+  interactive beyond the disclosures that already exist: each persisted
+  snapshot replaces the whole timeline, so there is no stream to follow.
 - **Reasoning availability is a tier fact, not a UI fact.** Argon publishes
   thought summaries only at `high`. On `pro`, `mid` was `argon-medium`, so the
   workers would have shown an empty block; hence the separate one-line change
@@ -73,7 +88,7 @@ arrive instead of discarding them.
       delegated writer.
 - [x] ST-3 Stream accumulation in `run-subagent.ts`: coalesced reasoning/text
       entries, emitted through the existing throttle. Route: delegated writer.
-- [ ] ST-4 Render: `SubagentTimeline` component wired into `SubagentEntry`,
+- [x] ST-4 Render: `SubagentTimeline` component wired into `SubagentEntry`,
       collapsed unless running, no scroller. Route: delegated writer.
 - [ ] ST-5 Evidence and commit identities.
 
@@ -98,21 +113,36 @@ by `apps/web/lib/games/harness/narration.ts`:
 
 ## Verification
 
-- `pnpm --dir apps/web exec tsx --test lib/games/harness/records.test.ts lib/games/harness/narration.test.ts components/chat/subagent-entry.test.tsx`
-  — 29 tests, 29 pass, 0 fail.
+- `pnpm --dir apps/web exec tsx --test components/chat/subagent-entry.test.tsx components/chat/subagent-timeline.test.tsx lib/games/harness/records.test.ts lib/games/harness/narration.test.ts`
+  — 39 tests, 39 pass, 0 fail (ST-2, ST-3 and ST-4 together).
 - `pnpm --filter web typecheck` — clean.
 - ESLint clean on every touched file.
 - Prettier clean on `narration.ts`, `narration.test.ts`, `records.ts`,
-  `records.test.ts` and this document. `run-subagent.ts` already failed
-  `prettier --check` at HEAD (174 lines of pre-existing rewrapping) and was
-  left unformatted rather than rewrapped in this unit; every line ST-3 added
-  is Prettier-shaped.
+  `records.test.ts`, `subagent-timeline.tsx`, `subagent-timeline.test.tsx`,
+  `subagent-entry.tsx`, `subagent-entry.test.tsx` and this document.
+  `run-subagent.ts` already failed `prettier --check` at HEAD (174 lines of
+  pre-existing rewrapping) and was left unformatted rather than rewrapped in
+  this unit; every line ST-3 added is Prettier-shaped.
+- ST-4 added no i18n keys: every string it shows already existed
+  (`ChatAgents.trace.*`, `ChatActivity.toolLabels.*`, and `ChatMessages`'
+  reasoning labels through `ReasoningBlock`), so `en.json`/`es.json` are
+  untouched.
 - Live check pending: no browser runtime in this session.
 
 ## Pending, honestly
 
 - Show the code being modified (diff per edit). Deferred by the user; needs a
   bounded diff captured from `tool-call` input and a `CodeBlock` that can mark
-  added/removed lines. A `tool` timeline entry now carries `toolCallId` for
+  added/removed lines. A `tool` timeline entry already carries `toolCallId` for
   that join.
-- Nothing here is verified against a live streaming turn.
+- Nothing here is verified against a live streaming turn: no browser runtime in
+  this session, so the render was only exercised through
+  `renderToStaticMarkup`. Specifically unverified against a real run: that the
+  trailing reasoning entry stops shimmering when the run ends, and that the
+  timeline reads well at the thread's width with a long run (100+ entries).
+- A finished reasoning entry is a closed "Thought" disclosure, because
+  `ReasoningBlock` opens only while its part is streaming. Keeping recorded
+  reasoning expanded by default would need an `defaultOpen`-style prop on
+  `ReasoningBlock`, which is outside ST-4's edit surfaces; the timeline reuses
+  the block untouched rather than forking its markup.
+- The commit is the parent's job: nothing in ST-2/ST-3/ST-4 is committed.

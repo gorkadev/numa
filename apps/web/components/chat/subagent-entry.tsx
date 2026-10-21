@@ -18,6 +18,7 @@ import {
   TraceTitle,
 } from "@workspace/ui/components/trace"
 import { Markdown } from "@/components/chat/markdown"
+import { SubagentTimeline } from "@/components/chat/subagent-timeline"
 import { localizedToolCallLabel } from "@/components/chat/tool-group"
 
 import { Spinner } from "@/components/localized-spinner"
@@ -123,35 +124,48 @@ export function SubagentEntry({ record, onSelect }: SubagentEntryProps) {
           </TraceLine>
         </TraceCollapsibleTrigger>
         <TraceCollapsibleContent keepMounted>
-          <Trace role="list">
-            {record.toolCalls.map((call) => (
-              <TraceLine
-                key={call.toolCallId}
-                role="listitem"
-                status={call.ok ? undefined : "error"}
-              >
-                <TraceIcon>
-                  <HugeiconsIcon
-                    icon={call.ok ? CircleCheckIcon : Alert01Icon}
-                    strokeWidth={2}
-                  />
-                </TraceIcon>
-                <TraceTitle>
-                  {localizedToolCallLabel(
-                    call.toolName,
-                    call.path,
-                    call.ok ? "done" : "failed",
-                    activityT
-                  ) ??
-                    t(call.ok ? "trace.callDone" : "trace.callFailed", {
-                      path: call.path ? ` ${call.path}` : "",
-                    })}
-                </TraceTitle>
-              </TraceLine>
-            ))}
-          </Trace>
-          {record.toolCalls.length === 0 && (
-            <p className="text-sm">{t("trace.empty")}</p>
+          {/**
+           * The timeline replaces the flat call list. A record written before
+           * the timeline existed has `timeline: []` and a populated
+           * `toolCalls`, so it keeps the old list — an old thread must not
+           * look worse than it did, and synthesising a timeline from
+           * `toolCalls` would invent an order the record never had.
+           */}
+          {record.timeline.length > 0 ? (
+            <SubagentTimeline entries={record.timeline} running={running} />
+          ) : (
+            <>
+              <Trace role="list">
+                {record.toolCalls.map((call) => (
+                  <TraceLine
+                    key={call.toolCallId}
+                    role="listitem"
+                    status={call.ok ? undefined : "error"}
+                  >
+                    <TraceIcon>
+                      <HugeiconsIcon
+                        icon={call.ok ? CircleCheckIcon : Alert01Icon}
+                        strokeWidth={2}
+                      />
+                    </TraceIcon>
+                    <TraceTitle>
+                      {localizedToolCallLabel(
+                        call.toolName,
+                        call.path,
+                        call.ok ? "done" : "failed",
+                        activityT
+                      ) ??
+                        t(call.ok ? "trace.callDone" : "trace.callFailed", {
+                          path: call.path ? ` ${call.path}` : "",
+                        })}
+                    </TraceTitle>
+                  </TraceLine>
+                ))}
+              </Trace>
+              {record.toolCalls.length === 0 && (
+                <p className="text-sm">{t("trace.empty")}</p>
+              )}
+            </>
           )}
           {report && (
             <Trace className="mt-2">
