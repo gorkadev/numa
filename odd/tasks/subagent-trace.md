@@ -92,6 +92,13 @@ arrive instead of discarding them.
       collapsed unless running, no scroller. Route: delegated writer. Commit
       `ad2f95a`.
 - [x] ST-5 Evidence and commit identities.
+- [x] ST-6 Detail panel: reuse `SubagentTimeline` in
+      `subagent-run-detail.tsx` and re-order its body to metadata → input →
+      trace → edited files → report, dropping the `Tool calls` section when a
+      timeline exists and keeping it unchanged as the fallback when it does
+      not. Route: delegated writer. **The panel was the user's actual
+      target**: ST-4 gave the timeline to the inline entry, and the user
+      pointed at the detail panel as the surface that had not changed.
 
 ## Caps
 
@@ -114,20 +121,26 @@ by `apps/web/lib/games/harness/narration.ts`:
 
 ## Verification
 
+- `pnpm --dir apps/web exec tsx --test components/chat/subagent-run-detail.test.tsx components/chat/subagent-entry.test.tsx components/chat/subagent-timeline.test.tsx`
+  — 20 tests, 20 pass, 0 fail (ST-4 and ST-6 together).
 - `pnpm --dir apps/web exec tsx --test components/chat/subagent-entry.test.tsx components/chat/subagent-timeline.test.tsx lib/games/harness/records.test.ts lib/games/harness/narration.test.ts`
   — 39 tests, 39 pass, 0 fail (ST-2, ST-3 and ST-4 together).
 - `pnpm --filter web typecheck` — clean.
 - ESLint clean on every touched file.
 - Prettier clean on `narration.ts`, `narration.test.ts`, `records.ts`,
   `records.test.ts`, `subagent-timeline.tsx`, `subagent-timeline.test.tsx`,
-  `subagent-entry.tsx`, `subagent-entry.test.tsx` and this document.
-  `run-subagent.ts` already failed `prettier --check` at HEAD (174 lines of
-  pre-existing rewrapping) and was left unformatted rather than rewrapped in
-  this unit; every line ST-3 added is Prettier-shaped.
+  `subagent-entry.tsx`, `subagent-entry.test.tsx`,
+  `subagent-run-detail.test.tsx` and this document. `run-subagent.ts` and
+  `subagent-run-detail.tsx` already failed `prettier --check` at HEAD (the
+  repo's committed harness/panel code is ~90–100 columns against an 80-column
+  `printWidth`); neither was reformatted, and every line ST-3/ST-6 ADDED is
+  Prettier-shaped — the remaining hunks are the untouched metadata/input/token
+  blocks plus the output block ST-6 moved verbatim.
 - ST-4 added no i18n keys: every string it shows already existed
   (`ChatAgents.trace.*`, `ChatActivity.toolLabels.*`, and `ChatMessages`'
   reasoning labels through `ReasoningBlock`), so `en.json`/`es.json` are
-  untouched.
+  untouched by it. ST-6 adds exactly one: `ChatAgents.traceLabel` ("Trace" /
+  "Traza"), the section heading the panel needs to look like its neighbours.
 - Live check pending: no browser runtime in this session.
 
 ## Pending, honestly
@@ -144,7 +157,14 @@ by `apps/web/lib/games/harness/narration.ts`:
 - A finished reasoning entry is a closed "Thought" disclosure, because
   `ReasoningBlock` opens only while its part is streaming. Keeping recorded
   reasoning expanded by default would need an `defaultOpen`-style prop on
-  `ReasoningBlock`, which is outside ST-4's edit surfaces; the timeline reuses
-  the block untouched rather than forking its markup.
+  `ReasoningBlock`, which is outside both ST-4's and ST-6's edit surfaces; the
+  timeline reuses the block untouched rather than forking its markup. ST-6's
+  order test therefore asserts the "Thought" line's position for a finished
+  entry and the reasoning TEXT for the trailing entry a live run has open.
+- The detail panel treats whitespace-only `summary` as content (a truthy
+  string), rendering an empty bubble, while the inline entry trims first.
+  Pre-existing and out of ST-6's "unchanged content" scope; worth one line in
+  a future unit.
 - Not verified by the parent's own eyes in a live turn: see above. The three
-  units are committed on `feat/chat-activity-trace` and not pushed.
+  units are committed on `feat/chat-activity-trace` and not pushed. ST-6 is
+  uncommitted.

@@ -141,6 +141,7 @@
     "outputLabel": "Salida",
     "pendingOutput": "Esperando a que termine la ejecución…",
     "emptyOutput": "Sin salida.",
+    "traceLabel": "Traza",
     "toolCallsLabel": "Llamadas a herramientas ({count, number})",
     "emptyToolCalls": "Aún no hay llamadas a herramientas.",
     "editedFilesLabel": "Archivos modificados ({count, number})",
