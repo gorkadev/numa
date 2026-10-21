@@ -81,16 +81,17 @@ arrive instead of discarding them.
 
 ## Tasks
 
-- [ ] ST-1 `pro.mid` → `argon-high` so workers publish reasoning on the tier the
+- [x] ST-1 `pro.mid` → `argon-high` so workers publish reasoning on the tier the
       user runs. Route: parent, inline (one profile line plus three test
-      expectations).
+      expectations). Commit `8e55697`.
 - [x] ST-2 Record schema: `timeline` with caps, defaults, and tests. Route:
-      delegated writer.
+      delegated writer. Commit `fd96301` (with ST-3).
 - [x] ST-3 Stream accumulation in `run-subagent.ts`: coalesced reasoning/text
       entries, emitted through the existing throttle. Route: delegated writer.
 - [x] ST-4 Render: `SubagentTimeline` component wired into `SubagentEntry`,
-      collapsed unless running, no scroller. Route: delegated writer.
-- [ ] ST-5 Evidence and commit identities.
+      collapsed unless running, no scroller. Route: delegated writer. Commit
+      `ad2f95a`.
+- [x] ST-5 Evidence and commit identities.
 
 ## Caps
 
@@ -145,4 +146,5 @@ by `apps/web/lib/games/harness/narration.ts`:
   reasoning expanded by default would need an `defaultOpen`-style prop on
   `ReasoningBlock`, which is outside ST-4's edit surfaces; the timeline reuses
   the block untouched rather than forking its markup.
-- The commit is the parent's job: nothing in ST-2/ST-3/ST-4 is committed.
+- Not verified by the parent's own eyes in a live turn: see above. The three
+  units are committed on `feat/chat-activity-trace` and not pushed.
