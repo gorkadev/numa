@@ -92,6 +92,104 @@ export const MAX_EDITS_PER_RECORD = 100
 export const MAX_PROMPT_CHARS = 8_000
 
 /**
+ * How long ONE narration entry's text may get. Narration is trimmed by TAIL:
+ * the NEWEST characters survive, because the tail is the part that is still
+ * interesting when a model reasons for a thousand tokens, and the surviving
+ * text is prefixed with a single "…" marking the cut. The cap bounds the
+ * whole stored string, marker included — `subagentTimelineEntrySchema`
+ * accepts 4,000 characters, never 4,001.
+ *
+ * Applied by `narration.ts` (neither a delta nor a coalesced run of deltas
+ * is allowed to grow past it) and enforced again here, so a malformed or
+ * maliciously oversized persisted record stays unparseable rather than
+ * accepted.
+ */
+export const MAX_NARRATION_CHARS_PER_ENTRY = 4_000
+
+/**
+ * How much narration one whole record may carry, summed over its `reasoning`
+ * and `text` entries. A sub-agent's record is re-sent in every progress
+ * snapshot (`run-subagent.ts`'s 500 ms throttle), so this is what keeps a
+ * long, chatty run from making each of those snapshots unbounded.
+ *
+ * `narration.ts` applies it by dropping the OLDEST narration entries whole —
+ * never a `tool` entry, which is the part that cannot be re-derived from
+ * anything else — until the rest fits; a single entry that on its own still
+ * exceeds the budget is tail-trimmed instead of dropped.
+ */
+export const MAX_NARRATION_CHARS_PER_RECORD = 16_000
+
+/**
+ * How many entries one `timeline` may carry. Over the ceiling, the OLDEST
+ * narration entries are dropped first, and only if that is not enough are the
+ * oldest `tool` entries dropped as well — a `tool` entry is the last thing
+ * this cap gives up, never the first.
+ *
+ * That last-resort tool eviction is not optional bookkeeping. A long builder
+ * run settles far more calls than entries: `roles.ts`'s highest `maxSteps` is
+ * 30 and a builder reads three or four files per step, so a single ordinary
+ * run can settle 120+ calls. `MAX_TOOL_CALLS_PER_RECORD` does NOT help here —
+ * it caps the flat `toolCalls` list, while every settled call still appends a
+ * `tool` entry. An over-cap timeline fails `subagentRunRecordSchema`, and
+ * `collectSubagentRuns`/`subagentRunsForPart` DROP a record that fails to
+ * parse, so the failure mode is a card that collapses to a generic chip
+ * mid-run. Hence the hard invariant: `narration.ts` never returns a timeline
+ * longer than this, whatever the mix of entries.
+ *
+ * Losing an old tool entry costs nothing a reader needs: the flat `toolCalls`
+ * list keeps the newest `MAX_TOOL_CALLS_PER_RECORD` for `wroteAnyFile` and
+ * every other consumer.
+ */
+export const MAX_TIMELINE_ENTRIES = 120
+
+/**
+ * One entry in a run's ordered `timeline` — the raw material ST-4 renders as
+ * a chat-style block: what the sub-agent reasoned, what it said, and what it
+ * did, in ARRIVAL order.
+ *
+ * Narration entries (`reasoning`, `text`) are coalesced by `narration.ts`:
+ * consecutive deltas of the same kind append to the last entry of that kind
+ * rather than opening one entry per chunk. A `tool` entry is appended where
+ * its call SETTLED (a `tool-result` or `tool-error` part), carrying the same
+ * `toolName`/`path`/`ok`/`error` data its matching `toolCalls` entry carries
+ * — the flat list stays for `run-tasks.ts`'s own reads, the timeline for the
+ * render, and both are derived from the same stream part.
+ *
+ * An `edit` kind, with a bounded diff, is designed but deferred with the
+ * code-visibility work (`odd/tasks/subagent-trace.md`'s pending list), which
+ * is why this is a discriminated union rather than a shape that has to be
+ * widened everywhere later.
+ */
+export const subagentTimelineEntrySchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("reasoning"),
+    text: z.string().max(MAX_NARRATION_CHARS_PER_ENTRY),
+  }),
+  z.object({
+    kind: z.literal("text"),
+    text: z.string().max(MAX_NARRATION_CHARS_PER_ENTRY),
+  }),
+  z.object({
+    kind: z.literal("tool"),
+    toolName: z.string(),
+    /** Present only for a call whose input had already streamed a `path` argument by the time it settled. */
+    path: z.string().optional(),
+    /**
+     * The settled call's id — the join key back to its `toolCalls` entry and,
+     * later, to its own input for the deferred "show the code being modified"
+     * work. Optional like `path`: a defensive reader must not depend on it.
+     * Index alignment is not enough on its own — this timeline evicts its
+     * oldest entries, and `toolCalls` evicts independently.
+     */
+    toolCallId: z.string().optional(),
+    ok: z.boolean(),
+    error: z.string().max(MAX_TOOL_CALL_ERROR_CHARS).optional(),
+  }),
+])
+
+export type SubagentTimelineEntry = z.infer<typeof subagentTimelineEntrySchema>
+
+/**
  * One tool call a sub-agent made, as far as the run record needs to know
  * about it (design.md decision 15 / task 9.2: "name, path, ok, ≤200-char
  * error"). Named `toolName`, not `name`: unit 2a's `SubagentProgress` shape
@@ -160,6 +258,22 @@ export const subagentRunRecordSchema = z.object({
   toolCalls: z.array(subagentToolCallSchema).max(MAX_TOOL_CALLS_PER_RECORD),
   /** Deduplicated paths this run has successfully written, replaced or deleted, first-seen order (a repeat write to the same path does not re-add or reorder it). */
   edits: z.array(z.string()).max(MAX_EDITS_PER_RECORD),
+  /**
+   * What the run actually did, in ARRIVAL order — reasoning, text and tool
+   * entries interleaved as they happened. `toolCalls` above is the flat list
+   * callers read today (`run-tasks.ts`'s own `wroteAnyFile`) and `summary` is
+   * the terminal report; this is the ordered story between prompt and report,
+   * and it does not replace either of them.
+   *
+   * `.default([])` so a record persisted before this field existed still
+   * parses: `collectSubagentRuns` drops anything that fails to parse
+   * outright, and an old run's `summary` is still worth keeping with no
+   * recorded narration alongside it.
+   */
+  timeline: z
+    .array(subagentTimelineEntrySchema)
+    .max(MAX_TIMELINE_ENTRIES)
+    .default([]),
   tokens: subagentRunTokensSchema,
   /** The skills pushed into this run's own instructions — a role's defaults, plus any per-task extras a dispatch tool added. */
   skills: z.array(z.string()),
@@ -235,7 +349,9 @@ function candidateRecords(raw: unknown): unknown[] {
  * `tool-parts.ts` wiring) can pass every dispatch-tool tool-output value
  * found across a whole thread's parts in one call.
  */
-export function collectSubagentRuns(rawOutputs: readonly unknown[]): SubagentRunRecord[] {
+export function collectSubagentRuns(
+  rawOutputs: readonly unknown[]
+): SubagentRunRecord[] {
   const byId = new Map<string, SubagentRunRecord>()
 
   for (const raw of rawOutputs) {

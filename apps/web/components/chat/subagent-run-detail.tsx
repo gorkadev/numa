@@ -23,6 +23,7 @@ import { Markdown } from "@/components/chat/markdown"
 import { AgentBot } from "@/components/chat/agent-bot"
 import { presentRunModel } from "@/components/chat/agent-run-presentation"
 import { subagentStatusKey } from "@/components/chat/subagent-entry"
+import { SubagentTimeline } from "@/components/chat/subagent-timeline"
 import { localizedToolCallLabel } from "@/components/chat/tool-group"
 import type { SubagentRunRecord } from "@/lib/games/harness/records"
 import { describeToolCall } from "@/lib/games/tool-parts"
@@ -130,6 +131,11 @@ function ExpandableText({ text }: { text: string }) {
  * re-rendering this component with a newer `record` — the next throttled
  * snapshot `run-subagent.ts` yields (design.md decision 5) — is the entire
  * "keeps updating while it runs" behavior the spec asks for.
+ *
+ * The body follows the run's own order: metadata, the input, what the run
+ * actually did (the same `SubagentTimeline` the inline entry renders), the
+ * files it touched, and the report LAST. The token footer closes the panel
+ * because it is metadata, not content.
  */
 export function SubagentRunDetail({ record }: SubagentRunDetailProps) {
   const t = useTranslations("ChatAgents")
@@ -185,24 +191,25 @@ export function SubagentRunDetail({ record }: SubagentRunDetailProps) {
         </div>
       ) : null}
 
-      <div className="flex flex-col gap-1">
-        <span className="text-xs text-muted-foreground">{t("outputLabel")}</span>
-        {record.summary ? (
-          <ExpandableText text={record.summary} />
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            {running ? t("pendingOutput") : t("emptyOutput")}
-          </p>
-        )}
-      </div>
-
-      <Separator />
+      {/** A hidden input would otherwise leave its separator behind. */}
+      {record.prompt ? <Separator /> : null}
 
       <div className="flex flex-col gap-2">
         <span className="text-xs text-muted-foreground">
-          {t("toolCallsLabel", { count: record.toolCalls.length })}
+          {/**
+           * The timeline IS the call list, so a record that has one drops the
+           * separate `Tool calls` section entirely instead of listing every
+           * call a second time. A record written before the timeline existed
+           * has `timeline: []` and a populated `toolCalls`, and keeps the old
+           * section unchanged — the same fallback rule the inline entry uses.
+           */}
+          {record.timeline.length > 0
+            ? t("traceLabel")
+            : t("toolCallsLabel", { count: record.toolCalls.length })}
         </span>
-        {record.toolCalls.length === 0 ? (
+        {record.timeline.length > 0 ? (
+          <SubagentTimeline entries={record.timeline} running={running} />
+        ) : record.toolCalls.length === 0 ? (
           <p className="text-muted-foreground">{t("emptyToolCalls")}</p>
         ) : (
           <ul className="flex flex-col gap-1.5">
@@ -260,6 +267,24 @@ export function SubagentRunDetail({ record }: SubagentRunDetailProps) {
               </li>
             ))}
           </ul>
+        )}
+      </div>
+
+      <Separator />
+
+      {/**
+       * Last content section on purpose: what the run produced is the thing a
+       * reader came for, so it closes the body. Only the token footer — which
+       * is metadata, not content — comes after it.
+       */}
+      <div className="flex flex-col gap-1">
+        <span className="text-xs text-muted-foreground">{t("outputLabel")}</span>
+        {record.summary ? (
+          <ExpandableText text={record.summary} />
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            {running ? t("pendingOutput") : t("emptyOutput")}
+          </p>
         )}
       </div>
 

@@ -5,11 +5,7 @@ import {
   type ConcreteLanguageModel,
   type FallbackHooks,
 } from "./fallback-model"
-import {
-  DEFAULT_TIER_ID,
-  isTierId,
-  type TierId,
-} from "./model-catalog"
+import { DEFAULT_TIER_ID, isTierId, type TierId } from "./model-catalog"
 import { providerModel } from "./models"
 
 export type { FallbackHooks, ServedCall } from "./fallback-model"
@@ -55,7 +51,9 @@ export type ModelEntryId =
  * depend on directly — so it is derived from `streamText`'s own parameter
  * type instead of adding an undeclared dependency for one type.
  */
-type ProviderOptions = NonNullable<Parameters<typeof streamText>[0]["providerOptions"]>
+type ProviderOptions = NonNullable<
+  Parameters<typeof streamText>[0]["providerOptions"]
+>
 
 export type ModelEntry = {
   id: ModelEntryId
@@ -85,18 +83,53 @@ function entry(
     providerModelId,
     displayName: `${name} (${effort})`,
     effort,
-    providerOptions: { googleVertex: { thinkingConfig: { thinkingLevel: effort } } },
+    providerOptions: {
+      googleVertex: {
+        thinkingConfig: {
+          thinkingLevel: effort,
+          // The model already spent effort thinking without ever returning it.
+          // `includeThoughts` is what asks Vertex to emit those thoughts as
+          // reasoning parts, which the AI SDK forwards and the thread persists.
+          includeThoughts: true,
+        },
+      },
+    },
   }
 }
 
 const REGISTRY: Record<ModelEntryId, ModelEntry> = {
-  "argon-medium": entry("argon-medium", "gemini-4-argon", "Gemini 4 Argon", "medium"),
+  "argon-medium": entry(
+    "argon-medium",
+    "gemini-4-argon",
+    "Gemini 4 Argon",
+    "medium"
+  ),
   "argon-high": entry("argon-high", "gemini-4-argon", "Gemini 4 Argon", "high"),
   "argon-low": entry("argon-low", "gemini-4-argon", "Gemini 4 Argon", "low"),
-  "flash-high": entry("flash-high", "gemini-3.8-flash", "Gemini 3.8 Flash", "high"),
-  "flash-medium": entry("flash-medium", "gemini-3.8-flash", "Gemini 3.8 Flash", "medium"),
-  "lite-medium": entry("lite-medium", "gemini-3.5-flash-lite", "Gemini 3.5 Flash Lite", "medium"),
-  "lite-minimal": entry("lite-minimal", "gemini-3.5-flash-lite", "Gemini 3.5 Flash Lite", "minimal"),
+  "flash-high": entry(
+    "flash-high",
+    "gemini-3.8-flash",
+    "Gemini 3.8 Flash",
+    "high"
+  ),
+  "flash-medium": entry(
+    "flash-medium",
+    "gemini-3.8-flash",
+    "Gemini 3.8 Flash",
+    "medium"
+  ),
+  "lite-medium": entry(
+    "lite-medium",
+    "gemini-3.5-flash-lite",
+    "Gemini 3.5 Flash Lite",
+    "medium"
+  ),
+  "lite-minimal": entry(
+    "lite-minimal",
+    "gemini-3.5-flash-lite",
+    "Gemini 3.5 Flash Lite",
+    "minimal"
+  ),
 }
 
 /**
@@ -116,21 +149,39 @@ export type SlotCandidates = readonly [ModelEntryId, ...ModelEntryId[]]
 type TierProfile = Record<Slot, SlotCandidates>
 
 /**
- * Approved static profiles, not an inferred capability ordering. In particular
- * pro.mid uses high effort while pro.strong uses medium. Effort levels do not
- * establish cross-model rankings. Legacy metadata still maps to the same tier,
- * but future execution uses this table; stored ledger rows are never rewritten.
+ * Approved static profiles, not an inferred capability ordering. Effort levels
+ * do not establish cross-model rankings. Legacy metadata still maps to the same
+ * tier, but future execution uses this table; stored ledger rows are never
+ * rewritten.
+ *
+ * `pro` puts the effort where the judgment is. `strong` carries the roles that
+ * decide: the orchestrator (what this turn is, and who builds it), the planner
+ * (the design, the file ownership, the acceptance criteria) and the verifier's
+ * visual half. `mid` carries the workers, which execute one already-scoped task
+ * — they consume far more tokens (30 steps, 900 s) without deciding more.
+ * `high` is also the only Argon level that publishes thought summaries at all
+ * (measured: `low` and `medium` spend thinking tokens but emit no summary
+ * text), so it is what makes the thread's reasoning visible for the model that
+ * writes every reply.
+ *
+ * `balanced` keeps that same division and moves only the hands off Argon.
+ * Lowering Argon's effort saves almost nothing — all three Argon entries share
+ * one rate card, so effort changes how much the model thinks, not what a token
+ * costs, and cached input dominates a turn's bill. The model family is the real
+ * cost lever, and the workers are where the tokens are: they are ~80% of a
+ * build turn's cost. `fast` is Flash end to end, because the tier itself is the
+ * cheap one.
  */
 const TIER_PROFILES: Record<TierId, TierProfile> = {
   pro: {
-    strong: ["argon-medium"],
+    strong: ["argon-high"],
     mid: ["argon-high"],
     light: ["argon-low"],
   },
   balanced: {
-    strong: ["argon-medium"],
-    mid: ["argon-low"],
-    light: ["flash-high"],
+    strong: ["argon-high"],
+    mid: ["flash-high"],
+    light: ["lite-medium"],
   },
   fast: {
     strong: ["flash-high"],
@@ -259,5 +310,9 @@ function resolveCandidates(
     model: factory(REGISTRY[id]) as ConcreteLanguageModel,
   }))
 
-  return { candidates: candidateIds, primary, model: createFallbackModel(candidates, hooks) }
+  return {
+    candidates: candidateIds,
+    primary,
+    model: createFallbackModel(candidates, hooks),
+  }
 }
