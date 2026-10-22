@@ -4,6 +4,31 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
+# Local-only developer assets and worktrees
+
+`.gitignore` excludes the assets agents depend on: `.agents/` (skills), `.claude/`
+(skill symlinks), `.atl/` (generated skill registry), `.pi/` (persona), `.neon`,
+`.env*`, and `apps/web/design/`. A Git worktree only materializes tracked files, so
+a fresh worktree starts without them.
+
+A Herdr plugin restores them automatically on `worktree.created` and `worktree.opened`:
+
+```bash
+herdr plugin list                      # numa.worktree-hydrate
+herdr plugin action invoke numa.worktree-hydrate.hydrate
+herdr plugin log list --plugin numa.worktree-hydrate
+```
+
+It lives at `~/.config/herdr/plugins/worktree-hydrate/`. It inventories ignored
+content with `git status --ignored=matching` and copies whatever is missing, so
+newly ignored paths are covered without editing the plugin. Build output, caches,
+`.codegraph`, and `node_modules` are never copied; dependencies are installed instead.
+`.atl/skill-registry.md` is path-rewritten to the new worktree.
+
+Skills belong at the repository root, in `.agents/skills/<name>/` with a
+`.claude/skills/<name>` symlink pointing at `../../.agents/skills/<name>`. Skills
+nested inside a workspace package are never discovered.
+
 # Database schema changes: use `db:push`, never `migrate`
 
 This project is in active development. There is no deployed data to preserve and
