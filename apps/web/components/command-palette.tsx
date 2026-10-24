@@ -10,6 +10,8 @@ import {
   PencilEdit02Icon,
   PinIcon,
   PinOffIcon,
+  Tag01Icon,
+  UserIcon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import type { Game } from "@workspace/db/schema"
@@ -23,8 +25,10 @@ import {
 } from "@workspace/ui/components/command"
 
 import { GameActionDialogs } from "@/components/game-action-dialogs"
+import { useSettingsDialog } from "@/hooks/use-settings-dialog"
 import { setGamePinned } from "@/lib/games/actions"
 import { openGameIdOf } from "@/lib/games/activity"
+import { SECTION_LABEL_KEYS, SECTIONS } from "@/lib/settings/sections"
 
 /**
  * The palette is a controlled dialog rather than one owning its own state,
@@ -45,6 +49,8 @@ export function CommandPalette({
   const router = useRouter()
   const t = useTranslations("Shell")
   const gameMenu = useTranslations("GameMenu")
+  const settings = useTranslations("Settings")
+  const { openSettings } = useSettingsDialog()
 
   /** The game on screen, which the palette can act on without the reader finding its row first. */
   const openGameId = openGameIdOf(usePathname())
@@ -118,6 +124,32 @@ export function CommandPalette({
               <HugeiconsIcon icon={PencilEdit02Icon} strokeWidth={2} />
               {t("newGame")}
             </CommandItem>
+          </CommandGroup>
+          <CommandGroup heading={t("goTo")}>
+            <CommandItem onSelect={() => go("/pricing")}>
+              <HugeiconsIcon icon={Tag01Icon} strokeWidth={2} />
+              {t("pricing")}
+            </CommandItem>
+            <CommandItem onSelect={() => go("/profile")}>
+              <HugeiconsIcon icon={UserIcon} strokeWidth={2} />
+              {t("profile")}
+            </CommandItem>
+          </CommandGroup>
+          <CommandGroup heading={t("settings")}>
+            {SECTIONS.map((section) => (
+              <CommandItem
+                key={section.id}
+                /**
+                 * "Settings" rides in the value, unseen, so typing it lists
+                 * every section even though each row only shows its own name.
+                 */
+                value={`${t("settings")} ${settings(SECTION_LABEL_KEYS[section.id])}`}
+                onSelect={() => run(() => openSettings(section.id))}
+              >
+                <HugeiconsIcon icon={section.icon} strokeWidth={2} />
+                {settings(SECTION_LABEL_KEYS[section.id])}
+              </CommandItem>
+            ))}
           </CommandGroup>
           {games.length > 0 && (
             <CommandGroup heading={t("recents")}>
