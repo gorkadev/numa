@@ -17,8 +17,12 @@ export type SessionUsage = {
   cached: number
   uncached: number
   output: number
+  /** Part of `output` the model spent reasoning; already counted there. */
+  reasoning: number
   /** Share of input served from cache, 0..1. */
   cacheHit: number
+  /** Credits charged, or undefined when no reply carries a charge. */
+  credits: number | undefined
 }
 
 /**
@@ -35,12 +39,15 @@ export function sumSessionUsage(messages: UIMessage[]): SessionUsage | null {
   let input = 0
   let output = 0
   let cached = 0
+  let reasoning = 0
+  let credits: number | undefined
   let priced = false
 
   for (const message of messages) {
     if (message.role !== "assistant") continue
 
-    const { tokens } = readMessageMeta(message)
+    const meta = readMessageMeta(message)
+    const { tokens } = meta
 
     if (!tokens) continue
 
@@ -48,6 +55,8 @@ export function sumSessionUsage(messages: UIMessage[]): SessionUsage | null {
     input += tokens.input
     output += tokens.output
     cached += tokens.cached
+    reasoning += tokens.reasoning
+    if (meta.credits !== undefined) credits = (credits ?? 0) + meta.credits
   }
 
   if (!priced) return null
@@ -58,7 +67,9 @@ export function sumSessionUsage(messages: UIMessage[]): SessionUsage | null {
     cached,
     uncached: input - cached,
     output,
+    reasoning,
     cacheHit: input === 0 ? 0 : cached / input,
+    credits,
   }
 }
 

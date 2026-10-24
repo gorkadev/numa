@@ -56,12 +56,6 @@
     "copied": "Copied",
     "copy": "Copy",
     "turnDetails": "Turn details",
-    "tokens": "Tokens",
-    "inputTokens": "Input",
-    "cachedTokens": "Cached",
-    "outputTokens": "Output",
-    "reasoningTokens": "Reasoning",
-    "credits": "Credits",
     "tools": "Tools",
     "questionsAsked": "Questions asked",
     "filesRead": "Files read",
@@ -89,7 +83,10 @@
     "contextUsed": "{percent} of context used",
     "contextUsedLabel": "Context used",
     "free": "Free",
-    "fromCache": "From cache"
+    "fromCache": "From cache",
+    "reasoning": "Reasoning",
+    "credits": "Credits",
+    "contextSuffix": "context"
   },
   "ChatAgents": {
     "trace": {

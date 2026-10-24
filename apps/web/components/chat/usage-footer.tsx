@@ -12,6 +12,7 @@ import {
 import { Progress } from "@workspace/ui/components/progress"
 
 import { AnimatedNumber } from "@/components/animated-number"
+import { TokenUsagePanel } from "@/components/chat/token-usage-panel"
 import {
   UsagePanelHeader,
   UsageRow,
@@ -143,7 +144,9 @@ const EMPTY_USAGE: SessionUsage = {
   cached: 0,
   uncached: 0,
   output: 0,
+  reasoning: 0,
   cacheHit: 0,
+  credits: undefined,
 }
 
 const RING_RADIUS = 6
@@ -212,6 +215,7 @@ function ContextRing({ context }: { context: ContextUsage }) {
         <AnimatedNumber
           value={ratio}
           format={{ style: "percent", maximumFractionDigits: 0 }}
+          suffix={` ${t("contextSuffix")}`}
         />
       </PopoverTrigger>
       <PopoverContent align="center" side="top" className="w-72 gap-3">
@@ -245,13 +249,6 @@ function ContextRing({ context }: { context: ContextUsage }) {
 
 function TokenUsage({ usage }: { usage: SessionUsage }) {
   const t = useTranslations("ChatUsage")
-  const locale = useLocale()
-  const exact = new Intl.NumberFormat(locale)
-  const percent = new Intl.NumberFormat(locale, {
-    style: "percent",
-    maximumFractionDigits: 0,
-  })
-  const tokens = (count: number) => t("tokens", { count: exact.format(count) })
 
   return (
     <Popover>
@@ -277,20 +274,7 @@ function TokenUsage({ usage }: { usage: SessionUsage }) {
         />
       </PopoverTrigger>
       <PopoverContent align="center" side="top" className="w-72 gap-3">
-        <UsagePanelHeader
-          icon={Database01Icon}
-          title={t("tokenUsage")}
-          value={tokens(usage.total)}
-        />
-        <UsageRows>
-          <UsageRow
-            label={t("cacheHit")}
-            value={percent.format(usage.cacheHit)}
-          />
-          <UsageRow label={t("uncachedInput")} value={tokens(usage.uncached)} />
-          <UsageRow label={t("cachedInput")} value={tokens(usage.cached)} />
-          <UsageRow label={t("output")} value={tokens(usage.output)} />
-        </UsageRows>
+        <TokenUsagePanel usage={usage} />
       </PopoverContent>
     </Popover>
   )

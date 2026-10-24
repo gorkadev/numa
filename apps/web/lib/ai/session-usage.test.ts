@@ -10,17 +10,20 @@ import {
   sumSessionUsage,
 } from "./session-usage"
 
-function reply(tokens?: {
-  input: number
-  output: number
-  cached: number
-  reasoning: number
-}): UIMessage {
+function reply(
+  tokens?: {
+    input: number
+    output: number
+    cached: number
+    reasoning: number
+  },
+  credits?: number
+): UIMessage {
   return {
     id: crypto.randomUUID(),
     role: "assistant",
     parts: [],
-    metadata: tokens ? { tokens } : {},
+    metadata: { ...(tokens ? { tokens } : {}), ...(credits !== undefined ? { credits } : {}) },
   }
 }
 
@@ -43,8 +46,23 @@ test("sums input, output and cached across every priced reply", () => {
     cached: 10_000,
     uncached: 30_413,
     output: 213,
+    reasoning: 50,
     cacheHit: 10_000 / 40_413,
+    credits: undefined,
   })
+})
+
+test("sums the credits every reply was charged, and reports none when no reply carries any", () => {
+  const charged = sumSessionUsage([
+    reply({ input: 100, output: 10, cached: 0, reasoning: 0 }, 3),
+    reply({ input: 100, output: 10, cached: 0, reasoning: 0 }, 4),
+  ])
+  const unpriced = sumSessionUsage([
+    reply({ input: 100, output: 10, cached: 0, reasoning: 0 }),
+  ])
+
+  assert.equal(charged?.credits, 7)
+  assert.equal(unpriced?.credits, undefined)
 })
 
 test("cached is a subset of input: the total never counts it twice", () => {

@@ -5,7 +5,6 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react"
 import { getToolName, isToolUIPart, type UIMessage } from "ai"
 import {
   Copy01Icon,
-  Database01Icon,
   MoreHorizontalIcon,
   Tick02Icon,
   Wrench01Icon,
@@ -25,12 +24,14 @@ import {
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip"
 
+import { TokenUsagePanel } from "@/components/chat/token-usage-panel"
 import {
   UsagePanelHeader,
   UsageRow,
   UsageRows,
 } from "@/components/chat/usage-panel"
 import { readMessageMeta } from "@/lib/ai/message-meta"
+import { sumSessionUsage } from "@/lib/ai/session-usage"
 import {
   formatMessageTime,
   formatMessageTimeLong,
@@ -364,7 +365,8 @@ function DetailsButton({ message }: { message: UIMessage }) {
   const t = useTranslations("ChatMessages")
   const locale = useLocale()
   const count = new Intl.NumberFormat(locale)
-  const meta = readMessageMeta(message)
+  /** One reply summed alone: the same numbers, in the same panel, as the footer's session total. */
+  const usage = sumSessionUsage([message])
   const tools = toolTally(message)
 
   return (
@@ -382,44 +384,7 @@ function DetailsButton({ message }: { message: UIMessage }) {
         <HugeiconsIcon icon={MoreHorizontalIcon} strokeWidth={2} />
       </PopoverTrigger>
       <PopoverContent align="start" className="w-72 gap-4">
-        {meta.tokens ? (
-          <section className="flex flex-col gap-3">
-            <UsagePanelHeader
-              icon={Database01Icon}
-              title={t("tokens")}
-              value={count.format(meta.tokens.input + meta.tokens.output)}
-            />
-            <UsageRows>
-              <UsageRow
-                label={t("inputTokens")}
-                value={count.format(meta.tokens.input)}
-              />
-              {meta.tokens.cached > 0 ? (
-                <UsageRow
-                  label={t("cachedTokens")}
-                  value={count.format(meta.tokens.cached)}
-                />
-              ) : null}
-              <UsageRow
-                label={t("outputTokens")}
-                value={count.format(meta.tokens.output)}
-              />
-              {meta.tokens.reasoning > 0 ? (
-                <UsageRow
-                  label={t("reasoningTokens")}
-                  value={count.format(meta.tokens.reasoning)}
-                />
-              ) : null}
-              {meta.credits !== undefined ? (
-                <UsageRow
-                  strong
-                  label={t("credits")}
-                  value={count.format(meta.credits)}
-                />
-              ) : null}
-            </UsageRows>
-          </section>
-        ) : null}
+        {usage ? <TokenUsagePanel usage={usage} /> : null}
         {tools.length > 0 ? (
           <section className="flex flex-col gap-3">
             <UsagePanelHeader icon={Wrench01Icon} title={t("tools")} />
