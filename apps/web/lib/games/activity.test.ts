@@ -6,6 +6,7 @@ import {
   createActivityStore,
   finishedTurnNotices,
   isGameUnread,
+  openGameIdOf,
   seenGameIds,
   workingGameIds,
 } from "./activity"
@@ -177,4 +178,12 @@ test("unread games loaded from the server are never announced", () => {
   store.seedUnread(["a"])
 
   assert.deepEqual(store.setWorking(new Set(), new Set(["a"])), [])
+})
+
+test("the open game is read from a game page, with or without a locale prefix", () => {
+  assert.equal(openGameIdOf("/games/abc"), "abc")
+  assert.equal(openGameIdOf("/es/games/abc"), "abc")
+  assert.equal(openGameIdOf("/games/abc/play"), undefined)
+  assert.equal(openGameIdOf("/"), undefined)
+  assert.equal(openGameIdOf("/pricing"), undefined)
 })

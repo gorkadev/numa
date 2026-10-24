@@ -189,3 +189,11 @@ export function isGameUnread(
 
   return game.lastTurnFinishedAt > game.lastReadAt
 }
+
+/** `/games/<id>`, with or without a locale prefix; not `/games/<id>/play`. */
+const OPEN_GAME = /\/games\/([^/]+)$/
+
+/** The game whose chat is on screen, if any. */
+export function openGameIdOf(pathname: string): string | undefined {
+  return OPEN_GAME.exec(pathname)?.[1]
+}
