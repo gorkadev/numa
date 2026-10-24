@@ -63,6 +63,12 @@ type ChatComposerProps = {
    * corners in turn whenever this is present, so the two read as one card.
    */
   tasksSlot?: ReactNode
+  /**
+   * Rendered directly below the `InputGroup`. Opt-in for the same reason as
+   * `tasksSlot`: the new-game screen shares this composer and has no chat to
+   * report on, so it simply never passes one.
+   */
+  usageSlot?: ReactNode
 }
 
 /** Shared controlled composer for the home screen and active chat thread. */
@@ -79,6 +85,7 @@ export function ChatComposer({
   templateId,
   onTemplateChange,
   tasksSlot,
+  usageSlot,
 }: ChatComposerProps) {
   const t = useTranslations("GameComposer")
   const isMac = useIsMac()
@@ -259,6 +266,7 @@ export function ChatComposer({
             </InputGroupButton>
           </InputGroupAddon>
         </InputGroup>
+        {usageSlot}
         {status || supported === false ? (
           <span role="status" aria-live="polite" className="sr-only">
             {status || t("dictationUnavailable")}

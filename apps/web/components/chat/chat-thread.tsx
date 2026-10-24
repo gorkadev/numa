@@ -28,6 +28,8 @@ import { TaskStrip } from "@/components/chat/task-strip"
 import { Thinking } from "@/components/chat/thinking"
 import { useGameChat } from "@/components/chat/use-game-chat"
 import type { TierId } from "@/lib/ai/model-catalog"
+import { sumSessionUsage } from "@/lib/ai/session-usage"
+import { UsageFooter } from "@/components/chat/usage-footer"
 import { gameBuildProgressLabelKey } from "@/lib/games/build-progress"
 import type { SubagentRunRecord } from "@/lib/games/harness/records"
 import { deriveTaskStrip, shouldShowTaskStrip } from "@/lib/games/plan-tasks"
@@ -147,6 +149,7 @@ export function ChatThread({
    * ends.
    */
   const taskStripTasks = useMemo(() => deriveTaskStrip(messages), [messages])
+  const sessionUsage = useMemo(() => sumSessionUsage(messages), [messages])
   const showTaskStrip = shouldShowTaskStrip(taskStripTasks, pending)
   const buildProgressKey = gameBuildProgressLabelKey(buildProgress)
   const buildProgressLabel = buildProgressKey === null ? null : t(buildProgressKey)
@@ -256,6 +259,7 @@ export function ChatThread({
           onTierChange={setTierId}
           pending={pending}
           placeholder={t("placeholder")}
+          usageSlot={<UsageFooter usage={sessionUsage} />}
           tasksSlot={
             showTaskStrip || buildProgressLabel ? (
               <div className="flex flex-col gap-2">

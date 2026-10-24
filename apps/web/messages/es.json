@@ -70,6 +70,15 @@
     "edits": "Ediciones",
     "filesDeleted": "Archivos eliminados"
   },
+  "ChatUsage": {
+    "summary": "{tokens} tok · Caché {cacheHit}",
+    "tokenUsage": "Uso de tokens",
+    "tokens": "{count} tok",
+    "cacheHit": "Acierto de caché",
+    "uncachedInput": "Entrada sin caché",
+    "cachedInput": "Entrada en caché",
+    "output": "Salida"
+  },
   "ChatAgents": {
     "trace": {
       "starting": "{role} está empezando",
