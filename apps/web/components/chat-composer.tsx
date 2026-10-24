@@ -1,6 +1,8 @@
 "use client"
 
 import {
+  useEffect,
+  useRef,
   useState,
   type FormEvent,
   type KeyboardEvent,
@@ -32,7 +34,7 @@ import { useSpeechDictation } from "@/components/chat/use-speech-dictation"
 import { useIsMac } from "@/hooks/use-is-mac"
 import { Spinner } from "@/components/localized-spinner"
 import { ModelPicker } from "@/components/model-picker"
-import { TemplatePicker } from "@/components/template-picker"
+import { LockedTemplate, TemplatePicker } from "@/components/template-picker"
 import type { TierId } from "@/lib/ai/model-catalog"
 import type { TemplateId } from "@/lib/games/templates/catalog"
 
@@ -48,12 +50,17 @@ type ChatComposerProps = {
   tierId?: TierId
   onTierChange?: (tierId: TierId) => void
   /**
-   * The template selected before creating a game. Optional together so an
-   * existing game's composer cannot offer a choice that is immutable after
-   * creation.
+   * The game's template. With `onTemplateChange` it is a choice made before
+   * creating the game; without it, it is an existing game's template, shown
+   * read-only because it is immutable after creation.
    */
   templateId?: TemplateId
   onTemplateChange?: (templateId: TemplateId) => void
+  /**
+   * Focuses the text area on mount and again whenever it is re-enabled after a
+   * turn, so the screen can be typed into without reaching for the mouse.
+   */
+  autoFocus?: boolean
   /**
    * Rendered directly above the `InputGroup`, visually merged into it (the
    * caller decides whether to render anything at all — this component stays
@@ -84,6 +91,7 @@ export function ChatComposer({
   onTierChange,
   templateId,
   onTemplateChange,
+  autoFocus = false,
   tasksSlot,
   usageSlot,
 }: ChatComposerProps) {
@@ -113,6 +121,31 @@ export function ChatComposer({
     phase, supported, pending, modelOpen, pickerAvailable, templatePickerAvailable,
     start, stop, discard, setModelOpen, setTemplateOpen,
   })
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const textareaDisabled = pending || active
+
+  /**
+   * An effect rather than the `autoFocus` attribute, which only fires on mount:
+   * the text area is disabled while a turn runs, and a disabled control drops
+   * focus, so it has to be taken back once the turn ends. Arriving through a
+   * link leaves focus on that link, so focus is taken from anything except
+   * another text field or an open dialog or menu. Never on touch screens, where
+   * focusing would throw the on-screen keyboard over the page.
+   */
+  useEffect(() => {
+    if (!autoFocus || textareaDisabled) return
+    if (!window.matchMedia("(pointer: fine)").matches) return
+    const focused = document.activeElement
+    if (
+      focused instanceof HTMLElement &&
+      (focused.isContentEditable ||
+        focused.matches("input, textarea, select") ||
+        focused.closest('[role="dialog"], [role="menu"]'))
+    )
+      return
+    textareaRef.current?.focus()
+  }, [autoFocus, textareaDisabled])
 
   const trimmed = value.trim()
   const stoppable = pending && Boolean(onStop)
@@ -145,10 +178,11 @@ export function ChatComposer({
         <InputGroup>
           <InputGroupTextarea
             className="max-h-48 resize-none overflow-y-auto py-3"
+            ref={textareaRef}
             name="prompt"
             rows={3}
             value={value}
-            disabled={pending || active}
+            disabled={textareaDisabled}
             placeholder={placeholder ?? t("placeholder")}
             onChange={(event) => {
               const next = event.target.value
@@ -174,6 +208,9 @@ export function ChatComposer({
                 onOpenChange={setTemplateOpen}
                 disabled={pending}
               />
+            ) : null}
+            {!active && templateId && templateId !== "none" && !onTemplateChange ? (
+              <LockedTemplate value={templateId} />
             ) : null}
             {active ? (
               <div className="flex min-w-0 flex-1 items-center gap-1">

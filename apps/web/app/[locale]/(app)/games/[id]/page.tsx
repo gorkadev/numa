@@ -6,6 +6,10 @@ import { isTierId } from "@/lib/ai/model-catalog"
 import { signPreviewToken } from "@/lib/games/preview-token"
 import { isGameUnread } from "@/lib/games/activity"
 import { getGame } from "@/lib/games/queries"
+import {
+  DEFAULT_TEMPLATE_ID,
+  isTemplateId,
+} from "@/lib/games/templates/catalog"
 import { markGameRead } from "@/lib/games/read-state"
 
 export default async function GamePage({
@@ -80,6 +84,9 @@ export default async function GamePage({
       gameId={game.id}
       title={game.title}
       pinned={game.pinnedAt !== null}
+      templateId={
+        isTemplateId(game.templateId) ? game.templateId : DEFAULT_TEMPLATE_ID
+      }
       previewToken={previewToken}
       initialMessages={game.messages}
       initialSessions={initialSessions}

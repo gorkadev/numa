@@ -201,6 +201,8 @@
       "finalizing": "Finalizing build…"
     },
     "placeholder": "Ask for a change…",
+    "untitledTurn": "Message without text",
+    "jumpToTurn": "Jump to: {text}",
     "scrollToEnd": "Scroll to end",
     "turnErrorTitle": "That turn did not go through",
     "genericTurnError": "Please try again. If the problem continues, check your connection or contact support.",
@@ -290,6 +292,7 @@
     "sendMessage": "Send message",
     "stopGenerating": "Stop generating",
     "openModelPicker": "Choose model tier",
+    "templateLocked": "The template is set when the game is created",
     "openTemplatePicker": "Choose game template",
     "templates": {
       "none": {

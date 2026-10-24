@@ -14,6 +14,7 @@ import { SubagentPanel } from "@/components/chat/subagent-panel"
 import { GameMenu } from "@/components/game-menu"
 import { MobileSidebarTrigger } from "@/components/mobile-sidebar-trigger"
 import type { TierId } from "@/lib/ai/model-catalog"
+import type { TemplateId } from "@/lib/games/templates/catalog"
 import type { SubagentRunRecord } from "@/lib/games/harness/records"
 
 /**
@@ -29,6 +30,7 @@ export function GameChat({
   gameId,
   title,
   pinned = false,
+  templateId,
   previewToken,
   initialMessages,
   initialSessions,
@@ -41,6 +43,8 @@ export function GameChat({
   title: string
   /** Whether this game is pinned, for the header's own `GameMenu`. */
   pinned?: boolean
+  /** The template the game was created from, shown read-only in the composer. */
+  templateId: TemplateId
   /**
    * The signed token the preview frame's requests carry, minted on the server so
    * the signing secret never reaches the browser.
@@ -256,6 +260,7 @@ export function GameChat({
         <ChatThread
           key={gameId}
           gameId={gameId}
+          templateId={templateId}
           initialMessages={initialMessages}
           initialSessions={initialSessions}
           initialPrompt={initialPrompt}

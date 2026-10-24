@@ -25,9 +25,11 @@ import { ChatComposer } from "@/components/chat-composer"
 import { AssistantAvatar } from "@/components/chat/assistant-avatar"
 import { ChatMessage } from "@/components/chat/chat-message"
 import { TaskStrip } from "@/components/chat/task-strip"
+import { ThreadOutline } from "@/components/chat/thread-outline"
 import { Thinking } from "@/components/chat/thinking"
 import { useGameChat } from "@/components/chat/use-game-chat"
 import type { TierId } from "@/lib/ai/model-catalog"
+import type { TemplateId } from "@/lib/games/templates/catalog"
 import {
   latestContextUsage,
   sumSessionActivity,
@@ -43,6 +45,7 @@ import { collectThreadSubagentRuns } from "@/lib/games/tool-parts"
 
 export function ChatThread({
   gameId,
+  templateId,
   initialMessages,
   initialSessions,
   initialPrompt,
@@ -54,6 +57,7 @@ export function ChatThread({
   onSubagentRunsChange,
 }: {
   gameId: string
+  templateId: TemplateId
   initialMessages: UIMessage[]
   /**
    * The chat session persisted with the thread — the transport's token and its
@@ -251,6 +255,9 @@ export function ChatThread({
             </MessageScrollerContent>
           </MessageScrollerViewport>
           <MessageScrollerButton label={t("scrollToEnd")} />
+          {runs.filter((run) => run.role === "user").length > 1 ? (
+            <ThreadOutline runs={runs} />
+          ) : null}
         </MessageScroller>
       </MessageScrollerProvider>
       <div className="mx-auto flex w-full max-w-3xl shrink-0 flex-col gap-2 px-4">
@@ -288,6 +295,8 @@ export function ChatThread({
           onStop={stop}
           tierId={tierId}
           onTierChange={setTierId}
+          templateId={templateId}
+          autoFocus
           pending={pending}
           placeholder={t("placeholder")}
           usageSlot={

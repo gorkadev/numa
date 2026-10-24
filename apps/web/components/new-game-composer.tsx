@@ -82,6 +82,7 @@ export function NewGameComposer() {
         onTierChange={setTierId}
         templateId={templateId}
         onTemplateChange={setTemplateId}
+        autoFocus
         pending={pending}
         error={state?.error ?? null}
       />

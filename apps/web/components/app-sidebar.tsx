@@ -278,6 +278,10 @@ export function AppSidebar({
                   >
                     <HugeiconsIcon icon={PencilEdit02Icon} />
                     <span>{t("newGame")}</span>
+                    {/** The expanded row's own hint; collapsed, the tooltip above carries it. */}
+                    <Kbd className="ml-auto group-data-[collapsible=icon]:hidden">
+                      {newGameHint}
+                    </Kbd>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem className="hidden group-data-[collapsible=icon]:block">

@@ -3,8 +3,10 @@
 import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
+import { useTheme } from "next-themes"
 import {
   Logout01Icon,
+  PaintBoardIcon,
   Settings02Icon,
   UserIcon,
   Tick02Icon,
@@ -22,6 +24,8 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuShortcut,
   DropdownMenuSub,
@@ -44,6 +48,7 @@ import { authClient } from "@/lib/auth-client"
 import { initials } from "@/lib/format/initials"
 import { useIsMac } from "@/hooks/use-is-mac"
 import { useSettingsDialog } from "@/hooks/use-settings-dialog"
+import { THEMES } from "@/lib/settings/themes"
 import type { BillingPlan } from "@/lib/polar/plan"
 
 function AccountIdentity({
@@ -95,6 +100,8 @@ type DeviceSession = NonNullable<
 export function NavUser({ plan }: { plan: BillingPlan }) {
   const router = useRouter()
   const t = useTranslations("Shell")
+  const settings = useTranslations("Settings")
+  const { theme, setTheme } = useTheme()
   const { isMobile, state } = useSidebar()
   const { data: session, isPending } = authClient.useSession()
   const { openSettings } = useSettingsDialog()
@@ -377,6 +384,33 @@ export function NavUser({ plan }: { plan: BillingPlan }) {
                 {t("settings")}
                 <DropdownMenuShortcut>{settingsHint}</DropdownMenuShortcut>
               </DropdownMenuItem>
+              {/**
+               * The everyday way to change the theme, so it is not only reachable
+               * through Settings, the palette or a hotkey nobody has discovered.
+               * The hint is the hotkey `ThemeHotkey` binds.
+               */}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger disabled={isActionPending}>
+                  <HugeiconsIcon icon={PaintBoardIcon} />
+                  {/* Takes the free space so the hint sits by the trigger's own chevron. */}
+                  <span className="flex-1">{settings("theme")}</span>
+                  <DropdownMenuShortcut>D</DropdownMenuShortcut>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
+                    {THEMES.map((option) => (
+                      <DropdownMenuRadioItem
+                        key={option.value}
+                        value={option.value}
+                        closeOnClick
+                      >
+                        <HugeiconsIcon icon={option.icon} />
+                        {settings(option.label)}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem
