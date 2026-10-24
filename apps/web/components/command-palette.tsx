@@ -31,6 +31,7 @@ import {
   CommandItem,
   CommandList,
   CommandShortcut,
+  defaultFilter,
 } from "@workspace/ui/components/command"
 
 import { GameActionDialogs } from "@/components/game-action-dialogs"
@@ -45,6 +46,7 @@ import { setGamePinned } from "@/lib/games/actions"
 import { openGameIdOf } from "@/lib/games/activity"
 import { DEFAULT_TEMPLATE_ID, TEMPLATES } from "@/lib/games/templates/catalog"
 import { backFrom, type PalettePage } from "@/lib/command-palette/pages"
+import { parseQuery } from "@/lib/command-palette/query"
 import {
   formatShortcutKey,
   shortcutKeys,
@@ -97,6 +99,14 @@ export function CommandPalette({
   const [pages, setPages] = useState<PalettePage[]>([])
   const [search, setSearch] = useState("")
   const page = pages.at(-1)
+
+  /**
+   * Prefixes only mean something on the root list: inside a page every row is
+   * the same kind, and a `#` there is just text.
+   */
+  const scope = page ? "all" : parseQuery(search).scope
+  const showCommands = scope !== "games"
+  const showGames = scope !== "commands"
 
   function enter(next: PalettePage) {
     setPages([...pages, next])
@@ -151,6 +161,9 @@ export function CommandPalette({
       <CommandDialog
         open={open}
         onOpenChange={setOpen}
+        filter={(value, _search, keywords) =>
+          defaultFilter(value, parseQuery(search).text, keywords)
+        }
         title={t("commandPalette")}
         description={t("commandPaletteDescription")}
       >
@@ -226,7 +239,7 @@ export function CommandPalette({
               ))}
             </CommandGroup>
           )}
-          {!page && currentGame && (
+          {!page && showCommands && currentGame && (
             <CommandGroup heading={t("currentGame")}>
               <CommandItem
                 onSelect={() =>
@@ -260,64 +273,71 @@ export function CommandPalette({
           )}
           {!page && (
             <>
-              <CommandGroup heading={t("actions")}>
-                <CommandItem value={t("newGame")} onSelect={() => go("/")}>
-                  <HugeiconsIcon icon={PencilEdit02Icon} strokeWidth={2} />
-                  {t("newGame")}
-                  <ShortcutHint label="newGame" />
-                </CommandItem>
-                <CommandItem onSelect={() => enter("templates")}>
-                  <HugeiconsIcon icon={LayoutTemplateIcon} strokeWidth={2} />
-                  {t("newGameFromTemplate")}
-                </CommandItem>
-              </CommandGroup>
-              <CommandGroup heading={t("goTo")}>
-                <CommandItem onSelect={() => go("/pricing")}>
-                  <HugeiconsIcon icon={Tag01Icon} strokeWidth={2} />
-                  {t("pricing")}
-                </CommandItem>
-                <CommandItem onSelect={() => go("/profile")}>
-                  <HugeiconsIcon icon={UserIcon} strokeWidth={2} />
-                  {t("profile")}
-                </CommandItem>
-              </CommandGroup>
-              <CommandGroup heading={t("settings")}>
-                <CommandItem onSelect={() => enter("theme")}>
-                  <HugeiconsIcon icon={PaintBoardIcon} strokeWidth={2} />
-                  {settings("theme")}
-                  <ShortcutHint label="toggleTheme" />
-                </CommandItem>
-                <CommandItem onSelect={() => enter("language")}>
-                  <HugeiconsIcon icon={TranslateIcon} strokeWidth={2} />
-                  {settings("language")}
-                </CommandItem>
-                {SECTIONS.map((section) => (
-                  <CommandItem
-                    key={section.id}
-                    /**
-                     * "Settings" rides in the value, unseen, so typing it lists
-                     * every section even though each row only shows its own name.
-                     */
-                    value={`${t("settings")} ${settings(SECTION_LABEL_KEYS[section.id])}`}
-                    onSelect={() => run(() => openSettings(section.id))}
-                  >
-                    <HugeiconsIcon icon={section.icon} strokeWidth={2} />
-                    {settings(SECTION_LABEL_KEYS[section.id])}
-                    {/* The settings chord opens the default section. */}
-                    {section.id === DEFAULT_SECTION_ID && (
-                      <ShortcutHint label="settings" />
-                    )}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-              {pinnedGames.length > 0 && (
+              {showCommands && (
+                <>
+                  <CommandGroup heading={t("actions")}>
+                    <CommandItem value={t("newGame")} onSelect={() => go("/")}>
+                      <HugeiconsIcon icon={PencilEdit02Icon} strokeWidth={2} />
+                      {t("newGame")}
+                      <ShortcutHint label="newGame" />
+                    </CommandItem>
+                    <CommandItem onSelect={() => enter("templates")}>
+                      <HugeiconsIcon
+                        icon={LayoutTemplateIcon}
+                        strokeWidth={2}
+                      />
+                      {t("newGameFromTemplate")}
+                    </CommandItem>
+                  </CommandGroup>
+                  <CommandGroup heading={t("goTo")}>
+                    <CommandItem onSelect={() => go("/pricing")}>
+                      <HugeiconsIcon icon={Tag01Icon} strokeWidth={2} />
+                      {t("pricing")}
+                    </CommandItem>
+                    <CommandItem onSelect={() => go("/profile")}>
+                      <HugeiconsIcon icon={UserIcon} strokeWidth={2} />
+                      {t("profile")}
+                    </CommandItem>
+                  </CommandGroup>
+                  <CommandGroup heading={t("settings")}>
+                    <CommandItem onSelect={() => enter("theme")}>
+                      <HugeiconsIcon icon={PaintBoardIcon} strokeWidth={2} />
+                      {settings("theme")}
+                      <ShortcutHint label="toggleTheme" />
+                    </CommandItem>
+                    <CommandItem onSelect={() => enter("language")}>
+                      <HugeiconsIcon icon={TranslateIcon} strokeWidth={2} />
+                      {settings("language")}
+                    </CommandItem>
+                    {SECTIONS.map((section) => (
+                      <CommandItem
+                        key={section.id}
+                        /**
+                         * "Settings" rides in the value, unseen, so typing it lists
+                         * every section even though each row only shows its own name.
+                         */
+                        value={`${t("settings")} ${settings(SECTION_LABEL_KEYS[section.id])}`}
+                        onSelect={() => run(() => openSettings(section.id))}
+                      >
+                        <HugeiconsIcon icon={section.icon} strokeWidth={2} />
+                        {settings(SECTION_LABEL_KEYS[section.id])}
+                        {/* The settings chord opens the default section. */}
+                        {section.id === DEFAULT_SECTION_ID && (
+                          <ShortcutHint label="settings" />
+                        )}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </>
+              )}
+              {showGames && pinnedGames.length > 0 && (
                 <CommandGroup heading={t("pinned")}>
                   {pinnedGames.map((game) => (
                     <GameItem key={game.id} game={game} onSelect={go} />
                   ))}
                 </CommandGroup>
               )}
-              {recentGames.length > 0 && (
+              {showGames && recentGames.length > 0 && (
                 <CommandGroup heading={t("recents")}>
                   {recentGames.map((game) => (
                     <GameItem key={game.id} game={game} onSelect={go} />

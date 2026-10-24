@@ -406,7 +406,7 @@
     "pinned": "Pinned",
     "commandPalette": "Command palette",
     "commandPaletteDescription": "Search for a command to run...",
-    "searchGamesAndActions": "Search games and actions...",
+    "searchGamesAndActions": "Search games and actions... (> actions, # games)",
     "noResults": "No results found.",
     "actions": "Actions",
     "currentGame": "Current game",

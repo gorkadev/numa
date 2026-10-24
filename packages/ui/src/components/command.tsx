@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Command as CommandPrimitive } from "cmdk"
+import { Command as CommandPrimitive, defaultFilter } from "cmdk"
 import { cn } from "cn"
 
 import {
@@ -40,12 +40,15 @@ function CommandDialog({
   children,
   className,
   showCloseButton = false,
+  filter,
   ...props
 }: Omit<React.ComponentProps<typeof Dialog>, "children"> & {
   title?: string
   description?: string
   className?: string
   showCloseButton?: boolean
+  /** Forwarded to the cmdk root, for a palette that reads its search before matching. */
+  filter?: React.ComponentProps<typeof CommandPrimitive>["filter"]
   children: React.ReactNode
 }) {
   return (
@@ -66,7 +69,9 @@ function CommandDialog({
          * `CommandInput` first of all — reads cmdk's store out of the context
          * this establishes, and finds `undefined` without it.
          */}
-        <Command className="rounded-none bg-transparent">{children}</Command>
+        <Command className="rounded-none bg-transparent" filter={filter}>
+          {children}
+        </Command>
       </DialogContent>
     </Dialog>
   )
@@ -199,4 +204,5 @@ export {
   CommandItem,
   CommandShortcut,
   CommandSeparator,
+  defaultFilter,
 }

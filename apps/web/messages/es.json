@@ -406,7 +406,7 @@
     "pinned": "Fijados",
     "commandPalette": "Paleta de comandos",
     "commandPaletteDescription": "Busca un comando para ejecutar...",
-    "searchGamesAndActions": "Buscar juegos y acciones...",
+    "searchGamesAndActions": "Buscar juegos y acciones... (> acciones, # juegos)",
     "noResults": "No se encontraron resultados.",
     "actions": "Acciones",
     "currentGame": "Partida actual",
