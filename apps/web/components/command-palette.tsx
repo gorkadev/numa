@@ -23,6 +23,7 @@ import {
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import type { Game } from "@workspace/db/schema"
+import { Spinner } from "@workspace/ui/components/spinner"
 import {
   CommandDialog,
   CommandEmpty,
@@ -33,6 +34,10 @@ import {
 } from "@workspace/ui/components/command"
 
 import { GameActionDialogs } from "@/components/game-action-dialogs"
+import {
+  useGameUnread,
+  useGameWorking,
+} from "@/components/game-activity-provider"
 import { LOCALE_OPTIONS, useChangeLocale } from "@/components/locale-switcher"
 import { useSettingsDialog } from "@/hooks/use-settings-dialog"
 import { setGamePinned } from "@/lib/games/actions"
@@ -100,6 +105,10 @@ export function CommandPalette({
   /** The game on screen, which the palette can act on without the reader finding its row first. */
   const openGameId = openGameIdOf(usePathname())
   const currentGame = games.find((game) => game.id === openGameId)
+
+  /** Same split as the sidebar: `listGames` already sorts pinned first. */
+  const pinnedGames = games.filter((game) => game.pinnedAt !== null)
+  const recentGames = games.filter((game) => game.pinnedAt === null)
 
   const [renameOpen, setRenameOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -290,23 +299,17 @@ export function CommandPalette({
                   </CommandItem>
                 ))}
               </CommandGroup>
-              {games.length > 0 && (
+              {pinnedGames.length > 0 && (
+                <CommandGroup heading={t("pinned")}>
+                  {pinnedGames.map((game) => (
+                    <GameItem key={game.id} game={game} onSelect={go} />
+                  ))}
+                </CommandGroup>
+              )}
+              {recentGames.length > 0 && (
                 <CommandGroup heading={t("recents")}>
-                  {games.map((game) => (
-                    <CommandItem
-                      key={game.id}
-                      /**
-                       * cmdk filters on `value`, and the default value is the item's
-                       * text content — which here is the title plus whatever the icon
-                       * contributes. Spelling it out keeps the match on the title
-                       * alone, and the id keeps two games of the same name distinct.
-                       */
-                      value={`${game.title} ${game.id}`}
-                      onSelect={() => go(`/games/${game.id}`)}
-                    >
-                      <HugeiconsIcon icon={MessageCircleIcon} strokeWidth={2} />
-                      <span className="truncate">{game.title}</span>
-                    </CommandItem>
+                  {recentGames.map((game) => (
+                    <GameItem key={game.id} game={game} onSelect={go} />
                   ))}
                 </CommandGroup>
               )}
@@ -325,5 +328,47 @@ export function CommandPalette({
         />
       )}
     </>
+  )
+}
+
+/**
+ * One game in the palette, wearing the sidebar row's live state: a spinner
+ * while its agent works, the unread dot once it finished. Its own component so
+ * each row subscribes to only its own game and re-renders alone.
+ */
+function GameItem({
+  game,
+  onSelect,
+}: {
+  game: Game
+  onSelect: (href: string) => void
+}) {
+  const t = useTranslations("GameMenu")
+  const working = useGameWorking(game.id)
+  const unread = useGameUnread(game.id)
+
+  return (
+    <CommandItem
+      /**
+       * cmdk filters on `value`, and the default value is the item's text
+       * content — which here is the title plus whatever the icon contributes.
+       * Spelling it out keeps the match on the title alone, and the id keeps
+       * two games of the same name distinct.
+       */
+      value={`${game.title} ${game.id}`}
+      onSelect={() => onSelect(`/games/${game.id}`)}
+    >
+      <HugeiconsIcon icon={MessageCircleIcon} strokeWidth={2} />
+      <span className="truncate">{game.title}</span>
+      {working ? (
+        <Spinner label={t("working")} className="ml-auto" />
+      ) : unread ? (
+        <span
+          role="status"
+          aria-label={t("unread")}
+          className="ml-auto size-2 shrink-0 rounded-full bg-primary"
+        />
+      ) : null}
+    </CommandItem>
   )
 }
