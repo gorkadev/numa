@@ -21,7 +21,7 @@ Branch: to be created from `feat/chat-usage-footer` or master after it merges. D
 
 ## Tasks
 
-- [ ] T1 · spike · verify in dev: `metadata.set` and a `user:<id>` tag from the `chat.agent` lifecycle hooks, what initial state `subscribeToRunsWithTag` delivers on subscribe (docs do not say), token scope and refresh. No sidebar, no DB.
+- [x] T1 · spike · verify in dev: `metadata.set` and a `user:<id>` tag from the `chat.agent` lifecycle hooks, what initial state `subscribeToRunsWithTag` delivers on subscribe (docs do not say), token scope and refresh. No sidebar, no DB. Route: inline. Evidence: L4. Spike code reverted, nothing committed but this log.
 - [ ] T2 · S3 S4 S6 · schema + hooks: the two `games` columns (`pnpm db:push`), written from `onTurnComplete` and when a game is opened.
 - [ ] T3 · S1 S2 S3 · provider + subscription + `GameRow` loading/hover swap.
 - [ ] T4 · S4 · unread indicator and mark-as-read.
@@ -31,3 +31,10 @@ Branch: to be created from `feat/chat-usage-footer` or master after it merges. D
 
 - L1 (2026-10-24) User: "podemos hacer que mientras un agente esta trabajando, en la sidebar mostrar un loading? ... se muestre un icono de loading junto al icono de tres puntos de acciones q hay ahora, el cual unicamente es visible al hacer hover" and "desde la sidebar como actualizamos ese estado? pues con un efecto no? o no serviria? intentaria pensarlo en hacerlo lo mas performance posible".
 - L2 Findings: the run stays `executing` while idle between messages, so run status alone is not "working"; a turn-level flag is needed. Trigger docs (SDK 4.5.16, `docs/realtime`): `useRealtimeRunsWithTag`, run metadata updates are pushed, tokens can be scoped by tag. Asked the user whether to start with the spike (T1); no answer yet.
+- L3 (2026-10-24) User: "empiezo por la tarea T1, el spike de metadata y suscripción por etiqueta en Trigger."
+- L4 (2026-10-24) T1 results, observed in dev with temporary instrumentation (reverted):
+  - Tag: `startGameChatSession` passing `triggerConfig: { ...params.triggerConfig, tags: ["user:<id>"] }` to `start()` yields runs tagged `["chat:<gameId>", "user:<id>"]` (SDK `ai-shared.js` `chatRunTags` prepends `chat:`, max 10 tags, 128 chars). Only sessions created after the change get it: existing games have no `user:` tag. Not observed: whether continuation runs (after idle timeout) keep the tag; by reading, tags live in the session's stored `triggerConfig`; confirm in T3.
+  - Metadata: `metadata.set("working", true)` in `onTurnStart` and `false` in `onTurnComplete` both arrive pushed. Sequence: QUEUED, EXECUTING, ~6 s later `working: true`, ~13 s later `working: false`, run stays EXECUTING (idle). Each change arrives 2-3 times (the SDK also writes its own metadata keys), so consumers must dedupe on the `working` value.
+  - Initial state: on subscribe the server delivers EVERY run ever carrying the tag, terminal ones included (`chat:dcbbf363…` returned 4 runs, 3 CANCELED, in ~196 ms). For `user:<id>` that is the whole history per tab load, so T3 must pass `createdAt` (duration string, max `"1w"`, computed server side at subscribe). Open: a turn in a run created before that window would be missed.
+  - Token: `auth.createPublicToken({ scopes: { read: { tags: ["user:<id>"] } } })` subscribes fine. A token scoped to another tag gets NO error: the stream closes silently after ~1.3 s. Refresh not exercised (token `expirationTime` set; re-mint on expiry belongs to T3).
+  - Confirmed L2: a run from 03:10 was still EXECUTING while idle; status alone is not "working".
