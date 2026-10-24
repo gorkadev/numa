@@ -26,13 +26,14 @@ const items = routing.locales.map((locale) => ({
   label: LOCALE_LABELS[locale],
 }))
 
-export function LocaleSwitcher({
-  describedBy,
-}: {
-  /** Auth pages keep the visible label; settings supplies its own row content. */
-  describedBy?: string
-}) {
-  const locale = useLocale()
+/** The locales a reader can switch to, with the name each goes by in itself. */
+export const LOCALE_OPTIONS = items
+
+/**
+ * Stores the preference and re-renders the tree in it, toasting on a failure;
+ * shared by the select below and the command palette's Language page.
+ */
+export function useChangeLocale() {
   const t = useTranslations("Shell")
   const router = useRouter()
   const [pending, startTransition] = useTransition()
@@ -51,6 +52,19 @@ export function LocaleSwitcher({
       }
     })
   }
+
+  return { changeLocale, pending }
+}
+
+export function LocaleSwitcher({
+  describedBy,
+}: {
+  /** Auth pages keep the visible label; settings supplies its own row content. */
+  describedBy?: string
+}) {
+  const locale = useLocale()
+  const t = useTranslations("Shell")
+  const { changeLocale, pending } = useChangeLocale()
 
   return(
     <Select
