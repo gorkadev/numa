@@ -93,14 +93,20 @@ export function CommandPalette({
     setSearch("")
   }
 
-  /** Reopening starts from the root, not from wherever the last visit ended. */
-  function setOpen(next: boolean) {
-    if (!next) {
+  /**
+   * Reopening starts from the root, not from wherever the last visit ended.
+   * Keyed on the `open` prop rather than done in a close handler, because the
+   * ⌘K chord in `AppSidebar` closes the palette without passing through here.
+   */
+  const [wasOpen, setWasOpen] = useState(open)
+  if (open !== wasOpen) {
+    setWasOpen(open)
+    if (!open) {
       setPages([])
       setSearch("")
     }
-    onOpenChange(next)
   }
+  const setOpen = onOpenChange
 
   /** The game on screen, which the palette can act on without the reader finding its row first. */
   const openGameId = openGameIdOf(usePathname())
