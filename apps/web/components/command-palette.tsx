@@ -39,12 +39,22 @@ import {
   useGameWorking,
 } from "@/components/game-activity-provider"
 import { LOCALE_OPTIONS, useChangeLocale } from "@/components/locale-switcher"
+import { useIsMac } from "@/hooks/use-is-mac"
 import { useSettingsDialog } from "@/hooks/use-settings-dialog"
 import { setGamePinned } from "@/lib/games/actions"
 import { openGameIdOf } from "@/lib/games/activity"
 import { DEFAULT_TEMPLATE_ID, TEMPLATES } from "@/lib/games/templates/catalog"
 import { backFrom, type PalettePage } from "@/lib/command-palette/pages"
-import { SECTION_LABEL_KEYS, SECTIONS } from "@/lib/settings/sections"
+import {
+  formatShortcutKey,
+  shortcutKeys,
+  type ShortcutLabel,
+} from "@/lib/settings/keyboard-shortcuts"
+import {
+  DEFAULT_SECTION_ID,
+  SECTION_LABEL_KEYS,
+  SECTIONS,
+} from "@/lib/settings/sections"
 
 const THEMES = [
   { value: "light", label: "lightTheme", icon: Sun03Icon },
@@ -254,6 +264,7 @@ export function CommandPalette({
                 <CommandItem value={t("newGame")} onSelect={() => go("/")}>
                   <HugeiconsIcon icon={PencilEdit02Icon} strokeWidth={2} />
                   {t("newGame")}
+                  <ShortcutHint label="newGame" />
                 </CommandItem>
                 <CommandItem onSelect={() => enter("templates")}>
                   <HugeiconsIcon icon={LayoutTemplateIcon} strokeWidth={2} />
@@ -274,6 +285,7 @@ export function CommandPalette({
                 <CommandItem onSelect={() => enter("theme")}>
                   <HugeiconsIcon icon={PaintBoardIcon} strokeWidth={2} />
                   {settings("theme")}
+                  <ShortcutHint label="toggleTheme" />
                 </CommandItem>
                 <CommandItem onSelect={() => enter("language")}>
                   <HugeiconsIcon icon={TranslateIcon} strokeWidth={2} />
@@ -291,6 +303,10 @@ export function CommandPalette({
                   >
                     <HugeiconsIcon icon={section.icon} strokeWidth={2} />
                     {settings(SECTION_LABEL_KEYS[section.id])}
+                    {/* The settings chord opens the default section. */}
+                    {section.id === DEFAULT_SECTION_ID && (
+                      <ShortcutHint label="settings" />
+                    )}
                   </CommandItem>
                 ))}
               </CommandGroup>
@@ -373,5 +389,17 @@ function GameItem({
         </CommandShortcut>
       ) : null}
     </CommandItem>
+  )
+}
+
+/** A row's chord from the shortcuts catalog, in the slot `CommandItem` leaves for it. */
+function ShortcutHint({ label }: { label: ShortcutLabel }) {
+  const isMac = useIsMac()
+  return (
+    <CommandShortcut>
+      {shortcutKeys(label)
+        .map((key) => formatShortcutKey(key, isMac))
+        .join(isMac ? "" : "+")}
+    </CommandShortcut>
   )
 }
