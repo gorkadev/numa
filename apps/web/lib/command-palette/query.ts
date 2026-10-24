@@ -15,3 +15,15 @@ export function parseQuery(search: string): { scope: QueryScope; text: string } 
   }
   return { scope: "all", text: search }
 }
+
+/**
+ * The text a "Create game" row would send as the new game's first message, or
+ * `null` when there is none to offer: nothing typed, a `#` search (games
+ * only), or a nested page, where the text filters that page's options.
+ */
+export function quickPromptOf(search: string, page: string | undefined): string | null {
+  if (page) return null
+  const { scope, text } = parseQuery(search)
+  const prompt = text.trim()
+  return scope === "games" || prompt === "" ? null : prompt
+}

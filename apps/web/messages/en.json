@@ -401,6 +401,8 @@
     "sidebarDrawerDescription": "Navigate the application using the sidebar.",
     "newGame": "New game",
     "newGameFromTemplate": "New game from template",
+    "createGame": "Create game",
+    "createGameFromPrompt": "Create game: “{prompt}”",
     "recents": "Recents",
     "emptyGames": "Your games will live here.",
     "pinned": "Pinned",

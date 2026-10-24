@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useEffect, useState, useTransition } from "react"
 
 import { usePathname, useRouter } from "next/navigation"
 import { useLocale, useTranslations } from "next-intl"
@@ -15,6 +15,7 @@ import {
   PencilEdit02Icon,
   PinIcon,
   PinOffIcon,
+  SparklesIcon,
   Sun03Icon,
   Tag01Icon,
   TranslateIcon,
@@ -23,6 +24,7 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react"
 import type { Game } from "@workspace/db/schema"
 import { Spinner } from "@workspace/ui/components/spinner"
+import { toast } from "@workspace/ui/components/toast"
 import {
   CommandDialog,
   CommandEmpty,
@@ -42,11 +44,11 @@ import {
 import { LOCALE_OPTIONS, useChangeLocale } from "@/components/locale-switcher"
 import { useIsMac } from "@/hooks/use-is-mac"
 import { useSettingsDialog } from "@/hooks/use-settings-dialog"
-import { setGamePinned } from "@/lib/games/actions"
+import { createGame, setGamePinned } from "@/lib/games/actions"
 import { openGameIdOf } from "@/lib/games/activity"
 import { DEFAULT_TEMPLATE_ID, TEMPLATES } from "@/lib/games/templates/catalog"
 import { backFrom, type PalettePage } from "@/lib/command-palette/pages"
-import { parseQuery } from "@/lib/command-palette/query"
+import { parseQuery, quickPromptOf } from "@/lib/command-palette/query"
 import {
   formatShortcutKey,
   shortcutKeys,
@@ -105,6 +107,16 @@ export function CommandPalette({
    * the same kind, and a `#` there is just text.
    */
   const scope = page ? "all" : parseQuery(search).scope
+  const quickPrompt = quickPromptOf(search, page)
+
+  function createFromPrompt(prompt: string) {
+    startCreating(async () => {
+      const formData = new FormData()
+      formData.set("prompt", prompt)
+      const result = await createGame(null, formData)
+      if (result?.error) toast.add({ type: "error", title: result.error })
+    })
+  }
   const showCommands = scope !== "games"
   const showGames = scope !== "commands"
 
@@ -129,7 +141,18 @@ export function CommandPalette({
   const setOpen = onOpenChange
 
   /** The game on screen, which the palette can act on without the reader finding its row first. */
-  const openGameId = openGameIdOf(usePathname())
+  const pathname = usePathname()
+  const openGameId = openGameIdOf(pathname)
+
+  /**
+   * The palette stays open while the game is created — naming it takes a
+   * model call — so the spinner has somewhere to show, and closes when the
+   * action's redirect lands on the new game.
+   */
+  const [creating, startCreating] = useTransition()
+  useEffect(() => {
+    onOpenChange(false)
+  }, [pathname, onOpenChange])
   const currentGame = games.find((game) => game.id === openGameId)
 
   /** Same split as the sidebar: `listGames` already sorts pinned first. */
@@ -345,6 +368,29 @@ export function CommandPalette({
                 </CommandGroup>
               )}
             </>
+          )}
+          {quickPrompt && (
+            <CommandGroup heading={t("createGame")}>
+              {/**
+               * Always mounted, whatever the filter says: it is the answer to
+               * the search itself, so it would never match its own text.
+               */}
+              <CommandItem
+                forceMount
+                value="create-game-from-prompt"
+                disabled={creating}
+                onSelect={() => createFromPrompt(quickPrompt)}
+              >
+                {creating ? (
+                  <Spinner />
+                ) : (
+                  <HugeiconsIcon icon={SparklesIcon} strokeWidth={2} />
+                )}
+                <span className="truncate">
+                  {t("createGameFromPrompt", { prompt: quickPrompt })}
+                </span>
+              </CommandItem>
+            </CommandGroup>
           )}
         </CommandList>
       </CommandDialog>

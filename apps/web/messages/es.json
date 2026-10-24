@@ -401,6 +401,8 @@
     "sidebarDrawerDescription": "Navega por la aplicación con la barra lateral.",
     "newGame": "Nuevo juego",
     "newGameFromTemplate": "Nueva partida desde plantilla",
+    "createGame": "Crear partida",
+    "createGameFromPrompt": "Crear partida: «{prompt}»",
     "recents": "Recientes",
     "emptyGames": "Tus juegos aparecerán aquí.",
     "pinned": "Fijados",
