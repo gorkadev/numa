@@ -207,48 +207,51 @@ export function SubagentRunDetail({ record }: SubagentRunDetailProps) {
             ? t("traceLabel")
             : t("toolCallsLabel", { count: record.toolCalls.length })}
         </span>
-        {record.timeline.length > 0 ? (
-          <SubagentTimeline entries={record.timeline} running={running} />
-        ) : record.toolCalls.length === 0 ? (
-          <p className="text-muted-foreground">{t("emptyToolCalls")}</p>
-        ) : (
-          <ul className="flex flex-col gap-1.5">
-            {record.toolCalls.map((call) => (
-              <li key={call.toolCallId} className="flex items-start gap-2">
-                <HugeiconsIcon
-                  icon={call.ok ? Tick02Icon : Alert01Icon}
-                  strokeWidth={2}
-                  className={cn(
-                    "mt-0.5 size-4 shrink-0 text-muted-foreground",
-                    !call.ok && "text-destructive"
-                  )}
-                />
-                {/**
-                 * The error text goes in `title`, the same place
-                 * `tool-group.tsx`'s `ToolMarker` puts it: written for
-                 * recovery, not for the player to act on, so it stays one
-                 * hover away rather than always on screen.
-                 */}
-                <span
-                  className={!call.ok ? "text-destructive" : undefined}
-                  title={call.error}
-                >
-                  {localizedToolCallLabel(
-                    call.toolName,
-                    call.path,
-                    call.ok ? "done" : "failed",
-                    activityT
-                  ) ??
-                    describeToolCall(
+        {/** The same muted surface as Input above and the token footer below, so the three read as one family of boxes. */}
+        <div className="rounded-2xl bg-muted p-3">
+          {record.timeline.length > 0 ? (
+            <SubagentTimeline entries={record.timeline} running={running} />
+          ) : record.toolCalls.length === 0 ? (
+            <p className="text-muted-foreground">{t("emptyToolCalls")}</p>
+          ) : (
+            <ul className="flex flex-col gap-1.5">
+              {record.toolCalls.map((call) => (
+                <li key={call.toolCallId} className="flex items-start gap-2">
+                  <HugeiconsIcon
+                    icon={call.ok ? Tick02Icon : Alert01Icon}
+                    strokeWidth={2}
+                    className={cn(
+                      "mt-0.5 size-4 shrink-0 text-muted-foreground",
+                      !call.ok && "text-destructive"
+                    )}
+                  />
+                  {/**
+                   * The error text goes in `title`, the same place
+                   * `tool-group.tsx`'s `ToolMarker` puts it: written for
+                   * recovery, not for the player to act on, so it stays one
+                   * hover away rather than always on screen.
+                   */}
+                  <span
+                    className={!call.ok ? "text-destructive" : undefined}
+                    title={call.error}
+                  >
+                    {localizedToolCallLabel(
                       call.toolName,
                       call.path,
-                      call.ok ? "done" : "failed"
-                    )}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
+                      call.ok ? "done" : "failed",
+                      activityT
+                    ) ??
+                      describeToolCall(
+                        call.toolName,
+                        call.path,
+                        call.ok ? "done" : "failed"
+                      )}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
 
       <Separator />

@@ -335,7 +335,7 @@ export default async function PricingPage({
         </Alert>
       )}
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-3">
         <Card>
           <CardHeader>
             <Badge variant="secondary">{t("free")}</Badge>
@@ -531,7 +531,7 @@ export default async function PricingPage({
           <p className="text-sm text-muted-foreground">{t("topUpsDescription")}</p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 lg:grid-cols-3">
           <TopUpCard
             price={formatLocalizedMoney(10, locale)}
             productId={POLAR_PRODUCT_TOPUP_ID}
