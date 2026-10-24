@@ -18,6 +18,10 @@ import {
 } from "@/components/chat/usage-panel"
 import type { SessionUsage } from "@/lib/ai/session-usage"
 import type { ContextUsage } from "@/lib/games/context-usage"
+import {
+  tokensPerSecond,
+  type GenerationSpeed,
+} from "@/lib/games/generation-speed"
 
 /**
  * What this chat has spent so far, as one quiet line under the composer.
@@ -35,16 +39,36 @@ import type { ContextUsage } from "@/lib/games/context-usage"
  */
 export function UsageFooter({
   usage,
+  speed,
   context,
 }: {
   usage: SessionUsage | null
+  speed: GenerationSpeed | null
   context: ContextUsage
 }) {
   return (
     <div className="flex items-center justify-center gap-1 py-1 text-muted-foreground">
+      <GenerationRate speed={speed} />
       <TokenUsage usage={usage ?? EMPTY_USAGE} />
       <ContextRing context={context} />
     </div>
+  )
+}
+
+/**
+ * The orchestrator's generation speed over the session, as plain text for now:
+ * the popover with the statistics behind it comes later. Zero until a reply
+ * has been measured, for the same reason the other groups start at zero.
+ */
+function GenerationRate({ speed }: { speed: GenerationSpeed | null }) {
+  const t = useTranslations("ChatUsage")
+  const locale = useLocale()
+  const rate = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 })
+
+  return (
+    <span className="px-2 text-xs tabular-nums">
+      {t("speed", { rate: rate.format(speed ? tokensPerSecond(speed) : 0) })}
+    </span>
   )
 }
 

@@ -110,3 +110,38 @@ test("a reply the receipt cannot belong to gets no live chunk", () => {
   assert.equal(turnMetaChunk(user, cost(1, 1)), null)
   assert.equal(turnMetaChunk(undefined, cost(1, 1)), null)
 })
+
+test("generation speed accumulates across the turns of one message", () => {
+  const once = withTurnMeta([assistant()], cost(1, 1), undefined, {
+    tokens: 100,
+    ms: 1_000,
+  })
+  const twice = withTurnMeta(once, cost(1, 1), undefined, {
+    tokens: 300,
+    ms: 1_000,
+  })
+
+  assert.deepEqual(readMessageMeta(twice[0]!).speed, { tokens: 400, ms: 2_000 })
+})
+
+test("a turn with no speed reading keeps the one already stamped", () => {
+  const once = withTurnMeta([assistant()], cost(1, 1), undefined, {
+    tokens: 100,
+    ms: 1_000,
+  })
+  const twice = withTurnMeta(once, cost(1, 1))
+
+  assert.deepEqual(readMessageMeta(twice[0]!).speed, { tokens: 100, ms: 1_000 })
+})
+
+test("the live receipt carries the same speed the persisted reply will", () => {
+  const speed = { tokens: 100, ms: 1_000 }
+  const chunk = turnMetaChunk(assistant(), cost(1, 1), undefined, speed)
+  const [stamped] = withTurnMeta([assistant()], cost(1, 1), undefined, speed)
+
+  assert.equal(chunk?.type, "message-metadata")
+  assert.deepEqual(
+    (chunk as { messageMetadata?: unknown }).messageMetadata,
+    stamped?.metadata
+  )
+})

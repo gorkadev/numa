@@ -1,5 +1,6 @@
 import type { UIMessage } from "ai"
 
+import { addSpeed, type GenerationSpeed } from "@/lib/games/generation-speed"
 import { readMessageMeta, type MessageMeta } from "./message-meta"
 
 /**
@@ -82,4 +83,23 @@ export function latestContextUsage(
   }
 
   return null
+}
+
+/**
+ * The orchestrator's generation speed over the whole chat: every reply's
+ * tokens and time added, so the rate is output over time, not a mean of rates.
+ * `null` when no reply carries a reading.
+ */
+export function sumSessionSpeed(messages: UIMessage[]): GenerationSpeed | null {
+  let total: GenerationSpeed | null = null
+
+  for (const message of messages) {
+    if (message.role !== "assistant") continue
+
+    const { speed } = readMessageMeta(message)
+
+    if (speed) total = total ? addSpeed(total, speed) : speed
+  }
+
+  return total
 }

@@ -2,7 +2,11 @@ import assert from "node:assert/strict"
 import test from "node:test"
 import type { UIMessage } from "ai"
 
-import { latestContextUsage, sumSessionUsage } from "./session-usage"
+import {
+  latestContextUsage,
+  sumSessionSpeed,
+  sumSessionUsage,
+} from "./session-usage"
 
 function reply(tokens?: {
   input: number
@@ -89,5 +93,19 @@ test("the latest context reading is the newest reply that carries one", () => {
   assert.deepEqual(
     latestContextUsage([withContext(10), withContext(40), reply()]),
     { tokens: 40, window: 1_000 }
+  )
+})
+
+test("session speed sums tokens and time over the replies that carry one", () => {
+  const withSpeed = (tokens: number, ms: number): UIMessage => ({
+    ...reply(),
+    metadata: { speed: { tokens, ms } },
+  })
+
+  assert.equal(sumSessionSpeed([]), null)
+  assert.equal(sumSessionSpeed([reply()]), null)
+  assert.deepEqual(
+    sumSessionSpeed([withSpeed(100, 1_000), reply(), withSpeed(300, 1_000)]),
+    { tokens: 400, ms: 2_000 }
   )
 })

@@ -4,6 +4,7 @@ import { DEFAULT_TIER_ID, type TierId } from "@/lib/ai/model-catalog"
 import type { ModelEntryId, ServedCall, Slot } from "@/lib/ai/model-registry"
 import type { AgentUsageEntry } from "@/lib/ai/pricing"
 import type { ContextUsage } from "@/lib/games/context-usage"
+import { addSpeed, type GenerationSpeed } from "@/lib/games/generation-speed"
 
 export type TurnVerifyOutcome = "not-run" | "pass" | "fail" | "unavailable" | "refused"
 
@@ -101,6 +102,8 @@ type TurnStateData = {
    * of the ledger on purpose: pricing sums steps, this keeps only the last.
    */
   context: ContextUsage | undefined
+  /** The orchestrator's output and generation time so far this turn, summed over steps. */
+  speed: GenerationSpeed | undefined
 }
 
 const local = chat.local<TurnStateData>({ id: "turnState" })
@@ -205,6 +208,16 @@ export const turnState = {
     local.context = context
   },
 
+  /** Adds one orchestrator step's generation speed to the turn's total. */
+  addSpeed(speed: GenerationSpeed): void {
+    local.speed = local.speed ? addSpeed(local.speed, speed) : speed
+  },
+
+  /** The turn's speed total, guarded by turn like `contextFor`. */
+  speedFor(turn: number): GenerationSpeed | undefined {
+    return local.turn === turn ? local.speed : undefined
+  },
+
   /**
    * The reading, but only if it belongs to `turn` — for the same stale-state
    * reason as `ledgerFor`: a turn that failed before `onTurnStart` must not
@@ -289,6 +302,7 @@ export const turnState = {
       verifyBaseline: undefined,
       unfinishedTaskIds: new Set(),
       context: undefined,
+      speed: undefined,
     })
   },
 

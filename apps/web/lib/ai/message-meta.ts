@@ -1,6 +1,8 @@
 import type { UIMessage, UIMessageChunk } from "ai"
 import { z } from "zod"
 
+import { addSpeed, type GenerationSpeed } from "@/lib/games/generation-speed"
+
 import type { TurnCost } from "./pricing"
 
 /**
@@ -49,6 +51,12 @@ const messageMetaSchema = z.object({
       cached: z.number().optional(),
     })
     .optional(),
+  /**
+   * Orchestrator output tokens and the generation time they took, summed over
+   * the turn's steps. Optional: a reply written before this existed carries
+   * none and simply adds nothing to the session's speed.
+   */
+  speed: z.object({ tokens: z.number(), ms: z.number() }).optional(),
 })
 
 export type MessageMeta = z.infer<typeof messageMetaSchema>
@@ -108,7 +116,8 @@ export function readMessageMeta(message: UIMessage): MessageMeta {
 export function withTurnMeta(
   messages: UIMessage[],
   cost: TurnCost,
-  context?: MessageMeta["context"]
+  context?: MessageMeta["context"],
+  speed?: GenerationSpeed
 ): UIMessage[] {
   const last = messages.at(-1)
 
@@ -132,6 +141,14 @@ export function withTurnMeta(
      * the only true one. A turn that took no reading keeps the previous one.
      */
     context: context ?? existing.context,
+    /**
+     * Accumulates like the token counts: it is a total of work done, so a
+     * message that spans two turns has both.
+     */
+    speed:
+      speed && existing.speed
+        ? addSpeed(existing.speed, speed)
+        : (speed ?? existing.speed),
   }
 
   /**
@@ -161,11 +178,12 @@ export function withTurnMeta(
 export function turnMetaChunk(
   message: UIMessage | undefined,
   cost: TurnCost,
-  context?: MessageMeta["context"]
+  context?: MessageMeta["context"],
+  speed?: GenerationSpeed
 ): UIMessageChunk | null {
   if (!message || message.role !== "assistant") return null
 
-  const [stamped] = withTurnMeta([message], cost, context)
+  const [stamped] = withTurnMeta([message], cost, context, speed)
 
   return { type: "message-metadata", messageMetadata: stamped?.metadata }
 }

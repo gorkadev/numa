@@ -14,6 +14,7 @@ import { z } from "zod"
 import { orchestratorModelSettings } from "@/lib/ai/agent"
 import { turnMetaChunk, withTurnMeta } from "@/lib/ai/message-meta"
 import { contextUsageChunk, contextUsageOf } from "@/lib/games/context-usage"
+import { speedOfStep } from "@/lib/games/generation-speed"
 import { withThreadTier } from "@/lib/ai/message-model"
 import { tierIdSchema } from "@/lib/ai/model-catalog"
 import {
@@ -745,7 +746,12 @@ export const gameChat = chat.agent({
        * usage footer and the per-reply popover would stay empty. Same cost,
        * same function (`withTurnMeta`), so the two cannot disagree.
        */
-      const receipt = turnMetaChunk(responseMessage, cost, turnState.contextFor(turn))
+      const receipt = turnMetaChunk(
+        responseMessage,
+        cost,
+        turnState.contextFor(turn),
+        turnState.speedFor(turn)
+      )
 
       if (receipt) writer.write(receipt)
     }
@@ -839,7 +845,8 @@ export const gameChat = chat.agent({
         withTurnMeta(
           withThreadTier(currentTurn ? withGameVerification(uiMessages, verificationData) : uiMessages, clientData?.tier),
           cost,
-          turnState.contextFor(turn)
+          turnState.contextFor(turn),
+          turnState.speedFor(turn)
         )
       ),
       chatAccessToken,
@@ -931,7 +938,20 @@ export const gameChat = chat.agent({
        * it. Kept out of `turnState.addUsage` so pricing is untouched. A step
        * that reports no input is skipped, leaving the previous reading in place.
        */
-      onStepFinish: ({ usage }) => {
+      onStepFinish: ({ usage, performance }) => {
+        /**
+         * Generation speed is read first and on its own: a step with no
+         * measurable speed (a tool-call-only step) must not skip the context
+         * reading below, and a failure in one must not take the other down.
+         */
+        try {
+          const speed = speedOfStep(usage.outputTokens, performance)
+
+          if (speed) turnState.addSpeed(speed)
+        } catch (error) {
+          logger.warn("Could not record the generation speed", { error })
+        }
+
         /**
          * A reading is telemetry: failing to take one must never fail the
          * step that was being measured.
