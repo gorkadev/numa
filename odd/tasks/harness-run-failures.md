@@ -13,7 +13,7 @@ Branch: `fix/harness-run-failures`. Delivery: ask-on-risk, forecast ~400 authore
 ## Tasks
 
 - [x] T1 — S1 — inline — worker without edits is retried once, then reported partial (RED: module missing; GREEN 5/5)
-- [ ] T2 — S2 — inline — limits in field descriptions
+- [x] T2 — S2 — inline — limits in field descriptions (RED 2 fail; GREEN 3/3)
 - [ ] T3 — S3 — inline — routing: no verify before changes, reads after failed verify
 - [ ] T4 — S4 — inline — engine lighting/mount guards + canvas visibility check
 
