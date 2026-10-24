@@ -37,6 +37,17 @@ const messageMetaSchema = z.object({
     })
     .optional(),
   credits: z.number().optional(),
+  /**
+   * How full the orchestrator's window was at the turn's last step. Optional:
+   * a reply written before this existed carries none, and the footer simply
+   * shows no ring for it.
+   */
+  context: z
+    .object({
+      tokens: z.number(),
+      window: z.number(),
+    })
+    .optional(),
 })
 
 export type MessageMeta = z.infer<typeof messageMetaSchema>
@@ -95,7 +106,8 @@ export function readMessageMeta(message: UIMessage): MessageMeta {
  */
 export function withTurnMeta(
   messages: UIMessage[],
-  cost: TurnCost
+  cost: TurnCost,
+  context?: MessageMeta["context"]
 ): UIMessage[] {
   const last = messages.at(-1)
 
@@ -113,6 +125,12 @@ export function withTurnMeta(
         (existing.tokens?.reasoning ?? 0) + cost.tokens.reasoningTokens,
     },
     credits: (existing.credits ?? 0) + cost.credits,
+    /**
+     * Replaces rather than accumulates, unlike the token counts: it is a
+     * reading of the window at the latest step, so the newest turn's value is
+     * the only true one. A turn that took no reading keeps the previous one.
+     */
+    context: context ?? existing.context,
   }
 
   /**

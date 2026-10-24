@@ -3,6 +3,7 @@ import { chat } from "@trigger.dev/sdk/ai"
 import { DEFAULT_TIER_ID, type TierId } from "@/lib/ai/model-catalog"
 import type { ModelEntryId, ServedCall, Slot } from "@/lib/ai/model-registry"
 import type { AgentUsageEntry } from "@/lib/ai/pricing"
+import type { ContextUsage } from "@/lib/games/context-usage"
 
 export type TurnVerifyOutcome = "not-run" | "pass" | "fail" | "unavailable" | "refused"
 
@@ -95,6 +96,11 @@ type TurnStateData = {
    * it.
    */
   unfinishedTaskIds: Set<string>
+  /**
+   * The orchestrator's context reading at its latest step this turn. Not part
+   * of the ledger on purpose: pricing sums steps, this keeps only the last.
+   */
+  context: ContextUsage | undefined
 }
 
 const local = chat.local<TurnStateData>({ id: "turnState" })
@@ -194,6 +200,20 @@ export const turnState = {
     return local.unavailable.has(id)
   },
 
+  /** Records the orchestrator's latest step reading; the newest one wins. */
+  setContext(context: ContextUsage): void {
+    local.context = context
+  },
+
+  /**
+   * The reading, but only if it belongs to `turn` — for the same stale-state
+   * reason as `ledgerFor`: a turn that failed before `onTurnStart` must not
+   * stamp the previous turn's reading on its own reply.
+   */
+  contextFor(turn: number): ContextUsage | undefined {
+    return local.turn === turn ? local.context : undefined
+  },
+
   /**
    * Records an availability failure so later calls on the same slot, this
    * turn, skip straight past it (decision 19). A new `Set` rather than a
@@ -268,6 +288,7 @@ export const turnState = {
       finishedTaskIds: new Set(),
       verifyBaseline: undefined,
       unfinishedTaskIds: new Set(),
+      context: undefined,
     })
   },
 
@@ -291,6 +312,7 @@ export const turnState = {
     local.finishedTaskIds = new Set()
     local.verifyBaseline = undefined
     local.unfinishedTaskIds = new Set()
+    local.context = undefined
   },
 
   /**

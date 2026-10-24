@@ -13,6 +13,7 @@ import { z } from "zod"
 
 import { orchestratorModelSettings } from "@/lib/ai/agent"
 import { withTurnMeta } from "@/lib/ai/message-meta"
+import { contextUsageChunk, contextUsageOf } from "@/lib/games/context-usage"
 import { withThreadTier } from "@/lib/ai/message-model"
 import { tierIdSchema } from "@/lib/ai/model-catalog"
 import {
@@ -826,7 +827,8 @@ export const gameChat = chat.agent({
       messages: withoutGameProgress(
         withTurnMeta(
           withThreadTier(currentTurn ? withGameVerification(uiMessages, verificationData) : uiMessages, clientData?.tier),
-          cost
+          cost,
+          turnState.contextFor(turn)
         )
       ),
       chatAccessToken,
@@ -912,6 +914,20 @@ export const gameChat = chat.agent({
        * while the model keeps generating server-side.
        */
       abortSignal: signal,
+      /**
+       * One reading per orchestrator step: the footer's context ring needs the
+       * LATEST step's input, not the turn's sum, and only a per-step hook sees
+       * it. Kept out of `turnState.addUsage` so pricing is untouched. A step
+       * that reports no input is skipped, leaving the previous reading in place.
+       */
+      onStepFinish: ({ usage }) => {
+        const context = contextUsageOf(usage.inputTokens, orchestratorEntryId())
+
+        if (!context) return
+
+        turnState.setContext(context)
+        chat.response.write(contextUsageChunk(context))
+      },
       /**
        * A turn is a loop, not a single answer: read the file, edit it, check
        * the result, then reply. Without a stop condition the SDK ends the turn
