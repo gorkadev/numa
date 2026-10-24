@@ -856,6 +856,7 @@ export const gameChat = chat.agent({
       ),
       chatAccessToken,
       lastEventId,
+      turnFinished: true,
     })
 
     /**

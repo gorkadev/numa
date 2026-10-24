@@ -22,7 +22,7 @@ Branch: to be created from `feat/chat-usage-footer` or master after it merges. D
 ## Tasks
 
 - [x] T1 · spike · verify in dev: `metadata.set` and a `user:<id>` tag from the `chat.agent` lifecycle hooks, what initial state `subscribeToRunsWithTag` delivers on subscribe (docs do not say), token scope and refresh. No sidebar, no DB. Route: inline. Evidence: L4. Spike code reverted, nothing committed but this log.
-- [ ] T2 · S3 S4 S6 · schema + hooks: the two `games` columns (`pnpm db:push`), written from `onTurnComplete` and when a game is opened.
+- [x] T2 · S3 S4 S6 · schema + hooks: the two `games` columns (`pnpm db:push`), written from `onTurnComplete` and when a game is opened. Route: inline. Evidence: L5.
 - [ ] T3 · S1 S2 S3 · provider + subscription + `GameRow` loading/hover swap.
 - [ ] T4 · S4 · unread indicator and mark-as-read.
 - [ ] T5 · S5 · toasts on the same store (own task, later).
@@ -38,3 +38,6 @@ Branch: to be created from `feat/chat-usage-footer` or master after it merges. D
   - Initial state: on subscribe the server delivers EVERY run ever carrying the tag, terminal ones included (`chat:dcbbf363…` returned 4 runs, 3 CANCELED, in ~196 ms). For `user:<id>` that is the whole history per tab load, so T3 must pass `createdAt` (duration string, max `"1w"`, computed server side at subscribe). Open: a turn in a run created before that window would be missed.
   - Token: `auth.createPublicToken({ scopes: { read: { tags: ["user:<id>"] } } })` subscribes fine. A token scoped to another tag gets NO error: the stream closes silently after ~1.3 s. Refresh not exercised (token `expirationTime` set; re-mint on expiry belongs to T3).
   - Confirmed L2: a run from 03:10 was still EXECUTING while idle; status alone is not "working".
+- L5 (2026-10-24) User: "perfecto, continua". T2 done on branch `feat/game-activity` (from `feat/chat-usage-footer`). `games.last_turn_finished_at` / `last_read_at` (nullable timestamptz, pushed and confirmed in `information_schema`). Both use the DB `now()` (worker and Next server clocks differ). `saveGameThread({ turnFinished: true })` stamps the finish in the same UPDATE, only from `onTurnComplete` (stopped and failed turns count as finished). The game page calls `markGameRead` only when `isGameUnread(game)` on the row it already loaded, so opening a game with nothing new writes nothing (S6); the UPDATE repeats the check in SQL and scopes to the owner. RED (module missing) then GREEN 4/4 for `isGameUnread`; suite 161/161; tsc and eslint clean. No runnable test for the two DB writes (no DB test harness); end-to-end check falls to T3/T4.
+  - Note for T4: the player watching the chat while a turn ends would see their own open game marked unread; the open chat must mark read on turn end.
+  - Noted, out of scope: `listGames` loads full rows, `messages` jsonb included, for the sidebar.

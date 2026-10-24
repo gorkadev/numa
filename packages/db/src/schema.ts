@@ -397,6 +397,16 @@ export const games = pgTable(
      * update pattern.
      */
     pinnedAt: timestamp("pinned_at", { withTimezone: true }),
+
+    /**
+     * When the agent last finished a turn of this game, and when the player
+     * last opened it. A finish later than the read is the sidebar's "something
+     * to read" signal (`isGameUnread`). Both are set with the database's
+     * `now()` so they share one clock, and both ride on the sidebar's existing
+     * `listGames` read rather than a query of their own.
+     */
+    lastTurnFinishedAt: timestamp("last_turn_finished_at", { withTimezone: true }),
+    lastReadAt: timestamp("last_read_at", { withTimezone: true }),
   },
   (table) => [
     /**
