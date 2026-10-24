@@ -7,6 +7,7 @@ import { Bubble, BubbleContent } from "@workspace/ui/components/bubble"
 import { Message, MessageContent } from "@workspace/ui/components/message"
 
 import { AskPlayer, AskPlayerAnswer } from "@/components/chat/ask-player"
+import { showsMessageActions } from "@/components/chat/actions-visibility"
 import { AssistantAvatar } from "@/components/chat/assistant-avatar"
 import { Markdown } from "@/components/chat/markdown"
 import { MessageActions } from "@/components/chat/message-actions"
@@ -194,9 +195,13 @@ function ChatMessageImpl({
          * same holds while a live stream is being reconnected, when the row
          * would otherwise appear beside the thinking indicator and move it.
          */}
-        {streaming || reconnecting || !last ? null : (
+        {showsMessageActions({
+          role,
+          live: streaming || reconnecting,
+          hasMessage: last !== undefined,
+        }) && last ? (
           <MessageActions message={last} copyText={runText(messages)} />
-        )}
+        ) : null}
       </MessageContent>
     </Message>
   )
