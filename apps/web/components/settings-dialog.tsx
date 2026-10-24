@@ -41,6 +41,7 @@ import {
 import type { BillingSummary } from "@/lib/polar/plan"
 import {
   SECTION_GROUPS,
+  SECTION_LABEL_KEYS,
   SECTIONS,
   type SectionId,
 } from "@/lib/settings/sections"
@@ -56,14 +57,6 @@ import {
 import { ThemePicker } from "@/components/settings/theme-picker"
 import { LocaleSwitcher } from "@/components/locale-switcher"
 import { useTranslations } from "next-intl"
-
-const SECTION_LABEL_KEYS = {
-  general: "preferencesTab",
-  account: "profileTab",
-  security: "securityTab",
-  billing: "billingTab",
-  shortcuts: "shortcutsTab",
-} as const satisfies Record<SectionId, string>
 
 /**
  * A settings surface shaped like the ChatGPT / Claude.ai settings modal: a

@@ -25,6 +25,18 @@ export type Section = {
 }
 
 /**
+ * Each section's name under the `Settings` messages; `label` above is the
+ * English fallback the type keeps, not what a reader sees.
+ */
+export const SECTION_LABEL_KEYS = {
+  general: "preferencesTab",
+  account: "profileTab",
+  security: "securityTab",
+  billing: "billingTab",
+  shortcuts: "shortcutsTab",
+} as const satisfies Record<SectionId, string>
+
+/**
  * The nav's sections, in the groups the sidebar renders them under.
  *
  * Grouping is the structure, not a decoration on top of a flat list: with

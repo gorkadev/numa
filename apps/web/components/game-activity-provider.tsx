@@ -10,6 +10,7 @@ import {
   activityTag,
   createActivityStore,
   finishedTurnNotices,
+  openGameIdOf,
   seenGameIds,
   workingGameIds,
   type ActivityStore,
@@ -57,7 +58,7 @@ export function GameActivityProvider({
     skipColumns: ["payload", "output"],
   })
 
-  const openGameId = OPEN_GAME.exec(usePathname())?.[1]
+  const openGameId = openGameIdOf(usePathname())
 
   useEffect(() => {
     store.setOpenGame(openGameId)
@@ -91,9 +92,6 @@ export function GameActivityProvider({
 
   return <ActivityContext value={store}>{children}</ActivityContext>
 }
-
-/** `/games/<id>`, with or without a locale prefix; not `/games/<id>/play`. */
-const OPEN_GAME = /\/games\/([^/]+)$/
 
 /** Whether this game's agent is mid-turn; re-renders only when that flips. */
 export function useGameWorking(gameId: string): boolean {

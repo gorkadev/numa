@@ -2,6 +2,7 @@
 
 import { useActionState, useState, startTransition } from "react"
 import { useTranslations } from "next-intl"
+import { useSearchParams } from "next/navigation"
 
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Button } from "@workspace/ui/components/button"
@@ -10,7 +11,7 @@ import { ChatComposer } from "@/components/chat-composer"
 import { DEFAULT_TIER_ID, type TierId } from "@/lib/ai/model-catalog"
 import { createGame } from "@/lib/games/actions"
 import {
-  DEFAULT_TEMPLATE_ID,
+  templateFromQuery,
   type TemplateId,
 } from "@/lib/games/templates/catalog"
 import { suggestions } from "@/lib/games/suggestions"
@@ -26,9 +27,32 @@ import { suggestions } from "@/lib/games/suggestions"
  */
 export function NewGameComposer() {
   const t = useTranslations("GameComposer")
-  const [value, setValue] = useState("")
+  const searchParams = useSearchParams()
+
+  /** `?prompt=` is the command palette's "Open in composer", seeded the same way as the template below. */
+  const queryPrompt = searchParams.get("prompt")
+  const [value, setValue] = useState(queryPrompt ?? "")
+  const [seededPrompt, setSeededPrompt] = useState(queryPrompt)
+  if (queryPrompt !== seededPrompt) {
+    setSeededPrompt(queryPrompt)
+    if (queryPrompt !== null) setValue(queryPrompt)
+  }
   const [tierId, setTierId] = useState<TierId>(DEFAULT_TIER_ID)
-  const [templateId, setTemplateId] = useState<TemplateId>(DEFAULT_TEMPLATE_ID)
+  const queryTemplate = searchParams.get("template")
+  const [templateId, setTemplateId] = useState<TemplateId>(() =>
+    templateFromQuery(queryTemplate)
+  )
+
+  /**
+   * The palette links here while this page may already be on screen, and a
+   * push to the same route keeps the composer mounted — so a new `?template=`
+   * has to replace the choice, not only seed it on mount.
+   */
+  const [seededTemplate, setSeededTemplate] = useState(queryTemplate)
+  if (queryTemplate !== seededTemplate) {
+    setSeededTemplate(queryTemplate)
+    setTemplateId(templateFromQuery(queryTemplate))
+  }
   const [state, formAction, pending] = useActionState(createGame, null)
 
   /**
