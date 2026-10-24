@@ -403,6 +403,7 @@
     "newGameFromTemplate": "Nueva partida desde plantilla",
     "createGame": "Crear partida",
     "createGameFromPrompt": "Crear partida: «{prompt}»",
+    "openInComposer": "Abrir en el composer para elegir modelo y plantilla",
     "recents": "Recientes",
     "messages": "Mensajes",
     "emptyGames": "Tus juegos aparecerán aquí.",

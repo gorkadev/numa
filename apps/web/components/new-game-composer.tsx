@@ -27,9 +27,18 @@ import { suggestions } from "@/lib/games/suggestions"
  */
 export function NewGameComposer() {
   const t = useTranslations("GameComposer")
-  const [value, setValue] = useState("")
+  const searchParams = useSearchParams()
+
+  /** `?prompt=` is the command palette's "Open in composer", seeded the same way as the template below. */
+  const queryPrompt = searchParams.get("prompt")
+  const [value, setValue] = useState(queryPrompt ?? "")
+  const [seededPrompt, setSeededPrompt] = useState(queryPrompt)
+  if (queryPrompt !== seededPrompt) {
+    setSeededPrompt(queryPrompt)
+    if (queryPrompt !== null) setValue(queryPrompt)
+  }
   const [tierId, setTierId] = useState<TierId>(DEFAULT_TIER_ID)
-  const queryTemplate = useSearchParams().get("template")
+  const queryTemplate = searchParams.get("template")
   const [templateId, setTemplateId] = useState<TemplateId>(() =>
     templateFromQuery(queryTemplate)
   )

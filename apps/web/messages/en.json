@@ -403,6 +403,7 @@
     "newGameFromTemplate": "New game from template",
     "createGame": "Create game",
     "createGameFromPrompt": "Create game: “{prompt}”",
+    "openInComposer": "Open in composer to pick model and template",
     "recents": "Recents",
     "messages": "Messages",
     "emptyGames": "Your games will live here.",

@@ -50,7 +50,11 @@ import { searchGameMessages, type MessageHit } from "@/lib/games/search-actions"
 import { openGameIdOf } from "@/lib/games/activity"
 import { DEFAULT_TEMPLATE_ID, TEMPLATES } from "@/lib/games/templates/catalog"
 import { backFrom, type PalettePage } from "@/lib/command-palette/pages"
-import { parseQuery, quickPromptOf } from "@/lib/command-palette/query"
+import {
+  composerHref,
+  parseQuery,
+  quickPromptOf,
+} from "@/lib/command-palette/query"
 import {
   formatShortcutKey,
   shortcutKeys,
@@ -426,6 +430,15 @@ export function CommandPalette({
                 <span className="truncate">
                   {t("createGameFromPrompt", { prompt: quickPrompt })}
                 </span>
+              </CommandItem>
+              <CommandItem
+                forceMount
+                value="open-prompt-in-composer"
+                disabled={creating}
+                onSelect={() => go(composerHref(quickPrompt))}
+              >
+                <HugeiconsIcon icon={PencilEdit02Icon} strokeWidth={2} />
+                <span className="truncate">{t("openInComposer")}</span>
               </CommandItem>
             </CommandGroup>
           )}

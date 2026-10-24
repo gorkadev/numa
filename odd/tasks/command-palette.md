@@ -19,6 +19,7 @@ Scope approved by the user ("Boff increíble, justo lo q necesitaba y estaba pen
 - **S9** Prefixes. "`>` para ver solo comandos, `#` para ver solo partidas."
 - **S10** Quick prompt. "**Pregunta rápida**: lo que escribes en el palette se convierte en el primer mensaje de una partida nueva («Crear partida: “juego de serpientes”»)."
 - **S11** Message search. "**Buscar dentro de los mensajes** de los chats, no solo en los títulos. Esto ya requiere un endpoint con búsqueda en Postgres (full-text o `ILIKE`), así que es la pieza más cara."
+- **S12** Pick model and template for a typed prompt. User: "cuando escribes libre y eso significa q quieres hacer un create game a partir de eso q estas escribiendo, no puedes ajustar ni modelo ni template no?" then "vale si, vamos a por la opcion 1 como mini mejora" (option 1: open the home composer with the text already written).
 
 ## Tasks
 
@@ -31,6 +32,7 @@ Scope approved by the user ("Boff increíble, justo lo q necesitaba y estaba pen
 - [x] T7 · S9 · `>` commands only, `#` games only; prefix stripped before cmdk's `defaultFilter`. Route: inline. Commit: see L6.
 - [x] T8 · S10 · "Create game: …" item that submits the typed text through `createGame`. Route: inline. Commit: see L6.
 - [x] T9 · S11 · owner-scoped message search server action, debounced, "Messages" group. Route: inline. Commit: see L6.
+- [x] T10 · S12 · "Open in composer" row: `/?prompt=<text>` seeds the home composer, where model and template are picked. Route: inline. Commit: see L7.
 
 ## Log
 
@@ -42,3 +44,4 @@ Scope approved by the user ("Boff increíble, justo lo q necesitaba y estaba pen
 - L6 (2026-10-24) Phase 2 T6-T9 done inline: 700b023 (S8, `formatShortcutKey`/`shortcutKeys` shared with the settings section), c0eca4d (S9, `parseQuery`; `CommandDialog` forwards `filter` and re-exports `defaultFilter`), 27b79a6 (S10, `quickPromptOf`, `createGame(null, formData)` in a transition, palette closes on pathname change), d501ae4 (S11, `searchGameMessages` owner-scoped lax jsonpath over text parts + `ILIKE ... escape`, `escapeLike`/`matchSnippet`, 250 ms debounce, stale replies dropped). RED then GREEN for each pure helper; suite 196/196; tsc and eslint clean. SQL validated against Postgres with literal CTE data only (tenant filter, non-text parts ignored, non-array rows skipped, `%` literal).
   - Independent verifier (Risk items 2 and 3): S8, S9, S11 pass (parameters `$1`/`$2`, one hit per game, `filter` additive, only `CommandDialog` user). Blocker in S10: cmdk 1.1.1 never registers a `forceMount` item with its group, so the "Create game" group was hidden whenever text was typed. Fixed by `forceMount` on the group; same commit hides `CommandEmpty` while the Create row shows, and the filter no longer strips `>`/`#` inside nested pages (advisories 1-2). Accepted: `matchSnippet` can drop a row ILIKE matched (Greek final sigma, doubled spaces in the query), only fewer hits; opening the palette mid-navigation closes it when the page lands.
   - Not observed in the browser yet (user).
+- L7 (2026-10-24) User: "vale si, vamos a por la opcion 1 como mini mejora. despues, commitea todo y push, y damos por cerrada esta mejora". Confirmed first: the quick prompt sends only `prompt`, so `createGame` uses `balanced` and no template. T10: `composerHref` (RED then GREEN, 6/6), composer seeds `?prompt=` like `?template=`. Suite 197/197, tsc and eslint clean. Feature closed and pushed; browser check left to the user.
