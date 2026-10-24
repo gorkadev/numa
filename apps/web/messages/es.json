@@ -79,7 +79,9 @@
     "cachedInput": "Entrada en caché",
     "output": "Salida",
     "contextUsed": "{percent} del contexto usado",
-    "contextUsedLabel": "Contexto usado"
+    "contextUsedLabel": "Contexto usado",
+    "free": "Libre",
+    "fromCache": "De caché"
   },
   "ChatAgents": {
     "trace": {

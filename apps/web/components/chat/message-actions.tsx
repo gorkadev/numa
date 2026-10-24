@@ -5,8 +5,10 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react"
 import { getToolName, isToolUIPart, type UIMessage } from "ai"
 import {
   Copy01Icon,
+  Database01Icon,
   MoreHorizontalIcon,
   Tick02Icon,
+  Wrench01Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useLocale, useTranslations } from "next-intl"
@@ -23,6 +25,11 @@ import {
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip"
 
+import {
+  UsagePanelHeader,
+  UsageRow,
+  UsageRows,
+} from "@/components/chat/usage-panel"
 import { readMessageMeta } from "@/lib/ai/message-meta"
 import {
   formatMessageTime,
@@ -244,7 +251,11 @@ function SpeechButton({ text }: { text: string }) {
           </>
         )}
       </svg>
-      {failed ? <span role="status" className="sr-only">{label}</span> : null}
+      {failed ? (
+        <span role="status" className="sr-only">
+          {label}
+        </span>
+      ) : null}
     </Button>
   )
 }
@@ -351,6 +362,8 @@ function SentAt({ at }: { at: number }) {
  */
 function DetailsButton({ message }: { message: UIMessage }) {
   const t = useTranslations("ChatMessages")
+  const locale = useLocale()
+  const count = new Intl.NumberFormat(locale)
   const meta = readMessageMeta(message)
   const tools = toolTally(message)
 
@@ -368,62 +381,61 @@ function DetailsButton({ message }: { message: UIMessage }) {
       >
         <HugeiconsIcon icon={MoreHorizontalIcon} strokeWidth={2} />
       </PopoverTrigger>
-      <PopoverContent align="start" className="gap-3">
+      <PopoverContent align="start" className="w-72 gap-4">
         {meta.tokens ? (
-          <section className="flex flex-col gap-1.5">
-            <h3 className="text-xs font-medium text-muted-foreground">
-              {t("tokens")}
-            </h3>
-            <dl className="flex flex-col gap-1 rounded-2xl bg-muted p-3 text-xs">
-              <Stat label={t("inputTokens")} value={meta.tokens.input} />
+          <section className="flex flex-col gap-3">
+            <UsagePanelHeader
+              icon={Database01Icon}
+              title={t("tokens")}
+              value={count.format(meta.tokens.input + meta.tokens.output)}
+            />
+            <UsageRows>
+              <UsageRow
+                label={t("inputTokens")}
+                value={count.format(meta.tokens.input)}
+              />
               {meta.tokens.cached > 0 ? (
-                <Stat label={t("cachedTokens")} value={meta.tokens.cached} />
-              ) : null}
-              <Stat label={t("outputTokens")} value={meta.tokens.output} />
-              {meta.tokens.reasoning > 0 ? (
-                <Stat label={t("reasoningTokens")} value={meta.tokens.reasoning} />
-              ) : null}
-              {meta.credits !== undefined ? (
-                <Stat
-                  label={t("credits")}
-                  value={meta.credits}
-                  className="border-t border-border pt-1 font-medium text-foreground"
+                <UsageRow
+                  label={t("cachedTokens")}
+                  value={count.format(meta.tokens.cached)}
                 />
               ) : null}
-            </dl>
+              <UsageRow
+                label={t("outputTokens")}
+                value={count.format(meta.tokens.output)}
+              />
+              {meta.tokens.reasoning > 0 ? (
+                <UsageRow
+                  label={t("reasoningTokens")}
+                  value={count.format(meta.tokens.reasoning)}
+                />
+              ) : null}
+              {meta.credits !== undefined ? (
+                <UsageRow
+                  strong
+                  label={t("credits")}
+                  value={count.format(meta.credits)}
+                />
+              ) : null}
+            </UsageRows>
           </section>
         ) : null}
         {tools.length > 0 ? (
-          <section className="flex flex-col gap-1.5">
-            <h3 className="text-xs font-medium text-muted-foreground">{t("tools")}</h3>
-            <dl className="flex flex-col gap-1 rounded-2xl bg-muted p-3 text-xs">
-              {tools.map(({ name, count }) => (
-                <Stat key={name} label={toolNoun(name, t)} value={count} />
+          <section className="flex flex-col gap-3">
+            <UsagePanelHeader icon={Wrench01Icon} title={t("tools")} />
+            <UsageRows>
+              {tools.map(({ name, count: uses }) => (
+                <UsageRow
+                  key={name}
+                  label={toolNoun(name, t)}
+                  value={count.format(uses)}
+                />
               ))}
-            </dl>
+            </UsageRows>
           </section>
         ) : null}
       </PopoverContent>
     </Popover>
-  )
-}
-
-function Stat({
-  label,
-  value,
-  className,
-}: {
-  label: string
-  value: number
-  className?: string
-}) {
-  return (
-    <div
-      className={`flex items-baseline justify-between gap-4 text-muted-foreground ${className ?? ""}`}
-    >
-      <dt className="min-w-0 truncate">{label}</dt>
-      <dd className="shrink-0 tabular-nums">{value.toLocaleString("en-US")}</dd>
-    </div>
   )
 }
 

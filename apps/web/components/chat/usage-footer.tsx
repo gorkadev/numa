@@ -11,6 +11,11 @@ import {
 } from "@workspace/ui/components/popover"
 import { Progress } from "@workspace/ui/components/progress"
 
+import {
+  UsagePanelHeader,
+  UsageRow,
+  UsageRows,
+} from "@/components/chat/usage-panel"
 import type { SessionUsage } from "@/lib/ai/session-usage"
 import type { ContextUsage } from "@/lib/games/context-usage"
 
@@ -64,6 +69,10 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS
  * step, so unlike the token total it falls again when compaction trims the
  * history. Clamped at 100%: a window cannot be more than full, and a reading
  * above it would only mean the declared window is out of date.
+ *
+ * The popover shows headroom, not tokens: input, output and reasoning already
+ * live in the token panel, and a sub-agent's window is its own, not a slice of
+ * this one.
  */
 function ContextRing({ context }: { context: ContextUsage }) {
   const t = useTranslations("ChatUsage")
@@ -122,6 +131,22 @@ function ContextRing({ context }: { context: ContextUsage }) {
           </span>
         </div>
         <Progress value={ratio * 100} aria-label={t("contextUsedLabel")} />
+        <UsageRows>
+          <UsageRow
+            label={t("free")}
+            value={t("tokens", {
+              count: compact.format(
+                Math.max(context.window - context.tokens, 0)
+              ),
+            })}
+          />
+          {context.cached !== undefined ? (
+            <UsageRow
+              label={t("fromCache")}
+              value={t("tokens", { count: compact.format(context.cached) })}
+            />
+          ) : null}
+        </UsageRows>
       </PopoverContent>
     </Popover>
   )
@@ -139,6 +164,7 @@ function TokenUsage({ usage }: { usage: SessionUsage }) {
     style: "percent",
     maximumFractionDigits: 0,
   })
+  const tokens = (count: number) => t("tokens", { count: exact.format(count) })
 
   return (
     <Popover>
@@ -159,44 +185,21 @@ function TokenUsage({ usage }: { usage: SessionUsage }) {
         })}
       </PopoverTrigger>
       <PopoverContent align="center" side="top" className="w-72 gap-3">
-        <div className="flex items-center justify-between gap-3 text-sm font-medium">
-          <span className="flex items-center gap-2">
-            <HugeiconsIcon
-              icon={Database01Icon}
-              strokeWidth={2}
-              className="size-4"
-            />
-            {t("tokenUsage")}
-          </span>
-          <span className="tabular-nums">
-            {t("tokens", { count: exact.format(usage.total) })}
-          </span>
-        </div>
-        <dl className="flex flex-col gap-1.5 border-t border-border pt-3 text-sm text-muted-foreground">
-          <Row label={t("cacheHit")} value={percent.format(usage.cacheHit)} />
-          <Row
-            label={t("uncachedInput")}
-            value={t("tokens", { count: exact.format(usage.uncached) })}
+        <UsagePanelHeader
+          icon={Database01Icon}
+          title={t("tokenUsage")}
+          value={tokens(usage.total)}
+        />
+        <UsageRows>
+          <UsageRow
+            label={t("cacheHit")}
+            value={percent.format(usage.cacheHit)}
           />
-          <Row
-            label={t("cachedInput")}
-            value={t("tokens", { count: exact.format(usage.cached) })}
-          />
-          <Row
-            label={t("output")}
-            value={t("tokens", { count: exact.format(usage.output) })}
-          />
-        </dl>
+          <UsageRow label={t("uncachedInput")} value={tokens(usage.uncached)} />
+          <UsageRow label={t("cachedInput")} value={tokens(usage.cached)} />
+          <UsageRow label={t("output")} value={tokens(usage.output)} />
+        </UsageRows>
       </PopoverContent>
     </Popover>
-  )
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-baseline justify-between gap-4">
-      <dt className="min-w-0 truncate">{label}</dt>
-      <dd className="shrink-0 tabular-nums">{value}</dd>
-    </div>
   )
 }
