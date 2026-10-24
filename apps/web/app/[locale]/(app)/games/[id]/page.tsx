@@ -38,8 +38,18 @@ export default async function GamePage({
 
   if (!game) notFound()
 
-  /** Opening the game is what reads it; a game with nothing new writes nothing. */
-  if (isGameUnread(game)) await markGameRead(game.id, game.userId)
+  /**
+   * Opening the game is what reads it; a game with nothing new writes nothing.
+   * A failed write only leaves the unread dot showing, so it must never take
+   * the page down with it.
+   */
+  if (isGameUnread(game)) {
+    try {
+      await markGameRead(game.id, game.userId)
+    } catch (error) {
+      console.error("Failed to mark game as read", error)
+    }
+  }
 
   /**
    * The persisted thread is rendered on the server, so a reload restores the
