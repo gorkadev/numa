@@ -190,7 +190,11 @@ export function CommandPalette({
         open={open}
         onOpenChange={setOpen}
         filter={(value, _search, keywords) =>
-          defaultFilter(value, parseQuery(search).text, keywords)
+          defaultFilter(
+            value,
+            page ? search : parseQuery(search).text,
+            keywords
+          )
         }
         title={t("commandPalette")}
         description={t("commandPaletteDescription")}
@@ -215,7 +219,8 @@ export function CommandPalette({
           }}
         />
         <CommandList>
-          <CommandEmpty>{t("noResults")}</CommandEmpty>
+          {/* cmdk counts only filtered rows, so it would show beside the always-there Create row. */}
+          {!quickPrompt && <CommandEmpty>{t("noResults")}</CommandEmpty>}
           {page === "theme" && (
             <CommandGroup heading={settings("theme")}>
               {THEMES.map((option) => (
@@ -398,7 +403,11 @@ export function CommandPalette({
             </CommandGroup>
           )}
           {quickPrompt && (
-            <CommandGroup heading={t("createGame")}>
+            /**
+             * The group needs `forceMount` as well: cmdk hides a group with no
+             * matching registered row, and a force-mounted row never registers.
+             */
+            <CommandGroup heading={t("createGame")} forceMount>
               {/**
                * Always mounted, whatever the filter says: it is the answer to
                * the search itself, so it would never match its own text.
