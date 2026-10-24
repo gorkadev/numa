@@ -39,11 +39,13 @@ test("stamps the turn's context reading on the reply", () => {
   const stamped = withTurnMeta([assistant()], cost(1, 1), {
     tokens: 16_700,
     window: 1_048_576,
+    cached: 9_000,
   })
 
   assert.deepEqual(readMessageMeta(stamped[0]!).context, {
     tokens: 16_700,
     window: 1_048_576,
+    cached: 9_000,
   })
 })
 

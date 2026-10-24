@@ -46,6 +46,7 @@ const messageMetaSchema = z.object({
     .object({
       tokens: z.number(),
       window: z.number(),
+      cached: z.number().optional(),
     })
     .optional(),
 })

@@ -939,7 +939,8 @@ export const gameChat = chat.agent({
         try {
           const context = contextUsageOf(
             usage.inputTokens,
-            entryContextWindow(orchestratorEntryId())
+            entryContextWindow(orchestratorEntryId()),
+            usage.inputTokenDetails?.cacheReadTokens
           )
 
           if (!context) return

@@ -13,6 +13,12 @@ export type ContextUsage = {
   tokens: number
   /** The serving model's window, resolved on the server so the browser keeps no model table. */
   window: number
+  /**
+   * How much of `tokens` the provider served from its cache. Optional because
+   * readings stamped before it existed carry none; a reading taken now always
+   * has it (zero when the provider reported no cache hit).
+   */
+  cached?: number
 }
 
 const PART_TYPE = "data-context-usage"
@@ -31,11 +37,12 @@ const PART_TYPE = "data-context-usage"
  */
 export function contextUsageOf(
   inputTokens: number | undefined,
-  window: number
+  window: number,
+  cachedTokens?: number
 ): ContextUsage | null {
   if (!inputTokens || inputTokens <= 0) return null
 
-  return { tokens: inputTokens, window }
+  return { tokens: inputTokens, window, cached: cachedTokens ?? 0 }
 }
 
 /**
@@ -62,9 +69,17 @@ export function readContextUsage(part: {
 
   if (typeof data !== "object" || data === null) return null
 
-  const { tokens, window } = data as { tokens?: unknown; window?: unknown }
+  const { tokens, window, cached } = data as {
+    tokens?: unknown
+    window?: unknown
+    cached?: unknown
+  }
 
   if (typeof tokens !== "number" || typeof window !== "number") return null
 
-  return window > 0 ? { tokens, window } : null
+  if (cached !== undefined && typeof cached !== "number") return null
+
+  if (window <= 0) return null
+
+  return cached === undefined ? { tokens, window } : { tokens, window, cached }
 }
