@@ -55,6 +55,14 @@ export function isTemplateId(value: unknown): value is TemplateId {
   return templateIdSchema.safeParse(value).success
 }
 
+/**
+ * The template a `?template=` link asks for, so the command palette can open
+ * the home composer with a kit already chosen; anything unknown is ignored.
+ */
+export function templateFromQuery(value: string | null): TemplateId {
+  return isTemplateId(value) ? value : DEFAULT_TEMPLATE_ID
+}
+
 export function getTemplate(id: TemplateId): GameTemplate {
   const template = TEMPLATES.find((candidate) => candidate.id === id)
 

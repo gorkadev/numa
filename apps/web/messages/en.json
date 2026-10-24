@@ -400,6 +400,7 @@
     "sidebarDrawerTitle": "Navigation menu",
     "sidebarDrawerDescription": "Navigate the application using the sidebar.",
     "newGame": "New game",
+    "newGameFromTemplate": "New game from template",
     "recents": "Recents",
     "emptyGames": "Your games will live here.",
     "pinned": "Pinned",

@@ -8,6 +8,7 @@ import { useTheme } from "next-themes"
 import {
   ComputerIcon,
   Delete02Icon,
+  LayoutTemplateIcon,
   MessageCircleIcon,
   Moon02Icon,
   PaintBoardIcon,
@@ -36,15 +37,9 @@ import { LOCALE_OPTIONS, useChangeLocale } from "@/components/locale-switcher"
 import { useSettingsDialog } from "@/hooks/use-settings-dialog"
 import { setGamePinned } from "@/lib/games/actions"
 import { openGameIdOf } from "@/lib/games/activity"
+import { DEFAULT_TEMPLATE_ID, TEMPLATES } from "@/lib/games/templates/catalog"
 import { backFrom, type PalettePage } from "@/lib/command-palette/pages"
 import { SECTION_LABEL_KEYS, SECTIONS } from "@/lib/settings/sections"
-
-/** Each nested page's name, under the `Settings` messages it shares with the dialog. */
-const PAGE_TITLE_KEYS = {
-  theme: "theme",
-  language: "language",
-  templates: "theme",
-} as const satisfies Record<PalettePage, string>
 
 const THEMES = [
   { value: "light", label: "lightTheme", icon: Sun03Icon },
@@ -72,6 +67,7 @@ export function CommandPalette({
   const t = useTranslations("Shell")
   const gameMenu = useTranslations("GameMenu")
   const settings = useTranslations("Settings")
+  const composer = useTranslations("GameComposer")
   const { openSettings } = useSettingsDialog()
   const { theme, setTheme } = useTheme()
   const locale = useLocale()
@@ -135,7 +131,11 @@ export function CommandPalette({
       >
         <CommandInput
           placeholder={
-            page ? settings(PAGE_TITLE_KEYS[page]) : t("searchGamesAndActions")
+            page === "templates"
+              ? t("newGameFromTemplate")
+              : page
+                ? settings(page)
+                : t("searchGamesAndActions")
           }
           value={search}
           onValueChange={setSearch}
@@ -189,6 +189,29 @@ export function CommandPalette({
               ))}
             </CommandGroup>
           )}
+          {page === "templates" && (
+            <CommandGroup heading={t("newGameFromTemplate")}>
+              {/* "No template" is plain "New game", already one level up. */}
+              {TEMPLATES.filter(
+                (template) => template.id !== DEFAULT_TEMPLATE_ID
+              ).map((template) => (
+                <CommandItem
+                  key={template.id}
+                  onSelect={() => go(`/?template=${template.id}`)}
+                >
+                  <HugeiconsIcon icon={LayoutTemplateIcon} strokeWidth={2} />
+                  <div className="flex min-w-0 flex-col">
+                    <span className="truncate">
+                      {composer(`templates.${template.id}.label`)}
+                    </span>
+                    <span className="truncate text-xs text-muted-foreground">
+                      {composer(`templates.${template.id}.tagline`)}
+                    </span>
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          )}
           {!page && currentGame && (
             <CommandGroup heading={t("currentGame")}>
               <CommandItem
@@ -227,6 +250,10 @@ export function CommandPalette({
                 <CommandItem value={t("newGame")} onSelect={() => go("/")}>
                   <HugeiconsIcon icon={PencilEdit02Icon} strokeWidth={2} />
                   {t("newGame")}
+                </CommandItem>
+                <CommandItem onSelect={() => enter("templates")}>
+                  <HugeiconsIcon icon={LayoutTemplateIcon} strokeWidth={2} />
+                  {t("newGameFromTemplate")}
                 </CommandItem>
               </CommandGroup>
               <CommandGroup heading={t("goTo")}>

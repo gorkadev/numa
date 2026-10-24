@@ -400,6 +400,7 @@
     "sidebarDrawerTitle": "Menú de navegación",
     "sidebarDrawerDescription": "Navega por la aplicación con la barra lateral.",
     "newGame": "Nuevo juego",
+    "newGameFromTemplate": "Nueva partida desde plantilla",
     "recents": "Recientes",
     "emptyGames": "Tus juegos aparecerán aquí.",
     "pinned": "Fijados",
