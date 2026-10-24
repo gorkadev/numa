@@ -9,8 +9,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
+import { Progress } from "@workspace/ui/components/progress"
 
 import type { SessionUsage } from "@/lib/ai/session-usage"
+import type { ContextUsage } from "@/lib/games/context-usage"
 
 /**
  * What this chat has spent so far, as one quiet line under the composer.
@@ -25,13 +27,94 @@ import type { SessionUsage } from "@/lib/ai/session-usage"
  * Renders nothing before the first priced turn: a row of zeros under a fresh
  * chat would read as a free session rather than an empty one.
  */
-export function UsageFooter({ usage }: { usage: SessionUsage | null }) {
-  if (!usage) return null
+export function UsageFooter({
+  usage,
+  context,
+}: {
+  usage: SessionUsage | null
+  context: ContextUsage | null
+}) {
+  if (!usage && !context) return null
 
   return (
     <div className="flex items-center justify-center gap-1 pt-1 text-muted-foreground">
-      <TokenUsage usage={usage} />
+      {usage ? <TokenUsage usage={usage} /> : null}
+      {context ? <ContextRing context={context} /> : null}
     </div>
+  )
+}
+
+const RING_RADIUS = 6
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS
+
+/**
+ * How full the model's window is: the share of the window the latest request
+ * used, as a small ring that opens a popover with the numbers behind it.
+ *
+ * The reading is the provider-reported input of the orchestrator's latest
+ * step, so unlike the token total it falls again when compaction trims the
+ * history. Clamped at 100%: a window cannot be more than full, and a reading
+ * above it would only mean the declared window is out of date.
+ */
+function ContextRing({ context }: { context: ContextUsage }) {
+  const t = useTranslations("ChatUsage")
+  const locale = useLocale()
+  const ratio = Math.min(context.tokens / context.window, 1)
+  const compact = new Intl.NumberFormat(locale, {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  })
+  const percent = new Intl.NumberFormat(locale, {
+    style: "percent",
+    maximumFractionDigits: 0,
+  }).format(ratio)
+
+  return (
+    <Popover>
+      <PopoverTrigger
+        render={
+          <Button
+            type="button"
+            variant="ghost"
+            size="xs"
+            aria-label={t("contextUsed", { percent })}
+            className="font-normal text-muted-foreground tabular-nums"
+          />
+        }
+      >
+        <svg viewBox="0 0 16 16" className="size-4 -rotate-90" aria-hidden>
+          <circle
+            cx="8"
+            cy="8"
+            r={RING_RADIUS}
+            fill="none"
+            strokeWidth="2"
+            className="stroke-muted"
+          />
+          <circle
+            cx="8"
+            cy="8"
+            r={RING_RADIUS}
+            fill="none"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeDasharray={RING_CIRCUMFERENCE}
+            strokeDashoffset={RING_CIRCUMFERENCE * (1 - ratio)}
+            className="stroke-current"
+          />
+        </svg>
+        {percent}
+      </PopoverTrigger>
+      <PopoverContent align="center" side="top" className="w-72 gap-3">
+        <div className="flex items-baseline justify-between gap-3 text-sm">
+          <span className="font-medium">{t("contextUsed", { percent })}</span>
+          <span className="text-muted-foreground tabular-nums">
+            {compact.format(context.tokens)} / {compact.format(context.window)}
+          </span>
+        </div>
+        <Progress value={ratio * 100} aria-label={t("contextUsedLabel")} />
+      </PopoverContent>
+    </Popover>
   )
 }
 

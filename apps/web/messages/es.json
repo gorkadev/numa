@@ -77,7 +77,9 @@
     "cacheHit": "Acierto de caché",
     "uncachedInput": "Entrada sin caché",
     "cachedInput": "Entrada en caché",
-    "output": "Salida"
+    "output": "Salida",
+    "contextUsed": "{percent} del contexto usado",
+    "contextUsedLabel": "Contexto usado"
   },
   "ChatAgents": {
     "trace": {

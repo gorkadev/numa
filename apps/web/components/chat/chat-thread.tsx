@@ -28,7 +28,7 @@ import { TaskStrip } from "@/components/chat/task-strip"
 import { Thinking } from "@/components/chat/thinking"
 import { useGameChat } from "@/components/chat/use-game-chat"
 import type { TierId } from "@/lib/ai/model-catalog"
-import { sumSessionUsage } from "@/lib/ai/session-usage"
+import { latestContextUsage, sumSessionUsage } from "@/lib/ai/session-usage"
 import { UsageFooter } from "@/components/chat/usage-footer"
 import { gameBuildProgressLabelKey } from "@/lib/games/build-progress"
 import type { SubagentRunRecord } from "@/lib/games/harness/records"
@@ -97,6 +97,7 @@ export function ChatThread({
     error,
     buildProgress,
     failureKind,
+    liveContext,
     stop,
     onAnswer,
     send,
@@ -150,6 +151,14 @@ export function ChatThread({
    */
   const taskStripTasks = useMemo(() => deriveTaskStrip(messages), [messages])
   const sessionUsage = useMemo(() => sumSessionUsage(messages), [messages])
+  /**
+   * The stream's live reading wins while a turn runs; the newest reply's
+   * stamped reading covers a thread opened fresh after a reload.
+   */
+  const contextUsage = useMemo(
+    () => liveContext ?? latestContextUsage(messages),
+    [liveContext, messages]
+  )
   const showTaskStrip = shouldShowTaskStrip(taskStripTasks, pending)
   const buildProgressKey = gameBuildProgressLabelKey(buildProgress)
   const buildProgressLabel = buildProgressKey === null ? null : t(buildProgressKey)
@@ -259,7 +268,7 @@ export function ChatThread({
           onTierChange={setTierId}
           pending={pending}
           placeholder={t("placeholder")}
-          usageSlot={<UsageFooter usage={sessionUsage} />}
+          usageSlot={<UsageFooter usage={sessionUsage} context={contextUsage} />}
           tasksSlot={
             showTaskStrip || buildProgressLabel ? (
               <div className="flex flex-col gap-2">

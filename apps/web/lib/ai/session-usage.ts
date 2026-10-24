@@ -1,6 +1,6 @@
 import type { UIMessage } from "ai"
 
-import { readMessageMeta } from "./message-meta"
+import { readMessageMeta, type MessageMeta } from "./message-meta"
 
 /**
  * What a chat has spent so far, in the terms a usage footer shows.
@@ -58,4 +58,28 @@ export function sumSessionUsage(messages: UIMessage[]): SessionUsage | null {
     output,
     cacheHit: input === 0 ? 0 : cached / input,
   }
+}
+
+/**
+ * The context-window reading `withTurnMeta` stamped on the newest reply that
+ * has one, or `null` for a thread with none (every reply predates the reading,
+ * or no turn has finished yet).
+ *
+ * The newest wins rather than a sum: it is where the window stands now, and it
+ * shrinks again when compaction trims the history.
+ */
+export function latestContextUsage(
+  messages: UIMessage[]
+): NonNullable<MessageMeta["context"]> | null {
+  for (let index = messages.length - 1; index >= 0; index--) {
+    const message = messages[index]
+
+    if (message?.role !== "assistant") continue
+
+    const { context } = readMessageMeta(message)
+
+    if (context) return context
+  }
+
+  return null
 }

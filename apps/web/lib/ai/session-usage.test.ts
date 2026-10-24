@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import test from "node:test"
 import type { UIMessage } from "ai"
 
-import { sumSessionUsage } from "./session-usage"
+import { latestContextUsage, sumSessionUsage } from "./session-usage"
 
 function reply(tokens?: {
   input: number
@@ -74,4 +74,20 @@ test("a session with zero input reports a cache hit of zero, not NaN", () => {
   ])
 
   assert.equal(usage?.cacheHit, 0)
+})
+
+test("the latest context reading is the newest reply that carries one", () => {
+  const withContext = (tokens: number): UIMessage => ({
+    id: crypto.randomUUID(),
+    role: "assistant",
+    parts: [],
+    metadata: { context: { tokens, window: 1_000 } },
+  })
+
+  assert.equal(latestContextUsage([]), null)
+  assert.equal(latestContextUsage([reply()]), null)
+  assert.deepEqual(
+    latestContextUsage([withContext(10), withContext(40), reply()]),
+    { tokens: 40, window: 1_000 }
+  )
 })

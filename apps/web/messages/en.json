@@ -77,7 +77,9 @@
     "cacheHit": "Cache hit",
     "uncachedInput": "Uncached input",
     "cachedInput": "Cached input",
-    "output": "Output"
+    "output": "Output",
+    "contextUsed": "{percent} of context used",
+    "contextUsedLabel": "Context used"
   },
   "ChatAgents": {
     "trace": {

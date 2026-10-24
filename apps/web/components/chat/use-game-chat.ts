@@ -20,6 +20,7 @@ import {
   withoutGameProgress,
   type GameBuildProgressEvent,
 } from "@/lib/games/build-progress"
+import { readContextUsage, type ContextUsage } from "@/lib/games/context-usage"
 import { readGameRevision } from "@/lib/games/revision"
 import type { AskPlayerOutput } from "@/lib/games/tools"
 import { readTurnCredits } from "@/lib/games/turn-credits"
@@ -93,6 +94,12 @@ export function useGameChat({
   }, [])
   const threadMessages = useMemo(() => withoutGameProgress(initialMessages), [initialMessages])
   const [failureKind, setFailureKind] = useState<ChatFailureKind>(null)
+  /**
+   * The orchestrator's latest context reading from the stream. Kept apart from
+   * `messages` because the part is transient; the durable copy rides on each
+   * reply's metadata and covers a reload (see `latestContextUsage`).
+   */
+  const [liveContext, setLiveContext] = useState<ContextUsage | null>(null)
 
   /**
    * The tier the next turn is sent with. It lives here rather than in the
@@ -269,6 +276,10 @@ export function useGameChat({
       const credits = readTurnCredits(part)
 
       if (credits !== null) publishTurnCredits(credits)
+
+      const context = readContextUsage(part)
+
+      if (context !== null) setLiveContext(context)
 
       const phase = readGameProgress(part)
 
@@ -469,6 +480,7 @@ export function useGameChat({
     error,
     buildProgress,
     failureKind,
+    liveContext,
     stop: stopBuild,
     onAnswer,
     send: handleSubmit,
