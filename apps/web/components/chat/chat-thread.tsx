@@ -32,6 +32,7 @@ import {
   latestContextUsage,
   sumSessionActivity,
   sumSessionSpeed,
+  sumSessionTiming,
   sumSessionUsage,
 } from "@/lib/ai/session-usage"
 import { UsageFooter } from "@/components/chat/usage-footer"
@@ -160,6 +161,7 @@ export function ChatThread({
   const taskStripTasks = useMemo(() => deriveTaskStrip(messages), [messages])
   const sessionUsage = useMemo(() => sumSessionUsage(messages), [messages])
   const sessionSpeed = useMemo(() => sumSessionSpeed(messages), [messages])
+  const sessionTiming = useMemo(() => sumSessionTiming(messages), [messages])
   const sessionActivity = useMemo(() => sumSessionActivity(messages), [messages])
   /**
    * The stream's live reading wins while a turn runs; the newest reply's
@@ -291,6 +293,7 @@ export function ChatThread({
               usage={sessionUsage}
               speed={sessionSpeed}
               activity={sessionActivity}
+              timing={sessionTiming}
               context={contextUsage}
             />
           }

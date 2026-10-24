@@ -1,6 +1,7 @@
 import type { UIMessage } from "ai"
 
 import { addSpeed, type GenerationSpeed } from "@/lib/games/generation-speed"
+import { addTiming, type StepTimingTotals } from "@/lib/games/step-timing"
 import { readMessageMeta, type MessageMeta } from "./message-meta"
 
 /**
@@ -128,4 +129,21 @@ export function sumSessionActivity(messages: UIMessage[]): {
   }
 
   return { turns, steps }
+}
+
+/** Every reply's timing added up, or `null` when none carries one. */
+export function sumSessionTiming(
+  messages: UIMessage[]
+): StepTimingTotals | null {
+  let total: StepTimingTotals | null = null
+
+  for (const message of messages) {
+    if (message.role !== "assistant") continue
+
+    const { timing } = readMessageMeta(message)
+
+    if (timing) total = total ? addTiming(total, timing) : timing
+  }
+
+  return total
 }

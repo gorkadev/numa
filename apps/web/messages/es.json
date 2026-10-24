@@ -72,6 +72,11 @@
   },
   "ChatUsage": {
     "speed": "tok/s",
+    "sessionStatistics": "Estadísticas de la sesión",
+    "llmTime": "Tiempo de LLM",
+    "toolTime": "Tiempo de herramientas",
+    "avgTtft": "Tiempo medio hasta el primer token (TTFT)",
+    "tps": "Tokens por segundo (TPS)",
     "turns": "{count, plural, one {turno} other {turnos}}",
     "steps": "{count, plural, one {paso} other {pasos}}",
     "summaryLabel": "tok · Caché",

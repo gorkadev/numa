@@ -1,6 +1,6 @@
 "use client"
 
-import { Database01Icon } from "@hugeicons/core-free-icons"
+import { Database01Icon, Timer01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useLocale, useTranslations } from "next-intl"
 import { Button } from "@workspace/ui/components/button"
@@ -23,6 +23,11 @@ import {
   tokensPerSecond,
   type GenerationSpeed,
 } from "@/lib/games/generation-speed"
+import {
+  averageTtft,
+  formatDuration,
+  type StepTimingTotals,
+} from "@/lib/games/step-timing"
 
 /**
  * What this chat has spent so far, as one quiet line under the composer.
@@ -42,16 +47,18 @@ export function UsageFooter({
   usage,
   speed,
   activity,
+  timing,
   context,
 }: {
   usage: SessionUsage | null
   speed: GenerationSpeed | null
   activity: { turns: number; steps: number }
+  timing: StepTimingTotals | null
   context: ContextUsage
 }) {
   return (
     <div className="flex items-center justify-center gap-1 py-1 text-muted-foreground">
-      <GenerationRate speed={speed} activity={activity} />
+      <SessionStatistics speed={speed} activity={activity} timing={timing} />
       <TokenUsage usage={usage ?? EMPTY_USAGE} />
       <ContextRing context={context} />
     </div>
@@ -60,30 +67,72 @@ export function UsageFooter({
 
 /**
  * The orchestrator's turns, steps and generation speed over the session, as
- * plain text for now: the popover with the statistics behind it comes later. Zero until a reply
- * has been measured, for the same reason the other groups start at zero.
+ * the trigger of the statistics behind it. Zero until a reply has been
+ * measured, for the same reason the other groups start at zero.
+ *
+ * Everything here is the orchestrator's alone: sub-agents run in parallel with
+ * their own clocks, so adding them would make "time" mean work, not what the
+ * reader waited for.
  */
-function GenerationRate({
+function SessionStatistics({
   speed,
   activity,
+  timing,
 }: {
   speed: GenerationSpeed | null
   activity: { turns: number; steps: number }
+  timing: StepTimingTotals | null
 }) {
   const t = useTranslations("ChatUsage")
+  const locale = useLocale()
+  const rate = speed ? Math.round(tokensPerSecond(speed)) : 0
+  const ttft = timing ? averageTtft(timing) : null
+  const none = "—"
 
   return (
-    <span className="flex items-center gap-1 px-2 text-xs tabular-nums">
-      <AnimatedNumber value={activity.turns} />
-      {t("turns", { count: activity.turns })}
-      <AnimatedNumber value={activity.steps} />
-      {t("steps", { count: activity.steps })}
-      <span aria-hidden>·</span>
-      <AnimatedNumber
-        value={speed ? Math.round(tokensPerSecond(speed)) : 0}
-        suffix={` ${t("speed")}`}
-      />
-    </span>
+    <Popover>
+      <PopoverTrigger
+        render={
+          <Button
+            type="button"
+            variant="ghost"
+            size="xs"
+            className="font-normal text-muted-foreground tabular-nums"
+          />
+        }
+      >
+        <AnimatedNumber value={activity.turns} />
+        {t("turns", { count: activity.turns })}
+        <AnimatedNumber value={activity.steps} />
+        {t("steps", { count: activity.steps })}
+        <span aria-hidden>·</span>
+        <AnimatedNumber value={rate} suffix={` ${t("speed")}`} />
+      </PopoverTrigger>
+      <PopoverContent align="center" side="top" className="w-72 gap-3">
+        <UsagePanelHeader
+          icon={Timer01Icon}
+          title={t("sessionStatistics")}
+        />
+        <UsageRows>
+          <UsageRow
+            label={t("llmTime")}
+            value={timing ? formatDuration(timing.llmMs, locale) : none}
+          />
+          <UsageRow
+            label={t("toolTime")}
+            value={timing ? formatDuration(timing.toolMs, locale) : none}
+          />
+          <UsageRow
+            label={t("avgTtft")}
+            value={ttft === null ? none : formatDuration(ttft, locale)}
+          />
+          <UsageRow
+            label={t("tps")}
+            value={speed ? `${rate} ${t("speed")}` : none}
+          />
+        </UsageRows>
+      </PopoverContent>
+    </Popover>
   )
 }
 

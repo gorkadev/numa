@@ -6,6 +6,7 @@ import {
   latestContextUsage,
   sumSessionActivity,
   sumSessionSpeed,
+  sumSessionTiming,
   sumSessionUsage,
 } from "./session-usage"
 
@@ -126,5 +127,20 @@ test("session activity counts replies with a receipt and sums their steps", () =
   assert.deepEqual(sumSessionActivity([user, priced(3), user, priced(2), priced()]), {
     turns: 3,
     steps: 5,
+  })
+})
+
+test("session timing sums every reply's timing and is null without any", () => {
+  const withTiming = (llmMs: number, ttftMs: number): UIMessage => ({
+    ...reply(),
+    metadata: { timing: { llmMs, toolMs: 10, ttftMs, ttftSteps: 1 } },
+  })
+
+  assert.equal(sumSessionTiming([reply()]), null)
+  assert.deepEqual(sumSessionTiming([withTiming(700, 400), reply(), withTiming(300, 200)]), {
+    llmMs: 1_000,
+    toolMs: 20,
+    ttftMs: 600,
+    ttftSteps: 2,
   })
 })

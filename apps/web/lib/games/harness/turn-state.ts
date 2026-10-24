@@ -5,6 +5,7 @@ import type { ModelEntryId, ServedCall, Slot } from "@/lib/ai/model-registry"
 import type { AgentUsageEntry } from "@/lib/ai/pricing"
 import type { ContextUsage } from "@/lib/games/context-usage"
 import { addSpeed, type GenerationSpeed } from "@/lib/games/generation-speed"
+import { addTiming, type StepTimingTotals } from "@/lib/games/step-timing"
 
 export type TurnVerifyOutcome = "not-run" | "pass" | "fail" | "unavailable" | "refused"
 
@@ -106,6 +107,8 @@ type TurnStateData = {
   speed: GenerationSpeed | undefined
   /** Orchestrator steps finished so far this turn. */
   steps: number
+  /** Where the orchestrator's time went so far this turn, summed over steps. */
+  timing: StepTimingTotals | undefined
 }
 
 const local = chat.local<TurnStateData>({ id: "turnState" })
@@ -215,6 +218,16 @@ export const turnState = {
     local.speed = local.speed ? addSpeed(local.speed, speed) : speed
   },
 
+  /** Adds one orchestrator step's timing to the turn's totals. */
+  addTiming(timing: StepTimingTotals): void {
+    local.timing = local.timing ? addTiming(local.timing, timing) : timing
+  },
+
+  /** The turn's timing totals, guarded by turn like `contextFor`. */
+  timingFor(turn: number): StepTimingTotals | undefined {
+    return local.turn === turn ? local.timing : undefined
+  },
+
   /** Counts one finished orchestrator step. */
   addStep(): void {
     local.steps += 1
@@ -316,6 +329,7 @@ export const turnState = {
       context: undefined,
       speed: undefined,
       steps: 0,
+      timing: undefined,
     })
   },
 

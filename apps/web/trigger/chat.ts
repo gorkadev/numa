@@ -15,6 +15,7 @@ import { orchestratorModelSettings } from "@/lib/ai/agent"
 import { turnMetaChunk, withTurnMeta } from "@/lib/ai/message-meta"
 import { contextUsageChunk, contextUsageOf } from "@/lib/games/context-usage"
 import { speedOfStep } from "@/lib/games/generation-speed"
+import { timingOfStep } from "@/lib/games/step-timing"
 import { withThreadTier } from "@/lib/ai/message-model"
 import { tierIdSchema } from "@/lib/ai/model-catalog"
 import {
@@ -751,7 +752,8 @@ export const gameChat = chat.agent({
         cost,
         turnState.contextFor(turn),
         turnState.speedFor(turn),
-        turnState.stepsFor(turn)
+        turnState.stepsFor(turn),
+        turnState.timingFor(turn)
       )
 
       if (receipt) writer.write(receipt)
@@ -848,7 +850,8 @@ export const gameChat = chat.agent({
           cost,
           turnState.contextFor(turn),
           turnState.speedFor(turn),
-          turnState.stepsFor(turn)
+          turnState.stepsFor(turn),
+          turnState.timingFor(turn)
         )
       ),
       chatAccessToken,
@@ -952,8 +955,10 @@ export const gameChat = chat.agent({
           const speed = speedOfStep(usage.outputTokens, performance)
 
           if (speed) turnState.addSpeed(speed)
+
+          turnState.addTiming(timingOfStep(performance))
         } catch (error) {
-          logger.warn("Could not record the generation speed", { error })
+          logger.warn("Could not record the generation speed and timing", { error })
         }
 
         /**

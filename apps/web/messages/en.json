@@ -72,6 +72,11 @@
   },
   "ChatUsage": {
     "speed": "tok/s",
+    "sessionStatistics": "Session statistics",
+    "llmTime": "LLM time",
+    "toolTime": "Tool time",
+    "avgTtft": "Avg time to first token (TTFT)",
+    "tps": "Tokens per second (TPS)",
     "turns": "{count, plural, one {turn} other {turns}}",
     "steps": "{count, plural, one {step} other {steps}}",
     "summaryLabel": "tok · Cache hit",

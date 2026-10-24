@@ -176,3 +176,20 @@ test("the live receipt carries the same step count the persisted reply will", ()
   )
   assert.equal(readMessageMeta(stamped!).steps, 4)
 })
+
+test("timing accumulates across the turns of one message and survives legacy", () => {
+  const first = { llmMs: 700, toolMs: 350, ttftMs: 400, ttftSteps: 1 }
+  const second = { llmMs: 300, toolMs: 0, ttftMs: 200, ttftSteps: 1 }
+  const once = withTurnMeta([assistant()], cost(1, 1), undefined, undefined, undefined, first)
+  const twice = withTurnMeta(once, cost(1, 1), undefined, undefined, undefined, second)
+  const kept = withTurnMeta(twice, cost(1, 1))
+
+  assert.deepEqual(readMessageMeta(twice[0]!).timing, {
+    llmMs: 1_000,
+    toolMs: 350,
+    ttftMs: 600,
+    ttftSteps: 2,
+  })
+  assert.deepEqual(readMessageMeta(kept[0]!).timing, readMessageMeta(twice[0]!).timing)
+  assert.equal(readMessageMeta(assistant({ sentAt: 1 })).timing, undefined)
+})

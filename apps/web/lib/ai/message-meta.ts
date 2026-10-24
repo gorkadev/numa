@@ -2,6 +2,7 @@ import type { UIMessage, UIMessageChunk } from "ai"
 import { z } from "zod"
 
 import { addSpeed, type GenerationSpeed } from "@/lib/games/generation-speed"
+import { addTiming, type StepTimingTotals } from "@/lib/games/step-timing"
 
 import type { TurnCost } from "./pricing"
 
@@ -62,6 +63,15 @@ const messageMetaSchema = z.object({
    * reason as `speed`: older replies carry none and add nothing to the total.
    */
   steps: z.number().optional(),
+  /** Model, tool and first-output time for the turn; optional like `speed`. */
+  timing: z
+    .object({
+      llmMs: z.number(),
+      toolMs: z.number(),
+      ttftMs: z.number(),
+      ttftSteps: z.number(),
+    })
+    .optional(),
 })
 
 export type MessageMeta = z.infer<typeof messageMetaSchema>
@@ -123,7 +133,8 @@ export function withTurnMeta(
   cost: TurnCost,
   context?: MessageMeta["context"],
   speed?: GenerationSpeed,
-  steps?: number
+  steps?: number,
+  timing?: StepTimingTotals
 ): UIMessage[] {
   const last = messages.at(-1)
 
@@ -157,6 +168,10 @@ export function withTurnMeta(
         : (speed ?? existing.speed),
     steps:
       steps === undefined ? existing.steps : (existing.steps ?? 0) + steps,
+    timing:
+      timing && existing.timing
+        ? addTiming(existing.timing, timing)
+        : (timing ?? existing.timing),
   }
 
   /**
@@ -188,11 +203,12 @@ export function turnMetaChunk(
   cost: TurnCost,
   context?: MessageMeta["context"],
   speed?: GenerationSpeed,
-  steps?: number
+  steps?: number,
+  timing?: StepTimingTotals
 ): UIMessageChunk | null {
   if (!message || message.role !== "assistant") return null
 
-  const [stamped] = withTurnMeta([message], cost, context, speed, steps)
+  const [stamped] = withTurnMeta([message], cost, context, speed, steps, timing)
 
   return { type: "message-metadata", messageMetadata: stamped?.metadata }
 }
