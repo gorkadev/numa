@@ -404,6 +404,7 @@
     "createGame": "Crear partida",
     "createGameFromPrompt": "Crear partida: «{prompt}»",
     "recents": "Recientes",
+    "messages": "Mensajes",
     "emptyGames": "Tus juegos aparecerán aquí.",
     "pinned": "Fijados",
     "commandPalette": "Paleta de comandos",

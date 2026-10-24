@@ -404,6 +404,7 @@
     "createGame": "Create game",
     "createGameFromPrompt": "Create game: “{prompt}”",
     "recents": "Recents",
+    "messages": "Messages",
     "emptyGames": "Your games will live here.",
     "pinned": "Pinned",
     "commandPalette": "Command palette",

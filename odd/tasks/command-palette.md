@@ -30,7 +30,7 @@ Scope approved by the user ("Boff increíble, justo lo q necesitaba y estaba pen
 - [x] T6 · S8 · shortcut hints from `SHORTCUT_GROUPS`, one shared key formatter for the settings section and the palette. Route: inline. Commit: see L6.
 - [x] T7 · S9 · `>` commands only, `#` games only; prefix stripped before cmdk's `defaultFilter`. Route: inline. Commit: see L6.
 - [x] T8 · S10 · "Create game: …" item that submits the typed text through `createGame`. Route: inline. Commit: see L6.
-- [ ] T9 · S11 · owner-scoped message search server action, debounced, "Messages" group. Route: inline.
+- [x] T9 · S11 · owner-scoped message search server action, debounced, "Messages" group. Route: inline. Commit: see L6.
 
 ## Log
 

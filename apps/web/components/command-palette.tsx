@@ -45,6 +45,8 @@ import { LOCALE_OPTIONS, useChangeLocale } from "@/components/locale-switcher"
 import { useIsMac } from "@/hooks/use-is-mac"
 import { useSettingsDialog } from "@/hooks/use-settings-dialog"
 import { createGame, setGamePinned } from "@/lib/games/actions"
+import { MIN_MESSAGE_QUERY_LENGTH } from "@/lib/games/message-search"
+import { searchGameMessages, type MessageHit } from "@/lib/games/search-actions"
 import { openGameIdOf } from "@/lib/games/activity"
 import { DEFAULT_TEMPLATE_ID, TEMPLATES } from "@/lib/games/templates/catalog"
 import { backFrom, type PalettePage } from "@/lib/command-palette/pages"
@@ -108,6 +110,9 @@ export function CommandPalette({
    */
   const scope = page ? "all" : parseQuery(search).scope
   const quickPrompt = quickPromptOf(search, page)
+  const messageQuery =
+    !page && scope !== "commands" ? parseQuery(search).text.trim() : ""
+  const messageHits = useMessageHits(messageQuery)
 
   function createFromPrompt(prompt: string) {
     startCreating(async () => {
@@ -369,6 +374,29 @@ export function CommandPalette({
               )}
             </>
           )}
+          {messageHits.length > 0 && (
+            <CommandGroup heading={t("messages")}>
+              {messageHits.map((hit) => (
+                <CommandItem
+                  key={hit.gameId}
+                  /**
+                   * The snippet holds the match, so the filter keeps every hit
+                   * the server found; the id keeps two hits apart.
+                   */
+                  value={`${hit.title} ${hit.snippet} message-${hit.gameId}`}
+                  onSelect={() => go(`/games/${hit.gameId}`)}
+                >
+                  <HugeiconsIcon icon={MessageCircleIcon} strokeWidth={2} />
+                  <div className="flex min-w-0 flex-col">
+                    <span className="truncate">{hit.title}</span>
+                    <span className="truncate text-xs text-muted-foreground">
+                      {hit.snippet}
+                    </span>
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          )}
           {quickPrompt && (
             <CommandGroup heading={t("createGame")}>
               {/**
@@ -468,4 +496,41 @@ function ShortcutHint({ label }: { label: ShortcutLabel }) {
         .join(isMac ? "" : "+")}
     </CommandShortcut>
   )
+}
+
+/** How long typing has to pause before the palette asks the server. */
+const MESSAGE_SEARCH_DELAY_MS = 250
+
+/**
+ * Message hits for the search, fetched once typing pauses. A reply that
+ * arrives after the query moved on is dropped, so a slow answer for "sna"
+ * never overwrites the one for "snake".
+ */
+function useMessageHits(query: string): MessageHit[] {
+  const [result, setResult] = useState<{ query: string; hits: MessageHit[] }>({
+    query: "",
+    hits: [],
+  })
+
+  useEffect(() => {
+    if (query.length < MIN_MESSAGE_QUERY_LENGTH) return
+
+    let current = true
+    const timer = setTimeout(() => {
+      searchGameMessages(query)
+        .then((hits) => {
+          if (current) setResult({ query, hits })
+        })
+        .catch(() => {
+          /* The title search still works; message hits just do not show. */
+        })
+    }, MESSAGE_SEARCH_DELAY_MS)
+
+    return () => {
+      current = false
+      clearTimeout(timer)
+    }
+  }, [query])
+
+  return result.query === query ? result.hits : []
 }
