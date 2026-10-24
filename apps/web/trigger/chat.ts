@@ -1,4 +1,4 @@
-import { logger } from "@trigger.dev/sdk"
+import { logger, metadata, tags } from "@trigger.dev/sdk"
 import { chat, upsertIncomingMessage } from "@trigger.dev/sdk/ai"
 import {
   getToolName,
@@ -36,6 +36,7 @@ import { createVerifyTool } from "@/lib/games/harness/tools/verify"
 import { turnState, type TurnVerifyOutcome } from "@/lib/games/harness/turn-state"
 import { extendTerminalInstructions } from "@/lib/games/harness/terminal-instructions"
 import { gameInstructions } from "@/lib/games/instructions"
+import { activityTag } from "@/lib/games/activity"
 import { gameProgressChunk, withoutGameProgress } from "@/lib/games/build-progress"
 import { gameRevisionChunk } from "@/lib/games/revision"
 import { loadGameThread, saveGameThread } from "@/lib/games/thread"
@@ -478,9 +479,20 @@ export const gameChat = chat.agent({
    * calls `turnState.reset` before `run()` or either completion hook can see
    * them, on every turn including the first.
    */
-  onBoot: async () => {
+  onBoot: async ({ chatId, ctx }) => {
     turnState.init()
     turnPricing.init({ snapshot: capturePricingSnapshot() })
+
+    /**
+     * Tags the run with its owner so the sidebar's single per-player
+     * subscription sees it (`lib/games/activity.ts`). Added here rather than
+     * when the session is created: `onBoot` fires on every run — a
+     * continuation run and a game created before this tag existed included —
+     * so no run of the player's is ever left out of the sidebar.
+     */
+    const userId = await getGameUserId(chatId)
+    const tag = userId ? activityTag(userId) : undefined
+    if (tag && !ctx.run.tags.includes(tag)) await tags.add(tag)
   },
 
   /**
@@ -669,6 +681,13 @@ export const gameChat = chat.agent({
     turnPricing.snapshot = capturePricingSnapshot()
     turnState.reset(turn, Date.now() + TURN_DEADLINE_MS, resolveTier(clientData?.tier))
 
+    /**
+     * The sidebar's "the agent is working" flag. Run status cannot carry it:
+     * the run stays `EXECUTING` while idle between messages. Cleared at the
+     * top of `onTurnComplete`, which also fires for stopped and failed turns.
+     */
+    metadata.set("working", true)
+
     await saveGameThread({
       gameId: chatId,
       messages: withoutGameProgress(withThreadTier(uiMessages, clientData?.tier)),
@@ -804,6 +823,7 @@ export const gameChat = chat.agent({
     stopped,
     error,
   }) => {
+    metadata.set("working", false)
     const modelId = orchestratorEntryId()
 
     /**

@@ -14,6 +14,8 @@ import { Skeleton } from "@workspace/ui/components/skeleton"
 import { AppSettings } from "@/components/app-settings"
 import { LocalizedSidebarProvider } from "@/components/localized-sidebar-provider"
 import { AppSidebar } from "@/components/app-sidebar"
+import { GameActivityProvider } from "@/components/game-activity-provider"
+import { createActivityToken } from "@/lib/games/activity-token"
 import { listGames } from "@/lib/games/queries"
 import { ensureBillingCustomer } from "@/lib/polar/customers"
 import { summarizeBillingState } from "@/lib/polar/plan"
@@ -38,22 +40,25 @@ async function AuthenticatedShell({ children }: { children: React.ReactNode }) {
    * create a game as soon as the route hydrates without racing the customer and
    * free-plan setup that authorizes their first turn.
    */
-  const [cookieStore, billingState] = await Promise.all([
+  const [cookieStore, billingState, session] = await Promise.all([
     cookies(),
     ensureBillingCustomer(),
     requireSession(),
   ])
+  const activityToken = await createActivityToken(session.user.id)
   const billing = summarizeBillingState(billingState)
   const defaultOpen = cookieStore.get("sidebar_state")?.value !== "false"
 
   return (
-    <LocalizedSidebarProvider defaultOpen={defaultOpen}>
-      <Suspense fallback={<SidebarFallback />}>
-        <AuthenticatedSidebar billing={billing} />
-      </Suspense>
-      <SidebarInset>{children}</SidebarInset>
-      <AppSettings billing={billing} />
-    </LocalizedSidebarProvider>
+    <GameActivityProvider userId={session.user.id} initialToken={activityToken}>
+      <LocalizedSidebarProvider defaultOpen={defaultOpen}>
+        <Suspense fallback={<SidebarFallback />}>
+          <AuthenticatedSidebar billing={billing} />
+        </Suspense>
+        <SidebarInset>{children}</SidebarInset>
+        <AppSettings billing={billing} />
+      </LocalizedSidebarProvider>
+    </GameActivityProvider>
   )
 }
 

@@ -373,6 +373,7 @@
   },
   "GameMenu": {
     "menuLabel": "Game options",
+    "working": "The agent is working on this game",
     "pin": "Pin",
     "unpin": "Unpin",
     "rename": "Rename",

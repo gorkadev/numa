@@ -373,6 +373,7 @@
   },
   "GameMenu": {
     "menuLabel": "Opciones del juego",
+    "working": "El agente está trabajando en este juego",
     "pin": "Fijar",
     "unpin": "Desfijar",
     "rename": "Cambiar nombre",
