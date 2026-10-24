@@ -17,7 +17,6 @@ import {
   PinOffIcon,
   Sun03Icon,
   Tag01Icon,
-  Tick02Icon,
   TranslateIcon,
   UserIcon,
 } from "@hugeicons/core-free-icons"
@@ -31,6 +30,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  CommandShortcut,
 } from "@workspace/ui/components/command"
 
 import { GameActionDialogs } from "@/components/game-action-dialogs"
@@ -170,17 +170,12 @@ export function CommandPalette({
               {THEMES.map((option) => (
                 <CommandItem
                   key={option.value}
+                  /** `CommandItem` draws its own tick, at the row's end, for a checked row. */
+                  data-checked={theme === option.value}
                   onSelect={() => run(() => setTheme(option.value))}
                 >
                   <HugeiconsIcon icon={option.icon} strokeWidth={2} />
                   {settings(option.label)}
-                  {theme === option.value && (
-                    <HugeiconsIcon
-                      icon={Tick02Icon}
-                      strokeWidth={2}
-                      className="ml-auto"
-                    />
-                  )}
                 </CommandItem>
               ))}
             </CommandGroup>
@@ -190,16 +185,10 @@ export function CommandPalette({
               {LOCALE_OPTIONS.map((option) => (
                 <CommandItem
                   key={option.value}
+                  data-checked={locale === option.value}
                   onSelect={() => run(() => changeLocale(option.value))}
                 >
                   {option.label}
-                  {locale === option.value && (
-                    <HugeiconsIcon
-                      icon={Tick02Icon}
-                      strokeWidth={2}
-                      className="ml-auto"
-                    />
-                  )}
                 </CommandItem>
               ))}
             </CommandGroup>
@@ -366,14 +355,22 @@ function GameItem({
     >
       <HugeiconsIcon icon={MessageCircleIcon} strokeWidth={2} />
       <span className="truncate">{game.title}</span>
-      {working ? (
-        <Spinner label={t("working")} className="ml-auto" />
-      ) : unread ? (
-        <span
-          role="status"
-          aria-label={t("unread")}
-          className="ml-auto size-2 shrink-0 rounded-full bg-primary"
-        />
+      {/**
+       * In the shortcut slot: `CommandItem` reserves the row's end for its
+       * (hidden) tick, and only gives it up to a `command-shortcut` child.
+       */}
+      {working || unread ? (
+        <CommandShortcut className="flex items-center">
+          {working ? (
+            <Spinner label={t("working")} />
+          ) : (
+            <span
+              role="status"
+              aria-label={t("unread")}
+              className="size-2 rounded-full bg-primary"
+            />
+          )}
+        </CommandShortcut>
       ) : null}
     </CommandItem>
   )
