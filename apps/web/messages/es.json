@@ -201,6 +201,8 @@
       "finalizing": "Finalizando la compilación…"
     },
     "placeholder": "Pide un cambio…",
+    "untitledTurn": "Mensaje sin texto",
+    "jumpToTurn": "Saltar a: {text}",
     "scrollToEnd": "Ir al final",
     "turnErrorTitle": "No se pudo completar el turno",
     "genericTurnError": "Inténtalo de nuevo. Si el problema continúa, comprueba tu conexión o contacta con soporte.",
@@ -290,6 +292,7 @@
     "sendMessage": "Enviar mensaje",
     "stopGenerating": "Detener la generación",
     "openModelPicker": "Elegir nivel de modelo",
+    "templateLocked": "La plantilla se fija al crear el juego",
     "openTemplatePicker": "Elegir plantilla de juego",
     "templates": {
       "none": {

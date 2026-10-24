@@ -13,7 +13,10 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
-import { InputGroupButton } from "@workspace/ui/components/input-group"
+import {
+  InputGroupButton,
+  InputGroupText,
+} from "@workspace/ui/components/input-group"
 import {
   Item,
   ItemContent,
@@ -33,6 +36,33 @@ type TemplatePickerProps = {
   disabled?: boolean
   open?: boolean
   onOpenChange?: (open: boolean) => void
+}
+
+/**
+ * The template an existing game was created from. It reads like the picker's
+ * trigger so the composer looks the same before and after creation, but it is
+ * plain text: the template is fixed once the game exists.
+ */
+export function LockedTemplate({ value }: { value: TemplateId }) {
+  const t = useTranslations("GameComposer")
+
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <InputGroupText
+            data-slot="locked-template"
+            tabIndex={0}
+            className="h-8 px-2.5"
+          >
+            <HugeiconsIcon icon={LayoutTemplateIcon} />
+            {t(`templates.${value}.label`)}
+          </InputGroupText>
+        }
+      />
+      <TooltipContent>{t("templateLocked")}</TooltipContent>
+    </Tooltip>
+  )
 }
 
 /**

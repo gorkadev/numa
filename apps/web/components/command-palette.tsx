@@ -6,17 +6,14 @@ import { usePathname, useRouter } from "next/navigation"
 import { useLocale, useTranslations } from "next-intl"
 import { useTheme } from "next-themes"
 import {
-  ComputerIcon,
   Delete02Icon,
   LayoutTemplateIcon,
   MessageCircleIcon,
-  Moon02Icon,
   PaintBoardIcon,
   PencilEdit02Icon,
   PinIcon,
   PinOffIcon,
   SparklesIcon,
-  Sun03Icon,
   Tag01Icon,
   TranslateIcon,
   UserIcon,
@@ -65,12 +62,7 @@ import {
   SECTION_LABEL_KEYS,
   SECTIONS,
 } from "@/lib/settings/sections"
-
-const THEMES = [
-  { value: "light", label: "lightTheme", icon: Sun03Icon },
-  { value: "dark", label: "darkTheme", icon: Moon02Icon },
-  { value: "system", label: "systemTheme", icon: ComputerIcon },
-] as const
+import { THEMES } from "@/lib/settings/themes"
 
 /**
  * The palette is a controlled dialog rather than one owning its own state,
