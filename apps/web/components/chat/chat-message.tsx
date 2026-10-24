@@ -190,9 +190,11 @@ function ChatMessageImpl({
          * Withheld while the turn is still being written. The row would
          * report a token count and a tool tally for a message that is not
          * finished — numbers that are wrong by definition until the turn
-         * lands, and that would change under the reader as it streams.
+         * lands, and that would change under the reader as it streams. The
+         * same holds while a live stream is being reconnected, when the row
+         * would otherwise appear beside the thinking indicator and move it.
          */}
-        {streaming || !last ? null : (
+        {streaming || reconnecting || !last ? null : (
           <MessageActions message={last} copyText={runText(messages)} />
         )}
       </MessageContent>

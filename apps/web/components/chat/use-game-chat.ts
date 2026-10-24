@@ -144,6 +144,8 @@ export function useGameChat({
    * Only a thread already sitting on an assistant message has one, and the
    * resume happens on mount, so nothing arriving later can change the answer.
    */
+  const streamFound = useRef<(() => void) | undefined>(undefined)
+
   const [resumedHeadId] = useState(() => {
     const last = threadMessages.at(-1)
 
@@ -184,6 +186,8 @@ export function useGameChat({
         options: Parameters<typeof transport.reconnectToStream>[0]
       ) => {
         const stream = await transport.reconnectToStream(options)
+
+        if (stream) streamFound.current?.()
 
         return stream && resumedHeadId
           ? stream.pipeThrough(withoutContinuationOf(resumedHeadId))
@@ -353,8 +357,26 @@ export function useGameChat({
     const attempt = reconnectAttempt.current.id + 1
 
     reconnectAttempt.current = { gameId, id: attempt, receivedPhase: false }
-    setReconnecting(true)
-    dispatchBuildProgress({ type: "reconnect-start" })
+
+    /**
+     * Nothing is announced yet. Most mounts have nothing to reconnect to — the
+     * last turn finished long ago — and the transport only learns that after a
+     * round trip. Flipping `reconnecting` and the build-progress label on
+     * before the answer put a "Reconnecting…" line above the composer and a
+     * thinking indicator inside the last reply on every entry, then took both
+     * away a moment later, which read as flicker. The transport reports back
+     * through `streamFound` the moment a live stream does exist.
+     */
+    streamFound.current = () => {
+      const currentAttempt = reconnectAttempt.current
+
+      if (currentAttempt.gameId !== gameId || currentAttempt.id !== attempt) {
+        return
+      }
+
+      setReconnecting(true)
+      dispatchBuildProgress({ type: "reconnect-start" })
+    }
 
     void (async () => {
       try {
