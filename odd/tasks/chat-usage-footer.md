@@ -21,7 +21,9 @@ Assumptions (not user-confirmed): the token group shows SESSION totals as in the
 
 - [x] T1 · S2 S3 · inline · pure `sumSessionUsage(messages)` + tests · RED observed (module not found), GREEN 5/5, pricing 3/3, tsc clean · Risk: none · commit: feat(chat) session usage helper
 - [x] T2 · S1 S2 S6 · inline · `UsageFooter` token group (Popover), opt-in `usageSlot` on `ChatComposer`, wired in `chat-thread.tsx`, `ChatUsage` en/es labels · tsc, eslint, prettier clean · Risk: none · PENDING: visual check in the browser (Chrome extension was not connected) · commit: feat(chat) usage footer
-- [ ] T3 · S4 · pending P2 · `contextWindow` in registry, per-step capture, transient data part, ring · Risk: touches the turn pipeline next to pricing; capture must not change `turnState.addUsage`
+- [x] T3a · S4 · inline · `contextWindow` required on `ModelEntry` (1,048,576 per Gemini model) + `entryContextWindow(id)`; test pins all 7 entries; the required field already caught one stale fixture in `models.test.ts` · tsc clean, registry/models/fallback/pricing/catalog tests green · Risk: none
+- [ ] T3b · S4 · inline · server capture: `lib/games/context-usage.ts` (transient `data-context-usage` chunk + reader, tests), `turnState` last-step context guarded by turn like `ledgerFor`, `onStepFinish` on the orchestrator `streamText`, durable copy on message metadata (optional `context`, so reload keeps the ring) · Risk to check: turn pipeline next to pricing; must not touch `turnState.addUsage`
+- [ ] T3c · S4 · inline · client: `onData` + latest message metadata → `ContextRing` (SVG ring + Popover with `Progress`, `~16.7K / 1M`), en/es
 - [ ] T4 · S5 · pending P3 · timing instrumentation (`onStepFinish`/`onChunk`), turns and steps
 
 ## Log
