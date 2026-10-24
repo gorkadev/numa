@@ -921,12 +921,20 @@ export const gameChat = chat.agent({
        * that reports no input is skipped, leaving the previous reading in place.
        */
       onStepFinish: ({ usage }) => {
-        const context = contextUsageOf(usage.inputTokens, orchestratorEntryId())
+        /**
+         * A reading is telemetry: failing to take one must never fail the
+         * step that was being measured.
+         */
+        try {
+          const context = contextUsageOf(usage.inputTokens, orchestratorEntryId())
 
-        if (!context) return
+          if (!context) return
 
-        turnState.setContext(context)
-        chat.response.write(contextUsageChunk(context))
+          turnState.setContext(context)
+          chat.response.write(contextUsageChunk(context))
+        } catch (error) {
+          logger.warn("Could not record the context reading", { error })
+        }
       },
       /**
        * A turn is a loop, not a single answer: read the file, edit it, check
