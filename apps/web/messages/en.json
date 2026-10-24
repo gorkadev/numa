@@ -371,6 +371,11 @@
       }
     }
   },
+  "GameActivity": {
+    "turnFinished": "The agent finished",
+    "untitledGame": "Your game",
+    "open": "Open"
+  },
   "GameMenu": {
     "menuLabel": "Game options",
     "working": "The agent is working on this game",

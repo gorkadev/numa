@@ -1,12 +1,15 @@
 "use client"
 
 import { createContext, use, useEffect, useState, useSyncExternalStore } from "react"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useRealtimeRunsWithTag } from "@trigger.dev/react-hooks"
+import { useTranslations } from "next-intl"
+import { toast } from "@workspace/ui/components/toast"
 
 import {
   activityTag,
   createActivityStore,
+  finishedTurnNotices,
   seenGameIds,
   workingGameIds,
   type ActivityStore,
@@ -38,6 +41,8 @@ export function GameActivityProvider({
   children: React.ReactNode
 }) {
   const [store] = useState(createActivityStore)
+  const router = useRouter()
+  const t = useTranslations("GameActivity")
 
   const { runs } = useRealtimeRunsWithTag(activityTag(userId), {
     accessToken: initialToken,
@@ -70,7 +75,19 @@ export function GameActivityProvider({
         /* Only leaves the dot showing on the next load. */
       })
     }
-  }, [runs, store, openGameId])
+
+    for (const { gameId, title } of finishedTurnNotices(finished, openGameId, store.titleOf)) {
+      toast.add({
+        type: "success",
+        title: t("turnFinished"),
+        description: title ?? t("untitledGame"),
+        actionProps: {
+          children: t("open"),
+          onClick: () => router.push(`/games/${gameId}`),
+        },
+      })
+    }
+  }, [runs, store, openGameId, router, t])
 
   return <ActivityContext value={store}>{children}</ActivityContext>
 }
@@ -112,6 +129,15 @@ export function useSeedUnreadGames(gameIds: readonly string[]) {
   useEffect(() => {
     store?.seedUnread(key ? key.split(",") : [])
   }, [key, store])
+}
+
+/** Hands the sidebar's game titles to the store, for the turn-finished toasts. */
+export function useSeedGameTitles(games: readonly { id: string; title: string }[]) {
+  const store = use(ActivityContext)
+
+  useEffect(() => {
+    store?.seedTitles(games.map((game) => [game.id, game.title] as const))
+  }, [games, store])
 }
 
 function noopSubscribe() {

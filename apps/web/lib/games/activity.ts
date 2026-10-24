@@ -66,7 +66,8 @@ export type ActivityStore = ReturnType<typeof createActivityStore>
 /**
  * The one place a tab keeps which games are working and which finished with
  * something unread, read through `useSyncExternalStore` so a row re-renders
- * only when its own game flips. Toasts are meant to read the same store.
+ * only when its own game flips. The turn-finished toasts come from the same
+ * transition that lights the unread dot (see `finishedTurnNotices`).
  *
  * Unread starts from the server (`isGameUnread` on the rows the layout already
  * loaded) and then moves live: the layout never re-renders while the player
@@ -80,6 +81,7 @@ export type ActivityStore = ReturnType<typeof createActivityStore>
 export function createActivityStore() {
   let working = new Set<string>()
   const unread = new Set<string>()
+  const titles = new Map<string, string>()
   let openGameId: string | undefined
   const listeners = new Set<() => void>()
 
@@ -99,6 +101,13 @@ export function createActivityStore() {
     },
     isUnread(gameId: string) {
       return unread.has(gameId)
+    },
+    /** Game titles for the toasts, from the rows the sidebar already loads. */
+    seedTitles(entries: Iterable<readonly [string, string]>) {
+      for (const [id, title] of entries) titles.set(id, title)
+    },
+    titleOf(gameId: string): string | undefined {
+      return titles.get(gameId)
     },
     markRead(gameId: string) {
       if (unread.delete(gameId)) notify()
@@ -146,6 +155,22 @@ export function createActivityStore() {
       return finished
     },
   }
+}
+
+/**
+ * The "turn finished" toasts for what `setWorking` just reported: every game
+ * but the one on screen, the same rule the unread dot follows. Only live
+ * transitions get here — unread games seeded from the server never do — so a
+ * reload never replays toasts for turns that ended while the player was away.
+ */
+export function finishedTurnNotices(
+  finished: readonly string[],
+  openGameId: string | undefined,
+  titleOf: (gameId: string) => string | undefined
+): { gameId: string; title: string | undefined }[] {
+  return finished
+    .filter((gameId) => gameId !== openGameId)
+    .map((gameId) => ({ gameId, title: titleOf(gameId) }))
 }
 
 /**

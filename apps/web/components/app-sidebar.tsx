@@ -45,7 +45,7 @@ import {
 
 import { CommandPalette } from "@/components/command-palette"
 import { CreditsButton } from "@/components/credits-button"
-import { useSeedUnreadGames } from "@/components/game-activity-provider"
+import { useSeedGameTitles, useSeedUnreadGames } from "@/components/game-activity-provider"
 import { GameRow } from "@/components/game-row"
 import { NavUser } from "@/components/nav-user"
 import { UpgradeCard } from "@/components/upgrade-card"
@@ -102,6 +102,7 @@ export function AppSidebar({
 
   /** The unread dots at load, from the rows already here; live changes come from the run subscription. */
   useSeedUnreadGames(games.filter(isGameUnread).map((game) => game.id))
+  useSeedGameTitles(games)
 
   /**
    * `listGames` already sorts pinned-first, so the split here is a single

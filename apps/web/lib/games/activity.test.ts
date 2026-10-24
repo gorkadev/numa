@@ -4,6 +4,7 @@ import test from "node:test"
 import {
   activityTag,
   createActivityStore,
+  finishedTurnNotices,
   isGameUnread,
   seenGameIds,
   workingGameIds,
@@ -148,4 +149,32 @@ test("a turn that finished after the last read is unread", () => {
 test("a read at or after the finished turn clears it", () => {
   assert.equal(isGameUnread({ lastTurnFinishedAt: earlier, lastReadAt: later }), false)
   assert.equal(isGameUnread({ lastTurnFinishedAt: earlier, lastReadAt: earlier }), false)
+})
+
+test("a turn that finishes away from its game is announced with the game's title", () => {
+  const store = createActivityStore()
+  store.seedTitles([["a", "Dungeon run"]])
+  store.setOpenGame("b")
+  store.setWorking(new Set(["a", "b"]), new Set(["a", "b"]))
+
+  const finished = store.setWorking(new Set(), new Set(["a", "b"]))
+
+  assert.deepEqual(finishedTurnNotices(finished, "b", store.titleOf), [
+    { gameId: "a", title: "Dungeon run" },
+  ])
+})
+
+test("a finished game the sidebar has no title for is still announced", () => {
+  const store = createActivityStore()
+
+  assert.deepEqual(finishedTurnNotices(["a"], undefined, store.titleOf), [
+    { gameId: "a", title: undefined },
+  ])
+})
+
+test("unread games loaded from the server are never announced", () => {
+  const store = createActivityStore()
+  store.seedUnread(["a"])
+
+  assert.deepEqual(store.setWorking(new Set(), new Set(["a"])), [])
 })

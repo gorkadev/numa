@@ -371,6 +371,11 @@
       }
     }
   },
+  "GameActivity": {
+    "turnFinished": "El agente ha terminado",
+    "untitledGame": "Tu partida",
+    "open": "Ver"
+  },
   "GameMenu": {
     "menuLabel": "Opciones del juego",
     "working": "El agente está trabajando en este juego",
