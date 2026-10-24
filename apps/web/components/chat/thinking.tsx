@@ -1,6 +1,5 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { useTranslations } from "next-intl"
 
 import {
@@ -10,39 +9,19 @@ import {
 } from "@workspace/ui/components/marker"
 
 import { Spinner } from "@/components/localized-spinner"
+import type { ThinkingLabelKey } from "@/lib/games/build-progress"
 
 /**
  * What the thread says while the agent has the turn and nothing to show yet.
  *
- * The phrases rotate because a line that never changes stops reading as
- * activity after the first few seconds — it reads as a stuck screen. They are
- * deliberately vague: this is the stretch before the first token, so the only
- * honest thing to say is that the agent is working, and a specific claim here
- * would be one nothing has happened to justify.
+ * One line for the whole wait: it starts as plain "Thinking…" and takes the
+ * build phase's own wording when the server reports one ("Planning build…"),
+ * fading from one to the next so a change reads as progress rather than a
+ * flicker. The caller decides the wording (`thinkingLabelKey`); this only
+ * draws it.
  */
-const THINKING_PHRASE_KEYS = [
-  "thinking",
-  "workingOutWhatToChange",
-  "planningTheEdit",
-  "gettingToIt",
-] as const
-
-const THINKING_INTERVAL = 2600
-
-export function Thinking({ reconnecting = false }: { reconnecting?: boolean }) {
+export function Thinking({ labelKey }: { labelKey: ThinkingLabelKey }) {
   const t = useTranslations("ChatActivity")
-  const [phrase, setPhrase] = useState(0)
-
-  useEffect(() => {
-    if (reconnecting) return
-
-    const timer = setInterval(
-      () => setPhrase((it) => (it + 1) % THINKING_PHRASE_KEYS.length),
-      THINKING_INTERVAL
-    )
-
-    return () => clearInterval(timer)
-  }, [reconnecting])
 
   return (
     /**
@@ -52,15 +31,18 @@ export function Thinking({ reconnecting = false }: { reconnecting?: boolean }) {
      *
      * The marker is the only live region. The spinner is decorative so it does
      * not announce a second, context-free loading status beside this message.
+     * Keyed on the label so each new wording fades in, and the fade is dropped
+     * for readers who asked for less motion.
      */
     <Marker role="status" className="ps-[13px]">
       <MarkerIcon>
         <Spinner decorative />
       </MarkerIcon>
-      <MarkerContent className="shimmer">
-        {reconnecting
-          ? t("reconnecting")
-          : `${t(THINKING_PHRASE_KEYS[phrase]!)}…`}
+      <MarkerContent
+        key={labelKey}
+        className="shimmer animate-in fade-in duration-300 motion-reduce:animate-none"
+      >
+        {t(labelKey)}
       </MarkerContent>
     </Marker>
   )

@@ -14,6 +14,7 @@ import { MessageActions } from "@/components/chat/message-actions"
 import { ReasoningBlock } from "@/components/chat/reasoning-block"
 import { SubagentEntry } from "@/components/chat/subagent-entry"
 import { Thinking } from "@/components/chat/thinking"
+import type { ThinkingLabelKey } from "@/lib/games/build-progress"
 import { ToolGroup } from "@/components/chat/tool-group"
 import { askPlayerAnswer } from "@/lib/games/ask-player"
 import { groupParts, isSettled, type PartBlock } from "@/lib/games/tool-parts"
@@ -37,6 +38,11 @@ type ChatMessageProps = {
   streaming: boolean
   /** True only while this trailing run's initial stream reconnect is pending. */
   reconnecting: boolean
+  /**
+   * What the thinking line says. Only the trailing run's value ever changes;
+   * every other row is handed the same constant, so its memo still holds.
+   */
+  thinkingKey: ThinkingLabelKey
   onAnswer: (toolCallId: string, output: AskPlayerOutput) => void
   /**
    * Opens the sub-agent panel on one run, whether it is still going or
@@ -52,6 +58,7 @@ function ChatMessageImpl({
   messages,
   streaming,
   reconnecting,
+  thinkingKey,
   onAnswer,
   onSelectRun,
 }: ChatMessageProps) {
@@ -186,7 +193,7 @@ function ChatMessageImpl({
             </Bubble>
           )
         })}
-        {showThinking ? <Thinking reconnecting={reconnecting} /> : null}
+        {showThinking ? <Thinking labelKey={thinkingKey} /> : null}
         {/**
          * Withheld while the turn is still being written. The row would
          * report a token count and a tool tally for a message that is not
@@ -283,6 +290,7 @@ export const ChatMessage = memo(ChatMessageImpl, (prev, next) => {
     prev.role === next.role &&
     prev.streaming === next.streaming &&
     prev.reconnecting === next.reconnecting &&
+    prev.thinkingKey === next.thinkingKey &&
     prev.onAnswer === next.onAnswer &&
     prev.onSelectRun === next.onSelectRun &&
     messagesEqual(prev.messages, next.messages)

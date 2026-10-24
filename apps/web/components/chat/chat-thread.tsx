@@ -36,7 +36,7 @@ import {
   sumSessionUsage,
 } from "@/lib/ai/session-usage"
 import { UsageFooter } from "@/components/chat/usage-footer"
-import { gameBuildProgressLabelKey } from "@/lib/games/build-progress"
+import { thinkingLabelKey } from "@/lib/games/build-progress"
 import type { SubagentRunRecord } from "@/lib/games/harness/records"
 import { deriveTaskStrip, shouldShowTaskStrip } from "@/lib/games/plan-tasks"
 import { collectThreadSubagentRuns } from "@/lib/games/tool-parts"
@@ -180,8 +180,7 @@ export function ChatThread({
     [liveContext, messages, contextWindows, tierId]
   )
   const showTaskStrip = shouldShowTaskStrip(taskStripTasks, pending)
-  const buildProgressKey = gameBuildProgressLabelKey(buildProgress)
-  const buildProgressLabel = buildProgressKey === null ? null : t(buildProgressKey)
+  const thinkingKey = thinkingLabelKey(buildProgress, reconnecting)
 
   const onSelectRun = useCallback(
     (agentId: string) => {
@@ -231,6 +230,9 @@ export function ChatThread({
                     messages={run.messages}
                     streaming={pending && index === runs.length - 1}
                     reconnecting={reconnecting && index === runs.length - 1}
+                    thinkingKey={
+                      index === runs.length - 1 ? thinkingKey : "thinking"
+                    }
                     onAnswer={onAnswer}
                     onSelectRun={onSelectRun}
                   />
@@ -241,7 +243,7 @@ export function ChatThread({
                   <Message align="start">
                     <AssistantAvatar />
                     <MessageContent>
-                      <Thinking reconnecting={reconnecting} />
+                      <Thinking labelKey={thinkingKey} />
                     </MessageContent>
                   </Message>
                 </MessageScrollerItem>
@@ -298,15 +300,8 @@ export function ChatThread({
             />
           }
           tasksSlot={
-            showTaskStrip || buildProgressLabel ? (
-              <div className="flex flex-col gap-2">
-                {showTaskStrip && taskStripTasks ? <TaskStrip tasks={taskStripTasks} /> : null}
-                {buildProgressLabel ? (
-                  <p aria-live="polite" role="status" className="text-sm text-muted-foreground">
-                    {buildProgressLabel}
-                  </p>
-                ) : null}
-              </div>
+            showTaskStrip && taskStripTasks ? (
+              <TaskStrip tasks={taskStripTasks} />
             ) : undefined
           }
         />

@@ -211,10 +211,7 @@
     "creditsExhausted": "You are out of credits. Upgrade your plan or add credits, then try again.",
     "gameUnavailable": "This game is no longer available. Return to your games and open an available game.",
     "reconnecting": "Reconnecting to your response…",
-    "thinking": "Thinking",
-    "workingOutWhatToChange": "Working out what to change",
-    "planningTheEdit": "Planning the edit",
-    "gettingToIt": "Getting to it",
+    "thinking": "Thinking…",
     "taskListHeading": "Tasks",
     "taskStripSummary": "Tasks: {done} of {total} complete. Current task: {currentTask} ({status}).",
     "taskStatus": {
