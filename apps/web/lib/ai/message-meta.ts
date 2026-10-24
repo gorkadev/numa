@@ -1,4 +1,4 @@
-import type { UIMessage } from "ai"
+import type { UIMessage, UIMessageChunk } from "ai"
 import { z } from "zod"
 
 import type { TurnCost } from "./pricing"
@@ -143,4 +143,28 @@ export function withTurnMeta(
       : {}
 
   return [...messages.slice(0, -1), { ...last, metadata: { ...base, ...meta } }]
+}
+
+/**
+ * The same receipt `withTurnMeta` persists, as a stream chunk.
+ *
+ * The persisted copy is written after the stream has closed, so without this
+ * the browser's message has no receipt until the thread is reloaded: no token
+ * footer, no per-reply popover. The `message-metadata` chunk is merged into
+ * the in-flight reply by the client as it arrives.
+ *
+ * Built by running `withTurnMeta` and reading back what it stamped, never by
+ * assembling the fields a second time, so the live value and the stored one
+ * cannot drift apart. `null` when there is no assistant reply to put it on.
+ */
+export function turnMetaChunk(
+  message: UIMessage | undefined,
+  cost: TurnCost,
+  context?: MessageMeta["context"]
+): UIMessageChunk | null {
+  if (!message || message.role !== "assistant") return null
+
+  const [stamped] = withTurnMeta([message], cost, context)
+
+  return { type: "message-metadata", messageMetadata: stamped?.metadata }
 }

@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import test from "node:test"
 import type { UIMessage } from "ai"
 
-import { readMessageMeta, withTurnMeta } from "./message-meta"
+import { readMessageMeta, turnMetaChunk, withTurnMeta } from "./message-meta"
 import type { TurnCost } from "./pricing"
 
 const cost = (input: number, output: number): TurnCost =>
@@ -81,4 +81,30 @@ test("metadata written before context existed still parses", () => {
 
   assert.equal(readMessageMeta(legacy).context, undefined)
   assert.equal(readMessageMeta(legacy).tokens?.input, 1)
+})
+
+test("the live receipt carries exactly what the persisted reply will", () => {
+  const chunk = turnMetaChunk(assistant(), cost(100, 10), {
+    tokens: 16_700,
+    window: 1_048_576,
+  })
+  const persisted = withTurnMeta([assistant()], cost(100, 10), {
+    tokens: 16_700,
+    window: 1_048_576,
+  })
+
+  assert.equal(chunk?.type, "message-metadata")
+  assert.deepEqual(
+    JSON.parse(
+      JSON.stringify((chunk as { messageMetadata: unknown }).messageMetadata)
+    ),
+    JSON.parse(JSON.stringify(persisted[0]!.metadata))
+  )
+})
+
+test("a reply the receipt cannot belong to gets no live chunk", () => {
+  const user: UIMessage = { id: "u", role: "user", parts: [] }
+
+  assert.equal(turnMetaChunk(user, cost(1, 1)), null)
+  assert.equal(turnMetaChunk(undefined, cost(1, 1)), null)
 })

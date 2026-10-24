@@ -12,7 +12,7 @@ import {
 import { z } from "zod"
 
 import { orchestratorModelSettings } from "@/lib/ai/agent"
-import { withTurnMeta } from "@/lib/ai/message-meta"
+import { turnMetaChunk, withTurnMeta } from "@/lib/ai/message-meta"
 import { contextUsageChunk, contextUsageOf } from "@/lib/games/context-usage"
 import { withThreadTier } from "@/lib/ai/message-model"
 import { tierIdSchema } from "@/lib/ai/model-catalog"
@@ -735,9 +735,19 @@ export const gameChat = chat.agent({
         status: error ? "error" : stopped ? "aborted" : "done",
       })
 
-      writer.write(
-        turnCreditsChunk(priceTurn(turnState.tier, turnState.ledgerFor(turn), turnPricing.snapshot))
-      )
+      const cost = priceTurn(turnState.tier, turnState.ledgerFor(turn), turnPricing.snapshot)
+
+      writer.write(turnCreditsChunk(cost))
+
+      /**
+       * The receipt `onTurnComplete` persists, sent live. Without it the
+       * browser's reply carries no tokens until the thread is reloaded, so the
+       * usage footer and the per-reply popover would stay empty. Same cost,
+       * same function (`withTurnMeta`), so the two cannot disagree.
+       */
+      const receipt = turnMetaChunk(responseMessage, cost, turnState.contextFor(turn))
+
+      if (receipt) writer.write(receipt)
     }
 
     const currentTurn = turnState.isCurrentTurn(turn)
