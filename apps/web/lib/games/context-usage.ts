@@ -1,7 +1,5 @@
 import type { UIMessageChunk } from "ai"
 
-import { entryContextWindow, type ModelEntryId } from "@/lib/ai/model-registry"
-
 /**
  * How full the orchestrator's context window was at its latest step.
  *
@@ -24,17 +22,20 @@ const PART_TYPE = "data-context-usage"
  * input for it. Callers keep the previous reading in that case rather than
  * replacing a real number with zero.
  *
- * Takes the entry that SERVED the step, not the tier's primary: after a
- * fallback the two can disagree and the percentage would be measured against
- * the wrong window.
+ * The window is a parameter, not looked up here: this module is imported by
+ * the browser, and the model registry that knows windows pulls in the Vertex
+ * provider, which cannot be bundled for the client. The server caller passes
+ * `entryContextWindow(<entry that SERVED the step>)` — the served entry, not
+ * the tier's primary, because after a fallback the two can disagree and the
+ * percentage would be measured against the wrong window.
  */
 export function contextUsageOf(
   inputTokens: number | undefined,
-  entryId: ModelEntryId
+  window: number
 ): ContextUsage | null {
   if (!inputTokens || inputTokens <= 0) return null
 
-  return { tokens: inputTokens, window: entryContextWindow(entryId) }
+  return { tokens: inputTokens, window }
 }
 
 /**

@@ -41,13 +41,25 @@ test("reads back what the chunk carried and nothing else", () => {
 })
 
 test("a step with no reported input leaves the previous reading alone", () => {
-  assert.equal(contextUsageOf(undefined, "argon-high"), null)
-  assert.equal(contextUsageOf(0, "argon-high"), null)
+  assert.equal(contextUsageOf(undefined, 1_048_576), null)
+  assert.equal(contextUsageOf(0, 1_048_576), null)
 })
 
-test("the window comes from the entry that served the step", () => {
-  assert.deepEqual(contextUsageOf(16_700, "flash-high"), {
+test("pairs the step's input with the window it was measured against", () => {
+  assert.deepEqual(contextUsageOf(16_700, 1_048_576), {
     tokens: 16_700,
     window: 1_048_576,
   })
+})
+
+test("this module stays importable from the browser", async () => {
+  const { readFile } = await import("node:fs/promises")
+  const source = await readFile(
+    new URL("./context-usage.ts", import.meta.url),
+    "utf8"
+  )
+
+  // The registry pulls in the Vertex provider (google-auth-library), which
+  // cannot be bundled for the client; the browser imports this file.
+  assert.doesNotMatch(source, /model-registry/)
 })

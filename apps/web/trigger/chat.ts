@@ -17,6 +17,7 @@ import { contextUsageChunk, contextUsageOf } from "@/lib/games/context-usage"
 import { withThreadTier } from "@/lib/ai/message-model"
 import { tierIdSchema } from "@/lib/ai/model-catalog"
 import {
+  entryContextWindow,
   resolveModel,
   resolveTier,
   type FallbackHooks,
@@ -926,7 +927,10 @@ export const gameChat = chat.agent({
          * step that was being measured.
          */
         try {
-          const context = contextUsageOf(usage.inputTokens, orchestratorEntryId())
+          const context = contextUsageOf(
+            usage.inputTokens,
+            entryContextWindow(orchestratorEntryId())
+          )
 
           if (!context) return
 
