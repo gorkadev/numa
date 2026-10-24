@@ -129,7 +129,7 @@ export async function recordTurnUsage({
      * only ever claim something that already happened. A crash in the gap
      * between them leaves a row that looks un-ingested when it was in fact
      * ingested — the safe direction, because the reconciliation query picks it
-     * up and the replay costs nothing: `externalId` is `gameId:turn`, so Polar
+     * up and the replay costs nothing: `externalId` is `gameId:runId:turn`, so Polar
      * recognises the duplicate and drops it.
      *
      * Reversing the two would be quietly catastrophic. Marking the row ingested
@@ -176,6 +176,7 @@ export async function recordTurnUsage({
     const ingested = await ingestTurnCredits({
       userId,
       gameId,
+      runId,
       turn,
       credits,
       modelId,

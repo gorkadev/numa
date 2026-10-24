@@ -1,4 +1,4 @@
-import { logger } from "@trigger.dev/sdk"
+import { logger, metadata, tags } from "@trigger.dev/sdk"
 import { chat, upsertIncomingMessage } from "@trigger.dev/sdk/ai"
 import {
   getToolName,
@@ -12,10 +12,14 @@ import {
 import { z } from "zod"
 
 import { orchestratorModelSettings } from "@/lib/ai/agent"
-import { withTurnMeta } from "@/lib/ai/message-meta"
+import { turnMetaChunk, withTurnMeta } from "@/lib/ai/message-meta"
+import { contextUsageChunk, contextUsageOf } from "@/lib/games/context-usage"
+import { speedOfStep } from "@/lib/games/generation-speed"
+import { timingOfStep } from "@/lib/games/step-timing"
 import { withThreadTier } from "@/lib/ai/message-model"
 import { tierIdSchema } from "@/lib/ai/model-catalog"
 import {
+  entryContextWindow,
   resolveModel,
   resolveTier,
   type FallbackHooks,
@@ -32,6 +36,7 @@ import { createVerifyTool } from "@/lib/games/harness/tools/verify"
 import { turnState, type TurnVerifyOutcome } from "@/lib/games/harness/turn-state"
 import { extendTerminalInstructions } from "@/lib/games/harness/terminal-instructions"
 import { gameInstructions } from "@/lib/games/instructions"
+import { activityTag } from "@/lib/games/activity"
 import { gameProgressChunk, withoutGameProgress } from "@/lib/games/build-progress"
 import { gameRevisionChunk } from "@/lib/games/revision"
 import { loadGameThread, saveGameThread } from "@/lib/games/thread"
@@ -474,9 +479,25 @@ export const gameChat = chat.agent({
    * calls `turnState.reset` before `run()` or either completion hook can see
    * them, on every turn including the first.
    */
-  onBoot: async () => {
+  onBoot: async ({ chatId, ctx }) => {
     turnState.init()
     turnPricing.init({ snapshot: capturePricingSnapshot() })
+
+    /**
+     * Tags the run with its owner so the sidebar's single per-player
+     * subscription sees it (`lib/games/activity.ts`). Added here rather than
+     * when the session is created: `onBoot` fires on every run — a
+     * continuation run and a game created before this tag existed included —
+     * so no run of the player's is ever left out of the sidebar.
+     */
+    try {
+      const userId = await getGameUserId(chatId)
+      const tag = userId ? activityTag(userId) : undefined
+      if (tag && !ctx.run.tags.includes(tag)) await tags.add(tag)
+    } catch (error) {
+      // Costs the sidebar its signal for this run, never the chat itself.
+      logger.warn("Failed to tag the run for game activity", { chatId, error: String(error) })
+    }
   },
 
   /**
@@ -665,6 +686,14 @@ export const gameChat = chat.agent({
     turnPricing.snapshot = capturePricingSnapshot()
     turnState.reset(turn, Date.now() + TURN_DEADLINE_MS, resolveTier(clientData?.tier))
 
+    /**
+     * The sidebar's "the agent is working" flag. Run status cannot carry it:
+     * the run stays `EXECUTING` while idle between messages. Cleared in
+     * `onTurnComplete` once the thread is saved, which also fires for stopped
+     * and failed turns.
+     */
+    metadata.set("working", true)
+
     await saveGameThread({
       gameId: chatId,
       messages: withoutGameProgress(withThreadTier(uiMessages, clientData?.tier)),
@@ -733,9 +762,26 @@ export const gameChat = chat.agent({
         status: error ? "error" : stopped ? "aborted" : "done",
       })
 
-      writer.write(
-        turnCreditsChunk(priceTurn(turnState.tier, turnState.ledgerFor(turn), turnPricing.snapshot))
+      const cost = priceTurn(turnState.tier, turnState.ledgerFor(turn), turnPricing.snapshot)
+
+      writer.write(turnCreditsChunk(cost))
+
+      /**
+       * The receipt `onTurnComplete` persists, sent live. Without it the
+       * browser's reply carries no tokens until the thread is reloaded, so the
+       * usage footer and the per-reply popover would stay empty. Same cost,
+       * same function (`withTurnMeta`), so the two cannot disagree.
+       */
+      const receipt = turnMetaChunk(
+        responseMessage,
+        cost,
+        turnState.contextFor(turn),
+        turnState.speedFor(turn),
+        turnState.stepsFor(turn),
+        turnState.timingFor(turn)
       )
+
+      if (receipt) writer.write(receipt)
     }
 
     const currentTurn = turnState.isCurrentTurn(turn)
@@ -821,17 +867,33 @@ export const gameChat = chat.agent({
       Boolean(stopped || error)
     )
 
-    await saveGameThread({
-      gameId: chatId,
-      messages: withoutGameProgress(
-        withTurnMeta(
-          withThreadTier(currentTurn ? withGameVerification(uiMessages, verificationData) : uiMessages, clientData?.tier),
-          cost
-        )
-      ),
-      chatAccessToken,
-      lastEventId,
-    })
+    /**
+     * `working` is cleared only once the save that stamps
+     * `last_turn_finished_at` has landed: the open chat marks the game read
+     * the moment it sees the flag drop, and a read written before the finish
+     * would leave the game showing as unread. `finally`, so a failed save
+     * still never leaves the sidebar spinning.
+     */
+    try {
+      await saveGameThread({
+        gameId: chatId,
+        messages: withoutGameProgress(
+          withTurnMeta(
+            withThreadTier(currentTurn ? withGameVerification(uiMessages, verificationData) : uiMessages, clientData?.tier),
+            cost,
+            turnState.contextFor(turn),
+            turnState.speedFor(turn),
+            turnState.stepsFor(turn),
+            turnState.timingFor(turn)
+          )
+        ),
+        chatAccessToken,
+        lastEventId,
+        turnFinished: true,
+      })
+    } finally {
+      metadata.set("working", false)
+    }
 
     /**
      * `chatId` is the game id.
@@ -912,6 +974,49 @@ export const gameChat = chat.agent({
        * while the model keeps generating server-side.
        */
       abortSignal: signal,
+      /**
+       * One reading per orchestrator step: the footer's context ring needs the
+       * LATEST step's input, not the turn's sum, and only a per-step hook sees
+       * it. Kept out of `turnState.addUsage` so pricing is untouched. A step
+       * that reports no input is skipped, leaving the previous reading in place.
+       */
+      onStepFinish: ({ usage, performance }) => {
+        turnState.addStep()
+
+        /**
+         * Generation speed is read first and on its own: a step with no
+         * measurable speed (a tool-call-only step) must not skip the context
+         * reading below, and a failure in one must not take the other down.
+         */
+        try {
+          const speed = speedOfStep(usage.outputTokens, performance)
+
+          if (speed) turnState.addSpeed(speed)
+
+          turnState.addTiming(timingOfStep(performance))
+        } catch (error) {
+          logger.warn("Could not record the generation speed and timing", { error })
+        }
+
+        /**
+         * A reading is telemetry: failing to take one must never fail the
+         * step that was being measured.
+         */
+        try {
+          const context = contextUsageOf(
+            usage.inputTokens,
+            entryContextWindow(orchestratorEntryId()),
+            usage.inputTokenDetails?.cacheReadTokens
+          )
+
+          if (!context) return
+
+          turnState.setContext(context)
+          chat.response.write(contextUsageChunk(context))
+        } catch (error) {
+          logger.warn("Could not record the context reading", { error })
+        }
+      },
       /**
        * A turn is a loop, not a single answer: read the file, edit it, check
        * the result, then reply. Without a stop condition the SDK ends the turn

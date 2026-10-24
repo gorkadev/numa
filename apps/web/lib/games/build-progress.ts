@@ -94,3 +94,29 @@ export function gameBuildProgressLabelKey(
 
   return `buildProgress.${progress.phase}`
 }
+
+/**
+ * The line the thread shows while the agent has the turn, as a `ChatActivity`
+ * message key.
+ *
+ * It is the one status the reader sees, so the build phase lives here rather
+ * than in a second line above the composer. A plain chat message never gets a
+ * phase, and `submit` is deliberately not one: it fires for every message, and
+ * claiming a build for a "hola" would be a lie, so it reads as generic thinking
+ * until the server reports a real phase. Reconnecting wins whichever signal
+ * reports it, because it explains why nothing is moving.
+ */
+export type ThinkingLabelKey =
+  | "thinking"
+  | "reconnecting"
+  | `buildProgress.${GameBuildPhase}`
+
+export function thinkingLabelKey(
+  progress: GameBuildProgress,
+  reconnecting: boolean
+): ThinkingLabelKey {
+  if (reconnecting || progress?.kind === "reconnecting") return "reconnecting"
+  if (progress?.kind === "phase") return `buildProgress.${progress.phase}`
+
+  return "thinking"
+}

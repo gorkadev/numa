@@ -34,6 +34,7 @@ export function GameChat({
   initialSessions,
   initialPrompt,
   initialTierId,
+  contextWindows,
 }: {
   gameId: string
   /** The game's name, as the header shows it. */
@@ -58,6 +59,8 @@ export function GameChat({
   initialPrompt?: string
   /** The tier the home screen's picker was on, when the game came from there. */
   initialTierId?: TierId
+  /** Each tier's orchestrator window, resolved on the server (see `strongContextWindows`). */
+  contextWindows: Record<TierId, number>
 }) {
   const t = useTranslations("ChatAgents")
 
@@ -257,6 +260,7 @@ export function GameChat({
           initialSessions={initialSessions}
           initialPrompt={initialPrompt}
           initialTierId={initialTierId}
+          contextWindows={contextWindows}
           onRevision={setRevision}
           onSelectedRunIdChange={setSelectedRunId}
           onSubagentPanelOpenChange={onSubagentPanelOpenChange}

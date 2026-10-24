@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useFormatter, useTranslations } from "next-intl"
+import { useTranslations } from "next-intl"
 import { Coins01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Badge } from "@workspace/ui/components/badge"
@@ -11,6 +11,7 @@ import {
   SidebarMenuItem,
 } from "@workspace/ui/components/sidebar"
 
+import { AnimatedNumber } from "@/components/animated-number"
 import type { BillingSummary } from "@/lib/polar/plan"
 
 /**
@@ -47,7 +48,6 @@ export function CreditsButton({
   className,
 }: BillingSummary & { className?: string }) {
   const t = useTranslations("Shell")
-  const format = useFormatter()
 
   return (
     <SidebarMenuItem>
@@ -82,7 +82,7 @@ export function CreditsButton({
        * which is why there is no visibility class here.
        */}
       <SidebarMenuBadge>
-        {balance === null ? "—" : format.number(balance)}
+        {balance === null ? "—" : <AnimatedNumber value={balance} />}
       </SidebarMenuBadge>
     </SidebarMenuItem>
   )

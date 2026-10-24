@@ -7,6 +7,7 @@ import {
   Copy01Icon,
   MoreHorizontalIcon,
   Tick02Icon,
+  Wrench01Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useLocale, useTranslations } from "next-intl"
@@ -23,7 +24,14 @@ import {
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip"
 
+import { TokenUsagePanel } from "@/components/chat/token-usage-panel"
+import {
+  UsagePanelHeader,
+  UsageRow,
+  UsageRows,
+} from "@/components/chat/usage-panel"
 import { readMessageMeta } from "@/lib/ai/message-meta"
+import { sumSessionUsage } from "@/lib/ai/session-usage"
 import {
   formatMessageTime,
   formatMessageTimeLong,
@@ -244,7 +252,11 @@ function SpeechButton({ text }: { text: string }) {
           </>
         )}
       </svg>
-      {failed ? <span role="status" className="sr-only">{label}</span> : null}
+      {failed ? (
+        <span role="status" className="sr-only">
+          {label}
+        </span>
+      ) : null}
     </Button>
   )
 }
@@ -351,7 +363,10 @@ function SentAt({ at }: { at: number }) {
  */
 function DetailsButton({ message }: { message: UIMessage }) {
   const t = useTranslations("ChatMessages")
-  const meta = readMessageMeta(message)
+  const locale = useLocale()
+  const count = new Intl.NumberFormat(locale)
+  /** One reply summed alone: the same numbers, in the same panel, as the footer's session total. */
+  const usage = sumSessionUsage([message])
   const tools = toolTally(message)
 
   return (
@@ -368,62 +383,24 @@ function DetailsButton({ message }: { message: UIMessage }) {
       >
         <HugeiconsIcon icon={MoreHorizontalIcon} strokeWidth={2} />
       </PopoverTrigger>
-      <PopoverContent align="start" className="gap-3">
-        {meta.tokens ? (
-          <section className="flex flex-col gap-1.5">
-            <h3 className="text-xs font-medium text-muted-foreground">
-              {t("tokens")}
-            </h3>
-            <dl className="flex flex-col gap-1 rounded-2xl bg-muted p-3 text-xs">
-              <Stat label={t("inputTokens")} value={meta.tokens.input} />
-              {meta.tokens.cached > 0 ? (
-                <Stat label={t("cachedTokens")} value={meta.tokens.cached} />
-              ) : null}
-              <Stat label={t("outputTokens")} value={meta.tokens.output} />
-              {meta.tokens.reasoning > 0 ? (
-                <Stat label={t("reasoningTokens")} value={meta.tokens.reasoning} />
-              ) : null}
-              {meta.credits !== undefined ? (
-                <Stat
-                  label={t("credits")}
-                  value={meta.credits}
-                  className="border-t border-border pt-1 font-medium text-foreground"
-                />
-              ) : null}
-            </dl>
-          </section>
-        ) : null}
+      <PopoverContent align="start" className="w-72 gap-4">
+        {usage ? <TokenUsagePanel usage={usage} /> : null}
         {tools.length > 0 ? (
-          <section className="flex flex-col gap-1.5">
-            <h3 className="text-xs font-medium text-muted-foreground">{t("tools")}</h3>
-            <dl className="flex flex-col gap-1 rounded-2xl bg-muted p-3 text-xs">
-              {tools.map(({ name, count }) => (
-                <Stat key={name} label={toolNoun(name, t)} value={count} />
+          <section className="flex flex-col gap-3">
+            <UsagePanelHeader icon={Wrench01Icon} title={t("tools")} />
+            <UsageRows>
+              {tools.map(({ name, count: uses }) => (
+                <UsageRow
+                  key={name}
+                  label={toolNoun(name, t)}
+                  value={count.format(uses)}
+                />
               ))}
-            </dl>
+            </UsageRows>
           </section>
         ) : null}
       </PopoverContent>
     </Popover>
-  )
-}
-
-function Stat({
-  label,
-  value,
-  className,
-}: {
-  label: string
-  value: number
-  className?: string
-}) {
-  return (
-    <div
-      className={`flex items-baseline justify-between gap-4 text-muted-foreground ${className ?? ""}`}
-    >
-      <dt className="min-w-0 truncate">{label}</dt>
-      <dd className="shrink-0 tabular-nums">{value.toLocaleString("en-US")}</dd>
-    </div>
   )
 }
 

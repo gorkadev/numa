@@ -1,9 +1,12 @@
 import { notFound } from "next/navigation"
 
 import { GameChat } from "@/components/game-chat"
+import { strongContextWindows } from "@/lib/ai/model-registry"
 import { isTierId } from "@/lib/ai/model-catalog"
 import { signPreviewToken } from "@/lib/games/preview-token"
+import { isGameUnread } from "@/lib/games/activity"
 import { getGame } from "@/lib/games/queries"
+import { markGameRead } from "@/lib/games/read-state"
 
 export default async function GamePage({
   params,
@@ -34,6 +37,19 @@ export default async function GamePage({
   const game = await getGame(id)
 
   if (!game) notFound()
+
+  /**
+   * Opening the game is what reads it; a game with nothing new writes nothing.
+   * A failed write only leaves the unread dot showing, so it must never take
+   * the page down with it.
+   */
+  if (isGameUnread(game)) {
+    try {
+      await markGameRead(game.id, game.userId)
+    } catch (error) {
+      console.error("Failed to mark game as read", error)
+    }
+  }
 
   /**
    * The persisted thread is rendered on the server, so a reload restores the
@@ -69,6 +85,7 @@ export default async function GamePage({
       initialSessions={initialSessions}
       initialPrompt={initialPrompt}
       initialTierId={initialTierId}
+      contextWindows={strongContextWindows()}
     />
   )
 }

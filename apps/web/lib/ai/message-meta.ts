@@ -1,5 +1,8 @@
-import type { UIMessage } from "ai"
+import type { UIMessage, UIMessageChunk } from "ai"
 import { z } from "zod"
+
+import { addSpeed, type GenerationSpeed } from "@/lib/games/generation-speed"
+import { addTiming, type StepTimingTotals } from "@/lib/games/step-timing"
 
 import type { TurnCost } from "./pricing"
 
@@ -37,6 +40,38 @@ const messageMetaSchema = z.object({
     })
     .optional(),
   credits: z.number().optional(),
+  /**
+   * How full the orchestrator's window was at the turn's last step. Optional:
+   * a reply written before this existed carries none, and the footer simply
+   * shows no ring for it.
+   */
+  context: z
+    .object({
+      tokens: z.number(),
+      window: z.number(),
+      cached: z.number().optional(),
+    })
+    .optional(),
+  /**
+   * Orchestrator output tokens and the generation time they took, summed over
+   * the turn's steps. Optional: a reply written before this existed carries
+   * none and simply adds nothing to the session's speed.
+   */
+  speed: z.object({ tokens: z.number(), ms: z.number() }).optional(),
+  /**
+   * How many steps the orchestrator took for the turn. Optional for the same
+   * reason as `speed`: older replies carry none and add nothing to the total.
+   */
+  steps: z.number().optional(),
+  /** Model, tool and first-output time for the turn; optional like `speed`. */
+  timing: z
+    .object({
+      llmMs: z.number(),
+      toolMs: z.number(),
+      ttftMs: z.number(),
+      ttftSteps: z.number(),
+    })
+    .optional(),
 })
 
 export type MessageMeta = z.infer<typeof messageMetaSchema>
@@ -95,7 +130,11 @@ export function readMessageMeta(message: UIMessage): MessageMeta {
  */
 export function withTurnMeta(
   messages: UIMessage[],
-  cost: TurnCost
+  cost: TurnCost,
+  context?: MessageMeta["context"],
+  speed?: GenerationSpeed,
+  steps?: number,
+  timing?: StepTimingTotals
 ): UIMessage[] {
   const last = messages.at(-1)
 
@@ -113,6 +152,26 @@ export function withTurnMeta(
         (existing.tokens?.reasoning ?? 0) + cost.tokens.reasoningTokens,
     },
     credits: (existing.credits ?? 0) + cost.credits,
+    /**
+     * Replaces rather than accumulates, unlike the token counts: it is a
+     * reading of the window at the latest step, so the newest turn's value is
+     * the only true one. A turn that took no reading keeps the previous one.
+     */
+    context: context ?? existing.context,
+    /**
+     * Accumulates like the token counts: it is a total of work done, so a
+     * message that spans two turns has both.
+     */
+    speed:
+      speed && existing.speed
+        ? addSpeed(existing.speed, speed)
+        : (speed ?? existing.speed),
+    steps:
+      steps === undefined ? existing.steps : (existing.steps ?? 0) + steps,
+    timing:
+      timing && existing.timing
+        ? addTiming(existing.timing, timing)
+        : (timing ?? existing.timing),
   }
 
   /**
@@ -125,4 +184,31 @@ export function withTurnMeta(
       : {}
 
   return [...messages.slice(0, -1), { ...last, metadata: { ...base, ...meta } }]
+}
+
+/**
+ * The same receipt `withTurnMeta` persists, as a stream chunk.
+ *
+ * The persisted copy is written after the stream has closed, so without this
+ * the browser's message has no receipt until the thread is reloaded: no token
+ * footer, no per-reply popover. The `message-metadata` chunk is merged into
+ * the in-flight reply by the client as it arrives.
+ *
+ * Built by running `withTurnMeta` and reading back what it stamped, never by
+ * assembling the fields a second time, so the live value and the stored one
+ * cannot drift apart. `null` when there is no assistant reply to put it on.
+ */
+export function turnMetaChunk(
+  message: UIMessage | undefined,
+  cost: TurnCost,
+  context?: MessageMeta["context"],
+  speed?: GenerationSpeed,
+  steps?: number,
+  timing?: StepTimingTotals
+): UIMessageChunk | null {
+  if (!message || message.role !== "assistant") return null
+
+  const [stamped] = withTurnMeta([message], cost, context, speed, steps, timing)
+
+  return { type: "message-metadata", messageMetadata: stamped?.metadata }
 }

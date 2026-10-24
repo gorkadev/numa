@@ -63,6 +63,7 @@ function entry(model: string, effort: string): ModelEntry {
     provider: "google-vertex",
     providerModelId: model,
     displayName: `${model} (${effort})`,
+    contextWindow: 1_048_576,
     providerOptions: { googleVertex: { thinkingConfig: { thinkingLevel: effort } } },
   }
 }

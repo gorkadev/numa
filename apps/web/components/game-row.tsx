@@ -3,7 +3,9 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import type { Game } from "@workspace/db/schema"
+import { useTranslations } from "next-intl"
 import { MarqueeText } from "@workspace/ui/components/marquee-text"
+import { Spinner } from "@workspace/ui/components/spinner"
 import { PopoverClose } from "@workspace/ui/components/popover"
 import {
   SidebarMenuAction,
@@ -12,6 +14,7 @@ import {
   useSidebar,
 } from "@workspace/ui/components/sidebar"
 
+import { useGameUnread, useGameWorking } from "@/components/game-activity-provider"
 import { GameMenu } from "@/components/game-menu"
 
 /**
@@ -39,6 +42,9 @@ export function GameRow({
 }) {
   const pathname = usePathname()
   const { setOpenMobile } = useSidebar()
+  const t = useTranslations("GameMenu")
+  const working = useGameWorking(game.id)
+  const unread = useGameUnread(game.id)
 
   const row = (
     <SidebarMenuButton
@@ -78,6 +84,23 @@ export function GameRow({
        * outside `PopoverClose`, so opening the menu does not dismiss the list
        * out from under it.
        */}
+      {/**
+       * The loader while the agent works, then the unread dot once it is done:
+       * both sit in the options menu's own slot, so they never share the row
+       * with it — shown while the menu is hidden, giving way to it on hover,
+       * on focus and while the menu is open. Only from `md` up — below it the
+       * menu is always visible (there is no hover to reveal it), and anything
+       * drawn over it would hide it.
+       */}
+      {(working || unread) && (
+        <span className="pointer-events-none absolute top-1.5 right-1 hidden aspect-square w-5 items-center justify-center text-sidebar-foreground/70 group-data-[collapsible=icon]:hidden md:flex md:group-hover/menu-item:opacity-0 md:group-focus-within/menu-item:opacity-0 md:group-has-aria-expanded/menu-item:opacity-0">
+          {working ? (
+            <Spinner label={t("working")} />
+          ) : (
+            <span role="status" aria-label={t("unread")} className="size-2 rounded-full bg-primary" />
+          )}
+        </span>
+      )}
       <GameMenu
         gameId={game.id}
         title={game.title}

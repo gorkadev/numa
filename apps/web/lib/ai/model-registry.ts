@@ -69,7 +69,21 @@ export type ModelEntry = {
   providerOptions?: ProviderOptions
   displayName: string
   effort?: "minimal" | "low" | "medium" | "high"
+  /**
+   * Tokens the provider model accepts in one request, input and output
+   * combined. A fact about the provider model, not about the effort level, so
+   * every entry of one model shares it. Declared here because Vertex cannot be
+   * asked at runtime; required so a new model cannot ship without one.
+   */
+  contextWindow: number
 }
+
+/**
+ * Gemini 4 Argon, 3.8 Flash and 3.5 Flash-Lite all publish a 1,048,576-token
+ * window (verified 2026-10-24: Google's model page for Argon; Flash and Lite
+ * from third-party catalogs only, so re-check against the Vertex docs).
+ */
+const GEMINI_CONTEXT_WINDOW = 1_048_576
 
 function entry(
   id: ModelEntryId,
@@ -83,6 +97,7 @@ function entry(
     providerModelId,
     displayName: `${name} (${effort})`,
     effort,
+    contextWindow: GEMINI_CONTEXT_WINDOW,
     providerOptions: {
       googleVertex: {
         thinkingConfig: {
@@ -237,6 +252,30 @@ export function resolveTier(id: TierId | undefined): TierId {
  */
 export function entryDisplayName(id: ModelEntryId): string {
   return REGISTRY[id].displayName
+}
+
+/**
+ * The context window of whichever entry served a call. Takes the served entry
+ * rather than a slot's primary, for the same reason `entryDisplayName` does: a
+ * fallback may have taken over mid-turn.
+ */
+export function entryContextWindow(id: ModelEntryId): number {
+  return REGISTRY[id].contextWindow
+}
+
+/**
+ * The window of each tier's orchestrator (its `strong` slot's primary), so the
+ * browser can draw an empty context ring before the first step of a turn has
+ * reported anything. A plain record of numbers: the client never imports this
+ * module, a server component reads it and passes the result down.
+ */
+export function strongContextWindows(): Record<TierId, number> {
+  return Object.fromEntries(
+    (Object.keys(TIER_PROFILES) as TierId[]).map((tier) => [
+      tier,
+      REGISTRY[TIER_PROFILES[tier].strong[0]].contextWindow,
+    ])
+  ) as Record<TierId, number>
 }
 
 /** Same configuration value used to construct this entry's provider options. */

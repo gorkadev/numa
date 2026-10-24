@@ -56,12 +56,6 @@
     "copied": "Copied",
     "copy": "Copy",
     "turnDetails": "Turn details",
-    "tokens": "Tokens",
-    "inputTokens": "Input",
-    "cachedTokens": "Cached",
-    "outputTokens": "Output",
-    "reasoningTokens": "Reasoning",
-    "credits": "Credits",
     "tools": "Tools",
     "questionsAsked": "Questions asked",
     "filesRead": "Files read",
@@ -69,6 +63,30 @@
     "filesWritten": "Files written",
     "edits": "Edits",
     "filesDeleted": "Files deleted"
+  },
+  "ChatUsage": {
+    "speed": "tok/s",
+    "sessionStatistics": "Session statistics",
+    "llmTime": "LLM time",
+    "toolTime": "Tool time",
+    "avgTtft": "Avg time to first token (TTFT)",
+    "tps": "Tokens per second (TPS)",
+    "turns": "{count, plural, one {turn} other {turns}}",
+    "steps": "{count, plural, one {step} other {steps}}",
+    "summaryLabel": "tok · Cache hit",
+    "tokenUsage": "Token usage",
+    "tokens": "{count} tok",
+    "cacheHit": "Cache hit",
+    "uncachedInput": "Uncached input",
+    "cachedInput": "Cached input",
+    "output": "Output",
+    "contextUsed": "{percent} of context used",
+    "contextUsedLabel": "Context used",
+    "free": "Free",
+    "fromCache": "From cache",
+    "reasoning": "Reasoning",
+    "credits": "Credits",
+    "contextSuffix": "context"
   },
   "ChatAgents": {
     "trace": {
@@ -190,10 +208,7 @@
     "creditsExhausted": "You are out of credits. Upgrade your plan or add credits, then try again.",
     "gameUnavailable": "This game is no longer available. Return to your games and open an available game.",
     "reconnecting": "Reconnecting to your response…",
-    "thinking": "Thinking",
-    "workingOutWhatToChange": "Working out what to change",
-    "planningTheEdit": "Planning the edit",
-    "gettingToIt": "Getting to it",
+    "thinking": "Thinking…",
     "taskListHeading": "Tasks",
     "taskStripSummary": "Tasks: {done} of {total} complete. Current task: {currentTask} ({status}).",
     "taskStatus": {
@@ -353,8 +368,15 @@
       }
     }
   },
+  "GameActivity": {
+    "turnFinished": "The agent finished",
+    "untitledGame": "Your game",
+    "open": "Open"
+  },
   "GameMenu": {
     "menuLabel": "Game options",
+    "working": "The agent is working on this game",
+    "unread": "The agent finished; there is something new to read",
     "pin": "Pin",
     "unpin": "Unpin",
     "rename": "Rename",

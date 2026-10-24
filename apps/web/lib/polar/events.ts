@@ -1,4 +1,5 @@
 import { polar } from "./client"
+import { turnEventKey } from "./turn-event-key"
 
 /**
  * The name every game turn is metered under.
@@ -53,10 +54,10 @@ export const CREDITS_METADATA_PROPERTY = "credits"
  * isolation: one has a balance nothing draws down, the other has usage against
  * no entitlement.
  *
- * `externalId` is `gameId:turn` and exists purely for DEDUPLICATION. Turns are
- * retried — the Trigger.dev run can fail and run again — and `turn` numbers are
- * not unique on their own; the column's comment in `schema.ts` says outright
- * that a retried run can repeat a number. Without a stable key, one retry bills
+ * `externalId` is `gameId:runId:turn` (see `turnEventKey`) and exists purely for
+ * DEDUPLICATION. Turns are retried — the Trigger.dev run can fail and run again
+ * — and `turn` numbers are not unique on their own: every run, continuations
+ * included, counts from 0 again, so the run is part of the key. Without a stable key, one retry bills
  * the customer twice for a single piece of work, and the second charge is
  * indistinguishable from real usage after the fact. This key is stable across
  * retries by construction, because both halves are decided before the turn runs
@@ -66,12 +67,14 @@ export const CREDITS_METADATA_PROPERTY = "credits"
 export async function ingestTurnCredits({
   userId,
   gameId,
+  runId,
   turn,
   credits,
   modelId,
 }: {
   userId: string
   gameId: string
+  runId: string
   turn: number
   credits: number
   modelId: string
@@ -89,7 +92,7 @@ export async function ingestTurnCredits({
         {
           name: GAME_TURN_EVENT_NAME,
           externalCustomerId: userId,
-          externalId: `${gameId}:${turn}`,
+          externalId: turnEventKey({ gameId, runId, turn }),
           metadata: {
             [CREDITS_METADATA_PROPERTY]: credits,
             model: modelId,
@@ -142,7 +145,7 @@ export async function ingestTurnCredits({
  *
  * # Why `externalId` is keyed on the subscription and the period, not a turn
  *
- * `ingestTurnCredits` dedupes on `gameId:turn` because a turn can retry. A
+ * `ingestTurnCredits` dedupes on `gameId:runId:turn` because a turn can retry. A
  * plan-change adjustment has no retry of that shape — `changePlanAction`
  * calls this at most once per successful `subscriptions.update` — but the
  * Server Action itself is reachable as a raw POST (see that function's own

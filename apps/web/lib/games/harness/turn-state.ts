@@ -3,6 +3,9 @@ import { chat } from "@trigger.dev/sdk/ai"
 import { DEFAULT_TIER_ID, type TierId } from "@/lib/ai/model-catalog"
 import type { ModelEntryId, ServedCall, Slot } from "@/lib/ai/model-registry"
 import type { AgentUsageEntry } from "@/lib/ai/pricing"
+import type { ContextUsage } from "@/lib/games/context-usage"
+import { addSpeed, type GenerationSpeed } from "@/lib/games/generation-speed"
+import { addTiming, type StepTimingTotals } from "@/lib/games/step-timing"
 
 export type TurnVerifyOutcome = "not-run" | "pass" | "fail" | "unavailable" | "refused"
 
@@ -95,6 +98,17 @@ type TurnStateData = {
    * it.
    */
   unfinishedTaskIds: Set<string>
+  /**
+   * The orchestrator's context reading at its latest step this turn. Not part
+   * of the ledger on purpose: pricing sums steps, this keeps only the last.
+   */
+  context: ContextUsage | undefined
+  /** The orchestrator's output and generation time so far this turn, summed over steps. */
+  speed: GenerationSpeed | undefined
+  /** Orchestrator steps finished so far this turn. */
+  steps: number
+  /** Where the orchestrator's time went so far this turn, summed over steps. */
+  timing: StepTimingTotals | undefined
 }
 
 const local = chat.local<TurnStateData>({ id: "turnState" })
@@ -194,6 +208,50 @@ export const turnState = {
     return local.unavailable.has(id)
   },
 
+  /** Records the orchestrator's latest step reading; the newest one wins. */
+  setContext(context: ContextUsage): void {
+    local.context = context
+  },
+
+  /** Adds one orchestrator step's generation speed to the turn's total. */
+  addSpeed(speed: GenerationSpeed): void {
+    local.speed = local.speed ? addSpeed(local.speed, speed) : speed
+  },
+
+  /** Adds one orchestrator step's timing to the turn's totals. */
+  addTiming(timing: StepTimingTotals): void {
+    local.timing = local.timing ? addTiming(local.timing, timing) : timing
+  },
+
+  /** The turn's timing totals, guarded by turn like `contextFor`. */
+  timingFor(turn: number): StepTimingTotals | undefined {
+    return local.turn === turn ? local.timing : undefined
+  },
+
+  /** Counts one finished orchestrator step. */
+  addStep(): void {
+    local.steps += 1
+  },
+
+  /** The turn's step count, guarded by turn like `contextFor`. */
+  stepsFor(turn: number): number {
+    return local.turn === turn ? local.steps : 0
+  },
+
+  /** The turn's speed total, guarded by turn like `contextFor`. */
+  speedFor(turn: number): GenerationSpeed | undefined {
+    return local.turn === turn ? local.speed : undefined
+  },
+
+  /**
+   * The reading, but only if it belongs to `turn` — for the same stale-state
+   * reason as `ledgerFor`: a turn that failed before `onTurnStart` must not
+   * stamp the previous turn's reading on its own reply.
+   */
+  contextFor(turn: number): ContextUsage | undefined {
+    return local.turn === turn ? local.context : undefined
+  },
+
   /**
    * Records an availability failure so later calls on the same slot, this
    * turn, skip straight past it (decision 19). A new `Set` rather than a
@@ -268,6 +326,10 @@ export const turnState = {
       finishedTaskIds: new Set(),
       verifyBaseline: undefined,
       unfinishedTaskIds: new Set(),
+      context: undefined,
+      speed: undefined,
+      steps: 0,
+      timing: undefined,
     })
   },
 
@@ -291,6 +353,7 @@ export const turnState = {
     local.finishedTaskIds = new Set()
     local.verifyBaseline = undefined
     local.unfinishedTaskIds = new Set()
+    local.context = undefined
   },
 
   /**

@@ -1,6 +1,6 @@
 import { db } from "@workspace/db"
 import { games } from "@workspace/db/schema"
-import { eq } from "drizzle-orm"
+import { eq, sql } from "drizzle-orm"
 import type { UIMessage } from "ai"
 
 /**
@@ -48,15 +48,28 @@ export async function saveGameThread({
   messages,
   chatAccessToken,
   lastEventId,
+  turnFinished = false,
 }: {
   gameId: string
   messages: UIMessage[]
   chatAccessToken?: string
   lastEventId?: string
+  /**
+   * Stamps `last_turn_finished_at` in this same statement, so the end of a
+   * turn costs no write of its own. Only the end-of-turn save passes it; the
+   * save at the start of a turn must not, or a turn would read as finished
+   * the moment it began.
+   */
+  turnFinished?: boolean
 }): Promise<void> {
   await db
     .update(games)
-    .set({ messages, chatAccessToken, lastEventId })
+    .set({
+      messages,
+      chatAccessToken,
+      lastEventId,
+      ...(turnFinished ? { lastTurnFinishedAt: sql`now()` } : {}),
+    })
     .where(eq(games.id, gameId))
 }
 
