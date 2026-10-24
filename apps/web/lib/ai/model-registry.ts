@@ -263,6 +263,21 @@ export function entryContextWindow(id: ModelEntryId): number {
   return REGISTRY[id].contextWindow
 }
 
+/**
+ * The window of each tier's orchestrator (its `strong` slot's primary), so the
+ * browser can draw an empty context ring before the first step of a turn has
+ * reported anything. A plain record of numbers: the client never imports this
+ * module, a server component reads it and passes the result down.
+ */
+export function strongContextWindows(): Record<TierId, number> {
+  return Object.fromEntries(
+    (Object.keys(TIER_PROFILES) as TierId[]).map((tier) => [
+      tier,
+      REGISTRY[TIER_PROFILES[tier].strong[0]].contextWindow,
+    ])
+  ) as Record<TierId, number>
+}
+
 /** Same configuration value used to construct this entry's provider options. */
 export function entryEffort(id: ModelEntryId): ModelEntry["effort"] {
   return REGISTRY[id].effort

@@ -6,6 +6,7 @@ import {
   resolveModel,
   resolveTier,
   resolveUtilityModel,
+  strongContextWindows,
   type Slot,
 } from "./model-registry"
 import { type TierId } from "./model-catalog"
@@ -91,4 +92,12 @@ test("every registry entry declares the context window of its provider model", (
     // 1,048,576 input+output tokens for all three Gemini models in use.
     assert.equal(entryContextWindow(id), 1_048_576, id)
   }
+})
+
+test("every tier reports the window of the model its orchestrator runs on", () => {
+  assert.deepEqual(strongContextWindows(), {
+    pro: 1_048_576,
+    balanced: 1_048_576,
+    fast: 1_048_576,
+  })
 })

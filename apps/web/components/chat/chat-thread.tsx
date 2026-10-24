@@ -41,6 +41,7 @@ export function ChatThread({
   initialSessions,
   initialPrompt,
   initialTierId,
+  contextWindows,
   onRevision,
   onSelectedRunIdChange,
   onSubagentPanelOpenChange,
@@ -71,6 +72,8 @@ export function ChatThread({
    * one and not a controlled prop.
    */
   initialTierId?: TierId
+  /** Each tier's orchestrator window, so the context ring can start at zero. */
+  contextWindows: Record<TierId, number>
   /**
    * Reports the revision the agent stamps on a turn that changed the game's
    * files. The thread owns the stream, but the preview is its sibling, so the
@@ -153,11 +156,19 @@ export function ChatThread({
   const sessionUsage = useMemo(() => sumSessionUsage(messages), [messages])
   /**
    * The stream's live reading wins while a turn runs; the newest reply's
-   * stamped reading covers a thread opened fresh after a reload.
+   * stamped reading covers a thread opened fresh after a reload. Before any
+   * turn the ring starts empty against the selected tier's window, so it is
+   * on screen from the first frame instead of appearing when the first step
+   * reports.
    */
   const contextUsage = useMemo(
-    () => liveContext ?? latestContextUsage(messages),
-    [liveContext, messages]
+    () =>
+      liveContext ??
+      latestContextUsage(messages) ?? {
+        tokens: 0,
+        window: contextWindows[tierId],
+      },
+    [liveContext, messages, contextWindows, tierId]
   )
   const showTaskStrip = shouldShowTaskStrip(taskStripTasks, pending)
   const buildProgressKey = gameBuildProgressLabelKey(buildProgress)
@@ -231,7 +242,7 @@ export function ChatThread({
           <MessageScrollerButton label={t("scrollToEnd")} />
         </MessageScroller>
       </MessageScrollerProvider>
-      <div className="mx-auto flex w-full max-w-3xl shrink-0 flex-col gap-2 px-4 pb-4">
+      <div className="mx-auto flex w-full max-w-3xl shrink-0 flex-col gap-2 px-4">
         {/**
          * Only application-owned structured stream events get specific copy.
          * Provider and transport messages are not stable localization codes

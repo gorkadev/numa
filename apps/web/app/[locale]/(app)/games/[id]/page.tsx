@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation"
 
 import { GameChat } from "@/components/game-chat"
+import { strongContextWindows } from "@/lib/ai/model-registry"
 import { isTierId } from "@/lib/ai/model-catalog"
 import { signPreviewToken } from "@/lib/games/preview-token"
 import { getGame } from "@/lib/games/queries"
@@ -69,6 +70,7 @@ export default async function GamePage({
       initialSessions={initialSessions}
       initialPrompt={initialPrompt}
       initialTierId={initialTierId}
+      contextWindows={strongContextWindows()}
     />
   )
 }

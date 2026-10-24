@@ -24,24 +24,33 @@ import type { ContextUsage } from "@/lib/games/context-usage"
  * when someone looks for them. The context ring and the session statistics
  * join this row as their data lands (see `odd/tasks/chat-usage-footer.md`).
  *
- * Renders nothing before the first priced turn: a row of zeros under a fresh
- * chat would read as a free session rather than an empty one.
+ * Always rendered, at zero before the first priced turn: a row that appears
+ * when the first answer lands makes the composer jump, and a zero is what a
+ * fresh chat has actually used.
  */
 export function UsageFooter({
   usage,
   context,
 }: {
   usage: SessionUsage | null
-  context: ContextUsage | null
+  context: ContextUsage
 }) {
-  if (!usage && !context) return null
-
   return (
-    <div className="flex items-center justify-center gap-1 pt-1 text-muted-foreground">
-      {usage ? <TokenUsage usage={usage} /> : null}
-      {context ? <ContextRing context={context} /> : null}
+    <div className="flex items-center justify-center gap-1 py-1 text-muted-foreground">
+      <TokenUsage usage={usage ?? EMPTY_USAGE} />
+      <ContextRing context={context} />
     </div>
   )
+}
+
+/** Shown before the first priced turn, so the row never changes shape when it arrives. */
+const EMPTY_USAGE: SessionUsage = {
+  total: 0,
+  input: 0,
+  cached: 0,
+  uncached: 0,
+  output: 0,
+  cacheHit: 0,
 }
 
 const RING_RADIUS = 6
