@@ -11,6 +11,7 @@ import {
 } from "@workspace/ui/components/popover"
 import { Progress } from "@workspace/ui/components/progress"
 
+import { AnimatedNumber } from "@/components/animated-number"
 import {
   UsagePanelHeader,
   UsageRow,
@@ -62,12 +63,13 @@ export function UsageFooter({
  */
 function GenerationRate({ speed }: { speed: GenerationSpeed | null }) {
   const t = useTranslations("ChatUsage")
-  const locale = useLocale()
-  const rate = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 })
 
   return (
     <span className="px-2 text-xs tabular-nums">
-      {t("speed", { rate: rate.format(speed ? tokensPerSecond(speed) : 0) })}
+      <AnimatedNumber
+        value={speed ? Math.round(tokensPerSecond(speed)) : 0}
+        suffix={` ${t("speed")}`}
+      />
     </span>
   )
 }
@@ -145,7 +147,10 @@ function ContextRing({ context }: { context: ContextUsage }) {
             className="stroke-current"
           />
         </svg>
-        {percent}
+        <AnimatedNumber
+          value={ratio}
+          format={{ style: "percent", maximumFractionDigits: 0 }}
+        />
       </PopoverTrigger>
       <PopoverContent align="center" side="top" className="w-72 gap-3">
         <div className="flex items-baseline justify-between gap-3 text-sm">
@@ -179,10 +184,6 @@ function ContextRing({ context }: { context: ContextUsage }) {
 function TokenUsage({ usage }: { usage: SessionUsage }) {
   const t = useTranslations("ChatUsage")
   const locale = useLocale()
-  const compact = new Intl.NumberFormat(locale, {
-    notation: "compact",
-    maximumFractionDigits: 1,
-  })
   const exact = new Intl.NumberFormat(locale)
   const percent = new Intl.NumberFormat(locale, {
     style: "percent",
@@ -203,10 +204,15 @@ function TokenUsage({ usage }: { usage: SessionUsage }) {
         }
       >
         <HugeiconsIcon icon={Database01Icon} strokeWidth={2} />
-        {t("summary", {
-          tokens: compact.format(usage.total),
-          cacheHit: percent.format(usage.cacheHit),
-        })}
+        <AnimatedNumber
+          value={usage.total}
+          format={{ notation: "compact", maximumFractionDigits: 1 }}
+        />
+        {t("summaryLabel")}
+        <AnimatedNumber
+          value={usage.cacheHit}
+          format={{ style: "percent", maximumFractionDigits: 0 }}
+        />
       </PopoverTrigger>
       <PopoverContent align="center" side="top" className="w-72 gap-3">
         <UsagePanelHeader

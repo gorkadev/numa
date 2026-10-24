@@ -71,8 +71,8 @@
     "filesDeleted": "Archivos eliminados"
   },
   "ChatUsage": {
-    "speed": "{rate} tok/s",
-    "summary": "{tokens} tok · Caché {cacheHit}",
+    "speed": "tok/s",
+    "summaryLabel": "tok · Caché",
     "tokenUsage": "Uso de tokens",
     "tokens": "{count} tok",
     "cacheHit": "Acierto de caché",
