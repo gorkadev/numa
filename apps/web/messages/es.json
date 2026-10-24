@@ -72,6 +72,8 @@
   },
   "ChatUsage": {
     "speed": "tok/s",
+    "turns": "{count, plural, one {turno} other {turnos}}",
+    "steps": "{count, plural, one {paso} other {pasos}}",
     "summaryLabel": "tok · Caché",
     "tokenUsage": "Uso de tokens",
     "tokens": "{count} tok",

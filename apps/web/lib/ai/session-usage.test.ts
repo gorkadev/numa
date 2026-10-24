@@ -4,6 +4,7 @@ import type { UIMessage } from "ai"
 
 import {
   latestContextUsage,
+  sumSessionActivity,
   sumSessionSpeed,
   sumSessionUsage,
 } from "./session-usage"
@@ -108,4 +109,22 @@ test("session speed sums tokens and time over the replies that carry one", () =>
     sumSessionSpeed([withSpeed(100, 1_000), reply(), withSpeed(300, 1_000)]),
     { tokens: 400, ms: 2_000 }
   )
+})
+
+test("session activity counts replies with a receipt and sums their steps", () => {
+  const priced = (steps?: number): UIMessage => ({
+    ...reply({ input: 1, output: 1, cached: 0, reasoning: 0 }),
+    metadata: {
+      tokens: { input: 1, output: 1, cached: 0, reasoning: 0 },
+      ...(steps === undefined ? {} : { steps }),
+    },
+  })
+  const user: UIMessage = { id: "u", role: "user", parts: [] }
+
+  assert.deepEqual(sumSessionActivity([]), { turns: 0, steps: 0 })
+  assert.deepEqual(sumSessionActivity([user, reply()]), { turns: 0, steps: 0 })
+  assert.deepEqual(sumSessionActivity([user, priced(3), user, priced(2), priced()]), {
+    turns: 3,
+    steps: 5,
+  })
 })

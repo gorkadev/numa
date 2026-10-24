@@ -750,7 +750,8 @@ export const gameChat = chat.agent({
         responseMessage,
         cost,
         turnState.contextFor(turn),
-        turnState.speedFor(turn)
+        turnState.speedFor(turn),
+        turnState.stepsFor(turn)
       )
 
       if (receipt) writer.write(receipt)
@@ -846,7 +847,8 @@ export const gameChat = chat.agent({
           withThreadTier(currentTurn ? withGameVerification(uiMessages, verificationData) : uiMessages, clientData?.tier),
           cost,
           turnState.contextFor(turn),
-          turnState.speedFor(turn)
+          turnState.speedFor(turn),
+          turnState.stepsFor(turn)
         )
       ),
       chatAccessToken,
@@ -939,6 +941,8 @@ export const gameChat = chat.agent({
        * that reports no input is skipped, leaving the previous reading in place.
        */
       onStepFinish: ({ usage, performance }) => {
+        turnState.addStep()
+
         /**
          * Generation speed is read first and on its own: a step with no
          * measurable speed (a tool-call-only step) must not skip the context

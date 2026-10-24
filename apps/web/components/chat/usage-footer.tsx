@@ -41,15 +41,17 @@ import {
 export function UsageFooter({
   usage,
   speed,
+  activity,
   context,
 }: {
   usage: SessionUsage | null
   speed: GenerationSpeed | null
+  activity: { turns: number; steps: number }
   context: ContextUsage
 }) {
   return (
     <div className="flex items-center justify-center gap-1 py-1 text-muted-foreground">
-      <GenerationRate speed={speed} />
+      <GenerationRate speed={speed} activity={activity} />
       <TokenUsage usage={usage ?? EMPTY_USAGE} />
       <ContextRing context={context} />
     </div>
@@ -57,15 +59,26 @@ export function UsageFooter({
 }
 
 /**
- * The orchestrator's generation speed over the session, as plain text for now:
- * the popover with the statistics behind it comes later. Zero until a reply
+ * The orchestrator's turns, steps and generation speed over the session, as
+ * plain text for now: the popover with the statistics behind it comes later. Zero until a reply
  * has been measured, for the same reason the other groups start at zero.
  */
-function GenerationRate({ speed }: { speed: GenerationSpeed | null }) {
+function GenerationRate({
+  speed,
+  activity,
+}: {
+  speed: GenerationSpeed | null
+  activity: { turns: number; steps: number }
+}) {
   const t = useTranslations("ChatUsage")
 
   return (
-    <span className="px-2 text-xs tabular-nums">
+    <span className="flex items-center gap-1 px-2 text-xs tabular-nums">
+      <AnimatedNumber value={activity.turns} />
+      {t("turns", { count: activity.turns })}
+      <AnimatedNumber value={activity.steps} />
+      {t("steps", { count: activity.steps })}
+      <span aria-hidden>·</span>
       <AnimatedNumber
         value={speed ? Math.round(tokensPerSecond(speed)) : 0}
         suffix={` ${t("speed")}`}

@@ -104,6 +104,8 @@ type TurnStateData = {
   context: ContextUsage | undefined
   /** The orchestrator's output and generation time so far this turn, summed over steps. */
   speed: GenerationSpeed | undefined
+  /** Orchestrator steps finished so far this turn. */
+  steps: number
 }
 
 const local = chat.local<TurnStateData>({ id: "turnState" })
@@ -213,6 +215,16 @@ export const turnState = {
     local.speed = local.speed ? addSpeed(local.speed, speed) : speed
   },
 
+  /** Counts one finished orchestrator step. */
+  addStep(): void {
+    local.steps += 1
+  },
+
+  /** The turn's step count, guarded by turn like `contextFor`. */
+  stepsFor(turn: number): number {
+    return local.turn === turn ? local.steps : 0
+  },
+
   /** The turn's speed total, guarded by turn like `contextFor`. */
   speedFor(turn: number): GenerationSpeed | undefined {
     return local.turn === turn ? local.speed : undefined
@@ -303,6 +315,7 @@ export const turnState = {
       unfinishedTaskIds: new Set(),
       context: undefined,
       speed: undefined,
+      steps: 0,
     })
   },
 

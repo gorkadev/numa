@@ -145,3 +145,34 @@ test("the live receipt carries the same speed the persisted reply will", () => {
     stamped?.metadata
   )
 })
+
+test("steps accumulate across the turns of one message", () => {
+  const once = withTurnMeta([assistant()], cost(1, 1), undefined, undefined, 3)
+  const twice = withTurnMeta(once, cost(1, 1), undefined, undefined, 2)
+
+  assert.equal(readMessageMeta(twice[0]!).steps, 5)
+})
+
+test("a turn with no step count keeps the one already stamped", () => {
+  const once = withTurnMeta([assistant()], cost(1, 1), undefined, undefined, 3)
+  const twice = withTurnMeta(once, cost(1, 1))
+
+  assert.equal(readMessageMeta(twice[0]!).steps, 3)
+})
+
+test("the live receipt carries the same step count the persisted reply will", () => {
+  const chunk = turnMetaChunk(assistant(), cost(1, 1), undefined, undefined, 4)
+  const [stamped] = withTurnMeta(
+    [assistant()],
+    cost(1, 1),
+    undefined,
+    undefined,
+    4
+  )
+
+  assert.deepEqual(
+    (chunk as { messageMetadata?: unknown }).messageMetadata,
+    stamped?.metadata
+  )
+  assert.equal(readMessageMeta(stamped!).steps, 4)
+})

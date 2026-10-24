@@ -57,6 +57,11 @@ const messageMetaSchema = z.object({
    * none and simply adds nothing to the session's speed.
    */
   speed: z.object({ tokens: z.number(), ms: z.number() }).optional(),
+  /**
+   * How many steps the orchestrator took for the turn. Optional for the same
+   * reason as `speed`: older replies carry none and add nothing to the total.
+   */
+  steps: z.number().optional(),
 })
 
 export type MessageMeta = z.infer<typeof messageMetaSchema>
@@ -117,7 +122,8 @@ export function withTurnMeta(
   messages: UIMessage[],
   cost: TurnCost,
   context?: MessageMeta["context"],
-  speed?: GenerationSpeed
+  speed?: GenerationSpeed,
+  steps?: number
 ): UIMessage[] {
   const last = messages.at(-1)
 
@@ -149,6 +155,8 @@ export function withTurnMeta(
       speed && existing.speed
         ? addSpeed(existing.speed, speed)
         : (speed ?? existing.speed),
+    steps:
+      steps === undefined ? existing.steps : (existing.steps ?? 0) + steps,
   }
 
   /**
@@ -179,11 +187,12 @@ export function turnMetaChunk(
   message: UIMessage | undefined,
   cost: TurnCost,
   context?: MessageMeta["context"],
-  speed?: GenerationSpeed
+  speed?: GenerationSpeed,
+  steps?: number
 ): UIMessageChunk | null {
   if (!message || message.role !== "assistant") return null
 
-  const [stamped] = withTurnMeta([message], cost, context, speed)
+  const [stamped] = withTurnMeta([message], cost, context, speed, steps)
 
   return { type: "message-metadata", messageMetadata: stamped?.metadata }
 }

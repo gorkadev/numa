@@ -103,3 +103,29 @@ export function sumSessionSpeed(messages: UIMessage[]): GenerationSpeed | null {
 
   return total
 }
+
+/**
+ * How much the orchestrator has done in this chat: a turn is a reply that
+ * carries a receipt, and steps are summed from the same receipts. Replies
+ * written before steps were recorded count as a turn with no steps.
+ */
+export function sumSessionActivity(messages: UIMessage[]): {
+  turns: number
+  steps: number
+} {
+  let turns = 0
+  let steps = 0
+
+  for (const message of messages) {
+    if (message.role !== "assistant") continue
+
+    const meta = readMessageMeta(message)
+
+    if (!meta.tokens) continue
+
+    turns += 1
+    steps += meta.steps ?? 0
+  }
+
+  return { turns, steps }
+}

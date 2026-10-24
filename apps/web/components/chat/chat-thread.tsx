@@ -30,6 +30,7 @@ import { useGameChat } from "@/components/chat/use-game-chat"
 import type { TierId } from "@/lib/ai/model-catalog"
 import {
   latestContextUsage,
+  sumSessionActivity,
   sumSessionSpeed,
   sumSessionUsage,
 } from "@/lib/ai/session-usage"
@@ -159,6 +160,7 @@ export function ChatThread({
   const taskStripTasks = useMemo(() => deriveTaskStrip(messages), [messages])
   const sessionUsage = useMemo(() => sumSessionUsage(messages), [messages])
   const sessionSpeed = useMemo(() => sumSessionSpeed(messages), [messages])
+  const sessionActivity = useMemo(() => sumSessionActivity(messages), [messages])
   /**
    * The stream's live reading wins while a turn runs; the newest reply's
    * stamped reading covers a thread opened fresh after a reload. Before any
@@ -288,6 +290,7 @@ export function ChatThread({
             <UsageFooter
               usage={sessionUsage}
               speed={sessionSpeed}
+              activity={sessionActivity}
               context={contextUsage}
             />
           }
