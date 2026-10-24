@@ -2,7 +2,7 @@ import { auth as triggerAuth } from "@trigger.dev/sdk"
 
 import { activityTag } from "@/lib/games/activity"
 
-/** `components/game-activity-provider.tsx` renews it ten minutes before this. */
+/** Renewed on rejection by the realtime client (`components/game-activity-provider.tsx`). */
 const ACTIVITY_TOKEN_EXPIRATION = "1h"
 
 /**

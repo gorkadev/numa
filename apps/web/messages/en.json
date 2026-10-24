@@ -374,6 +374,7 @@
   "GameMenu": {
     "menuLabel": "Game options",
     "working": "The agent is working on this game",
+    "unread": "The agent finished; there is something new to read",
     "pin": "Pin",
     "unpin": "Unpin",
     "rename": "Rename",

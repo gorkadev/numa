@@ -374,6 +374,7 @@
   "GameMenu": {
     "menuLabel": "Opciones del juego",
     "working": "El agente está trabajando en este juego",
+    "unread": "El agente ha terminado; hay algo nuevo que leer",
     "pin": "Fijar",
     "unpin": "Desfijar",
     "rename": "Cambiar nombre",

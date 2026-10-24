@@ -490,9 +490,14 @@ export const gameChat = chat.agent({
      * continuation run and a game created before this tag existed included —
      * so no run of the player's is ever left out of the sidebar.
      */
-    const userId = await getGameUserId(chatId)
-    const tag = userId ? activityTag(userId) : undefined
-    if (tag && !ctx.run.tags.includes(tag)) await tags.add(tag)
+    try {
+      const userId = await getGameUserId(chatId)
+      const tag = userId ? activityTag(userId) : undefined
+      if (tag && !ctx.run.tags.includes(tag)) await tags.add(tag)
+    } catch (error) {
+      // Costs the sidebar its signal for this run, never the chat itself.
+      logger.warn("Failed to tag the run for game activity", { chatId, error: String(error) })
+    }
   },
 
   /**
@@ -683,8 +688,9 @@ export const gameChat = chat.agent({
 
     /**
      * The sidebar's "the agent is working" flag. Run status cannot carry it:
-     * the run stays `EXECUTING` while idle between messages. Cleared at the
-     * top of `onTurnComplete`, which also fires for stopped and failed turns.
+     * the run stays `EXECUTING` while idle between messages. Cleared in
+     * `onTurnComplete` once the thread is saved, which also fires for stopped
+     * and failed turns.
      */
     metadata.set("working", true)
 
@@ -823,7 +829,6 @@ export const gameChat = chat.agent({
     stopped,
     error,
   }) => {
-    metadata.set("working", false)
     const modelId = orchestratorEntryId()
 
     /**
@@ -862,22 +867,33 @@ export const gameChat = chat.agent({
       Boolean(stopped || error)
     )
 
-    await saveGameThread({
-      gameId: chatId,
-      messages: withoutGameProgress(
-        withTurnMeta(
-          withThreadTier(currentTurn ? withGameVerification(uiMessages, verificationData) : uiMessages, clientData?.tier),
-          cost,
-          turnState.contextFor(turn),
-          turnState.speedFor(turn),
-          turnState.stepsFor(turn),
-          turnState.timingFor(turn)
-        )
-      ),
-      chatAccessToken,
-      lastEventId,
-      turnFinished: true,
-    })
+    /**
+     * `working` is cleared only once the save that stamps
+     * `last_turn_finished_at` has landed: the open chat marks the game read
+     * the moment it sees the flag drop, and a read written before the finish
+     * would leave the game showing as unread. `finally`, so a failed save
+     * still never leaves the sidebar spinning.
+     */
+    try {
+      await saveGameThread({
+        gameId: chatId,
+        messages: withoutGameProgress(
+          withTurnMeta(
+            withThreadTier(currentTurn ? withGameVerification(uiMessages, verificationData) : uiMessages, clientData?.tier),
+            cost,
+            turnState.contextFor(turn),
+            turnState.speedFor(turn),
+            turnState.stepsFor(turn),
+            turnState.timingFor(turn)
+          )
+        ),
+        chatAccessToken,
+        lastEventId,
+        turnFinished: true,
+      })
+    } finally {
+      metadata.set("working", false)
+    }
 
     /**
      * `chatId` is the game id.

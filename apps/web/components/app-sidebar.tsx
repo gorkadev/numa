@@ -45,11 +45,13 @@ import {
 
 import { CommandPalette } from "@/components/command-palette"
 import { CreditsButton } from "@/components/credits-button"
+import { useSeedUnreadGames } from "@/components/game-activity-provider"
 import { GameRow } from "@/components/game-row"
 import { NavUser } from "@/components/nav-user"
 import { UpgradeCard } from "@/components/upgrade-card"
 import { useIsMac } from "@/hooks/use-is-mac"
 import { useLiveBilling } from "@/hooks/use-live-billing"
+import { isGameUnread } from "@/lib/games/activity"
 import type { BillingSummary } from "@/lib/polar/plan"
 
 /**
@@ -97,6 +99,9 @@ export function AppSidebar({
    * listens to and why the optimistic subtraction is safe.
    */
   const billing = useLiveBilling(initialBilling)
+
+  /** The unread dots at load, from the rows already here; live changes come from the run subscription. */
+  useSeedUnreadGames(games.filter(isGameUnread).map((game) => game.id))
 
   /**
    * `listGames` already sorts pinned-first, so the split here is a single

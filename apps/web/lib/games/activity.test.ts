@@ -1,7 +1,13 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import { activityTag, createActivityStore, isGameUnread, workingGameIds } from "./activity"
+import {
+  activityTag,
+  createActivityStore,
+  isGameUnread,
+  seenGameIds,
+  workingGameIds,
+} from "./activity"
 
 test("the store tells listeners only when the working set actually changes", () => {
   const store = createActivityStore()
@@ -21,6 +27,62 @@ test("the store tells listeners only when the working set actually changes", () 
   unsubscribe()
   store.setWorking(new Set(["b"]))
   assert.equal(calls, 2)
+})
+
+test("the store starts from the server's unread games and a read clears one once", () => {
+  const store = createActivityStore()
+  store.seedUnread(["a"])
+  let calls = 0
+  store.subscribe(() => calls++)
+
+  assert.equal(store.isUnread("a"), true)
+  store.markRead("a")
+  store.markRead("a")
+  assert.equal(store.isUnread("a"), false)
+  assert.equal(calls, 1)
+})
+
+test("a game that stops working becomes unread and is reported as finished", () => {
+  const store = createActivityStore()
+  store.setWorking(new Set(["a"]), new Set(["a"]))
+
+  assert.deepEqual(store.setWorking(new Set(), new Set(["a"])), ["a"])
+  assert.equal(store.isUnread("a"), true)
+})
+
+test("the game the player has open finishes without becoming unread", () => {
+  const store = createActivityStore()
+  store.setOpenGame("a")
+  store.setWorking(new Set(["a"]), new Set(["a"]))
+
+  assert.deepEqual(store.setWorking(new Set(), new Set(["a"])), ["a"])
+  assert.equal(store.isUnread("a"), false)
+})
+
+test("opening a game reads it, and the server's unread list never re-marks it", () => {
+  const store = createActivityStore()
+  store.seedUnread(["a", "b"])
+  store.setOpenGame("a")
+  assert.equal(store.isUnread("a"), false)
+
+  store.seedUnread(["a"])
+  assert.equal(store.isUnread("a"), false)
+  assert.equal(store.isUnread("b"), true)
+})
+
+test("a game missing from the runs is not taken as finished", () => {
+  const store = createActivityStore()
+  store.setWorking(new Set(["a"]), new Set(["a"]))
+
+  assert.deepEqual(store.setWorking(new Set(), new Set()), [])
+  assert.equal(store.isUnread("a"), false)
+})
+
+test("every game a run belongs to is seen, working or not", () => {
+  assert.deepEqual(
+    [...seenGameIds([run({ metadata: { working: false } }), run({ tags: ["user:u1"] })])],
+    [GAME]
+  )
 })
 
 const GAME = "dcbbf363-1f85-4186-84e3-9ff98a710ff0"
