@@ -78,6 +78,11 @@ export const LIGHTING_PRESETS = {
  * @param {keyof typeof LIGHTING_PRESETS | object} [preset]
  */
 export function addLighting(engine, preset = "day", options = {}) {
+  if (typeof preset === "string" && !Object.hasOwn(LIGHTING_PRESETS, preset)) {
+    throw new Error(
+      `Unknown lighting preset "${preset}". Use one of: ${Object.keys(LIGHTING_PRESETS).join(", ")}, or pass a config object.`
+    )
+  }
   const config =
     typeof preset === "string" ? LIGHTING_PRESETS[preset] : { ...preset }
   const { shadowRadius = 30, shadowMapSize = 2048, applyBackground = true } =

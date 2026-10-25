@@ -15,10 +15,11 @@ Branch: `fix/harness-run-failures`. Delivery: ask-on-risk, forecast ~400 authore
 - [x] T1 — S1 — inline — worker without edits is retried once, then reported partial (RED: module missing; GREEN 5/5)
 - [x] T2 — S2 — inline — limits in field descriptions (RED 2 fail; GREEN 3/3)
 - [x] T3 — S3 — inline — routing moved to `lib/games/harness/routing.ts`; no verify after an empty dispatch, reads after failed verify (RED module missing; GREEN 7/7)
-- [ ] T4 — S4 — inline — engine lighting/mount guards + canvas visibility check
+- [x] T4 — S4 — inline — engine lighting/mount guards + canvas visibility check (RED 3+1 fail incl. real `reading 'sky'`; GREEN 3/3, 5/5; generated Python compiles)
 
 ## Log
 
 - L1 (2026-10-24, user, verbatim): "Si porfa divídete el trabajo como consideres y vete arreglándolo" — in reply to the proposed post-mortem fixes (1 tarea vacía, 2 límites, 3 verify/lectura, 4 motor).
 - L2: Cost item (orchestrator/planner re-reading the engine) deliberately left out of scope; pending a separate decision.
 - L3: S3 narrowed — hiding `verify` whenever nothing changed would also remove it from a turn where the player only asks for a check ("¿por qué se ve azul?"). It now hides only after a dispatch that wrote nothing. Also fixed: `prepareStep` ignored routed lists longer than one tool.
+- L4: Closing checks — full suite 253/253, tsc clean, eslint 0 errors. Not run: a live build against Daytona/Trigger with the new routing and canvas check.

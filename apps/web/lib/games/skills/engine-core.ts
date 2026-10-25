@@ -66,7 +66,9 @@ on top of them in your own files, and do not rewrite or delete them.
 **engine.js** — renderer, scene, camera, loop.
 - \`createEngine({ mount, background, fog, fogRange, fov, near, far,
   cameraPosition, lookAt, orthographic, frustumSize, shadows, antialias,
-  maxPixelRatio, fixedStep })\`
+  maxPixelRatio, fixedStep })\` — \`mount\` defaults to the page's \`#app\`
+  when it has a height, else \`body\`; pass it explicitly when the canvas
+  belongs somewhere else.
 - The engine handles pixel ratio, resizing, tab visibility, WebGL context
   loss, and shows uncaught errors on screen instead of freezing.
 - \`engine.onUpdate(fn(dt, engine))\` — game logic. \`dt\` is clamped seconds.
