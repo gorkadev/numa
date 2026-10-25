@@ -61,3 +61,10 @@ test("a thread whose build went through the old planner still shows the plan's t
 test("a thread with no dispatch shows no strip", () => {
   assert.equal(deriveTaskStrip([user, assistant({ type: "text", text: "Hi" })]), undefined)
 })
+
+test("a batch run_tasks rejected before starting is not part of the list", () => {
+  const rejected = runTasks([body("gameplay", "A"), body("hud", "B")], "output-available", { error: "overlapping ownership" })
+  const accepted = runTasks([body("game", "C")], "output-available", { outcomes: [{ taskId: "game", envelope: { status: "done" } }] })
+  const strip = deriveTaskStrip([user, assistant(rejected, accepted)])
+  assert.deepEqual(strip?.map((task) => `${task.id}:${task.status}`), ["game:done"])
+})

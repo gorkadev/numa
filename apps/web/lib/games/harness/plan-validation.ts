@@ -538,3 +538,25 @@ export function validateDispatch(
 
   return undefined
 }
+
+/**
+ * What a dispatch does to the stored eager-asset receipt `verify` enforces.
+ * A declared receipt is written. The first build's receipt is otherwise kept
+ * through that build (its corrective pass included), but a later build of the
+ * same game lifts it — the retired planner did the same by rewriting
+ * `plan.json` without the marker — so a later turn that adds a model to the
+ * first screen is not failed against the first build's selection.
+ */
+export function receiptAction({
+  receipt,
+  assets,
+  hasStoredReceipt,
+}: {
+  receipt?: AssetReceipt
+  assets: PlanAssetCatalog
+  hasStoredReceipt: boolean
+}): "write" | "clear" | "keep" {
+  if (receipt) return "write"
+  if (!assets.requiresAssetReceipt && hasStoredReceipt) return "clear"
+  return "keep"
+}

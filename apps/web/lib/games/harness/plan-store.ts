@@ -152,3 +152,13 @@ export async function writeDispatchReceipt(
     `${GAME_DIR}/${PLAN_RELATIVE}`
   )
 }
+
+/**
+ * Lifts the eager-asset check for a later build: `plan.json` keeps no receipt
+ * and no readiness marker, which `readPlanAssetReceipt` reads as no policy.
+ */
+export async function clearDispatchReceipt(gameId: string): Promise<void> {
+  const { sandbox } = await getGameSandbox(gameId)
+
+  await sandbox.fs.uploadFile(Buffer.from("{}", "utf-8"), `${GAME_DIR}/${PLAN_RELATIVE}`)
+}

@@ -186,7 +186,12 @@ function runTasksBodies(input: unknown): PlanTaskSummary[] {
   return planTasksFromOutput({ tasks: (input as { tasks?: unknown }).tasks }) ?? []
 }
 
-const DISPATCHED_STATES = new Set(["input-available", "output-available", "output-error"])
+/** A call that is dispatching or dispatched — not one `run_tasks` rejected before starting, or that failed outright. */
+function dispatched(part: { state: string; output?: unknown }): boolean {
+  if (part.state === "input-available") return true
+  if (part.state !== "output-available") return false
+  return !(typeof part.output === "object" && part.output !== null && "error" in part.output)
+}
 
 /**
  * The build's task list with each task's latest status, or `undefined` when
@@ -224,14 +229,14 @@ export function deriveTaskStrip(messages: UIMessage[]): TaskStripTask[] | undefi
   // The latest message whose run_tasks calls carried bodies is the current build.
   let dispatchMessage = -1
   messages.forEach((message, messageIndex) => {
-    const dispatched = message.parts.some(
+    const hasDispatch = message.parts.some(
       (part) =>
         isToolUIPart(part) &&
         getToolName(part) === "run_tasks" &&
-        DISPATCHED_STATES.has(part.state) &&
+        dispatched(part) &&
         runTasksBodies(part.input).length > 0
     )
-    if (dispatched) dispatchMessage = messageIndex
+    if (hasDispatch) dispatchMessage = messageIndex
   })
 
   let anchor = planIndex
@@ -241,7 +246,7 @@ export function deriveTaskStrip(messages: UIMessage[]): TaskStripTask[] | undefi
     const byId = new Map<string, PlanTaskSummary>()
     for (const part of messages[dispatchMessage]!.parts) {
       if (!isToolUIPart(part) || getToolName(part) !== "run_tasks") continue
-      if (!DISPATCHED_STATES.has(part.state)) continue
+      if (!dispatched(part)) continue
       for (const task of runTasksBodies(part.input)) byId.set(task.id, task)
     }
     tasks = [...byId.values()]

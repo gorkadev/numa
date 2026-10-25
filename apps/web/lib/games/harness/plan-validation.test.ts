@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 
-import { parseStoredPlanArtifact, validateDispatch } from "./plan-validation"
+import { parseStoredPlanArtifact, receiptAction, validateDispatch } from "./plan-validation"
 import type { TaskSpec } from "./task-spec"
 
 function task(id: string, owns: string[], dependsOn: string[] = []): TaskSpec {
@@ -63,4 +63,18 @@ test("a stored plan written by run_tasks carries its receipt without an assessme
 test("a stored plan written by the old planner still parses", () => {
   const stored = parseStoredPlanArtifact(JSON.stringify({ assessment: { classification: "cohesive", rationale: "One loop.", assetReceipt: { eagerModelIds: ["soldier"], eagerSharedAssetIds: [] } }, readinessPolicyVersion: 1 }))
   assert.deepEqual(stored?.assetReceipt, { eagerModelIds: ["soldier"], eagerSharedAssetIds: [] })
+})
+
+test("a declared receipt is written, whatever build it is", () => {
+  assert.equal(receiptAction({ receipt: { eagerModelIds: ["crate"], eagerSharedAssetIds: [] }, assets: toon, hasStoredReceipt: false }), "write")
+})
+
+test("a later build of a template game lifts the first build's eager-asset check, as a new plan used to", () => {
+  assert.equal(receiptAction({ assets: { ...toon, requiresAssetReceipt: false }, hasStoredReceipt: true }), "clear")
+})
+
+test("the fresh build itself, and games with nothing stored, keep what they have", () => {
+  assert.equal(receiptAction({ assets: toon, hasStoredReceipt: true }), "keep")
+  assert.equal(receiptAction({ assets: { ...toon, requiresAssetReceipt: false }, hasStoredReceipt: false }), "keep")
+  assert.equal(receiptAction({ assets: noTemplate, hasStoredReceipt: false }), "keep")
 })

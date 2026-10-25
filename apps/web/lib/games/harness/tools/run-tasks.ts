@@ -22,8 +22,8 @@ import {
 } from "@/lib/games/skills/registry"
 
 import { renderEnvelope, type SubagentEnvelope } from "../envelope"
-import { readPlanAssetReceipt, readPlanTasks, writeDispatchReceipt } from "../plan-store"
-import { assetReceiptSchema, validateDispatch } from "../plan-validation"
+import { clearDispatchReceipt, readPlanAssetReceipt, readPlanTasks, writeDispatchReceipt } from "../plan-store"
+import { assetReceiptSchema, receiptAction, validateDispatch } from "../plan-validation"
 import { ROLES } from "../roles"
 import {
   runSubagent,
@@ -377,14 +377,6 @@ export function createRunTasksTool(
        * Any number of calls before `verify`; once it has run, exactly one
        * corrective call (`turnState.tryStartPostVerifyRunTasks`).
        */
-      if (!turnState.tryStartPostVerifyRunTasks()) {
-        yield {
-          error:
-            "Verification has already started and this turn already used its one corrective run_tasks call. Run the forced second verify or report the current blocked result; no further task dispatch is allowed this turn.",
-        }
-        return
-      }
-
       if (taskIds && tasksInput) {
         yield {
           error:
@@ -394,6 +386,7 @@ export function createRunTasksTool(
       }
 
       let tasks: TaskSpec[]
+      let receipt: ReturnType<typeof receiptAction> = "keep"
 
       if (taskIds) {
         const plan = await readPlanTasks(gameId)
@@ -417,7 +410,7 @@ export function createRunTasksTool(
       } else if (tasksInput) {
         const { assetCatalog } = await readGameTemplateBuildContext(gameId)
         const hasStoredReceipt =
-          assetCatalog.requiresAssetReceipt === true &&
+          assetCatalog.modelIds.length > 0 &&
           !assetReceipt &&
           (await readPlanAssetReceipt(gameId)) !== undefined
         const invalid = validateDispatch(tasksInput, {
@@ -432,8 +425,7 @@ export function createRunTasksTool(
           return
         }
 
-        if (assetReceipt) await writeDispatchReceipt(gameId, assetReceipt)
-
+        receipt = receiptAction({ receipt: assetReceipt, assets: assetCatalog, hasStoredReceipt })
         tasks = tasksInput
       } else {
         yield {
@@ -442,6 +434,21 @@ export function createRunTasksTool(
         }
         return
       }
+
+      /**
+       * Counted only once the batch is valid: a rejected corrective batch is a
+       * correctable mistake, and must not spend the turn's one corrective call.
+       */
+      if (!turnState.tryStartPostVerifyRunTasks()) {
+        yield {
+          error:
+            "Verification has already started and this turn already used its one corrective run_tasks call. Run the forced second verify or report the current blocked result; no further task dispatch is allowed this turn.",
+        }
+        return
+      }
+
+      if (receipt === "write" && assetReceipt) await writeDispatchReceipt(gameId, assetReceipt)
+      if (receipt === "clear") await clearDispatchReceipt(gameId)
 
       options.onStart?.()
 
