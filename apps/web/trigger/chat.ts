@@ -35,6 +35,7 @@ import { createRunTasksTool } from "@/lib/games/harness/tools/run-tasks"
 import { createVerifyTool } from "@/lib/games/harness/tools/verify"
 import { turnState, type TurnVerifyOutcome } from "@/lib/games/harness/turn-state"
 import { extendTerminalInstructions } from "@/lib/games/harness/terminal-instructions"
+import { priorStepsCalledTool, routeHarnessTools } from "@/lib/games/harness/routing"
 import { gameInstructions } from "@/lib/games/instructions"
 import { activityTag } from "@/lib/games/activity"
 import { gameProgressChunk, withoutGameProgress } from "@/lib/games/build-progress"
@@ -310,24 +311,6 @@ function activeToolNames<T extends ToolSet>(tools: T): (keyof T & string)[] {
   ) as (keyof T & string)[]
 }
 
-export type HarnessRoutingState = {
-  changedGameFiles: boolean
-  outcome: TurnVerifyOutcome
-  verifyCalls: number
-  postVerifyRunTasksCalls: number
-}
-
-/** Pure phase router: verification is a host-enforced state machine, not a prompt suggestion. */
-export function routeHarnessTools(state: HarnessRoutingState): string[] | undefined {
-  if (state.outcome === "pass" || state.outcome === "refused") return []
-
-  if (state.outcome === "fail" || state.outcome === "unavailable") {
-    if (state.verifyCalls >= 2) return []
-    return state.postVerifyRunTasksCalls === 0 ? ["run_tasks"] : ["verify"]
-  }
-
-  return state.changedGameFiles ? ["verify"] : undefined
-}
 
 /**
  * Wires the orchestrator's `strong` slot to `turnState` (decision 19, unit
@@ -1057,12 +1040,16 @@ export const gameChat = chat.agent({
         const base = (await injectedPrepareStep?.(options)) as Record<string, unknown> | undefined
 
         const routedTools = HARNESS_PHASES
-          ? routeHarnessTools({
-              changedGameFiles: priorStepsChangedGameFiles(options.steps),
-              outcome: turnState.verifyOutcome,
-              verifyCalls: turnState.verifyCalls,
-              postVerifyRunTasksCalls: turnState.postVerifyRunTasksCalls,
-            })
+          ? routeHarnessTools(
+              {
+                changedGameFiles: priorStepsChangedGameFiles(options.steps),
+                dispatchedWithoutChanges: priorStepsCalledTool(options.steps, "run_tasks"),
+                outcome: turnState.verifyOutcome,
+                verifyCalls: turnState.verifyCalls,
+                postVerifyRunTasksCalls: turnState.postVerifyRunTasksCalls,
+              },
+              activeToolNames(tools)
+            )
           : undefined
         const mustFinalize = options.stepNumber >= LAST_ORCHESTRATOR_STEP_INDEX || routedTools?.length === 0
 
@@ -1084,11 +1071,15 @@ export const gameChat = chat.agent({
           }
         }
 
-        if (routedTools && routedTools.length === 1) {
-          const toolName = routedTools[0]
+        // The corrective pass after a failed check: it may also read files, and may end honestly without a fix.
+        const correctivePass =
+          (turnState.verifyOutcome === "fail" || turnState.verifyOutcome === "unavailable") &&
+          routedTools?.includes("run_tasks") === true
+
+        if (routedTools && routedTools.length > 0) {
           return {
             ...base,
-            ...(toolName === "run_tasks" ? {
+            ...(correctivePass ? {
               instructions: extendTerminalInstructions(
                 gameInstructions,
                 base?.instructions as Instructions | undefined,
@@ -1099,10 +1090,9 @@ export const gameChat = chat.agent({
             activeTools: routedTools,
             // A failed/unavailable first check may end honestly without a fix;
             // all verify routes remain mandatory once a check is required.
-            toolChoice:
-              toolName === "run_tasks"
-                ? "auto"
-                : { type: "tool", toolName },
+            ...(routedTools.length === 1 && routedTools[0] === "verify"
+              ? { toolChoice: { type: "tool", toolName: "verify" } }
+              : correctivePass ? { toolChoice: "auto" } : {}),
           }
         }
 
