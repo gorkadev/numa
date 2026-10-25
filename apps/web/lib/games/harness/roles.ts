@@ -56,7 +56,13 @@ export const ROLES: Record<RoleId, RoleDef> = {
     displayName: "Architect",
     slot: "strong",
     maxSteps: 12,
-    timeoutMs: 300 * SECOND_MS,
+    /**
+     * Raised from 300s. A plan is a single 5-10k-token tool call that takes
+     * the strong slot one to two minutes to write, after a minute of reading:
+     * 300s left no room for one rejected `submit_plan` and its retry, and
+     * real runs were killed mid-retry ("Timed out.") with nothing to show.
+     */
+    timeoutMs: 480 * SECOND_MS,
   },
   /**
    * `maxSteps`/`timeoutMs` raised from 20/600s: the planner now defaults to

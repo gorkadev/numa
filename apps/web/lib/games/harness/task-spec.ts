@@ -29,9 +29,9 @@ export const taskSpecSchema = z.object({
   goal: z
     .string()
     .min(1)
-    .max(1200)
+    .max(2000)
     .describe(
-      "The task's goal, procedure, constraints and done-when condition, in plain language. This is the worker's whole brief — write it as if the worker has read nothing else about the game. At most 1200 characters: name what to build, where and against which engine APIs, not every value — the worker reads the game's own files and skills itself."
+      "The task's goal, procedure, constraints and done-when condition, in plain language. This is the worker's whole brief — write it as if the worker has read nothing else about the game. At most 2000 characters: name what to build, where and against which engine APIs, not every value — the worker reads the game's own files and skills itself."
     ),
   owns: z
     .array(z.string().min(1))
