@@ -13,7 +13,7 @@ Branch: `feat/orchestrator-dispatch` (stacked on `fix/harness-run-failures`). De
 ## Tasks
 
 - [x] T1 — S1 — inline — `validateDispatch` + `assetReceipt` input persisted by `writeDispatchReceipt`; `tasks` normal, `taskIds` legacy (RED export missing; GREEN 11/11). `run_tasks` execute wiring has no unit test (no harness for the tool).
-- [ ] T2 — S2 — inline — orchestrator authors tasks; `plan` inactive; context injected
+- [x] T2 — S2 — inline — `RETIRED_TOOLS` keeps `plan` declared but inactive; routing text rewritten (planner rules absorbed: scope, controls, one task by default, fields, 2000-char goal); `orchestratorContextInstructions` adds engine index + template context + receipt line per turn (RED module missing; GREEN 4/4; suite 281/281). The run() wiring in chat.ts has no unit test.
 - [ ] T3 — S3 — inline — task strip from `run_tasks` inputs
 - [ ] T4 — S4 — inline — engine read guidance + budget
 

@@ -170,11 +170,11 @@ the player cannot play.`,
 }
 
 /**
- * The tweak-vs-build routing rule and the plan/run_tasks/verify phase flow
- * (design.md decision 8, unit 8). A separate message from
+ * The tweak-vs-build routing rule and the run_tasks/verify phase flow —
+ * the orchestrator now writes the tasks itself; the planner is retired. A separate message from
  * `workflowInstructions` on purpose, not a section appended to it:
  * `instructions/index.ts` includes this one only when `HARNESS_PHASES` is
- * on. With the flag off, `plan`, `run_tasks` and `verify` are not in
+ * on. With the flag off, `run_tasks` and `verify` are not in
  * `activeTools` at all (`trigger/chat.ts`) — telling the model to call them
  * would describe tools it cannot reach, and the single-loop path this
  * section describes routing away from would have nothing to route to.
@@ -197,19 +197,48 @@ none of what follows in this section applies to them.
 A build is a new game, or an addition substantial enough to span several
 files or systems on its own: new mechanics with their own state, a new
 visual system, anything that touches gameplay, visuals and audio together.
-For a build, call \`plan\` first — it designs the work and writes back a task
-list — then dispatch that task list with \`run_tasks\`, then call \`verify\`
-before you reply. Do not skip straight to \`run_tasks\` for a build-sized turn:
-the tasks it dispatches need the design and boundaries \`plan\` produced, not
-ones improvised on the spot. Do not call \`plan\` again once you already have
-a task list this turn to work from — dispatch it with \`run_tasks\` instead.
+For a build, write the task list yourself and dispatch it with
+\`run_tasks({ tasks: [...] })\`, then call \`verify\` before you reply. There is
+no separate planner: you decide the design and the split, in the tasks.
 
-Once \`plan\` has accepted a task list, dispatch it by id: \`run_tasks({ taskIds:
-[...] })\`, naming the plan's own task ids rather than retyping every task's
-goal and ownership back out — that list already lives in \`.numa/tasks.json\`.
-The only time \`run_tasks\` takes full task bodies (\`{ tasks: [...] }\`) is the
-one corrective pass \`verify\` allows after it has already run once this turn,
-when the fix genuinely does not match anything \`plan\` designed.
+## Writing the tasks
+
+Scope them to what was asked, not to a maximally-featured version of the
+genre. "Snake with power-ups" is a snake game plus power-ups, built well —
+not one that also grew a shop and a leaderboard nobody requested.
+
+Decide the control scheme yourself and put it in the goal: keyboard and
+mouse on desktop, a thumb on a phone (\`hud.touch()\`), unless the player
+said otherwise. A worker should never have to discover mid-task that the
+genre needs more inputs than a screen has room for.
+
+One task is the default. A new game is usually one task owning
+\`["index.html", "game.js"]\`: one scene, one frame loop, one owner. Split
+only where a boundary is real and the parts can be built without seeing
+each other — audio in its own \`sound.js\` beside gameplay, say — and then
+end with the task that wires them together, depending on the others. Never
+split just to have more tasks: two tasks that would touch the same file are
+one task.
+
+Each task is:
+
+- \`role\`: \`gameplay\`, \`visuals\` or \`audio\` — whichever the bulk of the
+  work is; \`skills\` can add what that role does not carry.
+- \`title\` and \`goal\`: the worker's whole brief, up to 2000 characters. It
+  sees nothing else about this turn, so name what to build, which files, and
+  which engine calls to build it on (from the engine API index below) — the
+  calls, not every value. Never tell a worker to skip reading the game's own
+  files: it reads what it edits.
+- \`owns\`: the files it may write. Never anything under \`engine/\`,
+  \`vendor/\` or \`.numa/\`.
+- \`dependsOn\`: tasks that must finish first, from this batch or an earlier
+  \`run_tasks\` call this turn. No cycles.
+- \`acceptance\`: a few short, observable done-when criteria — behavior the
+  player can see, not "finish the game".
+
+\`run_tasks\` checks the batch before anything starts — cycles, unknown
+dependencies, protected or overlapping files, a missing asset receipt — and
+answers with an error naming what to fix. Fix it and call again.
 
 A build's final reply is only ever written after \`verify\` has actually run
 against the applied change — never before, and never merely because
@@ -235,10 +264,9 @@ plainly what is still unfinished and offer to continue, exactly as if
 
 ## Conversational progress during builds
 
-For a build, briefly tell the player in their language what you are about to do
-before calling \`plan\`. After reading the plan result, summarize its actual
-proposed scope before calling \`run_tasks\`, and say what you are building before
-the delegated call. Before \`verify\`, say you are reviewing the actual
+For a build, briefly tell the player in their language what you are about to
+build — the scope and the controls you picked — together with the \`run_tasks\`
+call that builds it. Before \`verify\`, say you are reviewing the actual
 implementation. For a direct tweak, briefly acknowledge the change before the
 edit and say you are reviewing it if a review applies. Answers and questions
 need no staged narration.
@@ -258,7 +286,7 @@ Reading your way through the game one file at a time is expensive and does
 not scale — that is work to delegate, not to do inline. You may \`read_file\`
 up to 3 files yourself in a turn; a 4th call is refused. When you hit that
 limit, or before you would, delegate instead: \`explore\` for a broader look
-at how something works across files you have not read, or \`plan\`/\`run_tasks\`
+at how something works across files you have not read, or \`run_tasks\`
 to make the change itself once you understand enough to describe it.
 
 You may still make one small, already-understood edit yourself — a single
