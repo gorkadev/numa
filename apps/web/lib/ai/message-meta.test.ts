@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import test from "node:test"
 import type { UIMessage } from "ai"
 
-import { liveTurnChunk, readMessageMeta, turnMetaChunk, withTurnMeta } from "./message-meta"
+import { liveTurnChunk, readMessageMeta, turnMetaChunk, withoutLiveReceipts, withTurnMeta } from "./message-meta"
 import type { TurnCost } from "./pricing"
 
 const cost = (input: number, output: number): TurnCost =>
@@ -216,4 +216,22 @@ test("the final receipt never counts the provisional one", () => {
 
   assert.deepEqual(readMessageMeta(stamped!).tokens, { input: 100, output: 10, cached: 0, reasoning: 0 })
   assert.equal("live" in (stamped!.metadata as object), false)
+})
+
+test("once a turn's stream ends, its provisional receipt is dropped", () => {
+  const live = (liveTurnChunk(cost(40, 4)) as { messageMetadata: object }).messageMetadata
+  const stored = withTurnMeta([assistant()], cost(100, 10))[0]!
+  const running = { ...stored, metadata: { ...(stored.metadata as object), ...live } }
+  const user: UIMessage = { id: "u", role: "user", parts: [], metadata: undefined }
+
+  const [first, second] = withoutLiveReceipts([user, running])
+
+  assert.equal(first, user)
+  assert.equal(readMessageMeta(second!).provisional, undefined)
+  assert.deepEqual(readMessageMeta(second!).tokens, { input: 100, output: 10, cached: 0, reasoning: 0 })
+})
+
+test("a thread with no provisional receipt is returned untouched", () => {
+  const messages = withTurnMeta([assistant()], cost(1, 1))
+  assert.equal(withoutLiveReceipts(messages), messages)
 })

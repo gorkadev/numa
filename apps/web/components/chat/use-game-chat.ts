@@ -6,7 +6,7 @@ import { useChat } from "@ai-sdk/react"
 import { useTriggerChatTransport } from "@trigger.dev/sdk/chat/react"
 import { lastAssistantMessageIsCompleteWithToolCalls, type UIMessage } from "ai"
 
-import { sentAtMetadata } from "@/lib/ai/message-meta"
+import { sentAtMetadata, withoutLiveReceipts } from "@/lib/ai/message-meta"
 import { readThreadTier, tierMetadata } from "@/lib/ai/message-model"
 import { DEFAULT_TIER_ID, type TierId } from "@/lib/ai/model-catalog"
 import { withoutContinuationOf } from "@/lib/ai/resume-stream"
@@ -213,6 +213,7 @@ export function useGameChat({
     status,
     error,
     resumeStream,
+    setMessages,
   } = useChat({
     id: gameId,
     messages: threadMessages,
@@ -298,6 +299,17 @@ export function useGameChat({
   })
 
   const pending = status === "submitted" || status === "streaming"
+
+  /**
+   * A turn's provisional receipt lives only while its stream does. A stopped
+   * turn never receives the final receipt that clears it, and the last
+   * provisional chunk can arrive after that receipt, so whatever is left once
+   * the stream ends is dropped: the reply keeps only its real receipt.
+   */
+  useEffect(() => {
+    if (pending) return
+    setMessages((current) => withoutLiveReceipts(current))
+  }, [pending, setMessages])
   const [reconnecting, setReconnecting] = useState(false)
 
   useEffect(() => {

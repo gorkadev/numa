@@ -307,3 +307,25 @@ export function liveTurnChunk(
     },
   }
 }
+
+/**
+ * The thread with every provisional receipt removed, or the same array when
+ * there is none. Run once a turn's stream has ended, however it ended: a
+ * stopped turn never receives the final receipt that would clear `live`, and
+ * the last provisional chunk can land after that receipt — each one its own
+ * write, in no guaranteed order — and would otherwise be counted on top of it.
+ */
+export function withoutLiveReceipts(messages: UIMessage[]): UIMessage[] {
+  let changed = false
+
+  const next = messages.map((message) => {
+    const metadata = message.metadata as Record<string, unknown> | undefined
+    if (message.role !== "assistant" || !metadata?.live) return message
+
+    changed = true
+    const { live: _live, ...rest } = metadata
+    return { ...message, metadata: rest }
+  })
+
+  return changed ? next : messages
+}
