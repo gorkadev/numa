@@ -49,6 +49,7 @@ test("sums input, output and cached across every priced reply", () => {
     reasoning: 50,
     cacheHit: 10_000 / 40_413,
     credits: undefined,
+    provisional: false,
   })
 })
 
@@ -161,4 +162,25 @@ test("session timing sums every reply's timing and is null without any", () => {
     ttftMs: 600,
     ttftSteps: 2,
   })
+})
+
+test("a turn still running counts with its provisional receipt", () => {
+  const running: UIMessage = {
+    id: "live",
+    role: "assistant",
+    parts: [],
+    metadata: { live: { tokens: { input: 50, output: 5, cached: 25, reasoning: 0 }, credits: 2, steps: 4 } },
+  }
+
+  const usage = sumSessionUsage([reply({ input: 100, output: 10, cached: 0, reasoning: 0 }, 1), running])
+
+  assert.equal(usage?.input, 150)
+  assert.equal(usage?.cached, 25)
+  assert.equal(usage?.credits, 3)
+  assert.equal(usage?.provisional, true)
+  assert.deepEqual(sumSessionActivity([running]), { turns: 1, steps: 4 })
+})
+
+test("a session whose turns have all finished is not provisional", () => {
+  assert.equal(sumSessionUsage([reply({ input: 1, output: 1, cached: 0, reasoning: 0 }, 1)])?.provisional, false)
 })

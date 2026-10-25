@@ -1,4 +1,5 @@
 import { chat } from "@trigger.dev/sdk/ai"
+import type { LanguageModelUsage } from "ai"
 
 import { DEFAULT_TIER_ID, type TierId } from "@/lib/ai/model-catalog"
 import type { ModelEntryId, ServedCall, Slot } from "@/lib/ai/model-registry"
@@ -109,7 +110,17 @@ type TurnStateData = {
   steps: number
   /** Where the orchestrator's time went so far this turn, summed over steps. */
   timing: StepTimingTotals | undefined
+  /** The orchestrator's own usage, one entry per finished step — it only joins the ledger as a whole at the turn's end. */
+  orchestratorSteps: LanguageModelUsage[]
 }
+
+/**
+ * Told whenever this turn's spend grows: a sub-agent step joined the ledger or
+ * an orchestrator step finished. `trigger/chat.ts` points it at the throttled
+ * provisional receipt. A plain module variable rather than part of `local`:
+ * it is a callback, not state, and one run owns this worker process.
+ */
+let usageListener: (() => void) | undefined
 
 const local = chat.local<TurnStateData>({ id: "turnState" })
 
@@ -330,6 +341,7 @@ export const turnState = {
       speed: undefined,
       steps: 0,
       timing: undefined,
+      orchestratorSteps: [],
     })
   },
 
@@ -354,6 +366,7 @@ export const turnState = {
     local.verifyBaseline = undefined
     local.unfinishedTaskIds = new Set()
     local.context = undefined
+    local.orchestratorSteps = []
   },
 
   /**
@@ -363,5 +376,22 @@ export const turnState = {
    */
   addUsage(entry: AgentUsageEntry): void {
     local.ledger = [...local.ledger, entry]
+    usageListener?.()
+  },
+
+  /** One finished orchestrator step's usage, for the provisional receipt only — never priced into the ledger. */
+  addOrchestratorStep(usage: LanguageModelUsage): void {
+    local.orchestratorSteps = [...local.orchestratorSteps, usage]
+    usageListener?.()
+  },
+
+  /** The orchestrator's finished steps so far, guarded by turn like `ledgerFor`. */
+  orchestratorStepsFor(turn: number): LanguageModelUsage[] {
+    return local.turn === turn ? local.orchestratorSteps : []
+  },
+
+  /** Replaces the listener told when this turn's spend grows; `undefined` removes it. */
+  onUsage(listener: (() => void) | undefined): void {
+    usageListener = listener
   },
 }

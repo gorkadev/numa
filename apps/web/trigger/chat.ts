@@ -12,7 +12,7 @@ import {
 import { z } from "zod"
 
 import { orchestratorModelSettings } from "@/lib/ai/agent"
-import { turnMetaChunk, withTurnMeta } from "@/lib/ai/message-meta"
+import { liveTurnChunk, turnMetaChunk, withTurnMeta } from "@/lib/ai/message-meta"
 import { contextUsageChunk, contextUsageOf } from "@/lib/games/context-usage"
 import { speedOfStep } from "@/lib/games/generation-speed"
 import { timingOfStep } from "@/lib/games/step-timing"
@@ -35,6 +35,8 @@ import { createRunTasksTool } from "@/lib/games/harness/tools/run-tasks"
 import { createVerifyTool } from "@/lib/games/harness/tools/verify"
 import { turnState, type TurnVerifyOutcome } from "@/lib/games/harness/turn-state"
 import { extendTerminalInstructions } from "@/lib/games/harness/terminal-instructions"
+import { priorStepsCalledTool, routeHarnessTools } from "@/lib/games/harness/routing"
+import { createThrottle } from "@/lib/games/harness/throttle"
 import { gameInstructions } from "@/lib/games/instructions"
 import { activityTag } from "@/lib/games/activity"
 import { gameProgressChunk, withoutGameProgress } from "@/lib/games/build-progress"
@@ -310,24 +312,6 @@ function activeToolNames<T extends ToolSet>(tools: T): (keyof T & string)[] {
   ) as (keyof T & string)[]
 }
 
-export type HarnessRoutingState = {
-  changedGameFiles: boolean
-  outcome: TurnVerifyOutcome
-  verifyCalls: number
-  postVerifyRunTasksCalls: number
-}
-
-/** Pure phase router: verification is a host-enforced state machine, not a prompt suggestion. */
-export function routeHarnessTools(state: HarnessRoutingState): string[] | undefined {
-  if (state.outcome === "pass" || state.outcome === "refused") return []
-
-  if (state.outcome === "fail" || state.outcome === "unavailable") {
-    if (state.verifyCalls >= 2) return []
-    return state.postVerifyRunTasksCalls === 0 ? ["run_tasks"] : ["verify"]
-  }
-
-  return state.changedGameFiles ? ["verify"] : undefined
-}
 
 /**
  * Wires the orchestrator's `strong` slot to `turnState` (decision 19, unit
@@ -383,6 +367,63 @@ function orchestratorEntryId(): ModelEntryId {
     turnState.servedFor("strong")?.entryId ??
     resolveModel(turnState.tier, "strong").primary.id
   )
+}
+
+/**
+ * At most one provisional receipt per this many milliseconds. Steps finish in
+ * bursts — up to three workers in parallel — so every step would flood the
+ * stream, while a fixed timer would keep sending when nothing changed.
+ */
+const LIVE_RECEIPT_INTERVAL_MS = 1500
+
+let liveReceipt: { call: () => void; cancel: () => void } | undefined
+
+/**
+ * Sends what the running turn has spent so far, priced exactly as the final
+ * receipt will be: the sub-agents' ledger plus the orchestrator's finished
+ * steps, which only join the ledger as one entry at the turn's end. Telemetry:
+ * a failure here must never fail the turn.
+ */
+function writeLiveReceipt(turn: number): void {
+  if (!turnState.isCurrentTurn(turn)) return
+
+  try {
+    const modelId = orchestratorEntryId()
+    const orchestratorSteps = turnState.orchestratorStepsFor(turn).map((usage) => ({
+      agentId: "orchestrator",
+      role: "orchestrator",
+      slot: "strong" as const,
+      modelId,
+      usage,
+      status: "done" as const,
+    }))
+    const cost = priceTurn(
+      turnState.tier,
+      [...turnState.ledgerFor(turn), ...orchestratorSteps],
+      turnPricing.snapshot
+    )
+
+    chat.response.write(
+      liveTurnChunk(cost, turnState.speedFor(turn), turnState.stepsFor(turn), turnState.timingFor(turn))
+    )
+  } catch (error) {
+    logger.warn("Could not write the provisional receipt", { error })
+  }
+}
+
+/** Starts this turn's provisional receipts; any earlier turn's are stopped first. */
+function startLiveReceipt(turn: number): void {
+  stopLiveReceipt()
+  const throttle = createThrottle(() => writeLiveReceipt(turn), LIVE_RECEIPT_INTERVAL_MS)
+  liveReceipt = throttle
+  turnState.onUsage(() => throttle.call())
+}
+
+/** Final: no provisional receipt may follow the turn's real one. */
+function stopLiveReceipt(): void {
+  turnState.onUsage(undefined)
+  liveReceipt?.cancel()
+  liveReceipt = undefined
 }
 
 /**
@@ -685,6 +726,7 @@ export const gameChat = chat.agent({
      */
     turnPricing.snapshot = capturePricingSnapshot()
     turnState.reset(turn, Date.now() + TURN_DEADLINE_MS, resolveTier(clientData?.tier))
+    startLiveReceipt(turn)
 
     /**
      * The sidebar's "the agent is working" flag. Run status cannot carry it:
@@ -723,6 +765,9 @@ export const gameChat = chat.agent({
     stopped,
     error,
   }) => {
+    // Before the orchestrator's entry joins the ledger below, which would otherwise schedule one more.
+    stopLiveReceipt()
+
     if (!stopped && !error) {
       writer.write(gameProgressChunk("finalizing"))
     }
@@ -829,6 +874,7 @@ export const gameChat = chat.agent({
     stopped,
     error,
   }) => {
+    stopLiveReceipt()
     const modelId = orchestratorEntryId()
 
     /**
@@ -982,6 +1028,7 @@ export const gameChat = chat.agent({
        */
       onStepFinish: ({ usage, performance }) => {
         turnState.addStep()
+        turnState.addOrchestratorStep(usage)
 
         /**
          * Generation speed is read first and on its own: a step with no
@@ -1057,12 +1104,16 @@ export const gameChat = chat.agent({
         const base = (await injectedPrepareStep?.(options)) as Record<string, unknown> | undefined
 
         const routedTools = HARNESS_PHASES
-          ? routeHarnessTools({
-              changedGameFiles: priorStepsChangedGameFiles(options.steps),
-              outcome: turnState.verifyOutcome,
-              verifyCalls: turnState.verifyCalls,
-              postVerifyRunTasksCalls: turnState.postVerifyRunTasksCalls,
-            })
+          ? routeHarnessTools(
+              {
+                changedGameFiles: priorStepsChangedGameFiles(options.steps),
+                dispatchedWithoutChanges: priorStepsCalledTool(options.steps, "run_tasks"),
+                outcome: turnState.verifyOutcome,
+                verifyCalls: turnState.verifyCalls,
+                postVerifyRunTasksCalls: turnState.postVerifyRunTasksCalls,
+              },
+              activeToolNames(tools)
+            )
           : undefined
         const mustFinalize = options.stepNumber >= LAST_ORCHESTRATOR_STEP_INDEX || routedTools?.length === 0
 
@@ -1084,11 +1135,15 @@ export const gameChat = chat.agent({
           }
         }
 
-        if (routedTools && routedTools.length === 1) {
-          const toolName = routedTools[0]
+        // The corrective pass after a failed check: it may also read files, and may end honestly without a fix.
+        const correctivePass =
+          (turnState.verifyOutcome === "fail" || turnState.verifyOutcome === "unavailable") &&
+          routedTools?.includes("run_tasks") === true
+
+        if (routedTools && routedTools.length > 0) {
           return {
             ...base,
-            ...(toolName === "run_tasks" ? {
+            ...(correctivePass ? {
               instructions: extendTerminalInstructions(
                 gameInstructions,
                 base?.instructions as Instructions | undefined,
@@ -1099,10 +1154,9 @@ export const gameChat = chat.agent({
             activeTools: routedTools,
             // A failed/unavailable first check may end honestly without a fix;
             // all verify routes remain mandatory once a check is required.
-            toolChoice:
-              toolName === "run_tasks"
-                ? "auto"
-                : { type: "tool", toolName },
+            ...(routedTools.length === 1 && routedTools[0] === "verify"
+              ? { toolChoice: { type: "tool", toolName: "verify" } }
+              : correctivePass ? { toolChoice: "auto" } : {}),
           }
         }
 

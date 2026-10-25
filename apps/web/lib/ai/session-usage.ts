@@ -23,6 +23,8 @@ export type SessionUsage = {
   cacheHit: number
   /** Credits charged, or undefined when no reply carries a charge. */
   credits: number | undefined
+  /** A turn is still running, so these numbers can still grow. */
+  provisional: boolean
 }
 
 /**
@@ -42,6 +44,7 @@ export function sumSessionUsage(messages: UIMessage[]): SessionUsage | null {
   let reasoning = 0
   let credits: number | undefined
   let priced = false
+  let provisional = false
 
   for (const message of messages) {
     if (message.role !== "assistant") continue
@@ -52,6 +55,7 @@ export function sumSessionUsage(messages: UIMessage[]): SessionUsage | null {
     if (!tokens) continue
 
     priced = true
+    if (meta.provisional) provisional = true
     input += tokens.input
     output += tokens.output
     cached += tokens.cached
@@ -70,6 +74,7 @@ export function sumSessionUsage(messages: UIMessage[]): SessionUsage | null {
     reasoning,
     cacheHit: input === 0 ? 0 : cached / input,
     credits,
+    provisional,
   }
 }
 

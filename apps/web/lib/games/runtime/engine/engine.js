@@ -16,7 +16,8 @@ import * as THREE from "three"
  * the hooks a game uses to drive them.
  *
  * @param {object} [options]
- * @param {HTMLElement} [options.mount] Element to fill. Defaults to `body`.
+ * @param {HTMLElement} [options.mount] Element to fill. Defaults to the
+ *   page's `#app` when it has a size, else `body` (`defaultMount`).
  * @param {number|string} [options.background] Scene background colour.
  * @param {number|false} [options.fog] Fog colour; `false` disables it.
  * @param {[number, number]} [options.fogRange] Near/far distance of the fog.
@@ -30,9 +31,24 @@ import * as THREE from "three"
  * @param {number} [options.maxPixelRatio]
  * @param {number} [options.fixedStep] Seconds per `onFixedUpdate` tick.
  */
+/**
+ * Where the canvas goes when the game does not say: a page that lays itself
+ * out around a full-height `#app` would otherwise get the canvas appended
+ * after it, below the fold and hidden by `overflow: hidden` — a game that
+ * runs, reports ready, and shows nothing but `#app`'s background. An empty
+ * `#app` (no height of its own) is not a layout, so `body` stays the default.
+ *
+ * @param {Document} [doc]
+ * @returns {HTMLElement}
+ */
+export function defaultMount(doc = document) {
+  const app = doc.getElementById("app")
+  return app && app.clientHeight > 0 ? app : doc.body
+}
+
 export function createEngine(options = {}) {
   const {
-    mount = document.body,
+    mount = defaultMount(),
     background = 0x0b1020,
     fog = false,
     fogRange = [20, 120],

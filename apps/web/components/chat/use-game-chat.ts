@@ -6,7 +6,7 @@ import { useChat } from "@ai-sdk/react"
 import { useTriggerChatTransport } from "@trigger.dev/sdk/chat/react"
 import { lastAssistantMessageIsCompleteWithToolCalls, type UIMessage } from "ai"
 
-import { sentAtMetadata } from "@/lib/ai/message-meta"
+import { sentAtMetadata, withoutLiveReceipts } from "@/lib/ai/message-meta"
 import { readThreadTier, tierMetadata } from "@/lib/ai/message-model"
 import { DEFAULT_TIER_ID, type TierId } from "@/lib/ai/model-catalog"
 import { withoutContinuationOf } from "@/lib/ai/resume-stream"
@@ -21,6 +21,7 @@ import {
   type GameBuildProgressEvent,
 } from "@/lib/games/build-progress"
 import { readContextUsage, type ContextUsage } from "@/lib/games/context-usage"
+import { detachedSend } from "@/lib/games/detached-send"
 import { readGameRevision } from "@/lib/games/revision"
 import type { AskPlayerOutput } from "@/lib/games/tools"
 import { readTurnCredits } from "@/lib/games/turn-credits"
@@ -188,7 +189,7 @@ export function useGameChat({
    */
   const chatTransport = useMemo(
     () => ({
-      sendMessages: transport.sendMessages,
+      sendMessages: detachedSend(transport.sendMessages),
       reconnectToStream: async (
         options: Parameters<typeof transport.reconnectToStream>[0]
       ) => {
@@ -212,6 +213,7 @@ export function useGameChat({
     status,
     error,
     resumeStream,
+    setMessages,
   } = useChat({
     id: gameId,
     messages: threadMessages,
@@ -297,6 +299,17 @@ export function useGameChat({
   })
 
   const pending = status === "submitted" || status === "streaming"
+
+  /**
+   * A turn's provisional receipt lives only while its stream does. A stopped
+   * turn never receives the final receipt that clears it, and the last
+   * provisional chunk can arrive after that receipt, so whatever is left once
+   * the stream ends is dropped: the reply keeps only its real receipt.
+   */
+  useEffect(() => {
+    if (pending) return
+    setMessages((current) => withoutLiveReceipts(current))
+  }, [pending, setMessages])
   const [reconnecting, setReconnecting] = useState(false)
 
   useEffect(() => {
@@ -389,7 +402,14 @@ export function useGameChat({
       dispatchBuildProgress({ type: "reconnect-start" })
     }
 
-    void (async () => {
+    /**
+     * Deferred a tick so React's development double mount settles first: its
+     * fake unmount runs `useChat`'s cleanup, `chat.stop()`, which aborted a
+     * reconnect started on the first mount, and the second mount's reconnect
+     * then found the aborted stream still registered in the transport and gave
+     * up. Entering a chat whose agent was working showed nothing until reload.
+     */
+    const resumeTimer = setTimeout(() => void (async () => {
       try {
         await resumeStream()
 
@@ -407,9 +427,10 @@ export function useGameChat({
           setReconnecting(false)
         }
       }
-    })()
+    })(), 0)
 
     return () => {
+      clearTimeout(resumeTimer)
       const currentAttempt = reconnectAttempt.current
 
       if (currentAttempt.gameId === gameId && currentAttempt.id === attempt) {
@@ -493,8 +514,11 @@ export function useGameChat({
     progressTurn.current += 1
     setReconnecting(false)
     dispatchBuildProgress({ type: "abort" })
+    // The send carries no abort signal (`detachedSend`), so stopping the
+    // local stream alone would leave the agent running: stop it explicitly.
+    void transport.stopGeneration(gameId)
     stop()
-  }, [dispatchBuildProgress, stop])
+  }, [dispatchBuildProgress, gameId, stop, transport])
 
   return {
     messages,

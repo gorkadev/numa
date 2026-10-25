@@ -36,6 +36,32 @@ export const MAX_ERROR_CHARS = 300
 const RENDER_WAIT_SECONDS = 2
 
 /**
+ * Below this share of the viewport covered by the page's largest canvas, a
+ * template game is reported as not visible. A centred fixed-size canvas still
+ * clears it easily; one pushed below a full-height `#app` covers none.
+ */
+export const MIN_CANVAS_VIEWPORT_SHARE = 0.25
+
+/**
+ * Evaluated in the page: the largest share of the viewport any canvas covers,
+ * or `null` when there is no canvas. Readiness flags and a clean console say
+ * nothing about whether the scene is on screen — a real run reported ready,
+ * passed every check, and showed the player only `#app`'s background.
+ */
+export const CANVAS_VIEWPORT_SHARE_JS = `() => {
+  const canvases = Array.from(document.querySelectorAll("canvas"))
+  if (canvases.length === 0) return null
+  let best = 0
+  for (const canvas of canvases) {
+    const r = canvas.getBoundingClientRect()
+    const w = Math.max(0, Math.min(r.right, innerWidth) - Math.max(r.left, 0))
+    const h = Math.max(0, Math.min(r.bottom, innerHeight) - Math.max(r.top, 0))
+    best = Math.max(best, (w * h) / (innerWidth * innerHeight))
+  }
+  return best
+}`
+
+/**
  * Where the script lives inside the sandbox — a fixed absolute path under
  * the Daytona default user's home, well outside `GAME_DIR`
  * (`lib/daytona/utils.ts`'s `/home/daytona/game`), so it shares no directory
@@ -96,6 +122,8 @@ RENDER_WAIT_SECONDS = ${RENDER_WAIT_SECONDS}
 INITIAL_READY_TIMEOUT_SECONDS = 20
 ADAPTER_ASSERTION_TIMEOUT_SECONDS = 3
 ADAPTER_POLL_SECONDS = 0.1
+MIN_CANVAS_VIEWPORT_SHARE = ${MIN_CANVAS_VIEWPORT_SHARE}
+CANVAS_VIEWPORT_SHARE_JS = ${JSON.stringify(CANVAS_VIEWPORT_SHARE_JS)}
 
 GAME_PORT = os.environ.get("VERIFY_GAME_PORT", "3000")
 GAME_URL = "http://127.0.0.1:" + GAME_PORT + "/index.html"
@@ -271,6 +299,13 @@ async def main():
             await asyncio.sleep(RENDER_WAIT_SECONDS)
         initial_phase = False
         await run_template_contract(page, template_failures)
+        if HAS_TEMPLATE_POLICY:
+            canvas_share = await page.evaluate(CANVAS_VIEWPORT_SHARE_JS)
+            if canvas_share is not None and canvas_share < MIN_CANVAS_VIEWPORT_SHARE:
+                template_failures.append(
+                    "game canvas covers only " + str(round(canvas_share * 100)) + "% of the viewport; "
+                    + "the page layout likely pushes it off-screen (check createGame's mount and #app's CSS)"
+                )
 
         # Release the desktop WebGL renderer before loading a second scene.
         # Software Chromium can stall when both pages render concurrently.

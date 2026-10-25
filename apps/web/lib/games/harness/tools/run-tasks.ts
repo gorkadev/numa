@@ -31,6 +31,7 @@ import {
 } from "../run-subagent"
 import { rejectDuplicateTaskIds, taskSpecSchema, type TaskSpec } from "../task-spec"
 import { turnState } from "../turn-state"
+import { noWritesEnvelope, retryPromptAfterNoWrites, wroteNothing } from "../worker-outcome"
 import { createLoadSkillTool } from "./load-skill"
 
 /** At most 4 tasks in one call (design.md decision 3). */
@@ -505,7 +506,12 @@ export function createRunTasksTool(
         const skills = mergeSkills(ROLE_DEFAULT_SKILLS[task.role], task.skills)
         const { templateContext } = await readGameTemplateBuildContext(gameId)
 
-        const run = runSubagent({
+        /**
+         * At most two attempts: a worker that finishes without writing any
+         * file it owns gets one retry (`worker-outcome.ts`), since that is
+         * how an empty provider response reads from here.
+         */
+        const runAttempt = (prompt: string) => runSubagent({
           role,
           /**
            * `task.id` alone is not enough: nothing stops a LATER `run_tasks`
@@ -526,19 +532,37 @@ export function createRunTasksTool(
            * own `skills` extra covers.
            */
           tools: { ...createScopedGameTools(gameId, task.owns), load_skill: createLoadSkillTool() },
-          prompt: buildPrompt(task),
+          prompt,
           abortSignal,
         })
 
-        let next = await run.next()
+        const drive = async (prompt: string): Promise<RunSubagentResult> => {
+          const run = runAttempt(prompt)
+          let next = await run.next()
 
-        while (!next.done) {
-          latestByTaskId.set(task.id, next.value)
-          pushEvent()
-          next = await run.next()
+          while (!next.done) {
+            latestByTaskId.set(task.id, next.value)
+            pushEvent()
+            next = await run.next()
+          }
+
+          return next.value
         }
 
-        const result: RunSubagentResult = next.value
+        const prompt = buildPrompt(task)
+        let result = await drive(prompt)
+
+        if (wroteNothing({ envelope: result.envelope, edits: result.record.edits }) && !abortSignal?.aborted) {
+          result = await drive(retryPromptAfterNoWrites(prompt, task.owns))
+
+          if (wroteNothing({ envelope: result.envelope, edits: result.record.edits })) {
+            const envelope = noWritesEnvelope(result.envelope, task.owns)
+            result = {
+              envelope,
+              record: { ...result.record, status: envelope.status, summary: envelope.summary },
+            }
+          }
+        }
 
         /**
          * Recorded in `turnState`, not only in this call's own `done` set,

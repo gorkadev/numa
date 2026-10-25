@@ -251,7 +251,7 @@ export const assetReceiptSchema = z
 const cohesiveAssessmentSchema = z
   .object({
     classification: z.literal("cohesive"),
-    rationale: z.string().min(1).max(1200),
+    rationale: z.string().min(1).max(1200).describe("Why the work is split this way, at most 1200 characters."),
     assetReceipt: assetReceiptSchema.optional(),
   })
   .strict()
@@ -259,7 +259,7 @@ const cohesiveAssessmentSchema = z
 const substantialAssessmentSchema = z
   .object({
     classification: z.literal("substantial"),
-    rationale: z.string().min(1).max(1200),
+    rationale: z.string().min(1).max(1200).describe("Why the work is split this way, at most 1200 characters."),
     integrationTaskId: z.string().min(1),
     assetReceipt: assetReceiptSchema.optional(),
   })
