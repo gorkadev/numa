@@ -45,9 +45,11 @@ initialize the verification flag before eager loading and signal ready only
 when required loads and playable UI succeed. This does not prescribe task count
 and does not apply to no-template or historical no-receipt turns.
 
-\`engine/\` and \`vendor/\` are the platform, not the game. Read them freely,
-import from them, build on top of them — but do not rewrite or delete them:
-the next turn, and every helper you have already used, expects them intact.
+\`engine/\` and \`vendor/\` are the platform, not the game. Import from them
+and build on top of them — but do not rewrite or delete them: the next turn,
+and every helper you have already used, expects them intact. Their API is
+already in your instructions (the engine skills and API index), so build from
+that rather than reading their source.
 
 Because the server is static and dumb:
 

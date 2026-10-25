@@ -196,7 +196,7 @@ function renderFileSection(fileName: string, source: string): string {
 
 const HEADER = `## Engine API index
 
-Every exported function and const from engine/*.js, generated from the actual source: names and parameter lists exactly as written, plus a one-line summary where the source has one. This lists the engine's exports — read an engine file yourself only when a task needs more than this gives you (a function body, an edge case, an exact default). When you do need more than one file, request them all in the SAME step (parallel read_file calls), never one read per step.`
+Every exported function and const from engine/*.js, generated from the actual source: names and parameter lists exactly as written, plus a one-line summary where the source has one. This lists the engine's exports — build from it and the engine skills (load_skill for the full reference of an area) rather than reading engine source. Workers may read at most 2 engine files, for a detail neither covers; when you need more than one, request them in the SAME step.`
 
 /**
  * Builds the whole index from `engineDir`'s own `*.js` files, sorted by name
