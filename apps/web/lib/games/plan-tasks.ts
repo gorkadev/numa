@@ -175,22 +175,36 @@ function applyRunTasksOutput(
 }
 
 /**
- * The task strip's whole derivation, from a thread's raw messages (the task
- * list attached above the chat composer, Cursor's "pending tasks" strip —
- * `task-strip.tsx` renders whatever this returns).
+ * The task bodies a `run_tasks` call dispatched — `input.tasks`, which the
+ * orchestrator writes itself now that no planner sits in between. A legacy
+ * `taskIds` call carries no titles and contributes nothing here; its plan
+ * part supplies them instead.
+ */
+function runTasksBodies(input: unknown): PlanTaskSummary[] {
+  if (typeof input !== "object" || input === null) return []
+
+  return planTasksFromOutput({ tasks: (input as { tasks?: unknown }).tasks }) ?? []
+}
+
+const DISPATCHED_STATES = new Set(["input-available", "output-available", "output-error"])
+
+/**
+ * The build's task list with each task's latest status, or `undefined` when
+ * the thread has none.
  *
- * Takes the LATEST `plan` tool part with an accepted task list — an earlier
- * plan a later one superseded contributes nothing, "a new plan replaces the
- * list automatically" — then folds every `run_tasks` part AFTER it, in
- * message and part order, onto that task list's own ids. A task id the plan
- * declared but no `run_tasks` call has touched yet reads as `"pending"`.
- *
- * `undefined` when no message carries a plan with a task list at all —
- * `task-strip.tsx`'s caller treats that the same as "nothing to show", not
- * as an empty list to render a header for.
+ * The list comes from the latest of two sources: the turn whose `run_tasks`
+ * calls carried task bodies (every call that turn, in order, so a build
+ * dispatched in two batches reads as one list), or — for threads built before
+ * the planner was retired — the latest `plan` call's task list. Statuses come
+ * from the `run_tasks` outputs after that point either way.
  */
 export function deriveTaskStrip(messages: UIMessage[]): TaskStripTask[] | undefined {
   const parts = messages.flatMap((message) => message.parts)
+  const messageStarts: number[] = []
+  messages.reduce((offset, message) => {
+    messageStarts.push(offset)
+    return offset + message.parts.length
+  }, 0)
 
   let planTasks: PlanTaskSummary[] | undefined
   let planIndex = -1
@@ -207,12 +221,39 @@ export function deriveTaskStrip(messages: UIMessage[]): TaskStripTask[] | undefi
     planIndex = index
   })
 
-  if (!planTasks) return undefined
+  // The latest message whose run_tasks calls carried bodies is the current build.
+  let dispatchMessage = -1
+  messages.forEach((message, messageIndex) => {
+    const dispatched = message.parts.some(
+      (part) =>
+        isToolUIPart(part) &&
+        getToolName(part) === "run_tasks" &&
+        DISPATCHED_STATES.has(part.state) &&
+        runTasksBodies(part.input).length > 0
+    )
+    if (dispatched) dispatchMessage = messageIndex
+  })
+
+  let anchor = planIndex
+  let tasks = planTasks
+
+  if (dispatchMessage !== -1 && messageStarts[dispatchMessage]! > planIndex) {
+    const byId = new Map<string, PlanTaskSummary>()
+    for (const part of messages[dispatchMessage]!.parts) {
+      if (!isToolUIPart(part) || getToolName(part) !== "run_tasks") continue
+      if (!DISPATCHED_STATES.has(part.state)) continue
+      for (const task of runTasksBodies(part.input)) byId.set(task.id, task)
+    }
+    tasks = [...byId.values()]
+    anchor = messageStarts[dispatchMessage]! - 1
+  }
+
+  if (!tasks) return undefined
 
   const statusById = new Map<string, { status: TaskStripStatus; activity?: string }>()
 
   parts.forEach((part, index) => {
-    if (index <= planIndex) return
+    if (index <= anchor) return
     if (!isToolUIPart(part)) return
     if (getToolName(part) !== "run_tasks") return
     if (part.state !== "output-available") return
@@ -220,7 +261,7 @@ export function deriveTaskStrip(messages: UIMessage[]): TaskStripTask[] | undefi
     applyRunTasksOutput(statusById, runTasksDeclaredIds(part.input), part.output)
   })
 
-  return planTasks.map((task) => {
+  return tasks.map((task) => {
     const found = statusById.get(task.id)
 
     return {
