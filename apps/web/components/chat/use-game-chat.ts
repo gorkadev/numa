@@ -402,7 +402,14 @@ export function useGameChat({
       dispatchBuildProgress({ type: "reconnect-start" })
     }
 
-    void (async () => {
+    /**
+     * Deferred a tick so React's development double mount settles first: its
+     * fake unmount runs `useChat`'s cleanup, `chat.stop()`, which aborted a
+     * reconnect started on the first mount, and the second mount's reconnect
+     * then found the aborted stream still registered in the transport and gave
+     * up. Entering a chat whose agent was working showed nothing until reload.
+     */
+    const resumeTimer = setTimeout(() => void (async () => {
       try {
         await resumeStream()
 
@@ -420,9 +427,10 @@ export function useGameChat({
           setReconnecting(false)
         }
       }
-    })()
+    })(), 0)
 
     return () => {
+      clearTimeout(resumeTimer)
       const currentAttempt = reconnectAttempt.current
 
       if (currentAttempt.gameId === gameId && currentAttempt.id === attempt) {

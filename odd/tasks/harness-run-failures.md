@@ -13,6 +13,7 @@ Branch: `fix/harness-run-failures`. Delivery: ask-on-risk, forecast ~400 authore
 - S6 — The planner is not killed mid-plan by its own budget: one rejected `submit_plan` plus a retry must fit. Evidence: war game, first planner 12:31:15→12:36:16 timed out at 300 s after a 136 s and a 61 s generation; second planner needed ~3 min.
 - S7 — Leaving a game's page while it builds does not stop the build. Evidence: turn 0 of game 60913af6 `stopped: true` 43 s in; `@ai-sdk/react` `useChat` calls `chat.stop()` on unmount and the Trigger transport sends `{kind:"stop"}` on that abort (`sendStopOnAbort: true`). The Stop button must still stop.
 - S8 — Usage (tokens, cache hit, steps, credits) updates during a turn, not only at the end: "en vez de q se ejecute al acabar, q sea un listener q se ejecute cada x acciones, o cada x tiempo". Event-driven per finished step (orchestrator and sub-agents), throttled; provisional until the final receipt; sidebar balance still moves only at the end.
+- S9 — "cuando estoy en un chat y me voy a otro donde el agente esta trabajando, no me muestra el turno en el q esta trabajando, el ultimo mensaje q se muestra es el mio. si recargo la pagina, entonces si se muestra en vivo". Entering a chat by client navigation while its agent works shows the live turn, as a reload does.
 
 ## Tasks
 
@@ -24,6 +25,7 @@ Branch: `fix/harness-run-failures`. Delivery: ask-on-risk, forecast ~400 authore
 - [x] T6 — S6 — inline — planner timeout 300→480 s (no runnable RED: a config value; covered by the next live run)
 - [x] T7 — S7 — inline — `detachedSend` drops the page abort signal; Stop calls `transport.stopGeneration` (RED module missing; GREEN 2/2). Not covered by a test: the hook wiring itself.
 - [x] T8 — S8 — inline — `live` provisional receipt per finished step (orchestrator + sub-agents), throttled 1.5 s, cleared by the final receipt (RED: liveTurnChunk missing, provisional missing; GREEN message-meta + session-usage 29/29; throttle 4/4 written with its implementation, no separate RED)
+- [x] T9 — S9 — inline — resume deferred one tick past React's dev double mount (no hook test harness; reproduced and verified in the browser, see L9)
 
 ## Log
 
@@ -35,3 +37,4 @@ Branch: `fix/harness-run-failures`. Delivery: ask-on-risk, forecast ~400 authore
 - L6: Closing checks T5-T8 — full suite 264/264 on rerun (first run had 1 failure that did not reproduce; flaky test not identified), tsc clean, eslint 0 errors. Not run: a live build observing the provisional receipt or a page switch mid-build.
 - L7: Verifier (feature end): S1-S7 pass; S8 blocker — a stopped or errored turn kept its provisional receipt (\"so far\") until reload; advisory — the last provisional chunk can land after the final receipt (separate writers, no ordering). One correction for both: `withoutLiveReceipts` runs in the hook once the stream is no longer pending. Flaky test seen earlier is likely `the live receipt carries exactly what the persisted reply will` (two `Date.now()` calls for `sentAt`), pre-existing.
 - L8: Recheck of fb7b90c: S8 blocker fixed (stop → status ready, error → status error both clear `live`; late chunks in the same stream are applied before status leaves streaming). Advisories left open: a provisional chunk written after turn-complete could replay into the next turn until overwritten; `setMessages` always copies, so one extra render when a stream ends.
+- L9: Reproduced on "Green Hell Rally" (running): client navigation opened one `/sessions/<id>/out` that closed in 11-73 ms and showed only the player message; a reload kept it open and streamed. Cause: in development React mounts, unmounts and remounts; `useChat` cleanup calls `chat.stop()`, aborting the first reconnect, and the second `reconnectToStream` returned null while the aborted stream was still in `activeStreams`. After the fix, two client navigations showed the live turn with the `/out` stream open. Production does not double-mount, so it is likely dev-only; not checked in a production build.
