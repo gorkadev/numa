@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 
-import { improverInstructions, improverTemplateContext } from "./instructions"
+import { cleanImprovedText, improverInstructions, improverTemplateContext } from "./instructions"
 
 const toon = {
   label: "Toon Shooter",
@@ -40,4 +40,15 @@ test("the template context names its models and animations without file paths", 
 
 test("no template means no template context", () => {
   assert.equal(improverTemplateContext(undefined), "")
+})
+
+test("the model's reply is trimmed of wrapping quotes and fences", () => {
+  assert.equal(cleanImprovedText('  "Un shooter cartoon."  '), "Un shooter cartoon.")
+  assert.equal(cleanImprovedText("```\nUn shooter.\n```"), "Un shooter.")
+  assert.equal(cleanImprovedText("Línea uno.\nLínea dos."), "Línea uno.\nLínea dos.")
+})
+
+test("a change request only names template models for something new", () => {
+  assert.match(improverInstructions("change"), /do not know which model plays which part/i)
+  assert.match(improverInstructions("new"), /name the models from its list/i)
 })

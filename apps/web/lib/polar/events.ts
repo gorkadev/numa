@@ -109,6 +109,51 @@ export async function ingestTurnCredits({
 }
 
 /**
+ * Tells Polar that a user spent credits on one prompt improvement beyond
+ * their plan's daily quota.
+ *
+ * Same event name and metadata property as a turn, because the meter's
+ * filter cannot change (see `ingestPlanUpgradeAdjustment` below), and the
+ * same contract as `ingestTurnCredits`: never throws, returns whether Polar
+ * accepted it. `externalId` is the ledger row's id, so a replay of the same
+ * improvement is deduplicated by Polar instead of billed twice.
+ */
+export async function ingestImprovementCredits({
+  userId,
+  improvementId,
+  credits,
+  modelId,
+}: {
+  userId: string
+  improvementId: string
+  credits: number
+  modelId: string
+}): Promise<boolean> {
+  if (credits <= 0) return false
+
+  try {
+    await polar.events.ingest({
+      events: [
+        {
+          name: GAME_TURN_EVENT_NAME,
+          externalCustomerId: userId,
+          externalId: `prompt-improvement:${improvementId}`,
+          metadata: {
+            [CREDITS_METADATA_PROPERTY]: credits,
+            model: modelId,
+            reason: "prompt_improvement",
+          },
+        },
+      ],
+    })
+
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
  * Claws back the unearned share of a Pro→Max upgrade's credit grant.
  *
  * # The exploit this closes

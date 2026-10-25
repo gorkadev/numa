@@ -213,10 +213,16 @@ const TIER_PROFILES: Record<TierId, TierProfile> = {
  * a fast player get the same title model. Swapping it means editing only the
  * list here, like `TIER_PROFILES`.
  */
-export type UtilityTask = "title"
+export type UtilityTask = "title" | "improve"
 
 const UTILITY_MODELS: Record<UtilityTask, SlotCandidates> = {
   title: ["lite-minimal"],
+  /**
+   * Rewriting a prompt has to pick fitting models from a template's catalog
+   * and hold back on scope, so it gets a little reasoning where a title gets
+   * none — same Lite rate card either way.
+   */
+  improve: ["lite-medium"],
 }
 
 export type ResolvedModel = {
