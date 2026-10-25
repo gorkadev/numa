@@ -287,6 +287,11 @@ export const turnState = {
     return local.finishedTaskIds.has(taskId)
   },
 
+  /** Every task id that finished this turn, for validating a later batch's `dependsOn` up front. */
+  get finishedTaskIds(): ReadonlySet<string> {
+    return local.finishedTaskIds
+  },
+
   /**
    * Records that a `run_tasks` task finished, so a later call this same turn
    * can satisfy a `dependsOn` naming it. A new `Set` rather than a mutating

@@ -127,6 +127,28 @@ export async function readPlanAssetReceipt(gameId: string): Promise<AssetReceipt
 
   const plan = parseStoredPlanArtifact(raw.toString("utf-8"))
   return plan?.readinessPolicyVersion === PLAN_READINESS_POLICY_VERSION
-    ? plan.assessment.assetReceipt
+    ? plan.assetReceipt
     : undefined
+}
+
+/**
+ * Records the eager-asset selection a fresh selected-template build declared
+ * through `run_tasks`, in the same `plan.json` `verify` reads it from
+ * (`readPlanAssetReceipt`). Replaces whatever an earlier plan left there, so
+ * a stale receipt never outlives the build that declares a new one.
+ */
+export async function writeDispatchReceipt(
+  gameId: string,
+  receipt: AssetReceipt
+): Promise<void> {
+  const { sandbox } = await getGameSandbox(gameId)
+
+  await sandbox.fs.createFolder(`${GAME_DIR}/${PLAN_DIR}`, "755").catch(() => {})
+  await sandbox.fs.uploadFile(
+    Buffer.from(JSON.stringify({
+      assetReceipt: receipt,
+      readinessPolicyVersion: PLAN_READINESS_POLICY_VERSION,
+    }, null, 2), "utf-8"),
+    `${GAME_DIR}/${PLAN_RELATIVE}`
+  )
 }

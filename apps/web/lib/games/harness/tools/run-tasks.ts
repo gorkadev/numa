@@ -22,7 +22,8 @@ import {
 } from "@/lib/games/skills/registry"
 
 import { renderEnvelope, type SubagentEnvelope } from "../envelope"
-import { readPlanTasks } from "../plan-store"
+import { readPlanAssetReceipt, readPlanTasks, writeDispatchReceipt } from "../plan-store"
+import { assetReceiptSchema, validateDispatch } from "../plan-validation"
 import { ROLES } from "../roles"
 import {
   runSubagent,
@@ -61,9 +62,9 @@ const POOL_CAP = 3
  * Batch-level constraints on top of the shared per-task schema: at most
  * `MAX_TASKS_PER_BATCH`, and no duplicate id (`rejectDuplicateTaskIds`,
  * `../task-spec.ts` — the same check `submit_plan`'s own array schema uses,
- * since both tools key their own bookkeeping by task id). Only ever reaches
- * `execute` for the corrective pass — see `runTasksInputSchema` below for
- * the normal, by-reference path.
+ * since both tools key their own bookkeeping by task id). The cross-task
+ * rules — cycles, unknown dependencies, protected or overlapping owns, the
+ * template asset receipt — run in `execute` (`validateDispatch`).
  */
 const tasksArraySchema = z
   .array(taskSpecSchema)
@@ -97,20 +98,20 @@ function rejectDuplicateTaskIdStrings(ids: string[], ctx: z.RefinementCtx): void
 }
 
 /**
- * `run_tasks`' own input: the normal way to call this tool is `taskIds`,
- * naming tasks the plan `submit_plan` already accepted (read back through
- * `readPlanTasks`) — never retyping a task's `goal`/`owns`/`dependsOn`/
- * `skills` the planner already wrote to `.numa/tasks.json`. Benchmark
- * traces showed that re-emission costing ~4k output tokens per call.
+ * `run_tasks`' own input. `tasks` — full task bodies the orchestrator writes
+ * itself — is the normal way to dispatch: the separate planner that used to
+ * write them cost minutes and a fifth of a build's spend, and most of its
+ * plans were a single task anyway. `taskIds` stays for a game whose earlier
+ * turn left an accepted plan in `.numa/tasks.json`.
  *
- * `tasks` — full task bodies — stays for the one case `taskIds` cannot
- * cover: the corrective pass `instructions/workflow.ts`'s routing section
- * allows after `verify` has already run this turn, dispatching a fix that
- * does not match anything the plan described. `execute` below enforces
- * that the two are mutually exclusive and that `tasks` never reaches this
- * tool outside that one pass.
+ * `assetReceipt` replaces the planner's own receipt for a fresh build with a
+ * selected template: the eager models the first screen loads, which `verify`
+ * then holds the game to.
  */
 const runTasksInputSchema = z.object({
+  tasks: tasksArraySchema.optional().describe(
+    "The tasks to dispatch, written by you: each with its own goal, the files it owns, any dependsOn, and acceptance criteria. The normal way to call this tool. Never pass this together with taskIds."
+  ),
   taskIds: z
     .array(z.string().min(1))
     .min(1)
@@ -118,10 +119,10 @@ const runTasksInputSchema = z.object({
     .superRefine(rejectDuplicateTaskIdStrings)
     .optional()
     .describe(
-      "Ids of tasks from the plan submit_plan already accepted, to dispatch by reference — the normal way to call this tool once a plan exists. Never pass this together with tasks."
+      "Legacy: ids of tasks from a plan an earlier turn already accepted in .numa/tasks.json. Never pass this together with tasks."
     ),
-  tasks: tasksArraySchema.optional().describe(
-    "Full task bodies to dispatch directly, bypassing the plan. Only allowed in the one corrective run_tasks pass after verify has already run this turn — refused otherwise. Never pass this together with taskIds."
+  assetReceipt: assetReceiptSchema.optional().describe(
+    "Required on the first dispatch of a fresh build with a selected template, and only then: the model ids (at most 6) the first screen loads eagerly, plus any lazy ones and the shared assets loaded eagerly, all from the template's asset catalog. verify checks the game loads exactly these."
   ),
 })
 
@@ -344,10 +345,9 @@ export function createRunTasksTool(
 ): Tool {
   return tool({
     description: [
-      "Dispatch the tasks a plan's own task list broke the build into, each against its own worker.",
-      "The normal way to call this: taskIds, naming tasks from the plan submit_plan already accepted — this tool reads their goal, owns, dependsOn and skills back from that plan, so there is no need to retype them.",
+      "Dispatch the tasks you broke the build into, each against its own worker. Pass tasks: full task bodies you write yourself.",
       "Each dispatched task's worker is scoped so it can only write the files that task owns. Tasks whose owns do not overlap run concurrently, up to 3 at once; tasks that share a file, or that depend on another task via dependsOn (this batch, or an earlier run_tasks call this turn), run only after what they depend on or conflict with has finished.",
-      "tasks — full task bodies instead of ids — is only for the one corrective pass allowed after verify has already run this turn, dispatching a fix that does not match anything the plan described. Pass taskIds or tasks, never both.",
+      "The batch is checked before anything starts: no dependency cycle, every dependsOn in this batch or finished earlier this turn, no owns under engine/, vendor/ or .numa/, and no overlapping owns without a dependsOn. After verify has run, one corrective call is allowed.",
     ].join(" "),
     inputSchema: runTasksInputSchema,
     /**
@@ -370,21 +370,13 @@ export function createRunTasksTool(
      * rendering.
      */
     execute: async function* (
-      { taskIds, tasks: tasksInput },
+      { taskIds, tasks: tasksInput, assetReceipt },
       { abortSignal }
     ): AsyncGenerator<RunTasksProgress | RunTasksResult | RunTasksRejection, void, void> {
       /**
-       * The corrective pass design.md's flow diagram marks "last allowed" —
-       * the one `run_tasks` retry the workflow prompt permits after `verify`
-       * has already run this turn (`instructions/workflow.ts`'s routing
-       * section). `turnState.verifyCalls` is already exactly that signal:
-       * `tools/verify.ts` increments it the moment its first call this turn
-       * starts, so `> 0` here means "verify has already run this turn" with
-       * no separate flag needed. The full `tasks` form is allowed only once
-       * this is true.
+       * Any number of calls before `verify`; once it has run, exactly one
+       * corrective call (`turnState.tryStartPostVerifyRunTasks`).
        */
-      const correctivePass = turnState.verifyCalls > 0
-
       if (!turnState.tryStartPostVerifyRunTasks()) {
         yield {
           error:
@@ -396,7 +388,7 @@ export function createRunTasksTool(
       if (taskIds && tasksInput) {
         yield {
           error:
-            "Pass either taskIds or tasks, never both. taskIds is the normal way to dispatch the plan's own tasks by reference; tasks is only for the one corrective pass allowed after verify has already run this turn.",
+            "Pass either tasks or taskIds, never both. tasks is the normal way to dispatch; taskIds only references a plan an earlier turn accepted.",
         }
         return
       }
@@ -423,19 +415,30 @@ export function createRunTasksTool(
 
         tasks = resolved.tasks
       } else if (tasksInput) {
-        if (!correctivePass) {
-          yield {
-            error:
-              "The full tasks form is only allowed in the one corrective run_tasks pass after verify has already run this turn. Reference the plan's own tasks by id with taskIds instead.",
-          }
+        const { assetCatalog } = await readGameTemplateBuildContext(gameId)
+        const hasStoredReceipt =
+          assetCatalog.requiresAssetReceipt === true &&
+          !assetReceipt &&
+          (await readPlanAssetReceipt(gameId)) !== undefined
+        const invalid = validateDispatch(tasksInput, {
+          finishedIds: turnState.finishedTaskIds,
+          assets: assetCatalog,
+          receipt: assetReceipt,
+          hasStoredReceipt,
+        })
+
+        if (invalid) {
+          yield { error: invalid }
           return
         }
+
+        if (assetReceipt) await writeDispatchReceipt(gameId, assetReceipt)
 
         tasks = tasksInput
       } else {
         yield {
           error:
-            "Give either taskIds — the ids of tasks from the accepted plan to dispatch, the normal way to call this tool — or tasks, only for the one corrective pass allowed after verify.",
+            "Give tasks — the task bodies to dispatch, the normal way to call this tool — or taskIds for a plan an earlier turn accepted.",
         }
         return
       }
