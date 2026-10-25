@@ -224,7 +224,7 @@ Each task is:
 
 - \`role\`: \`gameplay\`, \`visuals\` or \`audio\` — whichever the bulk of the
   work is; \`skills\` can add what that role does not carry.
-- \`title\` and \`goal\`: the worker's whole brief, up to 2000 characters. It
+- \`title\` and \`goal\`: the worker's whole brief, about 1500 characters. It
   sees nothing else about this turn, so name what to build, which files, and
   which engine calls to build it on (from the engine API index below) — the
   calls, not every value. Never tell a worker to skip reading the game's own

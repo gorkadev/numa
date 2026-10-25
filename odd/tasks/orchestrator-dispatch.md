@@ -9,6 +9,7 @@ Branch: `feat/orchestrator-dispatch` (stacked on `fix/harness-run-failures`). De
 - S2 — The `plan` tool is no longer active for the orchestrator (still declared, so stored `tool-plan` parts keep converting). The orchestrator's instructions tell it to author the tasks (absorbing the planner's task-writing rules), and it receives the template context, its asset catalog and the engine API index.
 - S3 — The task strip shows the tasks of the turn's `run_tasks` calls without a `plan` part; threads with a `plan` part render as before.
 - S4 — "eso q comentas también del engine q se lee varias veces hay q solucionarlo si": instructions stop inviting agents to read `engine/*.js` and point to the API index and skills; a worker or explorer that reads engine files beyond a small budget gets a refusal pointing to the index and `load_skill`.
+- S5 — "no entiendo de todos modos porque se les impone un límite y no lo obedecen, revísalo y soluciónalo de la forma q mejor considered": a task goal or acceptance item that overshoots its stated length is not rejected; descriptions state a target (goal ~1500, acceptance ~200) and the hard ceiling (4000, 600) only stops a runaway field.
 
 ## Tasks
 
@@ -16,6 +17,7 @@ Branch: `feat/orchestrator-dispatch` (stacked on `fix/harness-run-failures`). De
 - [x] T2 — S2 — inline — `RETIRED_TOOLS` keeps `plan` declared but inactive; routing text rewritten (planner rules absorbed: scope, controls, one task by default, fields, 2000-char goal); `orchestratorContextInstructions` adds engine index + template context + receipt line per turn (RED module missing; GREEN 4/4; suite 281/281). The run() wiring in chat.ts has no unit test.
 - [x] T3 — S3 — inline — `deriveTaskStrip` takes the latest turn's `run_tasks` bodies (all calls of that turn), legacy `plan` path kept (RED 4 fail; GREEN 6/6)
 - [x] T4 — S4 — inline — `engineReadBudget(2)` on every worker read_file; runtime, engine-core and index text point to index + load_skill (RED module missing; GREEN 3/3). Explorer left unbudgeted: reading is its job.
+- [x] T5 — S5 — inline — target vs ceiling in `task-spec.ts`, workflow text says about 1500 (RED 4 fail; GREEN 4/4; suite 295/295, tsc clean)
 
 ## Log
 
@@ -25,3 +27,5 @@ Branch: `feat/orchestrator-dispatch` (stacked on `fix/harness-run-failures`). De
 - L4: Closing checks T1-T4 — suite 289/290: the one failure is `lib/highlighter.test.tsx` "aliases highlight real tokens…", untouched by this feature, passing twice in isolation (slow test under suite load). tsc clean, eslint 0 errors. Not run: a live build without the planner.
 - L5: Verifier (feature end): S2, S4 pass; blockers B1 (a rejected corrective batch spent the one corrective call — counter ran before validation), B2 (later builds no longer lifted the first build's eager-asset check, which a new plan used to), B3 (rejected batches stayed in the task strip as pending). One correction for all three: `tryStartPostVerifyRunTasks` after validation; `receiptAction` write/clear/keep with `clearDispatchReceipt`; `deriveTaskStrip` skips calls whose output is an error (RED: receiptAction missing, strip test failing; GREEN 21/21). Advisories left: stale receipt from an empty earlier build (same as baseline), per-turn template read now awaited every turn (a retired template seed would fail every turn), engine budget whitespace bypass, failed reads count, retry resets the budget.
 - L6: Recheck of f9fd4af: B1, B2, B3 fixed (21/21 focused tests, tsc clean). Pending: a live build without the planner; push/PR and chain strategy are the user's decision.
+- L7: Live build "Toon Base Survival" (ffdcd025, run_06gn6i8hjq6t1ar9vipbqffua2): no planner, one task t1, assetReceipt with 6 catalog models, verify PASS, turn 0 $0.48 / 97 credits in ~5m17s. First run_tasks rejected: goal 2172 > 2000 chars; first worker attempt wrote nothing and the S1 retry recovered. One task is by design (workflow.ts "One task is the default").
+- L8 (2026-10-25, user, verbatim): "Mm sube un mini fix si para eso, no entiendo de todos modos porque se les impone un límite y no lo obedecen, revísalo y soluciónalo de la forma q mejor considered". Cause: a model writes tokens, not characters, so a stated character limit is overshot by a few percent; the stated limit was also the hard rejection point.
