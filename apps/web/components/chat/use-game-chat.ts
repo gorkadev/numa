@@ -21,6 +21,7 @@ import {
   type GameBuildProgressEvent,
 } from "@/lib/games/build-progress"
 import { readContextUsage, type ContextUsage } from "@/lib/games/context-usage"
+import { detachedSend } from "@/lib/games/detached-send"
 import { readGameRevision } from "@/lib/games/revision"
 import type { AskPlayerOutput } from "@/lib/games/tools"
 import { readTurnCredits } from "@/lib/games/turn-credits"
@@ -188,7 +189,7 @@ export function useGameChat({
    */
   const chatTransport = useMemo(
     () => ({
-      sendMessages: transport.sendMessages,
+      sendMessages: detachedSend(transport.sendMessages),
       reconnectToStream: async (
         options: Parameters<typeof transport.reconnectToStream>[0]
       ) => {
@@ -493,8 +494,11 @@ export function useGameChat({
     progressTurn.current += 1
     setReconnecting(false)
     dispatchBuildProgress({ type: "abort" })
+    // The send carries no abort signal (`detachedSend`), so stopping the
+    // local stream alone would leave the agent running: stop it explicitly.
+    void transport.stopGeneration(gameId)
     stop()
-  }, [dispatchBuildProgress, stop])
+  }, [dispatchBuildProgress, gameId, stop, transport])
 
   return {
     messages,

@@ -287,9 +287,9 @@ export function ChatThread({
           onValueChange={setInput}
           onSubmit={send}
           /**
-           * The transport turns this abort into a `stop` chunk on the session's
-           * input channel, which aborts the agent's `streamText` call while the
-           * run stays alive for the next message — so cancelling costs the
+           * `stopBuild` sends a `stop` chunk on the session's input channel
+           * (`stopGeneration`), which aborts the agent's `streamText` call while
+           * the run stays alive for the next message — so cancelling costs the
            * conversation nothing.
            */
           onStop={stop}

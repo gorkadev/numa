@@ -22,7 +22,7 @@ Branch: `fix/harness-run-failures`. Delivery: ask-on-risk, forecast ~400 authore
 - [x] T4 — S4 — inline — engine lighting/mount guards + canvas visibility check (RED 3+1 fail incl. real `reading 'sky'`; GREEN 3/3, 5/5; generated Python compiles)
 - [x] T5 — S5 — inline — goal limit 2000 (RED 2 fail; GREEN 3/3)
 - [x] T6 — S6 — inline — planner timeout 300→480 s (no runnable RED: a config value; covered by the next live run)
-- [ ] T7 — S7 — inline — unmount does not stop the turn
+- [x] T7 — S7 — inline — `detachedSend` drops the page abort signal; Stop calls `transport.stopGeneration` (RED module missing; GREEN 2/2). Not covered by a test: the hook wiring itself.
 - [ ] T8 — S8 — inline — live provisional receipt
 
 ## Log
