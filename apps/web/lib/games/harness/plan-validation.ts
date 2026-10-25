@@ -86,13 +86,14 @@ function ownershipOverlaps(a: readonly string[], b: readonly string[]): boolean 
  * same submission.
  */
 export function findUnknownDependency(
-  tasks: readonly TaskSpec[]
+  tasks: readonly TaskSpec[],
+  finishedIds: ReadonlySet<string> = new Set()
 ): { taskId: string; missing: string } | undefined {
   const ids = new Set(tasks.map((task) => task.id))
 
   for (const task of tasks) {
     for (const dep of task.dependsOn) {
-      if (!ids.has(dep)) return { taskId: task.id, missing: dep }
+      if (!ids.has(dep) && !finishedIds.has(dep)) return { taskId: task.id, missing: dep }
     }
   }
 
@@ -275,7 +276,10 @@ export type AssetReceipt = z.infer<typeof assetReceiptSchema>
 export type PlanAssessment = z.infer<typeof planAssessmentSchema>
 export const PLAN_READINESS_POLICY_VERSION = 1 as const
 export type StoredPlan = {
-  assessment: PlanAssessment
+  /** Written by the retired planner; a plan written by `run_tasks` carries none. */
+  assessment?: PlanAssessment
+  /** The accepted eager-asset selection, wherever it was written from. */
+  assetReceipt?: AssetReceipt
   readinessPolicyVersion?: typeof PLAN_READINESS_POLICY_VERSION
 }
 export type PlanAssetCatalog = {
@@ -287,7 +291,8 @@ export type PlanAssetCatalog = {
 
 const tasksFileSchema = z.array(taskSpecSchema)
 const planFileSchema = z.object({
-  assessment: planAssessmentSchema,
+  assessment: planAssessmentSchema.optional(),
+  assetReceipt: assetReceiptSchema.optional(),
   readinessPolicyVersion: z.literal(PLAN_READINESS_POLICY_VERSION).optional(),
 }).strict()
 
@@ -305,7 +310,15 @@ export function parsePlanTasksArtifact(contents: string): TaskSpec[] | undefined
 export function parseStoredPlanArtifact(contents: string): StoredPlan | undefined {
   try {
     const parsed = planFileSchema.safeParse(JSON.parse(contents))
-    return parsed.success ? parsed.data : undefined
+    if (!parsed.success) return undefined
+
+    const { assessment, readinessPolicyVersion } = parsed.data
+    const assetReceipt = parsed.data.assetReceipt ?? assessment?.assetReceipt
+    return {
+      ...(assessment ? { assessment } : {}),
+      ...(assetReceipt ? { assetReceipt } : {}),
+      ...(readinessPolicyVersion ? { readinessPolicyVersion } : {}),
+    }
   } catch {
     return undefined
   }
@@ -408,6 +421,15 @@ export function validatePlanAssessment(
       : undefined
   }
 
+  return validateAssetReceipt(receipt, assets)
+}
+
+/** The receipt's own checks: no repeats, every id in the template's catalog, no model both eager and lazy. */
+export function validateAssetReceipt(
+  receipt: AssetReceipt,
+  assets: PlanAssetCatalog
+): string | undefined {
+
   const eagerDuplicate = findDuplicate(receipt.eagerModelIds)
   if (eagerDuplicate) return `assetReceipt.eagerModelIds repeats "${eagerDuplicate}".`
   const lazyDuplicate = receipt.lazyModelIds && findDuplicate(receipt.lazyModelIds)
@@ -461,4 +483,80 @@ export function validatePlanTasks(tasks: readonly TaskSpec[]): string | undefine
   }
 
   return undefined
+}
+
+/**
+ * The checks a batch must pass before `run_tasks` starts any of it, now that
+ * the orchestrator writes tasks itself rather than a planner submitting them:
+ * the same graph and ownership rules `submit_plan` applied, with `dependsOn`
+ * also allowed to name a task an earlier call finished this turn, plus the
+ * template asset receipt a fresh selected-template build must declare once.
+ */
+export function validateDispatch(
+  tasks: readonly TaskSpec[],
+  {
+    finishedIds,
+    assets,
+    receipt,
+    hasStoredReceipt = false,
+  }: {
+    finishedIds: ReadonlySet<string>
+    assets: PlanAssetCatalog
+    receipt?: AssetReceipt
+    /** A receipt this build already recorded (an earlier dispatch), so a later batch need not repeat it. */
+    hasStoredReceipt?: boolean
+  }
+): string | undefined {
+  const cycle = findDependencyCycle(tasks)
+  if (cycle) {
+    return `dependsOn has a cycle: ${cycle.join(" -> ")}. No task may wait, even transitively, on itself.`
+  }
+
+  const unknown = findUnknownDependency(tasks, finishedIds)
+  if (unknown) {
+    return `Task "${unknown.taskId}" depends on "${unknown.missing}", which is neither in this batch nor a task that finished earlier this turn.`
+  }
+
+  for (const task of tasks) {
+    const entry = task.owns.find(isProtectedOwnership)
+    if (entry) {
+      return `Task "${task.id}" declares owning "${entry}", which is inside a protected prefix (${PROTECTED_DIR_NAMES.join(", ")}) no task may ever own.`
+    }
+  }
+
+  const overlap = findUnresolvedOwnershipOverlap(tasks)
+  if (overlap) {
+    const [a, b] = overlap
+    return `Tasks "${a}" and "${b}" declare overlapping ownership with no dependsOn between them. Narrow their owns, or add a dependsOn so they never run concurrently.`
+  }
+
+  if (receipt) return validateAssetReceipt(receipt, assets)
+
+  if (assets.requiresAssetReceipt && !hasStoredReceipt) {
+    return "This is a fresh build with a selected template: pass assetReceipt with the eager model ids (at most 6) the first screen loads, from the template's asset catalog."
+  }
+
+  return undefined
+}
+
+/**
+ * What a dispatch does to the stored eager-asset receipt `verify` enforces.
+ * A declared receipt is written. The first build's receipt is otherwise kept
+ * through that build (its corrective pass included), but a later build of the
+ * same game lifts it — the retired planner did the same by rewriting
+ * `plan.json` without the marker — so a later turn that adds a model to the
+ * first screen is not failed against the first build's selection.
+ */
+export function receiptAction({
+  receipt,
+  assets,
+  hasStoredReceipt,
+}: {
+  receipt?: AssetReceipt
+  assets: PlanAssetCatalog
+  hasStoredReceipt: boolean
+}): "write" | "clear" | "keep" {
+  if (receipt) return "write"
+  if (!assets.requiresAssetReceipt && hasStoredReceipt) return "clear"
+  return "keep"
 }

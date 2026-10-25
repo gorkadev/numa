@@ -252,11 +252,11 @@ export type PathGuard = (relative: string) => ToolError | undefined
  * rather than path-shaped: it takes no argument, and a call either passes
  * (returning `undefined`, having also recorded the call against whatever
  * budget it tracks) or refuses outright. Only `trigger/chat.ts`'s
- * orchestrator instance passes one, for its own per-turn `read_file` budget
- * — a worker's scoped tools, the planner's read-only tools and the explorer
- * are unaffected.
+ * orchestrator instance passes one, for its own per-turn `read_file` budget,
+ * and every worker's scoped tools pass one that caps reads of `engine/`
+ * source (`harness/engine-read-budget.ts`). It receives the requested path.
  */
-export type ReadBudgetGuard = () => ToolError | undefined
+export type ReadBudgetGuard = (path: string) => ToolError | undefined
 
 /** Builds the `withSandbox` helper every tool builder below closes over. */
 function withSandboxFor(gameId: string) {
@@ -369,7 +369,7 @@ export function createReadFileTool(gameId: string, budgetGuard?: ReadBudgetGuard
         ),
     }),
     execute: async ({ path }) => {
-      const budgetError = budgetGuard?.()
+      const budgetError = budgetGuard?.(path)
       if (budgetError) return budgetError
 
       const resolved = resolveGamePath(path)

@@ -19,6 +19,18 @@ import { ALL_SKILL_NAMES } from "@/lib/games/skills/registry"
  * (`harness/plan-validation.ts`) can be exercised standalone, with no
  * sandbox or database in the loop.
  */
+/**
+ * Field lengths come in pairs: the target the description asks for, and a
+ * hard ceiling well above it. A model writes tokens, not characters, so a
+ * stated limit is an aim it overshoots by a few percent; rejecting at the
+ * stated number threw away a whole dispatch over a 172-character overshoot
+ * (game ffdcd025). The ceiling only stops a runaway field.
+ */
+const GOAL_TARGET_CHARS = 1500
+const GOAL_MAX_CHARS = 4000
+const ACCEPTANCE_TARGET_CHARS = 200
+const ACCEPTANCE_MAX_CHARS = 600
+
 export const taskSpecSchema = z.object({
   id: z
     .string()
@@ -29,9 +41,9 @@ export const taskSpecSchema = z.object({
   goal: z
     .string()
     .min(1)
-    .max(2000)
+    .max(GOAL_MAX_CHARS)
     .describe(
-      "The task's goal, procedure, constraints and done-when condition, in plain language. This is the worker's whole brief — write it as if the worker has read nothing else about the game. At most 2000 characters: name what to build, where and against which engine APIs, not every value — the worker reads the game's own files and skills itself."
+      `The task's goal, procedure, constraints and done-when condition, in plain language. This is the worker's whole brief — write it as if the worker has read nothing else about the game. Aim for about ${GOAL_TARGET_CHARS} characters: name what to build, where and against which engine APIs, not every value — the worker reads the game's own files and skills itself.`
     ),
   owns: z
     .array(z.string().min(1))
@@ -52,11 +64,11 @@ export const taskSpecSchema = z.object({
       `Extra skills to push into this worker's instructions on top of its role's defaults, when this task needs one its role does not already carry. One or more of: ${ALL_SKILL_NAMES.join(", ")}.`
     ),
   acceptance: z
-    .array(z.string().min(1).max(300))
+    .array(z.string().min(1).max(ACCEPTANCE_MAX_CHARS))
     .max(6)
     .optional()
     .describe(
-      "Bounded, observable acceptance criteria for this task, at most 6, each at most 300 characters. Historical stored tasks may omit this field; selected-template first-build plans must provide at least one criterion per task."
+      `Bounded, observable acceptance criteria for this task, at most 6, each about ${ACCEPTANCE_TARGET_CHARS} characters. Historical stored tasks may omit this field; selected-template first-build plans must provide at least one criterion per task.`
     ),
 })
 

@@ -8,6 +8,7 @@ import {
   createWriteFileTool,
   type PathGuard,
 } from "@/lib/games/tools"
+import { engineReadBudget, WORKER_ENGINE_READS } from "./engine-read-budget"
 
 /**
  * Whether `relative` falls inside one of a task's declared ownership entries
@@ -88,7 +89,7 @@ export function createScopedGameTools(
   const guard = ownershipGuard(owns)
 
   return {
-    read_file: createReadFileTool(gameId),
+    read_file: createReadFileTool(gameId, engineReadBudget(WORKER_ENGINE_READS)),
     list_files: createListFilesTool(gameId),
     write_file: createWriteFileTool(gameId, guard),
     replace_text: createReplaceTextTool(gameId, guard),

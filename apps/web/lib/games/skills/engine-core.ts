@@ -60,8 +60,9 @@ model, sound and texture is generated in code.
 import { createGame, createGround, PALETTE } from "./engine/index.js"
 \`\`\`
 
-\`engine/\` and \`vendor/\` are a library: read them when you need detail, build
-on top of them in your own files, and do not rewrite or delete them.
+\`engine/\` and \`vendor/\` are a library: build on top of them in your own
+files, and do not rewrite or delete them. What follows and the API index are
+their reference — reach for \`load_skill\` before their source.
 
 **engine.js** — renderer, scene, camera, loop.
 - \`createEngine({ mount, background, fog, fogRange, fov, near, far,

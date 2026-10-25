@@ -38,6 +38,8 @@ import { extendTerminalInstructions } from "@/lib/games/harness/terminal-instruc
 import { priorStepsCalledTool, routeHarnessTools } from "@/lib/games/harness/routing"
 import { createThrottle } from "@/lib/games/harness/throttle"
 import { gameInstructions } from "@/lib/games/instructions"
+import { orchestratorContextInstructions } from "@/lib/games/instructions/orchestrator-context"
+import { readGameTemplateBuildContext } from "@/lib/games/templates/context"
 import { activityTag } from "@/lib/games/activity"
 import { gameProgressChunk, withoutGameProgress } from "@/lib/games/build-progress"
 import { gameRevisionChunk } from "@/lib/games/revision"
@@ -278,7 +280,7 @@ function orchestratorReadBudgetGuard(): { error: string } | undefined {
 
   if (turnState.orchestratorReadCalls >= MAX_ORCHESTRATOR_READS_PER_TURN) {
     return {
-      error: `You have already read ${MAX_ORCHESTRATOR_READS_PER_TURN} files yourself this turn. Reading your way through the game one file at a time is exactly what this budget exists to stop — delegate instead: explore for a broader look at how something works, or plan/run_tasks to make the change itself.`,
+      error: `You have already read ${MAX_ORCHESTRATOR_READS_PER_TURN} files yourself this turn. Reading your way through the game one file at a time is exactly what this budget exists to stop — delegate instead: explore for a broader look at how something works, or run_tasks to make the change itself.`,
     }
   }
 
@@ -308,9 +310,17 @@ const PHASE_TOOLS = new Set(["explore", "plan", "run_tasks", "verify", "load_ski
  */
 function activeToolNames<T extends ToolSet>(tools: T): (keyof T & string)[] {
   return Object.keys(tools).filter(
-    (name) => HARNESS_PHASES || !PHASE_TOOLS.has(name)
+    (name) => !RETIRED_TOOLS.has(name) && (HARNESS_PHASES || !PHASE_TOOLS.has(name))
   ) as (keyof T & string)[]
 }
+
+/**
+ * Declared so stored parts still convert, never offered. `plan` ran a
+ * separate planner the orchestrator now replaces by writing `run_tasks`
+ * bodies itself: it cost minutes and a fifth of a build's spend, timed out
+ * on two plans in ten, and four in ten were a single task anyway.
+ */
+const RETIRED_TOOLS = new Set(["plan"])
 
 
 /**
@@ -967,7 +977,7 @@ export const gameChat = chat.agent({
     })
   },
 
-  run: async ({ messages, tools, clientData, signal }) => {
+  run: async ({ chatId, messages, tools, clientData, signal }) => {
     /**
      * Captured once so `prepareStep` below can call the auto-injected
      * function it wires up (compaction, mid-turn steering, background
@@ -979,6 +989,23 @@ export const gameChat = chat.agent({
      * auto-injected one").
      */
     const baseStreamTextOptions = chat.toStreamTextOptions({ tools })
+
+    /**
+     * The orchestrator writes the tasks itself, so it needs what a planner
+     * used to be handed: the engine's API, the game's template, and on a
+     * fresh template build the asset ids its first dispatch must declare.
+     */
+    const { templateContext, assetCatalog } = await readGameTemplateBuildContext(chatId)
+    const instructions = HARNESS_PHASES
+      ? [
+          ...gameInstructions,
+          ...orchestratorContextInstructions({
+            templateContext,
+            requiresAssetReceipt: assetCatalog.requiresAssetReceipt === true,
+            modelIds: assetCatalog.modelIds,
+          }),
+        ]
+      : gameInstructions
 
     return streamText({
       /**
@@ -1013,7 +1040,7 @@ export const gameChat = chat.agent({
        * and `instructions` wins over `system` regardless, so this stays the
        * prompt if a managed one is ever introduced without it being wired here.
        */
-      instructions: gameInstructions,
+      instructions,
       messages,
       /**
        * Fires on stop and on cancel. Without it, stopping updates the browser
@@ -1125,7 +1152,7 @@ export const gameChat = chat.agent({
           return {
             ...base,
             instructions: extendTerminalInstructions(
-               gameInstructions,
+               instructions,
                base?.instructions as Instructions | undefined,
                base?.system as Instructions | undefined,
                instruction
@@ -1145,7 +1172,7 @@ export const gameChat = chat.agent({
             ...base,
             ...(correctivePass ? {
               instructions: extendTerminalInstructions(
-                gameInstructions,
+                instructions,
                 base?.instructions as Instructions | undefined,
                 base?.system as Instructions | undefined,
                 finalResponseInstruction(turnState.verifyOutcome, [...turnState.unfinishedTaskIds])

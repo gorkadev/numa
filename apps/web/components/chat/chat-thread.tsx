@@ -156,8 +156,8 @@ export function ChatThread({
 
   /**
    * The task-list strip above the composer (`task-strip.tsx`): derived from
-   * the latest `plan` call's task list plus every `run_tasks` call after it
-   * (`lib/games/plan-tasks.ts`), shown while any task is not yet done or the
+   * the latest build's `run_tasks` task bodies, or an older thread's `plan`
+   * call (`lib/games/plan-tasks.ts`), shown while any task is not yet done or the
    * turn is still streaming — see `shouldShowTaskStrip`'s own comment for the
    * exact rule, including why a failed task keeps it visible after the turn
    * ends.
