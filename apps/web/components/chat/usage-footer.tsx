@@ -147,6 +147,7 @@ const EMPTY_USAGE: SessionUsage = {
   reasoning: 0,
   cacheHit: 0,
   credits: undefined,
+  provisional: false,
 }
 
 const RING_RADIUS = 6

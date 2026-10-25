@@ -12,7 +12,7 @@ import {
 import { z } from "zod"
 
 import { orchestratorModelSettings } from "@/lib/ai/agent"
-import { turnMetaChunk, withTurnMeta } from "@/lib/ai/message-meta"
+import { liveTurnChunk, turnMetaChunk, withTurnMeta } from "@/lib/ai/message-meta"
 import { contextUsageChunk, contextUsageOf } from "@/lib/games/context-usage"
 import { speedOfStep } from "@/lib/games/generation-speed"
 import { timingOfStep } from "@/lib/games/step-timing"
@@ -36,6 +36,7 @@ import { createVerifyTool } from "@/lib/games/harness/tools/verify"
 import { turnState, type TurnVerifyOutcome } from "@/lib/games/harness/turn-state"
 import { extendTerminalInstructions } from "@/lib/games/harness/terminal-instructions"
 import { priorStepsCalledTool, routeHarnessTools } from "@/lib/games/harness/routing"
+import { createThrottle } from "@/lib/games/harness/throttle"
 import { gameInstructions } from "@/lib/games/instructions"
 import { activityTag } from "@/lib/games/activity"
 import { gameProgressChunk, withoutGameProgress } from "@/lib/games/build-progress"
@@ -369,6 +370,63 @@ function orchestratorEntryId(): ModelEntryId {
 }
 
 /**
+ * At most one provisional receipt per this many milliseconds. Steps finish in
+ * bursts — up to three workers in parallel — so every step would flood the
+ * stream, while a fixed timer would keep sending when nothing changed.
+ */
+const LIVE_RECEIPT_INTERVAL_MS = 1500
+
+let liveReceipt: { call: () => void; cancel: () => void } | undefined
+
+/**
+ * Sends what the running turn has spent so far, priced exactly as the final
+ * receipt will be: the sub-agents' ledger plus the orchestrator's finished
+ * steps, which only join the ledger as one entry at the turn's end. Telemetry:
+ * a failure here must never fail the turn.
+ */
+function writeLiveReceipt(turn: number): void {
+  if (!turnState.isCurrentTurn(turn)) return
+
+  try {
+    const modelId = orchestratorEntryId()
+    const orchestratorSteps = turnState.orchestratorStepsFor(turn).map((usage) => ({
+      agentId: "orchestrator",
+      role: "orchestrator",
+      slot: "strong" as const,
+      modelId,
+      usage,
+      status: "done" as const,
+    }))
+    const cost = priceTurn(
+      turnState.tier,
+      [...turnState.ledgerFor(turn), ...orchestratorSteps],
+      turnPricing.snapshot
+    )
+
+    chat.response.write(
+      liveTurnChunk(cost, turnState.speedFor(turn), turnState.stepsFor(turn), turnState.timingFor(turn))
+    )
+  } catch (error) {
+    logger.warn("Could not write the provisional receipt", { error })
+  }
+}
+
+/** Starts this turn's provisional receipts; any earlier turn's are stopped first. */
+function startLiveReceipt(turn: number): void {
+  stopLiveReceipt()
+  const throttle = createThrottle(() => writeLiveReceipt(turn), LIVE_RECEIPT_INTERVAL_MS)
+  liveReceipt = throttle
+  turnState.onUsage(() => throttle.call())
+}
+
+/** Final: no provisional receipt may follow the turn's real one. */
+function stopLiveReceipt(): void {
+  turnState.onUsage(undefined)
+  liveReceipt?.cancel()
+  liveReceipt = undefined
+}
+
+/**
  * The stream part that tells the browser a turn was refused for credits.
  *
  * A `data-*` part rather than the thrown error's message, for the same reason
@@ -668,6 +726,7 @@ export const gameChat = chat.agent({
      */
     turnPricing.snapshot = capturePricingSnapshot()
     turnState.reset(turn, Date.now() + TURN_DEADLINE_MS, resolveTier(clientData?.tier))
+    startLiveReceipt(turn)
 
     /**
      * The sidebar's "the agent is working" flag. Run status cannot carry it:
@@ -706,6 +765,9 @@ export const gameChat = chat.agent({
     stopped,
     error,
   }) => {
+    // Before the orchestrator's entry joins the ledger below, which would otherwise schedule one more.
+    stopLiveReceipt()
+
     if (!stopped && !error) {
       writer.write(gameProgressChunk("finalizing"))
     }
@@ -812,6 +874,7 @@ export const gameChat = chat.agent({
     stopped,
     error,
   }) => {
+    stopLiveReceipt()
     const modelId = orchestratorEntryId()
 
     /**
@@ -965,6 +1028,7 @@ export const gameChat = chat.agent({
        */
       onStepFinish: ({ usage, performance }) => {
         turnState.addStep()
+        turnState.addOrchestratorStep(usage)
 
         /**
          * Generation speed is read first and on its own: a step with no

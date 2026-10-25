@@ -86,6 +86,7 @@
     "fromCache": "De caché",
     "reasoning": "Razonamiento",
     "credits": "Créditos",
+    "creditsSoFar": "Créditos hasta ahora",
     "contextSuffix": "contexto"
   },
   "ChatAgents": {

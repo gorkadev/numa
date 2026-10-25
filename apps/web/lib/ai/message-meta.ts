@@ -23,6 +23,35 @@ import type { TurnCost } from "./pricing"
  * This is the durable half of the same fact: not "your balance just moved",
  * but "this message cost that".
  */
+const tokensSchema = z.object({
+  input: z.number(),
+  output: z.number(),
+  cached: z.number(),
+  reasoning: z.number(),
+})
+
+const timingSchema = z.object({
+  llmMs: z.number(),
+  toolMs: z.number(),
+  ttftMs: z.number(),
+  ttftSteps: z.number(),
+})
+
+/**
+ * The turn still running, as far as it has got: what it has spent so far, sent
+ * after each finished step (`liveTurnChunk`) so the usage popover moves while a
+ * build runs instead of jumping at the end. Provisional — only ever held by the
+ * browser: the final receipt clears it (`live: null`) and `withTurnMeta` never
+ * stores it, so it cannot be counted twice.
+ */
+const liveTurnSchema = z.object({
+  tokens: tokensSchema,
+  credits: z.number(),
+  speed: z.object({ tokens: z.number(), ms: z.number() }).optional(),
+  steps: z.number().optional(),
+  timing: timingSchema.optional(),
+})
+
 const messageMetaSchema = z.object({
   /**
    * Milliseconds since the epoch. A number rather than an ISO string because
@@ -31,14 +60,7 @@ const messageMetaSchema = z.object({
    * only timezone that means anything here.
    */
   sentAt: z.number().optional(),
-  tokens: z
-    .object({
-      input: z.number(),
-      output: z.number(),
-      cached: z.number(),
-      reasoning: z.number(),
-    })
-    .optional(),
+  tokens: tokensSchema.optional(),
   credits: z.number().optional(),
   /**
    * How full the orchestrator's window was at the turn's last step. Optional:
@@ -64,17 +86,17 @@ const messageMetaSchema = z.object({
    */
   steps: z.number().optional(),
   /** Model, tool and first-output time for the turn; optional like `speed`. */
-  timing: z
-    .object({
-      llmMs: z.number(),
-      toolMs: z.number(),
-      ttftMs: z.number(),
-      ttftSteps: z.number(),
-    })
-    .optional(),
+  timing: timingSchema.optional(),
+  live: liveTurnSchema.nullable().optional(),
 })
 
-export type MessageMeta = z.infer<typeof messageMetaSchema>
+type StoredMeta = z.infer<typeof messageMetaSchema>
+
+/** A reply's receipt as the UI reads it: a running turn's provisional spend already folded in. */
+export type MessageMeta = Omit<StoredMeta, "live"> & {
+  /** Set while the turn behind this reply is still running and its numbers can still grow. */
+  provisional?: true
+}
 
 /**
  * The stamp a message the browser sends carries with it.
@@ -98,10 +120,48 @@ export function sentAtMetadata(): { sentAt: number } {
  * downstream renders what is present and omits what is not — a missing
  * timestamp shows no time rather than the epoch.
  */
+/** What the reply durably carries, without a running turn's provisional spend. */
+function readStoredMeta(message: UIMessage): Omit<StoredMeta, "live"> {
+  const parsed = messageMetaSchema.safeParse(message.metadata)
+
+  if (!parsed.success) return {}
+
+  const { live: _live, ...stored } = parsed.data
+  return stored
+}
+
 export function readMessageMeta(message: UIMessage): MessageMeta {
   const parsed = messageMetaSchema.safeParse(message.metadata)
 
-  return parsed.success ? parsed.data : {}
+  if (!parsed.success) return {}
+
+  const { live, ...stored } = parsed.data
+
+  if (!live) return stored
+
+  return {
+    ...stored,
+    tokens: {
+      input: (stored.tokens?.input ?? 0) + live.tokens.input,
+      output: (stored.tokens?.output ?? 0) + live.tokens.output,
+      cached: (stored.tokens?.cached ?? 0) + live.tokens.cached,
+      reasoning: (stored.tokens?.reasoning ?? 0) + live.tokens.reasoning,
+    },
+    credits: (stored.credits ?? 0) + live.credits,
+    speed:
+      live.speed && stored.speed
+        ? addSpeed(stored.speed, live.speed)
+        : (live.speed ?? stored.speed),
+    steps:
+      live.steps === undefined
+        ? stored.steps
+        : (stored.steps ?? 0) + live.steps,
+    timing:
+      live.timing && stored.timing
+        ? addTiming(stored.timing, live.timing)
+        : (live.timing ?? stored.timing),
+    provisional: true,
+  }
 }
 
 /**
@@ -140,7 +200,7 @@ export function withTurnMeta(
 
   if (!last || last.role !== "assistant") return messages
 
-  const existing = readMessageMeta(last)
+  const existing = readStoredMeta(last)
 
   const meta: MessageMeta = {
     sentAt: existing.sentAt ?? Date.now(),
@@ -178,9 +238,9 @@ export function withTurnMeta(
    * Merged into whatever is already there rather than replacing it — the model
    * choice lives in this same object and is written by a different function.
    */
-  const base =
+  const { live: _live, ...base } =
     typeof last.metadata === "object" && last.metadata !== null
-      ? last.metadata
+      ? (last.metadata as Record<string, unknown>)
       : {}
 
   return [...messages.slice(0, -1), { ...last, metadata: { ...base, ...meta } }]
@@ -210,5 +270,40 @@ export function turnMetaChunk(
 
   const [stamped] = withTurnMeta([message], cost, context, speed, steps, timing)
 
-  return { type: "message-metadata", messageMetadata: stamped?.metadata }
+  return {
+    type: "message-metadata",
+    // `null`, not omitted: the browser merges metadata chunks and skips undefined keys.
+    messageMetadata: { ...(stamped?.metadata as object), live: null },
+  }
+}
+
+/**
+ * The provisional receipt for the turn still running: what it has cost so
+ * far, as `live`, which `readMessageMeta` adds on top of what the reply already
+ * carries. Sent after finished steps while the turn runs; the final receipt
+ * (`turnMetaChunk`) clears it.
+ */
+export function liveTurnChunk(
+  cost: TurnCost,
+  speed?: GenerationSpeed,
+  steps?: number,
+  timing?: StepTimingTotals
+): UIMessageChunk {
+  return {
+    type: "message-metadata",
+    messageMetadata: {
+      live: {
+        tokens: {
+          input: cost.tokens.inputTokens,
+          output: cost.tokens.outputTokens,
+          cached: cost.tokens.cachedInputTokens,
+          reasoning: cost.tokens.reasoningTokens,
+        },
+        credits: cost.credits,
+        speed,
+        steps,
+        timing,
+      },
+    },
+  }
 }

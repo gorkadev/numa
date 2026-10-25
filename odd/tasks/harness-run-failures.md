@@ -23,7 +23,7 @@ Branch: `fix/harness-run-failures`. Delivery: ask-on-risk, forecast ~400 authore
 - [x] T5 — S5 — inline — goal limit 2000 (RED 2 fail; GREEN 3/3)
 - [x] T6 — S6 — inline — planner timeout 300→480 s (no runnable RED: a config value; covered by the next live run)
 - [x] T7 — S7 — inline — `detachedSend` drops the page abort signal; Stop calls `transport.stopGeneration` (RED module missing; GREEN 2/2). Not covered by a test: the hook wiring itself.
-- [ ] T8 — S8 — inline — live provisional receipt
+- [x] T8 — S8 — inline — `live` provisional receipt per finished step (orchestrator + sub-agents), throttled 1.5 s, cleared by the final receipt (RED: liveTurnChunk missing, provisional missing; GREEN message-meta + session-usage 29/29; throttle 4/4 written with its implementation, no separate RED)
 
 ## Log
 
@@ -32,3 +32,4 @@ Branch: `fix/harness-run-failures`. Delivery: ask-on-risk, forecast ~400 authore
 - L3: S3 narrowed — hiding `verify` whenever nothing changed would also remove it from a turn where the player only asks for a check ("¿por qué se ve azul?"). It now hides only after a dispatch that wrote nothing. Also fixed: `prepareStep` ignored routed lists longer than one tool.
 - L4: Closing checks — full suite 253/253, tsc clean, eslint 0 errors. Not run: a live build against Daytona/Trigger with the new routing and canvas check.
 - L5 (2026-10-25, user, verbatim): "vale ps sube el limite si. y lo de antes q hemos hablado, hazlo ya ps" + report of the war game: "ha vuelto a fallar lo del plan, el orquestador dice q el planificador tardó demasiado... nada mas empezar la conversacion, ha dicho q iba a hacer nsq y se ha parado".
+- L6: Closing checks T5-T8 — full suite 264/264 on rerun (first run had 1 failure that did not reproduce; flaky test not identified), tsc clean, eslint 0 errors. Not run: a live build observing the provisional receipt or a page switch mid-build.

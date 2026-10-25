@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import test from "node:test"
 import type { UIMessage } from "ai"
 
-import { readMessageMeta, turnMetaChunk, withTurnMeta } from "./message-meta"
+import { liveTurnChunk, readMessageMeta, turnMetaChunk, withTurnMeta } from "./message-meta"
 import type { TurnCost } from "./pricing"
 
 const cost = (input: number, output: number): TurnCost =>
@@ -100,7 +100,8 @@ test("the live receipt carries exactly what the persisted reply will", () => {
     JSON.parse(
       JSON.stringify((chunk as { messageMetadata: unknown }).messageMetadata)
     ),
-    JSON.parse(JSON.stringify(persisted[0]!.metadata))
+    // Plus `live: null`, which clears the turn's provisional receipt in the browser.
+    { ...JSON.parse(JSON.stringify(persisted[0]!.metadata)), live: null }
   )
 })
 
@@ -142,7 +143,7 @@ test("the live receipt carries the same speed the persisted reply will", () => {
   assert.equal(chunk?.type, "message-metadata")
   assert.deepEqual(
     (chunk as { messageMetadata?: unknown }).messageMetadata,
-    stamped?.metadata
+    { ...(stamped?.metadata as object), live: null }
   )
 })
 
@@ -172,7 +173,7 @@ test("the live receipt carries the same step count the persisted reply will", ()
 
   assert.deepEqual(
     (chunk as { messageMetadata?: unknown }).messageMetadata,
-    stamped?.metadata
+    { ...(stamped?.metadata as object), live: null }
   )
   assert.equal(readMessageMeta(stamped!).steps, 4)
 })
@@ -192,4 +193,27 @@ test("timing accumulates across the turns of one message and survives legacy", (
   })
   assert.deepEqual(readMessageMeta(kept[0]!).timing, readMessageMeta(twice[0]!).timing)
   assert.equal(readMessageMeta(assistant({ sentAt: 1 })).timing, undefined)
+})
+
+test("a provisional receipt is read on top of what the reply already carries", () => {
+  const stored = withTurnMeta([assistant()], cost(100, 10))[0]!
+  const live = (liveTurnChunk(cost(40, 4), undefined, 3) as { messageMetadata: object }).messageMetadata
+  const meta = readMessageMeta({ ...stored, metadata: { ...(stored.metadata as object), ...live } })
+
+  assert.equal(meta.provisional, true)
+  assert.deepEqual(meta.tokens, { input: 140, output: 14, cached: 0, reasoning: 0 })
+  assert.equal(meta.credits, 2)
+  assert.equal(meta.steps, 3)
+})
+
+test("a reply without a provisional receipt is not provisional", () => {
+  assert.equal(readMessageMeta(withTurnMeta([assistant()], cost(1, 1))[0]!).provisional, undefined)
+})
+
+test("the final receipt never counts the provisional one", () => {
+  const live = (liveTurnChunk(cost(40, 4)) as { messageMetadata: object }).messageMetadata
+  const [stamped] = withTurnMeta([assistant(live)], cost(100, 10))
+
+  assert.deepEqual(readMessageMeta(stamped!).tokens, { input: 100, output: 10, cached: 0, reasoning: 0 })
+  assert.equal("live" in (stamped!.metadata as object), false)
 })

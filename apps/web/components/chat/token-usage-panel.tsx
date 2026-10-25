@@ -16,7 +16,8 @@ import type { SessionUsage } from "@/lib/ai/session-usage"
  * the two can never label or split the same numbers differently.
  *
  * Reasoning only shows when the model reasoned: a row of zeros for models that
- * never do is noise. Credits only show when a reply carried a charge.
+ * never do is noise. Credits only show when a reply carried a charge, and read
+ * as "so far" while a turn is still running and its numbers can still grow.
  */
 export function TokenUsagePanel({ usage }: { usage: SessionUsage }) {
   const t = useTranslations("ChatUsage")
@@ -46,7 +47,8 @@ export function TokenUsagePanel({ usage }: { usage: SessionUsage }) {
         {usage.credits !== undefined ? (
           <UsageRow
             strong
-            label={t("credits")}
+            // While a turn runs the total is what it has spent so far, not its final charge.
+            label={usage.provisional ? t("creditsSoFar") : t("credits")}
             value={exact.format(usage.credits)}
           />
         ) : null}
