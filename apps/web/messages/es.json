@@ -314,6 +314,15 @@
       }
     },
     "startDictation": "Iniciar dictado",
+    "improvePrompt": "Mejorar prompt",
+    "undoImprove": "Deshacer mejora",
+    "improveRemaining": "Mejorar prompt · quedan {remaining} de {limit} hoy",
+    "improveCharged": "Mejorar prompt · has usado tus {limit} gratis de hoy; se cobra en créditos según uso",
+    "improveExhausted": "Has usado tus {limit} mejoras de hoy · vuelven a las {time}. Puedes cobrarlas en créditos desde Ajustes › Juego",
+    "improveNoBalance": "Sin créditos para más mejoras · tus {limit} gratis vuelven a las {time}",
+    "improveLocked": "Mejorar prompt · disponible en Pro y Max",
+    "improveUnavailable": "Mejorar prompt · no disponible ahora mismo",
+    "improveFailed": "No se pudo mejorar el prompt. Inténtalo de nuevo.",
     "stopDictation": "Detener dictado",
     "discardDictation": "Descartar dictado",
     "dictationFinishing": "Finalizando dictado…",
@@ -490,6 +499,14 @@
     "securityTab": "Seguridad y acceso",
     "billingTab": "Plan y créditos",
     "shortcutsTab": "Atajos de teclado",
+    "gameTab": "Juego",
+    "game": {
+      "improverTitle": "Mejorar prompt",
+      "improverDescription": "El botón de mejorar prompt del editor es gratis hasta {pro} usos al día en Pro y {max} en Max.",
+      "improverOverage": "Seguir mejorando al agotar los usos gratis",
+      "improverOverageDescription": "Cuando acabes los usos gratis del día, cada mejora se cobra en créditos según lo que cueste, igual que los turnos del agente.",
+      "couldNotSave": "No se pudo guardar el ajuste. Inténtalo de nuevo."
+    },
     "shortcuts": {
       "navigationGroup": "Navegación",
       "navigationDescription": "Disponibles en toda la aplicación, incluso en el editor de mensajes.",

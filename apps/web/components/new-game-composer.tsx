@@ -85,6 +85,7 @@ export function NewGameComposer() {
         autoFocus
         pending={pending}
         error={state?.error ?? null}
+        improverMode="new"
       />
       <div className="flex flex-wrap justify-center gap-2">
         {suggestions.map((suggestion) => (

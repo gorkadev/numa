@@ -605,3 +605,79 @@ export const turnUsage = pgTable(
 
 export type TurnUsage = typeof turnUsage.$inferSelect
 export type NewTurnUsage = typeof turnUsage.$inferInsert
+
+/**
+ * One row per user for the preferences that follow the account rather than
+ * the device. Theme and language are deliberately NOT here: they apply before
+ * the first paint and are per device by nature, so they stay in
+ * `localStorage` and a cookie. Each setting is its own typed column with its
+ * default in the schema, so an unset row and a missing row read the same.
+ */
+export const userSettings = pgTable("user_settings", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+
+  /**
+   * Whether the prompt improver keeps working once the plan's daily quota is
+   * spent, charged in credits at the price of the call (the same pricing as a
+   * turn). Off by default: nobody is charged for something they did not opt
+   * into.
+   */
+  improverOverageBilling: boolean("improver_overage_billing")
+    .notNull()
+    .default(false),
+
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+})
+
+export type UserSettings = typeof userSettings.$inferSelect
+
+/**
+ * The ledger of prompt improvements: what counts against the daily quota and
+ * what a charged improvement is billed from. Not a foreign key to `user.id`,
+ * for the same reason `turn_usage.user_id` is not one — spend that happened
+ * must outlive the account row.
+ */
+export const promptImprovements = pgTable(
+  "prompt_improvements",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+
+    userId: text("user_id").notNull(),
+
+    /** The template the prompt was grounded in, `none` when there was none. */
+    templateId: text("template_id").notNull(),
+
+    modelId: text("model_id").notNull(),
+
+    inputTokens: integer("input_tokens").notNull().default(0),
+    outputTokens: integer("output_tokens").notNull().default(0),
+    cachedInputTokens: integer("cached_input_tokens").notNull().default(0),
+    reasoningTokens: integer("reasoning_tokens").notNull().default(0),
+
+    costMicroUsd: integer("cost_micro_usd").notNull(),
+
+    rateVersion: text("rate_version").notNull(),
+
+    /** Zero for an improvement inside the quota; the price otherwise. */
+    credits: integer("credits").notNull().default(0),
+
+    /** When Polar accepted the charge; null while a charge is still owed. */
+    creditsIngestedAt: timestamp("credits_ingested_at", { withTimezone: true }),
+
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("prompt_improvements_user_id_created_at_idx").on(
+      table.userId,
+      table.createdAt.desc()
+    ),
+  ]
+)
+
+export type PromptImprovement = typeof promptImprovements.$inferSelect

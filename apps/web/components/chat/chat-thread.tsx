@@ -296,6 +296,7 @@ export function ChatThread({
           tierId={tierId}
           onTierChange={setTierId}
           templateId={templateId}
+          improverMode="change"
           autoFocus
           pending={pending}
           placeholder={t("placeholder")}

@@ -1,5 +1,6 @@
 import {
   CreditCardIcon,
+  GameController01Icon,
   KeyboardIcon,
   Settings02Icon,
   ShieldKeyIcon,
@@ -16,7 +17,13 @@ import type { IconSvgElement } from "@hugeicons/react"
  * client hook importing a client *component* file just to reach a type and
  * a lookup table.
  */
-export type SectionId = "general" | "account" | "security" | "billing" | "shortcuts"
+export type SectionId =
+  | "general"
+  | "game"
+  | "account"
+  | "security"
+  | "billing"
+  | "shortcuts"
 
 export type Section = {
   id: SectionId
@@ -30,6 +37,7 @@ export type Section = {
  */
 export const SECTION_LABEL_KEYS = {
   general: "preferencesTab",
+  game: "gameTab",
   account: "profileTab",
   security: "securityTab",
   billing: "billingTab",
@@ -51,6 +59,7 @@ export const SECTION_GROUPS: { label: string; sections: Section[] }[] = [
     label: "Personal",
     sections: [
       { id: "general", label: "Preferences", icon: Settings02Icon },
+      { id: "game", label: "Game", icon: GameController01Icon },
       { id: "account", label: "Account", icon: UserCircleIcon },
       { id: "security", label: "Security & access", icon: ShieldKeyIcon },
       { id: "shortcuts", label: "Keyboard shortcuts", icon: KeyboardIcon },

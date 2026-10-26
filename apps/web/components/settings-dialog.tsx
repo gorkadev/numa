@@ -46,6 +46,7 @@ import {
   type SectionId,
 } from "@/lib/settings/sections"
 import { BillingSection } from "@/components/settings/billing-section"
+import { GameSettingsSection } from "@/components/settings/game-section"
 import { ProfileSection } from "@/components/settings/profile-section"
 import { SecuritySection } from "@/components/settings/security-section"
 import { KeyboardShortcutsSection } from "@/components/settings/keyboard-shortcuts-section"
@@ -308,6 +309,8 @@ export function SettingsDialog({
                     </SettingsRows>
                   </>
                 )}
+
+                {shownSection === "game" && <GameSettingsSection />}
 
                 {shownSection === "account" && <ProfileSection />}
 
