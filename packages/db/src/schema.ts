@@ -628,6 +628,16 @@ export const userSettings = pgTable("user_settings", {
     .notNull()
     .default(false),
 
+  /**
+   * The tier the new-game composer starts on. Null until the player picks one,
+   * so a player who never chose follows the app's default if that ever
+   * changes, instead of being frozen on whatever it was when the row appeared.
+   */
+  defaultTierId: text("default_tier_id"),
+
+  /** Whether the chat footer shows the session statistics button. */
+  showSessionStats: boolean("show_session_stats").notNull().default(true),
+
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

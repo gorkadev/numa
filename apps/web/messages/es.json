@@ -505,7 +505,13 @@
       "improverDescription": "El botón de mejorar prompt del editor es gratis hasta {pro} usos al día en Pro y {max} en Max.",
       "improverOverage": "Seguir mejorando al agotar los usos gratis",
       "improverOverageDescription": "Cuando acabes los usos gratis del día, cada mejora se cobra en créditos según lo que cueste, igual que los turnos del agente.",
-      "couldNotSave": "No se pudo guardar el ajuste. Inténtalo de nuevo."
+      "couldNotSave": "No se pudo guardar el ajuste. Inténtalo de nuevo.",
+      "newGameTitle": "Juegos nuevos",
+      "defaultTier": "Nivel por defecto",
+      "defaultTierDescription": "El nivel con el que empieza un juego nuevo. Puedes cambiarlo antes de enviar.",
+      "chatTitle": "Chat",
+      "sessionStats": "Estadísticas de sesión",
+      "sessionStatsDescription": "Muestra turnos, pasos y tokens por segundo bajo el editor, con los tiempos de la sesión al hacer clic."
     },
     "shortcuts": {
       "navigationGroup": "Navegación",
