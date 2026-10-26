@@ -15,7 +15,7 @@ Branch: `feat/game-settings`. Delivery: ask-on-risk (one PR to master, user merg
 
 - [x] T1 — S1, S2 — inline — `default_tier_id` (nullable) + `show_session_stats` (default true), `db:push` applied with no data-loss prompt; `updateGameSettings(patch)` replaces `setImproverOverageBilling`; Settings › Game rows (RED module missing; GREEN 3/3)
 - [x] T2 — S1, S3, S4 — inline — `initialTierId` + `newGameSearch` (RED module missing; GREEN 3/3); home page passes the default tier; picks written with `router.replace`. Live: default Pro → composer opens on Pro; Fast + Toon Shooter → `?tier=fast&template=toon-shooter`, kept after reload. `new-game-avatar.test.ts` updated to the new page wiring
-- [ ] T3 — S2 — inline — footer hides session statistics
+- [x] T3 — S2 — inline — `showSessionStats` from the game page to `UsageFooter` (RED 2 fail; GREEN 2/2). Live: switch off in the dialog over a game hides "turns · steps · tok/s" without a reload; tokens and the context ring stay
 - [ ] T4 — S5 — inline — new-game draft store, composer and palette wiring
 
 ## Log
