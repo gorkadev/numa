@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 
-import { improverAllowance, utcDayStart } from "./allowance"
+import { improverAllowance, improverTooltip, utcDayStart } from "./allowance"
 
 const now = new Date("2026-10-25T15:30:00Z")
 const resetsAt = "2026-10-26T00:00:00.000Z"
@@ -58,4 +58,27 @@ test("a charged improvement needs a positive, known balance", () => {
 
 test("the day starts at UTC midnight", () => {
   assert.equal(utcDayStart(now).toISOString(), "2026-10-25T00:00:00.000Z")
+})
+
+test("the tooltip says what the button will do in every state", () => {
+  const at = resetsAt
+  assert.deepEqual(improverTooltip({ kind: "free", remaining: 7, limit: 10, resetsAt: at }), {
+    key: "improveRemaining",
+    values: { remaining: 7, limit: 10 },
+  })
+  assert.deepEqual(improverTooltip({ kind: "charged", limit: 10, resetsAt: at }), {
+    key: "improveCharged",
+    values: { limit: 10 },
+  })
+  assert.deepEqual(improverTooltip({ kind: "exhausted", reason: "quota", limit: 20, resetsAt: at }), {
+    key: "improveExhausted",
+    values: { limit: 20 },
+    resetsAt: at,
+  })
+  assert.deepEqual(improverTooltip({ kind: "exhausted", reason: "balance", limit: 20, resetsAt: at }), {
+    key: "improveNoBalance",
+    values: {},
+  })
+  assert.deepEqual(improverTooltip({ kind: "locked" }), { key: "improveLocked", values: {} })
+  assert.deepEqual(improverTooltip({ kind: "unavailable" }), { key: "improveUnavailable", values: {} })
 })

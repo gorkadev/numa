@@ -8,12 +8,14 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react"
-import { useTranslations } from "next-intl"
+import { useFormatter, useTranslations } from "next-intl"
 import {
   ArrowUp02Icon,
   AudioWave01FreeIcons,
   Cancel01Icon,
+  MagicWand01Icon,
   StopIcon,
+  Undo02Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
@@ -30,12 +32,15 @@ import {
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip"
 import { useComposerShortcuts } from "@/components/chat/use-composer-shortcuts"
+import { usePromptImprover } from "@/components/chat/use-prompt-improver"
 import { useSpeechDictation } from "@/components/chat/use-speech-dictation"
 import { useIsMac } from "@/hooks/use-is-mac"
 import { Spinner } from "@/components/localized-spinner"
 import { ModelPicker } from "@/components/model-picker"
 import { LockedTemplate, TemplatePicker } from "@/components/template-picker"
 import type { TierId } from "@/lib/ai/model-catalog"
+import { canImprove, improverTooltip } from "@/lib/games/improver/allowance"
+import type { ImproverMode } from "@/lib/games/improver/instructions"
 import type { TemplateId } from "@/lib/games/templates/catalog"
 
 type ChatComposerProps = {
@@ -76,6 +81,12 @@ type ChatComposerProps = {
    * report on, so it simply never passes one.
    */
   usageSlot?: ReactNode
+  /**
+   * Turns on the prompt improver: `new` rewrites the prompt that starts a
+   * game, `change` a change request inside one. Without it, no button and no
+   * allowance request.
+   */
+  improverMode?: ImproverMode
 }
 
 /** Shared controlled composer for the home screen and active chat thread. */
@@ -94,8 +105,10 @@ export function ChatComposer({
   autoFocus = false,
   tasksSlot,
   usageSlot,
+  improverMode,
 }: ChatComposerProps) {
   const t = useTranslations("GameComposer")
+  const format = useFormatter()
   const isMac = useIsMac()
   const dictationHint = isMac ? "⌃⇧D" : "Ctrl ⇧ D"
   const dictation = useSpeechDictation(value, onValueChange)
@@ -122,8 +135,24 @@ export function ChatComposer({
     start, stop, discard, setModelOpen, setTemplateOpen,
   })
 
+  /**
+   * Programmatic writes go through the same two calls as typing does, so
+   * dictation's draft never falls behind the text it would append to.
+   */
+  function replaceValue(next: string) {
+    setDraft(next)
+    onValueChange(next)
+  }
+
+  const improver = usePromptImprover({
+    mode: improverMode,
+    value,
+    setValue: replaceValue,
+    templateId: templateId ?? "none",
+  })
+
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const textareaDisabled = pending || active
+  const textareaDisabled = pending || active || improver.improving
 
   /**
    * An effect rather than the `autoFocus` attribute, which only fires on mount:
@@ -150,8 +179,20 @@ export function ChatComposer({
   const trimmed = value.trim()
   const stoppable = pending && Boolean(onStop)
 
+  /** The limit is always on show: remaining uses, the charge, or the reset. */
+  function improverTooltipText() {
+    if (!improver.allowance) return t("improvePrompt")
+    const { key, values, resetsAt } = improverTooltip(improver.allowance)
+    return t(key, {
+      ...values,
+      time: resetsAt
+        ? format.dateTime(new Date(resetsAt), { hour: "2-digit", minute: "2-digit" })
+        : "",
+    })
+  }
+
   function submit() {
-    if (pending || active || hasSession() || !trimmed) return
+    if (pending || active || improver.improving || hasSession() || !trimmed) return
     onSubmit(trimmed)
   }
 
@@ -184,11 +225,7 @@ export function ChatComposer({
             value={value}
             disabled={textareaDisabled}
             placeholder={placeholder ?? t("placeholder")}
-            onChange={(event) => {
-              const next = event.target.value
-              setDraft(next)
-              onValueChange(next)
-            }}
+            onChange={(event) => replaceValue(event.target.value)}
             onKeyDown={handleKeyDown}
           />
           <InputGroupAddon align="block-end" className="justify-start">
@@ -266,6 +303,41 @@ export function ChatComposer({
                 </Tooltip>
               </div>
             ) : (
+              <div className="ml-auto flex items-center gap-1">
+              {improver.enabled ? (
+                <Tooltip>
+                  <TooltipTrigger render={
+                    <InputGroupButton
+                      type="button"
+                      onClick={improver.canUndo ? improver.restore : improver.improve}
+                      aria-label={improver.canUndo ? t("undoImprove") : t("improvePrompt")}
+                      disabled={
+                        pending ||
+                        improver.improving ||
+                        (!improver.canUndo &&
+                          (!trimmed || !improver.allowance || !canImprove(improver.allowance)))
+                      }
+                      /**
+                       * Still hoverable while disabled, so the tooltip can
+                       * say why: Free, the quota spent, or no balance.
+                       */
+                      focusableWhenDisabled
+                      size="icon-sm"
+                      variant="ghost"
+                      className="data-disabled:opacity-50"
+                    >
+                      {improver.improving ? (
+                        <Spinner />
+                      ) : (
+                        <HugeiconsIcon icon={improver.canUndo ? Undo02Icon : MagicWand01Icon} />
+                      )}
+                    </InputGroupButton>
+                  } />
+                  <TooltipContent>
+                    {improver.canUndo ? t("undoImprove") : improverTooltipText()}
+                  </TooltipContent>
+                </Tooltip>
+              ) : null}
               <Tooltip>
                 <TooltipTrigger render={
                   <InputGroupButton
@@ -273,22 +345,22 @@ export function ChatComposer({
                     onClick={start}
                     aria-keyshortcuts={supported !== false && !pending ? "Control+Shift+D" : undefined}
                     aria-label={t("startDictation")}
-                    disabled={supported === false || pending}
+                    disabled={supported === false || pending || improver.improving}
                     size="icon-sm"
                     variant="ghost"
-                    className="ml-auto"
                   >
                     <HugeiconsIcon icon={AudioWave01FreeIcons} />
                   </InputGroupButton>
                 } />
                 <TooltipContent>{t("startDictation")} <Kbd>{dictationHint}</Kbd></TooltipContent>
               </Tooltip>
+              </div>
             )}
             <InputGroupButton
               type={stoppable ? "button" : "submit"}
               onClick={stoppable ? onStop : undefined}
               aria-label={stoppable ? t("stopGenerating") : t("sendMessage")}
-              disabled={active || (stoppable ? false : pending || !trimmed)}
+              disabled={active || (stoppable ? false : pending || improver.improving || !trimmed)}
               className="shrink-0 rounded-full"
               variant={stoppable ? "destructive" : "default"}
               size="icon-sm"

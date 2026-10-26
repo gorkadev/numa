@@ -84,3 +84,45 @@ export function improverAllowance({
 export function canImprove(allowance: ImproverAllowance): boolean {
   return allowance.kind === "free" || allowance.kind === "charged"
 }
+
+export type ImproverTooltipKey =
+  | "improveRemaining"
+  | "improveCharged"
+  | "improveExhausted"
+  | "improveNoBalance"
+  | "improveLocked"
+  | "improveUnavailable"
+
+/**
+ * Which `GameComposer` message the button's tooltip shows, so the limit is
+ * visible before it is reached rather than discovered by a disabled button.
+ * `resetsAt` is returned only where the copy names the reset time; the
+ * component formats it in the viewer's own locale and time zone.
+ */
+export function improverTooltip(allowance: ImproverAllowance): {
+  key: ImproverTooltipKey
+  values: Record<string, number>
+  resetsAt?: string
+} {
+  switch (allowance.kind) {
+    case "free":
+      return {
+        key: "improveRemaining",
+        values: { remaining: allowance.remaining, limit: allowance.limit },
+      }
+    case "charged":
+      return { key: "improveCharged", values: { limit: allowance.limit } }
+    case "exhausted":
+      return allowance.reason === "quota"
+        ? {
+            key: "improveExhausted",
+            values: { limit: allowance.limit },
+            resetsAt: allowance.resetsAt,
+          }
+        : { key: "improveNoBalance", values: {} }
+    case "locked":
+      return { key: "improveLocked", values: {} }
+    case "unavailable":
+      return { key: "improveUnavailable", values: {} }
+  }
+}
