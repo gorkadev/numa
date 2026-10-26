@@ -48,7 +48,6 @@ import { openGameIdOf } from "@/lib/games/activity"
 import { DEFAULT_TEMPLATE_ID, TEMPLATES } from "@/lib/games/templates/catalog"
 import { backFrom, type PalettePage } from "@/lib/command-palette/pages"
 import {
-  composerHref,
   parseQuery,
   quickPromptOf,
 } from "@/lib/command-palette/query"
@@ -62,6 +61,7 @@ import {
   SECTION_LABEL_KEYS,
   SECTIONS,
 } from "@/lib/settings/sections"
+import { newGameDraft } from "@/lib/games/new-game-draft"
 import { THEMES } from "@/lib/settings/themes"
 
 /**
@@ -427,7 +427,12 @@ export function CommandPalette({
                 forceMount
                 value="open-prompt-in-composer"
                 disabled={creating}
-                onSelect={() => go(composerHref(quickPrompt))}
+                onSelect={() => {
+                  // The draft carries the text, not the URL: a long prompt
+                  // would not fit there and would end up in history and logs.
+                  newGameDraft.replace(quickPrompt)
+                  go("/")
+                }}
               >
                 <HugeiconsIcon icon={PencilEdit02Icon} strokeWidth={2} />
                 <span className="truncate">{t("openInComposer")}</span>
