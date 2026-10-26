@@ -38,6 +38,10 @@ function fakeLedger(overrides: Partial<UnbilledLedger> = {}) {
     markImprovement: async (id) => {
       calls.push(`mark improvement ${id}`)
     },
+    releaseStaleClaims: async () => {
+      calls.push("release stale claims")
+      return 2
+    },
     ...overrides,
   }
 
@@ -54,8 +58,9 @@ test("resends unbilled turns and improvements under their original keys", async 
     "mark turn turn-1",
     "ingest improvement imp-1 2",
     "mark improvement imp-1",
+    "release stale claims",
   ])
-  assert.deepEqual(result, { resent: 2, failed: 0 })
+  assert.deepEqual(result, { resent: 2, failed: 0, released: 2 })
 })
 
 test("a row Polar refuses stays unbilled and the rest still go", async () => {
@@ -65,8 +70,12 @@ test("a row Polar refuses stays unbilled and the rest still go", async () => {
 
   const result = await replayUnbilled(ledger)
 
-  assert.deepEqual(calls, ["ingest improvement imp-1 2", "mark improvement imp-1"])
-  assert.deepEqual(result, { resent: 1, failed: 1 })
+  assert.deepEqual(calls, [
+    "ingest improvement imp-1 2",
+    "mark improvement imp-1",
+    "release stale claims",
+  ])
+  assert.deepEqual(result, { resent: 1, failed: 1, released: 2 })
 })
 
 test("a failure on one row never stops the replay", async () => {
@@ -81,6 +90,19 @@ test("a failure on one row never stops the replay", async () => {
 
   const result = await replayUnbilled(ledger)
 
-  assert.deepEqual(calls, ["ingest improvement imp-1 2"])
-  assert.deepEqual(result, { resent: 1, failed: 1 })
+  assert.deepEqual(calls, ["ingest improvement imp-1 2", "release stale claims"])
+  assert.deepEqual(result, { resent: 1, failed: 1, released: 2 })
+})
+
+test("a failed cleanup of stale claims never stops the replay", async () => {
+  const { ledger, calls } = fakeLedger({
+    releaseStaleClaims: async () => {
+      throw new Error("connection reset")
+    },
+  })
+
+  const result = await replayUnbilled(ledger)
+
+  assert.equal(calls.length, 4)
+  assert.deepEqual(result, { resent: 2, failed: 0, released: 0 })
 })

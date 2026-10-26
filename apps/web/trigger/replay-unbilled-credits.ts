@@ -22,7 +22,8 @@ const BATCH = 500
 /**
  * Resends to Polar every charge it never acknowledged, from both credit
  * ledgers: `credits > 0 and credits_ingested_at is null`. See
- * `replayUnbilled` for why a replay can never bill twice.
+ * `replayUnbilled` for why a replay can never bill twice. It also deletes
+ * improvement claims that never settled, giving back the free use they held.
  */
 export const replayUnbilledCredits = schedules.task({
   id: "replay-unbilled-credits",
@@ -83,6 +84,26 @@ export const replayUnbilledCredits = schedules.task({
           .update(promptImprovements)
           .set({ creditsIngestedAt: new Date() })
           .where(eq(promptImprovements.id, id))
+      },
+      /**
+       * A claim is inserted with zero tokens and zero credits and filled in by
+       * `settle`; a real model call always reports input tokens. Rows with
+       * credits are never touched, whatever their tokens say.
+       */
+      releaseStaleClaims: async () => {
+        const released = await db
+          .delete(promptImprovements)
+          .where(
+            and(
+              eq(promptImprovements.credits, 0),
+              eq(promptImprovements.inputTokens, 0),
+              eq(promptImprovements.outputTokens, 0),
+              lt(promptImprovements.createdAt, before)
+            )
+          )
+          .returning({ id: promptImprovements.id })
+
+        return released.length
       },
     })
 
