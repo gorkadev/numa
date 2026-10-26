@@ -82,7 +82,7 @@ export function GameSettingsSection() {
   }))
 
   return (
-    <>
+    <div className="flex flex-col gap-8">
       <SettingsGroup title={t("newGameTitle")}>
         <SettingsRow>
           <ItemContent>
@@ -149,6 +149,6 @@ export function GameSettingsSection() {
           </ItemActions>
         </SettingsRow>
       </SettingsGroup>
-    </>
+    </div>
   )
 }

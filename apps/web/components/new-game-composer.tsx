@@ -2,14 +2,15 @@
 
 import { useActionState, useState, startTransition } from "react"
 import { useTranslations } from "next-intl"
-import { useSearchParams } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Button } from "@workspace/ui/components/button"
 
 import { ChatComposer } from "@/components/chat-composer"
-import { DEFAULT_TIER_ID, type TierId } from "@/lib/ai/model-catalog"
+import type { TierId } from "@/lib/ai/model-catalog"
 import { createGame } from "@/lib/games/actions"
+import { initialTierId, newGameSearch } from "@/lib/games/new-game-query"
 import {
   templateFromQuery,
   type TemplateId,
@@ -25,9 +26,16 @@ import { suggestions } from "@/lib/games/suggestions"
  * writes into this component's state. They were markup on the server page
  * before, which made them decoration: buttons with nothing bound to them.
  */
-export function NewGameComposer() {
+export function NewGameComposer({
+  defaultTierId,
+}: {
+  /** The player's default tier from Settings › Game; `null` follows the app's. */
+  defaultTierId: TierId | null
+}) {
   const t = useTranslations("GameComposer")
   const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
 
   /** `?prompt=` is the command palette's "Open in composer", seeded the same way as the template below. */
   const queryPrompt = searchParams.get("prompt")
@@ -37,7 +45,20 @@ export function NewGameComposer() {
     setSeededPrompt(queryPrompt)
     if (queryPrompt !== null) setValue(queryPrompt)
   }
-  const [tierId, setTierId] = useState<TierId>(DEFAULT_TIER_ID)
+  /**
+   * Re-seeded whenever `?tier=` or the default changes underneath the mounted
+   * composer — a settings change refreshes this page behind the dialog.
+   */
+  const queryTier = searchParams.get("tier")
+  const [tierId, setTierId] = useState<TierId>(() =>
+    initialTierId(queryTier, defaultTierId)
+  )
+  const tierSeed = `${queryTier}|${defaultTierId}`
+  const [seededTier, setSeededTier] = useState(tierSeed)
+  if (tierSeed !== seededTier) {
+    setSeededTier(tierSeed)
+    setTierId(initialTierId(queryTier, defaultTierId))
+  }
   const queryTemplate = searchParams.get("template")
   const [templateId, setTemplateId] = useState<TemplateId>(() =>
     templateFromQuery(queryTemplate)
@@ -54,6 +75,24 @@ export function NewGameComposer() {
     setTemplateId(templateFromQuery(queryTemplate))
   }
   const [state, formAction, pending] = useActionState(createGame, null)
+
+  /** A pick is kept in the URL, so a reload or a shared link keeps it. */
+  function keepInUrl(change: { tier?: TierId; template?: TemplateId }) {
+    router.replace(
+      `${pathname}${newGameSearch(searchParams.toString(), change)}`,
+      { scroll: false }
+    )
+  }
+
+  function changeTier(next: TierId) {
+    setTierId(next)
+    keepInUrl({ tier: next })
+  }
+
+  function changeTemplate(next: TemplateId) {
+    setTemplateId(next)
+    keepInUrl({ template: next })
+  }
 
   /**
    * The tier rides along with the prompt, and the action puts it back in the
@@ -79,9 +118,9 @@ export function NewGameComposer() {
         onValueChange={setValue}
         onSubmit={handleSubmit}
         tierId={tierId}
-        onTierChange={setTierId}
+        onTierChange={changeTier}
         templateId={templateId}
-        onTemplateChange={setTemplateId}
+        onTemplateChange={changeTemplate}
         autoFocus
         pending={pending}
         error={state?.error ?? null}
