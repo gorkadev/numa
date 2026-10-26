@@ -32,6 +32,12 @@ export type UnbilledLedger = {
   }): Promise<boolean>
   markTurn(id: string): Promise<void>
   markImprovement(id: string): Promise<void>
+  /**
+   * Deletes improvement claims that never settled — the call died between the
+   * claim and its settle or release — and returns how many. Each one counts as
+   * a use of that day's quota until it is gone.
+   */
+  releaseStaleClaims(): Promise<number>
 }
 
 /**
@@ -41,11 +47,12 @@ export type UnbilledLedger = {
  * stamp was lost — is deduplicated by Polar instead of billed twice.
  *
  * Rows are independent: one that fails stays unbilled for the next run and
- * never stops the rest.
+ * never stops the rest. The same run gives back free uses held by improvement
+ * claims that never settled.
  */
 export async function replayUnbilled(
   ledger: UnbilledLedger
-): Promise<{ resent: number; failed: number }> {
+): Promise<{ resent: number; failed: number; released: number }> {
   const [turns, improvements] = await Promise.all([
     ledger.pendingTurns(),
     ledger.pendingImprovements(),
@@ -74,5 +81,7 @@ export async function replayUnbilled(
     await charge.mark().catch(() => undefined)
   }
 
-  return { resent, failed }
+  const released = await ledger.releaseStaleClaims().catch(() => 0)
+
+  return { resent, failed, released }
 }
