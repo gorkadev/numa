@@ -166,6 +166,12 @@ export type HeatmapCalendarProps = {
   calendarOnly?: boolean
   /** Tooltip hover delay in milliseconds (default 0). */
   tooltipDelay?: number
+  /**
+   * BCP 47 locale for month, weekday and date labels. Pass the page's locale
+   * when server-rendering: without it the server and the browser each use
+   * their own and the labels fail hydration.
+   */
+  locale?: string
   /** Tooltip content override */
   renderTooltip?: (cell: HeatmapCell) => React.ReactNode
 
@@ -244,25 +250,33 @@ function sameMonth(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth()
 }
 
-function formatMonth(d: Date, fmt: "short" | "long" | "numeric") {
+function formatMonth(
+  d: Date,
+  fmt: "short" | "long" | "numeric",
+  locale: string | undefined
+) {
   if (fmt === "numeric") {
     const yy = String(d.getFullYear()).slice(-2)
     return `${d.getMonth() + 1}/${yy}`
   }
-  return d.toLocaleDateString(undefined, { month: fmt })
+  return d.toLocaleDateString(locale, { month: fmt })
 }
 
 function defaultYearOptions(currentYear: number, count = 5) {
   return Array.from({ length: count }, (_, i) => currentYear - i)
 }
 
-function weekdayLabelForIndex(index: number, weekStartsOn: 0 | 1) {
+function weekdayLabelForIndex(
+  index: number,
+  weekStartsOn: 0 | 1,
+  locale: string | undefined
+) {
   // index is 0..6 in grid row order (top->bottom).
   // actual weekday = weekStartsOn + index
   const actualDay = (weekStartsOn + index) % 7
   // stable reference week (UTC)
   const base = new Date(Date.UTC(2024, 0, 7 + actualDay))
-  return base.toLocaleDateString(undefined, { weekday: "short" }).toUpperCase()
+  return base.toLocaleDateString(locale, { weekday: "short" }).toUpperCase()
 }
 
 /* ---------------- component ---------------- */
@@ -280,6 +294,7 @@ export function HeatmapCalendar({
   cellSize = 12,
   cellGap = 3,
   tooltipDelay = 0,
+  locale,
   calendarOnly = false,
   onCellClick,
   levelClassNames,
@@ -406,7 +421,7 @@ export function HeatmapCalendar({
         disabled: !inRange,
         future: inRange && isFuture,
         meta,
-        label: date.toLocaleDateString(undefined, {
+        label: date.toLocaleDateString(locale, {
           year: "numeric",
           month: "short",
           day: "numeric",
@@ -439,7 +454,7 @@ export function HeatmapCalendar({
       const monthChanged = !prevFirst || !sameMonth(firstInCol, prevFirst)
 
       if (monthChanged && i - lastLabeledWeek >= minWeekSpacing) {
-        labels.push({ colIndex: i, text: formatMonth(firstInCol, monthFormat) })
+        labels.push({ colIndex: i, text: formatMonth(firstInCol, monthFormat, locale) })
         lastLabeledWeek = i
       }
     }
@@ -575,7 +590,7 @@ export function HeatmapCalendar({
                     style={{ width: 40, height: calendarOnly ? "auto" : cellSize }}
                   >
                     {weekdayIndices.includes(rowIdx)
-                      ? weekdayLabelForIndex(rowIdx, weekStartsOn)
+                      ? weekdayLabelForIndex(rowIdx, weekStartsOn, locale)
                       : ""}
                   </div>
                 ))}

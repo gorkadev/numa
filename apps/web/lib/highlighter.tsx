@@ -89,6 +89,10 @@ export async function loadHighlighter(language: string) {
           themes: { light: "github-light", dark: "github-dark" },
           defaultColor: false,
           grammarState: state,
+          // Shiki's default 500 ms per-line limit gives up mid-line and paints
+          // the rest in one color — common on the first, cold call — and a
+          // finished block keeps those colors for good.
+          tokenizeTimeLimit: 0,
         }).tokens
 
       // ANSI has no grammar state, so each line is tokenized on its own and

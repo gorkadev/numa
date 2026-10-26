@@ -210,6 +210,7 @@ export function ProfilePage({
             cellSize={10}
             cellGap={2}
             tooltipDelay={150}
+            locale={locale}
             scale="quantile"
             levelClassNames={[
               "bg-muted",
