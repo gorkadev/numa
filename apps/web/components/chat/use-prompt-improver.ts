@@ -5,10 +5,6 @@ import { useTranslations } from "next-intl"
 import { toast } from "@workspace/ui/components/toast"
 
 import {
-  improvePrompt,
-  readImproverAllowance,
-} from "@/lib/games/improver/actions"
-import {
   canImprove,
   type ImproverAllowance,
 } from "@/lib/games/improver/allowance"
@@ -16,6 +12,14 @@ import { onImproverAllowanceStale } from "@/lib/games/improver/allowance-channel
 import type { ImproverMode } from "@/lib/games/improver/instructions"
 import type { TemplateId } from "@/lib/games/templates/catalog"
 import { publishTurnCredits } from "@/lib/polar/credits-channel"
+
+/**
+ * The server actions, loaded on first use rather than imported. Next turns a
+ * static import into an action reference anyway, but anything that renders
+ * the composer outside Next — its tests — would otherwise load the database
+ * client behind them just to render a button.
+ */
+const improverActions = () => import("@/lib/games/improver/actions")
 
 /**
  * The improver's state for the composer: the allowance its tooltip reads,
@@ -39,7 +43,8 @@ export function usePromptImprover({
   const [undo, setUndo] = useState<{ original: string; improved: string } | null>(null)
 
   const refresh = useCallback(() => {
-    readImproverAllowance()
+    improverActions()
+      .then((actions) => actions.readImproverAllowance())
       .then(setAllowance)
       .catch(() => setAllowance({ kind: "unavailable" }))
   }, [])
@@ -58,6 +63,7 @@ export function usePromptImprover({
     if (!mode || !text || !allowance || !canImprove(allowance) || improving) return
 
     startImproving(async () => {
+      const { improvePrompt } = await improverActions()
       const result = await improvePrompt({ text, templateId, mode })
       setAllowance(result.allowance)
 
