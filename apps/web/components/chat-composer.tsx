@@ -130,10 +130,6 @@ export function ChatComposer({
   const templatePickerAvailable = Boolean(templateId && onTemplateChange && !active && !pending)
   const pickerAvailable = Boolean(tierId && onTierChange && !active)
 
-  useComposerShortcuts({
-    phase, supported, pending, modelOpen, pickerAvailable, templatePickerAvailable,
-    start, stop, discard, setModelOpen, setTemplateOpen,
-  })
 
   /**
    * Programmatic writes go through the same two calls as typing does, so
@@ -149,6 +145,15 @@ export function ChatComposer({
     value,
     setValue: replaceValue,
     templateId: templateId ?? "none",
+  })
+
+  /**
+   * An improvement in flight counts as pending for the shortcuts too: a
+   * dictation started mid-call would be overwritten by the improved text.
+   */
+  useComposerShortcuts({
+    phase, supported, pending: pending || improver.improving, modelOpen, pickerAvailable,
+    templatePickerAvailable, start, stop, discard, setModelOpen, setTemplateOpen,
   })
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)

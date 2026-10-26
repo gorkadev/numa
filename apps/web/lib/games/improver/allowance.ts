@@ -119,7 +119,11 @@ export function improverTooltip(allowance: ImproverAllowance): {
             values: { limit: allowance.limit },
             resetsAt: allowance.resetsAt,
           }
-        : { key: "improveNoBalance", values: {} }
+        : {
+            key: "improveNoBalance",
+            values: { limit: allowance.limit },
+            resetsAt: allowance.resetsAt,
+          }
     case "locked":
       return { key: "improveLocked", values: {} }
     case "unavailable":

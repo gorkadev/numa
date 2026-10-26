@@ -77,7 +77,8 @@ test("the tooltip says what the button will do in every state", () => {
   })
   assert.deepEqual(improverTooltip({ kind: "exhausted", reason: "balance", limit: 20, resetsAt: at }), {
     key: "improveNoBalance",
-    values: {},
+    values: { limit: 20 },
+    resetsAt: at,
   })
   assert.deepEqual(improverTooltip({ kind: "locked" }), { key: "improveLocked", values: {} })
   assert.deepEqual(improverTooltip({ kind: "unavailable" }), { key: "improveUnavailable", values: {} })

@@ -319,7 +319,7 @@
     "improveRemaining": "Mejorar prompt · quedan {remaining} de {limit} hoy",
     "improveCharged": "Mejorar prompt · has usado tus {limit} gratis de hoy; se cobra en créditos según uso",
     "improveExhausted": "Has usado tus {limit} mejoras de hoy · vuelven a las {time}. Puedes cobrarlas en créditos desde Ajustes › Juego",
-    "improveNoBalance": "Sin créditos para mejorar más prompts hoy",
+    "improveNoBalance": "Sin créditos para más mejoras · tus {limit} gratis vuelven a las {time}",
     "improveLocked": "Mejorar prompt · disponible en Pro y Max",
     "improveUnavailable": "Mejorar prompt · no disponible ahora mismo",
     "improveFailed": "No se pudo mejorar el prompt. Inténtalo de nuevo.",
