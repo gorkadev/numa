@@ -3,7 +3,7 @@
 import { db } from "@workspace/db"
 import { promptImprovements, userSettings } from "@workspace/db/schema"
 import { generateText } from "ai"
-import { and, count, eq, gte } from "drizzle-orm"
+import { and, count, eq, gte, sql } from "drizzle-orm"
 import { z } from "zod"
 
 import { resolveUtilityModel } from "@/lib/ai/model-registry"
@@ -14,11 +14,11 @@ import {
   turnUsageTokens,
 } from "@/lib/ai/pricing"
 import {
-  canImprove,
   improverAllowance,
   utcDayStart,
   type ImproverAllowance,
 } from "@/lib/games/improver/allowance"
+import { runImprovement, type ImproveOutcome } from "@/lib/games/improver/flow"
 import {
   cleanImprovedText,
   improverInstructions,
@@ -39,27 +39,33 @@ const improveInputSchema = z.object({
 })
 
 export type ImproveResult =
-  | { ok: true; text: string; credits: number; allowance: ImproverAllowance }
-  | { ok: false; error: "invalid" | "denied" | "failed"; allowance: ImproverAllowance }
+  | ImproveOutcome
+  | { ok: false; error: "invalid"; allowance: ImproverAllowance }
+
+type Executor = Pick<typeof db, "select">
+
+async function countToday(executor: Executor, userId: string, now: Date) {
+  const [used] = await executor
+    .select({ value: count() })
+    .from(promptImprovements)
+    .where(
+      and(
+        eq(promptImprovements.userId, userId),
+        gte(promptImprovements.createdAt, utcDayStart(now))
+      )
+    )
+
+  return used?.value ?? 0
+}
 
 /**
- * Everything the quota decision needs, read fresh on every call: the plan and
- * balance from Polar, today's uses from the ledger, and the overage opt-in.
- * The browser's idea of any of these is never trusted — an action is a public
- * endpoint.
+ * The plan and balance from Polar and the overage opt-in, read fresh on every
+ * call. The browser's idea of any of these is never trusted — an action is a
+ * public endpoint.
  */
-async function readQuotaState(userId: string, now: Date) {
-  const [state, [used], [settings]] = await Promise.all([
+async function readAccount(userId: string) {
+  const [state, [settings]] = await Promise.all([
     readCustomerState(userId),
-    db
-      .select({ value: count() })
-      .from(promptImprovements)
-      .where(
-        and(
-          eq(promptImprovements.userId, userId),
-          gte(promptImprovements.createdAt, utcDayStart(now))
-        )
-      ),
     db
       .select({ overageBilling: userSettings.improverOverageBilling })
       .from(userSettings)
@@ -68,12 +74,16 @@ async function readQuotaState(userId: string, now: Date) {
   ])
   const { plan, balance } = summarizeBillingState(state)
 
-  return {
-    plan,
-    balance,
-    usedToday: used?.value ?? 0,
-    overageBilling: settings?.overageBilling ?? false,
-  }
+  return { plan, balance, overageBilling: settings?.overageBilling ?? false }
+}
+
+async function readQuotaState(userId: string, now: Date) {
+  const [account, usedToday] = await Promise.all([
+    readAccount(userId),
+    countToday(db, userId, now),
+  ])
+
+  return { ...account, usedToday }
 }
 
 /** The button's state for its tooltip, read when the composer mounts. */
@@ -88,6 +98,10 @@ export async function readImproverAllowance(): Promise<ImproverAllowance> {
  * Rewrites the composer's text into a solid prompt. Inside the quota the call
  * is free; beyond it, with the overage opt-in, it is priced exactly like a
  * turn (`turnCreditCost`) and metered to Polar from its ledger row.
+ *
+ * The quota check and the ledger claim run in one short transaction holding
+ * `pg_advisory_xact_lock` on the user, so parallel calls are counted one after
+ * another; see `runImprovement`.
  */
 export async function improvePrompt(input: {
   text: string
@@ -96,91 +110,108 @@ export async function improvePrompt(input: {
 }): Promise<ImproveResult> {
   const { user } = await requireSession()
   const now = new Date()
-  const quota = await readQuotaState(user.id, now)
-  const allowance = improverAllowance({ ...quota, now })
 
   const parsed = improveInputSchema.safeParse(input)
-  if (!parsed.success) return { ok: false, error: "invalid", allowance }
-  if (!canImprove(allowance)) return { ok: false, error: "denied", allowance }
-
-  const { text, templateId, mode } = parsed.data
-  const charged = allowance.kind === "charged"
-
-  try {
-    const template = getTemplate(templateId)
-    const contract =
-      templateId === "none"
-        ? undefined
-        : await readTemplateContract(template.id, template.version)
-    const context = improverTemplateContext(
-      contract && {
-        label: template.label,
-        tagline: template.tagline,
-        models: contract.manifest.models,
-      }
-    )
-
-    const { model, primary } = resolveUtilityModel("improve")
-    const { text: reply, usage } = await generateText({
-      model,
-      providerOptions: primary.providerOptions,
-      instructions: context
-        ? `${improverInstructions(mode)}\n\n${context}`
-        : improverInstructions(mode),
-      prompt: text,
-    })
-
-    const improved = cleanImprovedText(reply)
-    if (!improved) return { ok: false, error: "failed", allowance }
-
-    const snapshot = capturePricingSnapshot(now)
-    const credits = charged
-      ? turnCreditCost({ modelId: primary.id, usage, snapshot })
-      : 0
-
-    const [row] = await db
-      .insert(promptImprovements)
-      .values({
-        userId: user.id,
-        templateId,
-        modelId: primary.id,
-        ...turnUsageTokens(usage),
-        costMicroUsd: turnCostMicroUsd({ modelId: primary.id, usage, snapshot }),
-        rateVersion: snapshot.rateVersion,
-        credits,
-      })
-      .returning({ id: promptImprovements.id })
-
-    if (row && credits > 0) {
-      const ingested = await ingestImprovementCredits({
-        userId: user.id,
-        improvementId: row.id,
-        credits,
-        modelId: primary.id,
-      })
-
-      if (ingested) {
-        await db
-          .update(promptImprovements)
-          .set({ creditsIngestedAt: new Date() })
-          .where(eq(promptImprovements.id, row.id))
-      }
-    }
-
+  if (!parsed.success) {
     return {
-      ok: true,
-      text: improved,
-      credits,
+      ok: false,
+      error: "invalid",
       allowance: improverAllowance({
-        ...quota,
-        usedToday: quota.usedToday + 1,
-        balance: quota.balance === null ? null : quota.balance - credits,
+        ...(await readQuotaState(user.id, now)),
         now,
       }),
     }
-  } catch (error) {
-    console.error("Prompt improvement failed", error)
-
-    return { ok: false, error: "failed", allowance }
   }
+
+  const { text, templateId, mode } = parsed.data
+  const { model, primary } = resolveUtilityModel("improve")
+  const snapshot = capturePricingSnapshot(now)
+
+  return runImprovement({
+    now,
+    readAccount: () => readAccount(user.id),
+    withUserLock: (fn) =>
+      db.transaction(async (tx) => {
+        await tx.execute(
+          sql`select pg_advisory_xact_lock(hashtext(${`prompt-improver:${user.id}`}))`
+        )
+
+        return fn({
+          countToday: () => countToday(tx, user.id, now),
+          claim: async () => {
+            const [row] = await tx
+              .insert(promptImprovements)
+              .values({
+                userId: user.id,
+                templateId,
+                modelId: primary.id,
+                costMicroUsd: 0,
+                rateVersion: snapshot.rateVersion,
+              })
+              .returning({ id: promptImprovements.id })
+            if (!row) throw new Error("The improvement claim was not recorded")
+
+            return row.id
+          },
+        })
+      }),
+    generate: async () => {
+      const template = getTemplate(templateId)
+      const contract =
+        templateId === "none"
+          ? undefined
+          : await readTemplateContract(template.id, template.version)
+      const context = improverTemplateContext(
+        contract && {
+          label: template.label,
+          tagline: template.tagline,
+          models: contract.manifest.models,
+        }
+      )
+      const { text: reply, usage } = await generateText({
+        model,
+        providerOptions: primary.providerOptions,
+        instructions: context
+          ? `${improverInstructions(mode)}\n\n${context}`
+          : improverInstructions(mode),
+        prompt: text,
+      })
+
+      return { text: cleanImprovedText(reply), usage }
+    },
+    settle: async (claimId, { usage }, charged) => {
+      const credits = charged
+        ? turnCreditCost({ modelId: primary.id, usage, snapshot })
+        : 0
+      await db
+        .update(promptImprovements)
+        .set({
+          ...turnUsageTokens(usage),
+          costMicroUsd: turnCostMicroUsd({ modelId: primary.id, usage, snapshot }),
+          credits,
+        })
+        .where(eq(promptImprovements.id, claimId))
+
+      return credits
+    },
+    release: async (claimId) => {
+      await db
+        .delete(promptImprovements)
+        .where(eq(promptImprovements.id, claimId))
+    },
+    ingest: ({ claimId, credits }) =>
+      ingestImprovementCredits({
+        userId: user.id,
+        improvementId: claimId,
+        credits,
+        modelId: primary.id,
+      }),
+    markIngested: async (claimId) => {
+      await db
+        .update(promptImprovements)
+        .set({ creditsIngestedAt: new Date() })
+        .where(eq(promptImprovements.id, claimId))
+    },
+    log: (message, error) => console.error(message, error),
+  })
 }
