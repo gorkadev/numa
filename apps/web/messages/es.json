@@ -499,6 +499,14 @@
     "securityTab": "Seguridad y acceso",
     "billingTab": "Plan y créditos",
     "shortcutsTab": "Atajos de teclado",
+    "gameTab": "Juego",
+    "game": {
+      "improverTitle": "Mejorar prompt",
+      "improverDescription": "El botón de mejorar prompt del editor es gratis hasta {pro} usos al día en Pro y {max} en Max.",
+      "improverOverage": "Seguir mejorando al agotar los usos gratis",
+      "improverOverageDescription": "Cuando acabes los usos gratis del día, cada mejora se cobra en créditos según lo que cueste, igual que los turnos del agente.",
+      "couldNotSave": "No se pudo guardar el ajuste. Inténtalo de nuevo."
+    },
     "shortcuts": {
       "navigationGroup": "Navegación",
       "navigationDescription": "Disponibles en toda la aplicación, incluso en el editor de mensajes.",

@@ -499,6 +499,14 @@
     "securityTab": "Security & access",
     "billingTab": "Plan & credits",
     "shortcutsTab": "Keyboard shortcuts",
+    "gameTab": "Game",
+    "game": {
+      "improverTitle": "Improve prompt",
+      "improverDescription": "The composer's improve-prompt button is free for up to {pro} uses a day on Pro and {max} on Max.",
+      "improverOverage": "Keep improving after the free uses",
+      "improverOverageDescription": "Once today's free uses are spent, each improvement is charged in credits at what it costs, just like the agent's turns.",
+      "couldNotSave": "Couldn't save the setting. Try again."
+    },
     "shortcuts": {
       "navigationGroup": "Navigation",
       "navigationDescription": "Available throughout the app, including in the composer.",
