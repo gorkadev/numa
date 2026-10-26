@@ -50,16 +50,21 @@ export function UsageFooter({
   activity,
   timing,
   context,
+  showSessionStats = true,
 }: {
   usage: SessionUsage | null
   speed: GenerationSpeed | null
   activity: { turns: number; steps: number }
   timing: StepTimingTotals | null
   context: ContextUsage
+  /** Settings › Game can hide the session statistics button. */
+  showSessionStats?: boolean
 }) {
   return (
     <div className="flex items-center justify-center gap-1 py-1 text-muted-foreground">
-      <SessionStatistics speed={speed} activity={activity} timing={timing} />
+      {showSessionStats ? (
+        <SessionStatistics speed={speed} activity={activity} timing={timing} />
+      ) : null}
       <TokenUsage usage={usage ?? EMPTY_USAGE} />
       <ContextRing context={context} />
     </div>

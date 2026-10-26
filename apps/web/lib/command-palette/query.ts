@@ -27,11 +27,3 @@ export function quickPromptOf(search: string, page: string | undefined): string 
   const prompt = text.trim()
   return scope === "games" || prompt === "" ? null : prompt
 }
-
-/**
- * The home page with the prompt already typed, for a reader who wants to pick
- * the model or template before sending; `NewGameComposer` reads `?prompt=`.
- */
-export function composerHref(prompt: string): string {
-  return `/?${new URLSearchParams({ prompt })}`
-}

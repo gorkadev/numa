@@ -505,7 +505,13 @@
       "improverDescription": "The composer's improve-prompt button is free for up to {pro} uses a day on Pro and {max} on Max.",
       "improverOverage": "Keep improving after the free uses",
       "improverOverageDescription": "Once today's free uses are spent, each improvement is charged in credits at what it costs, just like the agent's turns.",
-      "couldNotSave": "Couldn't save the setting. Try again."
+      "couldNotSave": "Couldn't save the setting. Try again.",
+      "newGameTitle": "New games",
+      "defaultTier": "Default tier",
+      "defaultTierDescription": "The tier a new game starts on. You can still change it before sending.",
+      "chatTitle": "Chat",
+      "sessionStats": "Session statistics",
+      "sessionStatsDescription": "Show turns, steps and tokens per second under the composer, with the session's timing on click."
     },
     "shortcuts": {
       "navigationGroup": "Navigation",

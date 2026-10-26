@@ -37,6 +37,7 @@ export function GameChat({
   initialPrompt,
   initialTierId,
   contextWindows,
+  showSessionStats,
 }: {
   gameId: string
   /** The game's name, as the header shows it. */
@@ -65,6 +66,8 @@ export function GameChat({
   initialTierId?: TierId
   /** Each tier's orchestrator window, resolved on the server (see `strongContextWindows`). */
   contextWindows: Record<TierId, number>
+  /** From Settings › Game: whether the footer shows the session statistics button. */
+  showSessionStats: boolean
 }) {
   const t = useTranslations("ChatAgents")
 
@@ -265,6 +268,7 @@ export function GameChat({
           initialSessions={initialSessions}
           initialPrompt={initialPrompt}
           initialTierId={initialTierId}
+          showSessionStats={showSessionStats}
           contextWindows={contextWindows}
           onRevision={setRevision}
           onSelectedRunIdChange={setSelectedRunId}

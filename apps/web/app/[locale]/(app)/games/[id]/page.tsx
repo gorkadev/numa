@@ -11,6 +11,7 @@ import {
   isTemplateId,
 } from "@/lib/games/templates/catalog"
 import { markGameRead } from "@/lib/games/read-state"
+import { readGameSettings } from "@/lib/settings/game-settings"
 
 export default async function GamePage({
   params,
@@ -38,7 +39,7 @@ export default async function GamePage({
    * `getGame` authenticates and scopes to the caller's user id, so a missing
    * game and one owned by another user both land here as a 404.
    */
-  const game = await getGame(id)
+  const [game, settings] = await Promise.all([getGame(id), readGameSettings()])
 
   if (!game) notFound()
 
@@ -93,6 +94,7 @@ export default async function GamePage({
       initialPrompt={initialPrompt}
       initialTierId={initialTierId}
       contextWindows={strongContextWindows()}
+      showSessionStats={settings.showSessionStats}
     />
   )
 }

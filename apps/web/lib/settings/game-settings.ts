@@ -3,41 +3,50 @@
 import { db } from "@workspace/db"
 import { userSettings } from "@workspace/db/schema"
 import { eq } from "drizzle-orm"
-import { z } from "zod"
 
+import {
+  gameSettingsOf,
+  gameSettingsPatchSchema,
+  type GameSettings,
+} from "@/lib/settings/game-preferences"
 import { requireSession } from "@/lib/session"
 
-export type GameSettings = {
-  improverOverageBilling: boolean
+async function readSettingsRow(userId: string) {
+  const [row] = await db
+    .select({
+      improverOverageBilling: userSettings.improverOverageBilling,
+      defaultTierId: userSettings.defaultTierId,
+      showSessionStats: userSettings.showSessionStats,
+    })
+    .from(userSettings)
+    .where(eq(userSettings.userId, userId))
+    .limit(1)
+
+  return row
 }
 
 /** A user with no row yet reads the schema's defaults. */
 export async function readGameSettings(): Promise<GameSettings> {
   const { user } = await requireSession()
-  const [row] = await db
-    .select({ improverOverageBilling: userSettings.improverOverageBilling })
-    .from(userSettings)
-    .where(eq(userSettings.userId, user.id))
-    .limit(1)
 
-  return { improverOverageBilling: row?.improverOverageBilling ?? false }
+  return gameSettingsOf(await readSettingsRow(user.id))
 }
 
 /**
- * Upserts the opt-in. The value arrives from the browser, so it is parsed —
+ * Upserts one setting. The value arrives from the browser, so it is parsed —
  * an action is a public endpoint, and only a real boolean may turn on a charge.
  */
-export async function setImproverOverageBilling(enabled: unknown): Promise<GameSettings> {
+export async function updateGameSettings(patch: unknown): Promise<GameSettings> {
   const { user } = await requireSession()
-  const value = z.boolean().parse(enabled)
+  const values = gameSettingsPatchSchema.parse(patch)
 
   await db
     .insert(userSettings)
-    .values({ userId: user.id, improverOverageBilling: value })
+    .values({ userId: user.id, ...values })
     .onConflictDoUpdate({
       target: userSettings.userId,
-      set: { improverOverageBilling: value, updatedAt: new Date() },
+      set: { ...values, updatedAt: new Date() },
     })
 
-  return { improverOverageBilling: value }
+  return gameSettingsOf(await readSettingsRow(user.id))
 }

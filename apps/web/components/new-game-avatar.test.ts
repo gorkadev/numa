@@ -29,9 +29,10 @@ test("server page replaces only its header logo and loads upstream motion CSS", 
   assert.doesNotMatch(page, /next\/image|\/logo\.svg|["']use client["']/)
   assert.match(page, /import "blobatar\/motion\.css"/)
   assert.match(page, /import "blobatar\/gaze\.css"/)
-  assert.match(page, /await requireSession\(\)/)
+  // readGameSettings requires the session before reading the player's default tier.
+  assert.match(page, /readGameSettings\(\)/)
   assert.match(page, /getTranslations\("Home"\)/)
-  assert.match(page, /<NewGameComposer\s*\/>/)
+  assert.match(page, /<NewGameComposer defaultTierId=\{defaultTierId\} \/>/)
 })
 
 // SSR cannot run effects or pointer events: this checks wiring, not browser motion.

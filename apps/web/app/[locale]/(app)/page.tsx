@@ -13,12 +13,14 @@ import {
 import { MobileSidebarTrigger } from "@/components/mobile-sidebar-trigger"
 import { NewGameComposer } from "@/components/new-game-composer"
 import { NewGameAvatar } from "@/components/new-game-avatar"
-import { requireSession } from "@/lib/session"
+import { readGameSettings } from "@/lib/settings/game-settings"
 import { getTranslations } from "next-intl/server"
 
 export default async function Page() {
-  await requireSession()
-  const t = await getTranslations("Home")
+  const [t, { defaultTierId }] = await Promise.all([
+    getTranslations("Home"),
+    readGameSettings(),
+  ])
 
   return (
     <div className="relative flex min-h-svh flex-col items-center justify-center gap-6">
@@ -32,7 +34,7 @@ export default async function Page() {
           <EmptyDescription>{t("emptyDescription")}</EmptyDescription>
         </EmptyHeader>
         <EmptyContent className="max-w-3xl">
-          <NewGameComposer />
+          <NewGameComposer defaultTierId={defaultTierId} />
         </EmptyContent>
       </Empty>
     </div>

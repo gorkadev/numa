@@ -51,6 +51,7 @@ export function ChatThread({
   initialPrompt,
   initialTierId,
   contextWindows,
+  showSessionStats,
   onRevision,
   onSelectedRunIdChange,
   onSubagentPanelOpenChange,
@@ -84,6 +85,8 @@ export function ChatThread({
   initialTierId?: TierId
   /** Each tier's orchestrator window, so the context ring can start at zero. */
   contextWindows: Record<TierId, number>
+  /** From Settings › Game: whether the footer shows the session statistics button. */
+  showSessionStats: boolean
   /**
    * Reports the revision the agent stamps on a turn that changed the game's
    * files. The thread owns the stream, but the preview is its sibling, so the
@@ -307,6 +310,7 @@ export function ChatThread({
               activity={sessionActivity}
               timing={sessionTiming}
               context={contextUsage}
+              showSessionStats={showSessionStats}
             />
           }
           tasksSlot={
