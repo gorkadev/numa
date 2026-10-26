@@ -34,3 +34,17 @@ test("grammar state continues streamed multiline comments like a whole pass", as
   assert.equal(markup([...first.lines, ...rest.lines]), markup(whole.lines))
   assert.equal(whole.lines.length, 3)
 })
+
+test("a slow tokenizer still colors the whole line", async (t) => {
+  const highlighter = await loadHighlighter("typescript")
+  assert.ok(highlighter)
+  const source = 'const value = "<tag> &"'
+  const expected = markup(highlighter.highlight(source).lines)
+
+  // Shiki checks its per-line time limit against Date.now; a clock that
+  // jumps a second per read stands in for a cold grammar on a slow device.
+  let clock = 0
+  t.mock.method(Date, "now", () => (clock += 1000))
+
+  assert.equal(markup(highlighter.highlight(source).lines), expected)
+})

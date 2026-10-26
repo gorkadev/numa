@@ -35,3 +35,7 @@ Migration is implemented, but do not declare C1 fully verified: one unexplained 
 - `pnpm --dir apps/web exec tsx --test ...` (full focused suite) — 20 passed, 0 failed, including the previously intermittent alias assertion.
 - `pnpm --filter web typecheck` — pass, with no baseline diagnostics left in `apps/web/lib/highlighter.tsx`.
 - Still open: real-browser highlighting, wrap, copy, theme switching, and streamed growth.
+
+## Intermittent failure resolved (2026-10-26)
+
+Root cause: Shiki's default `tokenizeTimeLimit` (500 ms per line, checked against `Date.now`) gives up mid-line on a slow first tokenization and paints the rest of the line in the last token's scope — `const value` then one `#005CC5`-family run, exactly the verifier's original evidence. Probe: `tokenizeTimeLimit: 1` on a cold highlighter produced the truncated tokens; `0` produced the full line. A real bug, not only a test artifact: a finished chat block highlighted on a slow device kept the wrong colors. Fix: `tokenizeTimeLimit: 0` in `lib/highlighter.tsx`. RED: new test mocking `Date.now` to jump 1 s per read failed with the truncated markup; GREEN 3/3 highlighter, 9/9 highlighter + hook + markdown. Tradeoff: no per-line time guard against a pathological grammar regex. Browser checks remain open.
