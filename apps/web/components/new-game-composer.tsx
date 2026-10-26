@@ -98,10 +98,15 @@ export function NewGameComposer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state])
 
-  /** A pick is kept in the URL, so a reload or a shared link keeps it. */
+  /**
+   * A pick is kept in the URL, so a reload or a shared link keeps it. Read
+   * from `window.location`, not `searchParams`: a second pick made before the
+   * first replace commits would otherwise start from the stale query and drop
+   * the first one.
+   */
   function keepInUrl(change: { tier?: TierId; template?: TemplateId }) {
     router.replace(
-      `${pathname}${newGameSearch(searchParams.toString(), change)}`,
+      `${pathname}${newGameSearch(window.location.search, change)}`,
       { scroll: false }
     )
   }
