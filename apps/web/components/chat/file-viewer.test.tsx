@@ -38,9 +38,9 @@ test("FileViewer plays audio and video with native controls", () => {
 })
 
 test("FileViewer explains a binary file instead of rendering it", () => {
-  const html = render(<FileViewer {...base} file={{ name: "ship.glb", path: "ship.glb", size: 2048 }} />)
+  const html = render(<FileViewer {...base} file={{ name: "ship.fbx", path: "ship.fbx", size: 2048 }} />)
 
-  assert.match(html, /ship\.glb/)
+  assert.match(html, /ship\.fbx/)
   assert.match(html, /can(&#x27;|')t be previewed/)
   assert.match(html, /2 kB/)
 })
@@ -68,9 +68,20 @@ test("FileCode renders the text with line numbers, copy and wrap controls", () =
   assert.match(html, /aria-label="Wrap lines"/)
 })
 
+test("FileViewer opens a glTF model in the 3D viewer, loading it from the preview proxy", () => {
+  const html = render(
+    <FileViewer {...base} file={{ name: "12_Mimic.gltf", path: "assets/cards/12_Mimic.gltf", size: 4096 }} />
+  )
+
+  assert.match(html, /data-slot="model-viewer"/)
+  assert.match(html, /data-src="\/api\/games\/g1\/preview\/tok\/assets\/cards\/12_Mimic\.gltf\?v=2"/)
+  assert.match(html, /Loading 12_Mimic\.gltf…/)
+  assert.doesNotMatch(html, /can(&#x27;|')t be previewed/)
+})
+
 test("FileViewer is translated", () => {
   const html = render(
-    <FileViewer {...base} file={{ name: "ship.glb", path: "ship.glb", size: 2048 }} />,
+    <FileViewer {...base} file={{ name: "ship.fbx", path: "ship.fbx", size: 2048 }} />,
     es,
     "es"
   )

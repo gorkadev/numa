@@ -78,6 +78,7 @@ export type FileView =
   | { kind: "image" }
   | { kind: "audio" }
   | { kind: "video" }
+  | { kind: "model" }
   | { kind: "binary" }
 
 /** Extensions the highlighter in `lib/highlighter.tsx` knows, by the language name it expects. */
@@ -102,13 +103,16 @@ const CODE_LANGUAGES: Record<string, string> = {
 const IMAGE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "gif", "webp", "avif", "bmp", "ico", "svg"])
 const AUDIO_EXTENSIONS = new Set(["mp3", "wav", "ogg", "oga", "m4a", "aac", "flac", "opus"])
 const VIDEO_EXTENSIONS = new Set(["mp4", "webm", "mov", "m4v", "ogv"])
+/** glTF, the format the templates' models ship in, as JSON (`.gltf`) or binary (`.glb`). */
+const MODEL_EXTENSIONS = new Set(["glb", "gltf"])
 
 /**
- * Files that are never worth trying as text. 3D models sit here until the
- * viewer can render them; a font or an archive has nothing to read.
+ * Files that are never worth trying as text. A `.bin` is the raw buffer a
+ * `.gltf` points at — it is seen by opening that model — and a font or an
+ * archive has nothing to read.
  */
 const BINARY_EXTENSIONS = new Set([
-  "glb", "gltf", "fbx", "obj", "bin",
+  "fbx", "obj", "bin",
   "woff", "woff2", "ttf", "otf",
   "zip", "gz", "tar", "wasm", "pdf",
 ])
@@ -133,6 +137,7 @@ export function fileViewOf(path: string): FileView {
   if (IMAGE_EXTENSIONS.has(extension)) return { kind: "image" }
   if (AUDIO_EXTENSIONS.has(extension)) return { kind: "audio" }
   if (VIDEO_EXTENSIONS.has(extension)) return { kind: "video" }
+  if (MODEL_EXTENSIONS.has(extension)) return { kind: "model" }
   if (BINARY_EXTENSIONS.has(extension)) return { kind: "binary" }
   return { kind: "code", language: "text" }
 }

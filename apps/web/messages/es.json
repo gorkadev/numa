@@ -188,7 +188,9 @@
     "missing": "Este archivo ya no existe.",
     "back": "Volver a los archivos",
     "binary": "Este archivo no se puede previsualizar.",
-    "tooLarge": "Este archivo es demasiado grande para previsualizarlo."
+    "tooLarge": "Este archivo es demasiado grande para previsualizarlo.",
+    "restPose": "Pose de reposo",
+    "animation": "Animación"
   },
   "GamePreview": {
     "startingPreview": "Iniciando la vista previa…",

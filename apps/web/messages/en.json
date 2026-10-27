@@ -188,7 +188,9 @@
     "missing": "This file no longer exists.",
     "back": "Back to files",
     "binary": "This file can't be previewed.",
-    "tooLarge": "This file is too large to preview."
+    "tooLarge": "This file is too large to preview.",
+    "restPose": "Rest pose",
+    "animation": "Animation"
   },
   "GamePreview": {
     "startingPreview": "Starting preview…",

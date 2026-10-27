@@ -20,6 +20,7 @@ import { Spinner } from "@/components/localized-spinner"
 import { useHighlightedCode } from "@/hooks/use-highlighted-code"
 import { fileContentUrl, fileViewOf, MAX_VIEW_BYTES, previewAssetUrl } from "@/lib/games/files"
 import type { ReadGameFileResult } from "@/lib/games/files-server"
+import { ModelViewer } from "./model-viewer"
 
 export type ViewedFile = { name: string; path: string; size: number }
 
@@ -37,7 +38,8 @@ type FileViewerProps = {
  * Text goes through the content endpoint and the same highlighter the chat's
  * code blocks use. Media is loaded straight from the preview proxy, which
  * already serves the game directory: an SVG is drawn through `<img>`, where
- * its scripts never run, rather than inlined into this page.
+ * its scripts never run, rather than inlined into this page, and a glTF
+ * model finds its `.bin` and textures next to it there.
  */
 export function FileViewer({ gameId, previewToken, version, file }: FileViewerProps) {
   const view = fileViewOf(file.path)
@@ -78,6 +80,8 @@ export function FileViewer({ gameId, previewToken, version, file }: FileViewerPr
           <video controls src={src} className="max-h-full max-w-full rounded-lg" />
         </MediaFrame>
       )
+    case "model":
+      return <ModelViewer key={src} src={src} name={file.name} />
     case "binary":
       return <FileNotice file={file} messageKey="binary" />
   }

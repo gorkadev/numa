@@ -81,8 +81,14 @@ test("fileViewOf classifies media assets, keeping SVG as an image", () => {
   assert.deepEqual(fileViewOf("intro.mp4"), { kind: "video" })
 })
 
-test("fileViewOf treats models, fonts and archives as binary", () => {
-  assert.deepEqual(fileViewOf("ship.glb"), { kind: "binary" })
+test("fileViewOf opens glTF models, binary or JSON, in the 3D viewer", () => {
+  assert.deepEqual(fileViewOf("ship.glb"), { kind: "model" })
+  assert.deepEqual(fileViewOf("assets/cards/12_Mimic.GLTF"), { kind: "model" })
+})
+
+test("fileViewOf treats a model's buffers, other model formats, fonts and archives as binary", () => {
+  assert.deepEqual(fileViewOf("12_Mimic.bin"), { kind: "binary" })
+  assert.deepEqual(fileViewOf("ship.fbx"), { kind: "binary" })
   assert.deepEqual(fileViewOf("font.woff2"), { kind: "binary" })
   assert.deepEqual(fileViewOf("bundle.zip"), { kind: "binary" })
 })
