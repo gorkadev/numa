@@ -183,13 +183,16 @@ export function CommandPalette({
         router.refresh()
         if (undo) return
         const title = settingHits.find((hit) => hit.id === action.id)?.title
-        toast.add({
+        const toastId = toast.add({
           title: t(next ? "settingTurnedOn" : "settingTurnedOff", {
             setting: title ?? "",
           }),
           actionProps: {
             children: t("undo"),
-            onClick: () => applyToggle(action, true),
+            onClick: () => {
+              toast.close(toastId)
+              applyToggle(action, true)
+            },
           },
         })
       })

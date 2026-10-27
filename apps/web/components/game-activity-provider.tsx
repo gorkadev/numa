@@ -78,13 +78,16 @@ export function GameActivityProvider({
     }
 
     for (const { gameId, title } of finishedTurnNotices(finished, openGameId, store.titleOf)) {
-      toast.add({
+      const toastId = toast.add({
         type: "success",
         title: t("turnFinished"),
         description: title ?? t("untitledGame"),
         actionProps: {
           children: t("open"),
-          onClick: () => router.push(`/games/${gameId}`),
+          onClick: () => {
+            toast.close(toastId)
+            router.push(`/games/${gameId}`)
+          },
         },
       })
     }
