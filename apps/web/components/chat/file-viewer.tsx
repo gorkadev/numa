@@ -17,6 +17,7 @@ import {
 import { useFormatter, useTranslations } from "next-intl"
 
 import { Spinner } from "@/components/localized-spinner"
+import { useDefaultCodeWrap } from "@/components/chat/code-wrap"
 import { useHighlightedCode } from "@/hooks/use-highlighted-code"
 import { fileContentUrl, fileViewOf, MAX_VIEW_BYTES, previewAssetUrl } from "@/lib/games/files"
 import type { ReadGameFileResult } from "@/lib/games/files-server"
@@ -180,7 +181,7 @@ export function FileCode({
   content: string
 }) {
   const t = useTranslations("ChatMessages")
-  const [wrap, setWrap] = useState(false)
+  const [wrap, setWrap] = useState(useDefaultCodeWrap())
   const lines = useHighlightedCode(content, language)
 
   return (

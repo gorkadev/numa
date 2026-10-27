@@ -11,6 +11,7 @@ import {
   isTemplateId,
 } from "@/lib/games/templates/catalog"
 import { markGameRead } from "@/lib/games/read-state"
+import { CodeWrapProvider } from "@/components/chat/code-wrap"
 import { readGameSettings } from "@/lib/settings/game-settings"
 
 export default async function GamePage({
@@ -81,21 +82,23 @@ export default async function GamePage({
   const previewToken = game.sandboxId ? signPreviewToken(game.id) : undefined
 
   return (
-    <GameChat
-      gameId={game.id}
-      title={game.title}
-      pinned={game.pinnedAt !== null}
-      templateId={
-        isTemplateId(game.templateId) ? game.templateId : DEFAULT_TEMPLATE_ID
-      }
-      previewToken={previewToken}
-      lastTurnFinishedAt={game.lastTurnFinishedAt?.getTime() ?? 0}
-      initialMessages={game.messages}
-      initialSessions={initialSessions}
-      initialPrompt={initialPrompt}
-      initialTierId={initialTierId}
-      contextWindows={strongContextWindows()}
-      showSessionStats={settings.showSessionStats}
-    />
+    <CodeWrapProvider wrap={settings.wrapCodeBlocks}>
+      <GameChat
+        gameId={game.id}
+        title={game.title}
+        pinned={game.pinnedAt !== null}
+        templateId={
+          isTemplateId(game.templateId) ? game.templateId : DEFAULT_TEMPLATE_ID
+        }
+        previewToken={previewToken}
+        lastTurnFinishedAt={game.lastTurnFinishedAt?.getTime() ?? 0}
+        initialMessages={game.messages}
+        initialSessions={initialSessions}
+        initialPrompt={initialPrompt}
+        initialTierId={initialTierId}
+        contextWindows={strongContextWindows()}
+        showSessionStats={settings.showSessionStats}
+      />
+    </CodeWrapProvider>
   )
 }

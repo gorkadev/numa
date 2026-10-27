@@ -543,7 +543,9 @@
       "defaultTierDescription": "The tier a new game starts on. You can still change it before sending.",
       "chatTitle": "Chat",
       "sessionStats": "Session statistics",
-      "sessionStatsDescription": "Show turns, steps and tokens per second under the composer, with the session's timing on click."
+      "sessionStatsDescription": "Show turns, steps and tokens per second under the composer, with the session's timing on click.",
+      "wrapCode": "Wrap code by default",
+      "wrapCodeDescription": "Code blocks in messages, sub-agents and the Files viewer start with long lines wrapped. Each block keeps its own toggle."
     },
     "shortcuts": {
       "navigationGroup": "Navigation",

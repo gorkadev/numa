@@ -638,6 +638,9 @@ export const userSettings = pgTable("user_settings", {
   /** Whether the chat footer shows the session statistics button. */
   showSessionStats: boolean("show_session_stats").notNull().default(true),
 
+  /** Whether code blocks in the chat and the Files viewer start wrapped. */
+  wrapCodeBlocks: boolean("wrap_code_blocks").notNull().default(true),
+
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

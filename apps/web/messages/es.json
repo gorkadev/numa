@@ -543,7 +543,9 @@
       "defaultTierDescription": "El nivel con el que empieza un juego nuevo. Puedes cambiarlo antes de enviar.",
       "chatTitle": "Chat",
       "sessionStats": "Estadísticas de sesión",
-      "sessionStatsDescription": "Muestra turnos, pasos y tokens por segundo bajo el editor, con los tiempos de la sesión al hacer clic."
+      "sessionStatsDescription": "Muestra turnos, pasos y tokens por segundo bajo el editor, con los tiempos de la sesión al hacer clic.",
+      "wrapCode": "Ajustar código por defecto",
+      "wrapCodeDescription": "Los bloques de código de los mensajes, los subagentes y el visor de archivos empiezan con las líneas largas ajustadas. Cada bloque mantiene su propio botón."
     },
     "shortcuts": {
       "navigationGroup": "Navegación",

@@ -16,6 +16,7 @@ import {
 } from "@workspace/ui/components/code-block"
 import { useTranslations } from "next-intl"
 
+import { useDefaultCodeWrap } from "@/components/chat/code-wrap"
 import { useHighlightedCode } from "@/hooks/use-highlighted-code"
 
 type MarkdownCodeProps = ComponentPropsWithoutRef<"code"> &
@@ -25,7 +26,7 @@ type MarkdownCodeProps = ComponentPropsWithoutRef<"code"> &
 
 function FencedCode({ code, language }: { code: string; language: string }) {
   const t = useTranslations("ChatMessages")
-  const [wrap, setWrap] = useState(true)
+  const [wrap, setWrap] = useState(useDefaultCodeWrap())
   // The generated hook removes the Markdown parser's final newline once.
   const lines = useHighlightedCode(code, language)
 
