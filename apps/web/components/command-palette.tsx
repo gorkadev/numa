@@ -495,6 +495,13 @@ export function CommandPalette({
                       {t("newGame")}
                       <ShortcutHint label="newGame" />
                     </CommandItem>
+                    <CommandItem onSelect={() => enter("templates")}>
+                      <HugeiconsIcon
+                        icon={LayoutTemplateIcon}
+                        strokeWidth={2}
+                      />
+                      {t("newGameFromTemplate")}
+                    </CommandItem>
                     {/**
                      * Verbs, under Actions: they open a picker and change the
                      * value. The Settings group below only lists rows that
@@ -540,13 +547,6 @@ export function CommandPalette({
                     >
                       <HugeiconsIcon icon={Logout01Icon} strokeWidth={2} />
                       {signOutArmed ? t("confirmSignOut") : t("signOut")}
-                    </CommandItem>
-                    <CommandItem onSelect={() => enter("templates")}>
-                      <HugeiconsIcon
-                        icon={LayoutTemplateIcon}
-                        strokeWidth={2}
-                      />
-                      {t("newGameFromTemplate")}
                     </CommandItem>
                   </CommandGroup>
                   <CommandGroup heading={t("goTo")}>
@@ -683,7 +683,7 @@ export function CommandPalette({
             </CommandGroup>
           )}
         </CommandList>
-        <PaletteHints />
+        <PaletteHints inPage={page !== undefined} />
       </CommandDialog>
       {currentGame && (
         <GameActionDialogs
@@ -808,7 +808,7 @@ function useMessageHits(query: string): MessageHit[] {
  * those glyphs off its line box's middle, so as text they look misaligned
  * in a key even when the box is exactly centred.
  */
-function PaletteHints() {
+function PaletteHints({ inPage }: { inPage: boolean }) {
   const t = useTranslations("Shell")
 
   return (
@@ -828,14 +828,28 @@ function PaletteHints() {
         </Kbd>
         {t("paletteHintSelect")}
       </span>
-      <span className="flex items-center gap-1.5">
-        <Kbd>&gt;</Kbd>
-        {t("paletteHintActions")}
-      </span>
-      <span className="flex items-center gap-1.5">
-        <Kbd>#</Kbd>
-        {t("paletteHintGames")}
-      </span>
+      {/**
+       * The `>` and `#` prefixes only mean something on the root list (see
+       * `scope`); inside a page, Backspace on an empty search goes back a
+       * level instead (see `backFrom`).
+       */}
+      {inPage ? (
+        <span className="flex items-center gap-1.5">
+          <Kbd>⌫</Kbd>
+          {t("paletteHintBack")}
+        </span>
+      ) : (
+        <>
+          <span className="flex items-center gap-1.5">
+            <Kbd>&gt;</Kbd>
+            {t("paletteHintActions")}
+          </span>
+          <span className="flex items-center gap-1.5">
+            <Kbd>#</Kbd>
+            {t("paletteHintGames")}
+          </span>
+        </>
+      )}
       <span className="ms-auto flex items-center gap-1.5">
         <Kbd>Esc</Kbd>
         {t("paletteHintClose")}
