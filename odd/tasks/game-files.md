@@ -27,7 +27,7 @@ Branch: `feat/game-files`. Delivery: ask-on-risk. Tests: `pnpm --dir apps/web ex
 | T2 | S1, S2, S7, S8 | inline | done, verified | c50edb8, 2bf0969 |
 | T3 | S2-S7 | inline | done | bf70d58 |
 | T4 | S9, S10 | inline | done, verified | f3b94a6 |
-| T5 | S5, S11 | inline | done | (this commit) |
+| T5 | S5, S11 | inline | done | ac6bf4c |
 
 - T1: pure helpers in `lib/games/files.ts` — nest a flat listing into a sorted tree, and classify a path into code (with a highlighter language), image, audio, video or binary.
 - T2: owner-scoped route handlers `GET /api/games/[id]/files` (tree) and `GET /api/games/[id]/files/content?path=` (text content), with size cap and binary detection. Risk item 2 (auth/access control).
