@@ -18,7 +18,20 @@ import { docToText, mentionedPaths, textToDoc } from "@/lib/games/mention-doc"
  * is too dark to read on the composer.
  */
 export const MENTION_CHIP_CLASS =
-  "rounded-md bg-primary/15 px-1 py-0.5 text-primary [box-decoration-break:clone] dark:bg-primary/25 dark:text-[color-mix(in_oklch,var(--primary),white_45%)]"
+  "cursor-pointer rounded-md bg-primary/15 px-1 py-0.5 text-primary [box-decoration-break:clone] hover:bg-primary/25 dark:bg-primary/25 dark:text-[color-mix(in_oklch,var(--primary),white_45%)] dark:hover:bg-primary/35"
+
+/**
+ * The editable element itself, styled as the text area it replaced — the same
+ * classes `Textarea` and `InputGroupTextarea` gave it, so the composer looks
+ * exactly as before. It carries the input group's control slot because it is
+ * what takes focus, and the group draws its focus ring from that slot's
+ * `:focus-visible`. The placeholder is drawn from the empty first paragraph,
+ * which is where Tiptap marks it. Unlike a text area, a div inherits its
+ * page's text alignment and wrapping — the new-game screen centres and
+ * balances its text — so both are set back to a text area's own.
+ */
+const EDITOR_CLASS =
+  "min-h-16 max-h-48 w-full overflow-y-auto px-2.5 py-3 text-start text-wrap text-base break-words whitespace-pre-wrap outline-none md:text-sm [&[contenteditable=false]]:cursor-not-allowed [&[contenteditable=false]]:opacity-50 [&_p.is-editor-empty:first-child]:before:pointer-events-none [&_p.is-editor-empty:first-child]:before:float-left [&_p.is-editor-empty:first-child]:before:h-0 [&_p.is-editor-empty:first-child]:before:text-muted-foreground [&_p.is-editor-empty:first-child]:before:content-[attr(data-placeholder)]"
 
 type ComposerEditor = {
   value: string
@@ -29,6 +42,8 @@ type ComposerEditor = {
   suggestion: Omit<SuggestionOptions, "editor">
   /** Paths `@path` may turn into chips when text is written in from outside. */
   knownPaths: readonly string[] | null
+  /** Opens a chip's file in the side panel; without it a chip is not clickable. */
+  onOpenFile?: (path: string) => void
 }
 
 /**
@@ -48,11 +63,12 @@ export function useComposerEditor({
   disabled,
   suggestion,
   knownPaths,
+  onOpenFile,
 }: ComposerEditor) {
   const emitted = useRef(value)
-  const latest = useRef({ onValueChange, onSubmit, knownPaths })
+  const latest = useRef({ onValueChange, onSubmit, knownPaths, onOpenFile })
   useLayoutEffect(() => {
-    latest.current = { onValueChange, onSubmit, knownPaths }
+    latest.current = { onValueChange, onSubmit, knownPaths, onOpenFile }
   })
 
   const editor = useEditor({
@@ -63,6 +79,14 @@ export function useComposerEditor({
         role: "textbox",
         "aria-multiline": "true",
         "aria-label": placeholder,
+        "data-slot": "input-group-control",
+        class: EDITOR_CLASS,
+      },
+      /** A chip in the message being written opens its file, as a sent one does. */
+      handleClickOn(_view, _pos, node) {
+        if (node.type.name !== "mention" || !latest.current.onOpenFile) return false
+        latest.current.onOpenFile(node.attrs.id as string)
+        return true
       },
     },
     content: textToDoc(value, new Set()),

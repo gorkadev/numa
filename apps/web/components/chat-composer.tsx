@@ -94,6 +94,8 @@ type ChatComposerProps = {
    * chosen is written into the message as its path. Without it, `@` is text.
    */
   loadMentionFiles?: MentionFilesLoader
+  /** Opens a mentioned file in the side panel when its chip is clicked. */
+  onOpenFile?: (path: string) => void
 }
 
 /** Shared controlled composer for the home screen and active chat thread. */
@@ -114,6 +116,7 @@ export function ChatComposer({
   usageSlot,
   improverMode,
   loadMentionFiles,
+  onOpenFile,
 }: ChatComposerProps) {
   const t = useTranslations("GameComposer")
   const format = useFormatter()
@@ -175,6 +178,7 @@ export function ChatComposer({
     disabled: textareaDisabled,
     suggestion: mentions.suggestion,
     knownPaths: mentions.files,
+    onOpenFile,
   })
 
   /**
@@ -229,16 +233,15 @@ export function ChatComposer({
       <div className="flex w-full flex-col">
         {tasksSlot}
         <InputGroup>
+          {/**
+           * The editor only exists after hydration, so the wrapper holds the
+           * text area's resting height meanwhile and the composer does not
+           * grow under the reader on load.
+           */}
           <EditorContent
             editor={editor}
-            data-slot="input-group-control"
-            aria-disabled={textareaDisabled || undefined}
-            /**
-             * Laid out as the text area it replaces: three lines tall at rest,
-             * scrolling past twelve. The placeholder is drawn from the empty
-             * first paragraph, which is where Tiptap marks it.
-             */
-            className="max-h-48 min-h-21 w-full flex-1 cursor-text overflow-y-auto px-2.5 py-3 text-base aria-disabled:cursor-not-allowed aria-disabled:opacity-50 md:text-sm [&_.ProseMirror]:min-h-full [&_.ProseMirror]:break-words [&_.ProseMirror]:whitespace-pre-wrap [&_.ProseMirror]:outline-none [&_p.is-editor-empty:first-child]:before:pointer-events-none [&_p.is-editor-empty:first-child]:before:float-left [&_p.is-editor-empty:first-child]:before:h-0 [&_p.is-editor-empty:first-child]:before:text-muted-foreground [&_p.is-editor-empty:first-child]:before:content-[attr(data-placeholder)]"
+            data-slot="composer-editor"
+            className="flex min-h-16 w-full min-w-0 flex-1 flex-col"
           />
           {mentions.open ? (
             <div

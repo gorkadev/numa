@@ -318,6 +318,7 @@ export function ChatThread({
           templateId={templateId}
           improverMode="change"
           loadMentionFiles={loadMentionFiles}
+          onOpenFile={onOpenFile}
           autoFocus
           pending={pending}
           placeholder={t("placeholder")}
