@@ -24,7 +24,7 @@ import {
   TEMPLATE_ASSET_LOCK_PATH,
   type AssetLock,
 } from "../lib/games/templates/asset-lock"
-import { parseTemplateManifest, TEMPLATE_MANIFEST_PATH } from "../lib/games/templates/seed"
+import { parseTemplateManifest, TEMPLATE_MANIFEST_PATH, undeclaredAssetPaths } from "../lib/games/templates/seed"
 
 const BUCKET = "numa-template-assets"
 const WRANGLER = "wrangler@4.153.0"
@@ -86,6 +86,10 @@ async function validateMirror(files: Map<string, Buffer>): Promise<void> {
   }
   for (const asset of manifest.sharedAssets ?? []) {
     if (!files.has(asset.path)) problems.push(`missing shared asset ${asset.path}`)
+  }
+
+  for (const undeclared of undeclaredAssetPaths(manifest, files.keys())) {
+    problems.push(`${undeclared} is not declared in ${TEMPLATE_MANIFEST_PATH}`)
   }
 
   if (problems.length) throw new Error(`Template ${template} assets are invalid:\n- ${problems.join("\n- ")}`)

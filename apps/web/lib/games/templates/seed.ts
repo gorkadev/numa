@@ -250,6 +250,20 @@ export function parseTemplateManifest(contents: Buffer): TemplateManifest {
   return result.data
 }
 
+/**
+ * Asset files the manifest does not account for. Every file shipped to a
+ * sandbox must be explained by the manifest, or the agent sees files it was
+ * never told about.
+ */
+export function undeclaredAssetPaths(manifest: TemplateManifest, paths: Iterable<string>): string[] {
+  const declared = new Set<string | undefined>([
+    ...manifest.models.flatMap((model) => [model.path, model.bufferPath, model.atlasPath]),
+    ...(manifest.sharedAssets?.map((asset) => asset.path) ?? []),
+    manifest.licenseEvidence?.path,
+  ])
+  return [...paths].filter((candidate) => !declared.has(candidate)).sort()
+}
+
 function seedFileMap(seed: RuntimeSeed): Map<string, Buffer> {
   return new Map(seed.files.map(({ relativePath, contents }) => [relativePath, contents]))
 }
@@ -326,6 +340,11 @@ function validateTemplateContract(
   // Locked assets are checked by path only; their bytes stay in object storage.
   for (const declaredPath of declaredPaths) {
     if (declaredPath && !lock?.files[declaredPath]) requireSeedFile(mergedFiles, declaredPath)
+  }
+
+  const undeclared = undeclaredAssetPaths(manifest, Object.keys(lock?.files ?? {}))
+  if (undeclared.length) {
+    throw new Error(`Template preflight failed: undeclared assets ${undeclared.join(", ")}`)
   }
 
   for (const [vendorPath, provenance] of Object.entries(manifest.provenance.three)) {

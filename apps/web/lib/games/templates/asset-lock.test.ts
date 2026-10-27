@@ -69,3 +69,28 @@ test("fetchLockedAssets fails loudly when a blob is missing", async () => {
     /Template asset assets\/kit\/A.gltf could not be downloaded: HTTP 404/
   )
 })
+
+test("fetchLockedAssets stops the remaining downloads once one fails", async () => {
+  const files = { "assets/a": Buffer.from("a"), "assets/b": Buffer.from("b"), "assets/c": Buffer.from("c") }
+  const lock = lockFor(files)
+  const requested: string[] = []
+  let slowSignal: AbortSignal | undefined
+
+  const failing = (async (input: string | URL | Request, init?: RequestInit) => {
+    const hash = String(input).slice(String(input).lastIndexOf("/") + 1)
+    requested.push(hash)
+    if (hash === sha256(files["assets/a"])) return new Response("missing", { status: 404 })
+    slowSignal = init?.signal ?? undefined
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    return new Response(new Uint8Array(files["assets/b"]))
+  }) as typeof fetch
+
+  await assert.rejects(
+    fetchLockedAssets(lock, { baseUrl: "https://cdn.example", fetch: failing, concurrency: 2 }),
+    /assets\/a could not be downloaded: HTTP 404/
+  )
+  await new Promise((resolve) => setTimeout(resolve, 40))
+
+  assert.equal(slowSignal?.aborted, true)
+  assert.ok(!requested.includes(sha256(files["assets/c"])), "no new download starts after a failure")
+})

@@ -94,22 +94,35 @@ export async function fetchLockedAssets(
   const entries = Object.entries(lock.files)
   const files: RuntimeSeedFile[] = []
   const root = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`
+  // The first failure already decides the outcome, so it cancels the rest.
+  const controller = new AbortController()
   let next = 0
 
-  async function worker() {
-    while (next < entries.length) {
-      const [relativePath, expected] = entries[next++]!
-      const response = await fetchBlob(new URL(assetBlobKey(expected.sha256), root).toString())
-      if (!response.ok) {
-        throw new Error(`Template asset ${relativePath} could not be downloaded: HTTP ${response.status}`)
-      }
+  async function download(relativePath: string, expected: AssetLock["files"][string]) {
+    const response = await fetchBlob(new URL(assetBlobKey(expected.sha256), root).toString(), {
+      signal: controller.signal,
+    })
+    if (!response.ok) {
+      throw new Error(`Template asset ${relativePath} could not be downloaded: HTTP ${response.status}`)
+    }
 
-      const contents = Buffer.from(await response.arrayBuffer())
-      const actual = createHash("sha256").update(contents).digest("hex")
-      if (contents.length !== expected.size || actual !== expected.sha256) {
-        throw new Error(`Template asset ${relativePath} does not match its lock`)
+    const contents = Buffer.from(await response.arrayBuffer())
+    const actual = createHash("sha256").update(contents).digest("hex")
+    if (contents.length !== expected.size || actual !== expected.sha256) {
+      throw new Error(`Template asset ${relativePath} does not match its lock`)
+    }
+    files.push({ relativePath, contents })
+  }
+
+  async function worker() {
+    while (next < entries.length && !controller.signal.aborted) {
+      const [relativePath, expected] = entries[next++]!
+      try {
+        await download(relativePath, expected)
+      } catch (error) {
+        controller.abort()
+        throw error
       }
-      files.push({ relativePath, contents })
     }
   }
 
