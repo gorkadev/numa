@@ -529,11 +529,7 @@ export function CommandPalette({
                     <CommandItem
                       value={t("signOut")}
                       keywords={["log out", "logout", settings("signOut")]}
-                      className={
-                        signOutArmed
-                          ? "text-destructive data-selected:text-destructive data-selected:*:[svg]:text-destructive"
-                          : undefined
-                      }
+                      variant={signOutArmed ? "destructive" : "default"}
                       onSelect={() => {
                         if (!signOutArmed) {
                           setSignOutArmed(true)
