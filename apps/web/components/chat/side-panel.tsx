@@ -591,6 +591,7 @@ export function SidePanel({
               reloadKey={reloadKey}
               onPhaseChange={onPreviewPhaseChange}
               onRetry={requestReload}
+              startGate
             />
           ) : null}
           {activeTab === "agents" && hasRuns ? (
