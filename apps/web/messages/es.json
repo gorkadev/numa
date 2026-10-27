@@ -132,6 +132,9 @@
     "efforts": { "minimal": "Mínimo", "low": "Bajo", "medium": "Medio", "high": "Alto" },
     "previewTab": "Vista previa",
     "agentsTab": "Agentes",
+    "filesTab": "Archivos",
+    "showFiles": "Mostrar archivos",
+    "hideFiles": "Ocultar archivos",
     "selectRun": "Selecciona una ejecución para ver sus detalles.",
     "resizeSidePanel": "Cambiar el ancho del panel lateral",
     "sidePanel": "Panel lateral",
@@ -173,6 +176,21 @@
     "showLess": "Mostrar menos",
     "hidePreview": "Ocultar la vista previa",
     "showPreview": "Mostrar la vista previa"
+  },
+  "ChatFiles": {
+    "startingSandbox": "Arrancando el sandbox…",
+    "treeFailed": "No se pudieron cargar los archivos del juego.",
+    "loadingFile": "Cargando {name}…",
+    "loadFailed": "No se pudo cargar este archivo.",
+    "retry": "Reintentar",
+    "empty": "Todavía no hay archivos.",
+    "selectFile": "Selecciona un archivo para ver su contenido.",
+    "missing": "Este archivo ya no existe.",
+    "back": "Volver a los archivos",
+    "binary": "Este archivo no se puede previsualizar.",
+    "tooLarge": "Este archivo es demasiado grande para previsualizarlo.",
+    "restPose": "Pose de reposo",
+    "animation": "Animación"
   },
   "GamePreview": {
     "startingPreview": "Iniciando la vista previa…",

@@ -89,6 +89,7 @@ export default async function GamePage({
         isTemplateId(game.templateId) ? game.templateId : DEFAULT_TEMPLATE_ID
       }
       previewToken={previewToken}
+      lastTurnFinishedAt={game.lastTurnFinishedAt?.getTime() ?? 0}
       initialMessages={game.messages}
       initialSessions={initialSessions}
       initialPrompt={initialPrompt}

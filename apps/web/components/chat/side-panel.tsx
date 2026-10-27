@@ -29,6 +29,7 @@ import { useIsMobile } from "@workspace/ui/hooks/use-mobile"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { ChatPreviewBody, type PreviewPhase } from "@/components/chat-preview"
+import { FilesTabBody } from "@/components/chat/files-tab"
 import {
   SubagentPanelBody,
   SubagentRunRow,
@@ -39,7 +40,7 @@ import type { SubagentRunRecord } from "@/lib/games/harness/records"
 
 import { filterAgentRuns, type AgentRunFilter } from "./agent-run-filter"
 
-export type SidePanelTab = "preview" | "agents"
+export type SidePanelTab = "preview" | "agents" | "files"
 
 function AgentRunFilterControl({ value, onChange }: {
   value: AgentRunFilter
@@ -249,6 +250,8 @@ export type SidePanelProps = {
   /** Lazy-mount flag for the preview frame, owned by `game-chat.tsx` for the same reason it owned it before 10c: see that file's comment on `previewMounted`. */
   previewMounted: boolean
   revision: number
+  /** The version the Files tab reads at — `game-chat.tsx` derives it from `revision` and the last finished turn. */
+  filesVersion: number
   subagentRuns: SubagentRunRecord[]
   selectedRunId: string | null
   onSelectRun: (agentId: string | null) => void
@@ -294,6 +297,7 @@ export function SidePanel({
   previewToken,
   previewMounted,
   revision,
+  filesVersion,
   subagentRuns,
   selectedRunId,
   onSelectRun,
@@ -319,6 +323,8 @@ export function SidePanel({
   const [reloadKey, setReloadKey] = useState(0)
   const reloadInFlightRef = useRef(false)
   const [previewPhase, setPreviewPhase] = useState<PreviewPhase>("starting")
+  /** Kept here rather than in the Files tab, which unmounts while another tab is shown, so coming back reopens the same file. */
+  const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null)
 
   const requestReload = useCallback(() => {
     if (reloadInFlightRef.current) return
@@ -493,6 +499,19 @@ export function SidePanel({
                 )}
               </button>
             ) : null}
+            {previewToken ? (
+              <button
+                type="button"
+                role="tab"
+                id="side-panel-tab-files"
+                aria-selected={activeTab === "files"}
+                aria-controls="side-panel-panel-files"
+                className={tabTriggerClassName}
+                onClick={() => onActiveTabChange("files")}
+              >
+                {t("filesTab")}
+              </button>
+            ) : null}
           </div>
           <div className="flex shrink-0 items-center gap-1">
             {activeTab === "preview" && previewToken ? (
@@ -573,6 +592,22 @@ export function SidePanel({
                 records={subagentRuns}
                 selectedRunId={selectedRunId}
                 onSelectRun={onSelectRun}
+              />
+            </div>
+          ) : null}
+          {activeTab === "files" && previewToken ? (
+            <div
+              id="side-panel-panel-files"
+              role="tabpanel"
+              aria-labelledby="side-panel-tab-files"
+              className="@container flex h-full min-h-0 flex-col"
+            >
+              <FilesTabBody
+                gameId={gameId}
+                previewToken={previewToken}
+                version={filesVersion}
+                selectedPath={selectedFilePath}
+                onSelectPath={setSelectedFilePath}
               />
             </div>
           ) : null}

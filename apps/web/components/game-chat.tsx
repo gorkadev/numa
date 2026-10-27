@@ -3,7 +3,7 @@
 import { useRef, useState } from "react"
 
 import type { UIMessage } from "ai"
-import { BotIcon, PanelRightIcon } from "@hugeicons/core-free-icons"
+import { BotIcon, Folder01Icon, PanelRightIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useTranslations } from "next-intl"
 import { Button } from "@workspace/ui/components/button"
@@ -32,6 +32,7 @@ export function GameChat({
   pinned = false,
   templateId,
   previewToken,
+  lastTurnFinishedAt = 0,
   initialMessages,
   initialSessions,
   initialPrompt,
@@ -56,6 +57,12 @@ export function GameChat({
    * shown broken.
    */
   previewToken?: string
+  /**
+   * When the last turn finished, in epoch ms (0 for none) — the Files tab's
+   * version on a fresh page load, before any turn in this session has
+   * reported a `revision` of its own.
+   */
+  lastTurnFinishedAt?: number
   initialMessages: UIMessage[]
   initialSessions?: Record<
     string,
@@ -181,12 +188,16 @@ export function GameChat({
    */
   const previewAvailable = Boolean(previewToken)
   const agentsAvailable = hasSubagentRuns
+  /** Files read the same sandbox the preview serves, so they exist exactly when it does. */
+  const filesAvailable = previewAvailable
   const effectiveTab: SidePanelTab | null =
     activeTab === "preview" && previewAvailable
       ? "preview"
       : activeTab === "agents" && agentsAvailable
         ? "agents"
-        : previewAvailable
+        : activeTab === "files" && filesAvailable
+          ? "files"
+          : previewAvailable
           ? "preview"
           : agentsAvailable
             ? "agents"
@@ -195,6 +206,14 @@ export function GameChat({
 
   const previewPressed = effectivePanelOpen && effectiveTab === "preview"
   const agentsPressed = effectivePanelOpen && effectiveTab === "agents"
+  const filesPressed = effectivePanelOpen && effectiveTab === "files"
+  /**
+   * `revision` is the `Date.now()` the agent stamps on a turn that changed
+   * files, but it starts at 0 on every page load. The last finished turn's
+   * time stands in until then, so a reload never reuses a cached read from
+   * before the turns it missed.
+   */
+  const filesVersion = revision || lastTurnFinishedAt
 
   return (
     <div ref={layoutRef} className="flex h-svh overflow-hidden">
@@ -258,6 +277,24 @@ export function GameChat({
               <span className="sr-only">{t("panelTitle")}</span>
             </Button>
           ) : null}
+          {filesAvailable ? (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              /**
+               * Desktop only: on a narrow viewport `SidePanel` is the
+               * preview `Drawer`, which has no Files tab to open onto.
+               */
+              className="aria-pressed:bg-muted aria-pressed:text-foreground max-md:hidden"
+              onClick={() => (filesPressed ? closePanel() : openPanel("files"))}
+              aria-pressed={filesPressed}
+            >
+              <HugeiconsIcon icon={Folder01Icon} strokeWidth={2} />
+              <span className="sr-only">
+                {filesPressed ? t("hideFiles") : t("showFiles")}
+              </span>
+            </Button>
+          ) : null}
           <GameMenu gameId={gameId} title={title} pinned={pinned} />
         </header>
         <ChatThread
@@ -282,6 +319,7 @@ export function GameChat({
         previewToken={previewToken}
         previewMounted={previewMounted}
         revision={revision}
+        filesVersion={filesVersion}
         subagentRuns={subagentRuns}
         selectedRunId={selectedRunId}
         onSelectRun={setSelectedRunId}

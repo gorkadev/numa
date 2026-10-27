@@ -7,6 +7,7 @@ import { db } from "@workspace/db"
 import { games } from "@workspace/db/schema"
 import { eq } from "drizzle-orm"
 
+import { GAME_DIR } from "@/lib/games/game-path"
 import { readGameSeed } from "@/lib/games/templates/seed"
 
 import { daytona } from "./client"
@@ -20,12 +21,7 @@ import { daytona } from "./client"
  */
 export type SandboxResult = { sandbox: Sandbox }
 
-/**
- * Where the generated game lives inside the sandbox. Daytona's default user is
- * `daytona`, so this is that user's home — writable without escalation, and the
- * directory a preview server would be pointed at later.
- */
-export const GAME_DIR = "/home/daytona/game"
+export { GAME_DIR }
 
 /**
  * Label every sandbox this app creates carries, holding the id of the game it
@@ -239,6 +235,15 @@ export async function getGameSandbox(gameId: string): Promise<SandboxResult> {
   }
 
   return resumeSandbox(await daytona.get(game.sandboxId))
+}
+
+/**
+ * Resumes an existing sandbox by id, without provisioning one and without
+ * the static server `startGameServer` also ensures — for a caller that only
+ * reads files, that health check is a process exec it never needs.
+ */
+export async function resumeGameSandbox(sandboxId: string): Promise<SandboxResult> {
+  return resumeSandbox(await daytona.get(sandboxId))
 }
 
 /**
