@@ -1,10 +1,12 @@
 import {
   AnimationMixer,
   Box3,
+  Line,
   LoadingManager,
   Mesh,
   PerspectiveCamera,
   PMREMGenerator,
+  Points,
   Scene,
   Sphere,
   Texture,
@@ -56,7 +58,6 @@ export async function mountModelScene(
   const renderer = new WebGLRenderer({ antialias: true, alpha: true })
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
   renderer.domElement.className = "block size-full touch-none"
-  container.appendChild(renderer.domElement)
 
   const scene = new Scene()
   const pmrem = new PMREMGenerator(renderer)
@@ -83,6 +84,7 @@ export async function mountModelScene(
     camera.aspect = width / height
     camera.updateProjectionMatrix()
   }
+  container.appendChild(renderer.domElement)
   const observer = new ResizeObserver(resize)
   observer.observe(container)
   resize()
@@ -109,7 +111,7 @@ export async function mountModelScene(
       controls.dispose()
       mixer.stopAllAction()
       model.traverse((object) => {
-        if (!(object instanceof Mesh)) return
+        if (!(object instanceof Mesh || object instanceof Line || object instanceof Points)) return
         object.geometry.dispose()
         const materials: Material[] = Array.isArray(object.material) ? object.material : [object.material]
         for (const material of materials) {
@@ -121,6 +123,8 @@ export async function mountModelScene(
       })
       environment.dispose()
       renderer.dispose()
+      /** Frees the GL context now rather than at garbage collection, so clicking through models never hits the browser's context limit. */
+      renderer.forceContextLoss()
       renderer.domElement.remove()
     },
   }
