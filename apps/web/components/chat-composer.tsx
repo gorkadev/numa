@@ -3,10 +3,8 @@
 import {
   useEffect,
   useId,
-  useRef,
   useState,
   type FormEvent,
-  type KeyboardEvent,
   type ReactNode,
 } from "react"
 import { useFormatter, useTranslations } from "next-intl"
@@ -24,7 +22,6 @@ import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
-  InputGroupTextarea,
 } from "@workspace/ui/components/input-group"
 import { LiveWaveform } from "@workspace/ui/components/live-waveform"
 import { Kbd } from "@workspace/ui/components/kbd"
@@ -33,6 +30,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip"
+import { EditorContent } from "@tiptap/react"
+import { useComposerEditor } from "@/components/chat/use-composer-editor"
 import { useComposerShortcuts } from "@/components/chat/use-composer-shortcuts"
 import { useFileMentions, type MentionFilesLoader } from "@/components/chat/use-file-mentions"
 import { usePromptImprover } from "@/components/chat/use-prompt-improver"
@@ -165,15 +164,17 @@ export function ChatComposer({
     templatePickerAvailable, start, stop, discard, setModelOpen, setTemplateOpen,
   })
 
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const mentionListId = useId()
   const textareaDisabled = pending || active || improver.improving
-  const mentions = useFileMentions({
-    load: loadMentionFiles,
+  const mentions = useFileMentions(loadMentionFiles, mentionListId)
+  const editor = useComposerEditor({
     value,
-    setValue: replaceValue,
-    textareaRef,
-    listId: mentionListId,
+    onValueChange: replaceValue,
+    onSubmit: submit,
+    placeholder: placeholder ?? t("placeholder"),
+    disabled: textareaDisabled,
+    suggestion: mentions.suggestion,
+    knownPaths: mentions.files,
   })
 
   /**
@@ -195,8 +196,8 @@ export function ChatComposer({
         focused.closest('[role="dialog"], [role="menu"]'))
     )
       return
-    textareaRef.current?.focus()
-  }, [autoFocus, textareaDisabled])
+    editor?.commands.focus("end")
+  }, [autoFocus, textareaDisabled, editor])
 
   const trimmed = value.trim()
   const stoppable = pending && Boolean(onStop)
@@ -223,45 +224,21 @@ export function ChatComposer({
     submit()
   }
 
-  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (mentions.handleKeyDown(event)) return
-    if (
-      event.key !== "Enter" ||
-      event.shiftKey ||
-      event.nativeEvent.isComposing
-    )
-      return
-    event.preventDefault()
-    submit()
-  }
-
   return (
     <form onSubmit={handleSubmit} className="flex w-full flex-col">
       <div className="flex w-full flex-col">
         {tasksSlot}
         <InputGroup>
-          <InputGroupTextarea
-            className="max-h-48 resize-none overflow-y-auto py-3"
-            ref={textareaRef}
-            name="prompt"
-            rows={3}
-            value={value}
-            disabled={textareaDisabled}
-            placeholder={placeholder ?? t("placeholder")}
-            onChange={(event) => {
-              replaceValue(event.target.value)
-              mentions.track(event.target.value, event.target)
-            }}
-            onSelect={(event) => mentions.track(event.currentTarget.value, event.currentTarget)}
-            onBlur={mentions.close}
-            onKeyDown={handleKeyDown}
-            aria-autocomplete={loadMentionFiles ? "list" : undefined}
-            aria-controls={mentions.open ? mentionListId : undefined}
-            aria-activedescendant={
-              mentions.open && mentions.matches.length > 0
-                ? `${mentionListId}-${mentions.index}`
-                : undefined
-            }
+          <EditorContent
+            editor={editor}
+            data-slot="input-group-control"
+            aria-disabled={textareaDisabled || undefined}
+            /**
+             * Laid out as the text area it replaces: three lines tall at rest,
+             * scrolling past twelve. The placeholder is drawn from the empty
+             * first paragraph, which is where Tiptap marks it.
+             */
+            className="max-h-48 min-h-21 w-full flex-1 cursor-text overflow-y-auto px-2.5 py-3 text-base aria-disabled:cursor-not-allowed aria-disabled:opacity-50 md:text-sm [&_.ProseMirror]:min-h-full [&_.ProseMirror]:break-words [&_.ProseMirror]:whitespace-pre-wrap [&_.ProseMirror]:outline-none [&_p.is-editor-empty:first-child]:before:pointer-events-none [&_p.is-editor-empty:first-child]:before:float-left [&_p.is-editor-empty:first-child]:before:h-0 [&_p.is-editor-empty:first-child]:before:text-muted-foreground [&_p.is-editor-empty:first-child]:before:content-[attr(data-placeholder)]"
           />
           {mentions.open ? (
             <div

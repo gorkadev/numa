@@ -18,8 +18,8 @@ Branch: `feat/composer-mentions`. Delivery: ask-on-risk. Tests: `tsx --test <fil
 
 | ID | Specs | Route | Status | Commit |
 | -- | ----- | ----- | ------ | ------ |
-| T1 | S1-S4 | inline | done (textarea version) | pending |
-| T2 | S1, S2, S5 | inline | todo — Tiptap editor + chips in the composer | |
+| T1 | S1-S4 | inline | done (textarea version) | cf59d0e |
+| T2 | S1, S2, S5 | inline | done, browser-checked — Tiptap editor + chips in the composer | see log |
 | T3 | S6 | inline | todo — chips in sent messages open the Files tab | |
 
 ## Log
@@ -28,3 +28,4 @@ Branch: `feat/composer-mentions`. Delivery: ask-on-risk. Tests: `tsx --test <fil
 - L2 — "vale si, vamos poco a poco": plain-text version first (full path inserted). Built and browser-checked.
 - L3 — user asked for chips (S5), click-to-open (S6), all results with scroll + fade (S3), list over the `@` (S4). S3/S4 built and browser-checked (75 gltf results, list over a third-line `@`).
 - L4 — "vamos con tiptap sin problemas si"; tree approved: `InputGroup` > editor (`data-slot="input-group-control"`) + addon; mention list stays in the composer's React tree, anchored at Tiptap's `clientRect`.
+- L5 — T2: Tiptap 3.32.0 (document, paragraph, text, mention, suggestion, extensions). Editor keeps a plain-text contract (`lib/games/mention-doc.ts`). Enter keymap needed priority 100.5 (between Mention 101 and core keymap 100): at 50, core split the paragraph. Browser: chip shown as file name, Enter/Tab choose, Shift+Enter new line, empty Enter sends nothing, Backspace removes chip whole. Not exercised live: outside writes (dictation/improver/clear after send) — covered by `textToDoc` round-trip tests only. Risk: item 5 (new dependencies).

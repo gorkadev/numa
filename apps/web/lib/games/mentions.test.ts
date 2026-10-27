@@ -2,25 +2,7 @@ import assert from "node:assert/strict"
 import test from "node:test"
 
 import type { FileTreeNode } from "./files"
-import { activeMention, insertMention, mentionFiles, rankMentions } from "./mentions"
-
-test("an @ at the start or after whitespace opens a mention with the text typed after it", () => {
-  assert.deepEqual(activeMention("@gu", 3), { start: 0, query: "gu" })
-  assert.deepEqual(activeMention("Usa @gun", 8), { start: 4, query: "gun" })
-  assert.deepEqual(activeMention("Usa @", 5), { start: 4, query: "" })
-  assert.deepEqual(activeMention("a\n@src/ma", 9), { start: 2, query: "src/ma" })
-})
-
-test("an @ inside a word, a finished mention, or a caret before the @ opens nothing", () => {
-  assert.equal(activeMention("me@mail.com", 11), null)
-  assert.equal(activeMention("Usa @gun ahora", 14), null)
-  assert.equal(activeMention("Usa @gun", 3), null)
-  assert.equal(activeMention("", 0), null)
-})
-
-test("only the text up to the caret counts as the query", () => {
-  assert.deepEqual(activeMention("Usa @gun", 6), { start: 4, query: "g" })
-})
+import { mentionFiles, rankMentions } from "./mentions"
 
 test("the file list is every file in the tree, folders left out", () => {
   const tree: FileTreeNode[] = [
@@ -54,15 +36,4 @@ test("every match is listed, with no cap, and an empty query lists every file in
 
   assert.equal(rankMentions(paths, "gltf").length, 40)
   assert.deepEqual(rankMentions(paths, ""), paths)
-})
-
-test("choosing a file replaces the typed mention with its full path and leaves the caret after one space", () => {
-  assert.deepEqual(insertMention("Usa @gu como arma", { start: 4, query: "gu" }, "assets/gun.glb"), {
-    value: "Usa @assets/gun.glb como arma",
-    caret: 20,
-  })
-  assert.deepEqual(insertMention("@", { start: 0, query: "" }, "index.html"), {
-    value: "@index.html ",
-    caret: 12,
-  })
 })

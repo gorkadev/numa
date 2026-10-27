@@ -1,129 +1,144 @@
 "use client"
 
-import { useRef, useState, type KeyboardEvent, type RefObject } from "react"
+import { useLayoutEffect, useRef, useState } from "react"
+import type { SuggestionOptions, SuggestionProps } from "@tiptap/suggestion"
 
-import { caretPosition } from "@/components/chat/caret-position"
-import { activeMention, insertMention, rankMentions, type ActiveMention } from "@/lib/games/mentions"
+import { mentionLabel } from "@/lib/games/mention-doc"
+import { rankMentions } from "@/lib/games/mentions"
 
 /** Fetches the game's file paths; called once each time a mention opens. */
 export type MentionFilesLoader = (signal: AbortSignal) => Promise<string[]>
 
-type FileMentions = {
-  load?: MentionFilesLoader
-  value: string
-  setValue: (value: string) => void
-  textareaRef: RefObject<HTMLTextAreaElement | null>
-  /** The list's id; each option's id is it plus the option's index. */
-  listId: string
+type MentionCommand = (attrs: { id: string; label: string }) => void
+
+type OpenMention = {
+  /** Where the `@` sits in the document; an Escape is remembered against it. */
+  from: number
+  query: string
+  /** The `@`'s top-left, relative to the editor's positioned ancestor. */
+  anchor: { top: number; left: number }
+  command: MentionCommand
 }
 
 /**
- * The `@` file picker's state, kept beside the text area rather than in it:
- * the text stays plain, and a chosen file lands in it as its full path, which
- * is all the agent needs to open it with its own tools.
+ * The `@` file picker's state, fed by the editor's mention suggestion. The
+ * list itself is rendered by the composer, in its own React tree, rather than
+ * mounted by the suggestion plugin, so it keeps the composer's translations,
+ * theme and tests.
  *
  * The listing is fetched as a mention opens, not on every keystroke — the
  * query only filters what is already here — and the previous listing stays on
  * screen while a fresh one arrives, since a turn changes a file or two at most.
  */
-export function useFileMentions({ load, value, setValue, textareaRef, listId }: FileMentions) {
-  const [caret, setCaret] = useState<number | null>(null)
+export function useFileMentions(load: MentionFilesLoader | undefined, listId: string) {
   const [files, setFiles] = useState<string[] | null>(null)
+  const [mention, setMention] = useState<OpenMention | null>(null)
   const [dismissed, setDismissed] = useState<number | null>(null)
   const [highlight, setHighlight] = useState({ key: "", index: 0 })
-  const [anchor, setAnchor] = useState({ top: 0, left: 0 })
-  const request = useRef<AbortController | null>(null)
 
-  const mention = load && caret !== null ? activeMention(value, caret) : null
-  const open = Boolean(mention && mention.start !== dismissed)
+  const open = Boolean(mention && mention.from !== dismissed)
   const matches = open && files ? rankMentions(files, mention!.query) : []
-  const key = mention ? `${mention.start}:${mention.query}` : ""
+  const key = mention ? `${mention.from}:${mention.query}` : ""
   const index = highlight.key === key ? Math.min(highlight.index, Math.max(matches.length - 1, 0)) : 0
 
-  function refresh() {
-    if (!load) return
-    request.current?.abort()
-    const controller = new AbortController()
-    request.current = controller
-    load(controller.signal)
-      .then((paths) => {
-        if (!controller.signal.aborted) setFiles(paths)
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) setFiles((current) => current ?? [])
-      })
-  }
-
-  /**
-   * Called with the text area's text and caret after every change, click or
-   * arrow key. A mention that just opened fetches the listing; one that
-   * closed forgets an Escape, so the next `@` opens again.
-   */
-  function track(nextValue: string, element: HTMLTextAreaElement) {
-    const nextCaret =
-      element.selectionStart === element.selectionEnd ? element.selectionStart : null
-    const next = load && nextCaret !== null ? activeMention(nextValue, nextCaret) : null
-    if (next && (!mention || next.start !== mention.start)) refresh()
-    if (!next) setDismissed(null)
-    else setAnchor(anchorOf(element, next.start))
-    setCaret(nextCaret)
-  }
-
   function choose(path: string) {
-    if (!mention) return
-    const next = insertMention(value, mention, path)
-    setValue(next.value)
-    setCaret(next.caret)
-    requestAnimationFrame(() => {
-      textareaRef.current?.focus()
-      textareaRef.current?.setSelectionRange(next.caret, next.caret)
-    })
+    mention?.command({ id: path, label: mentionLabel(path) })
   }
 
   /** Takes the keys the open list needs; returns whether it took this one. */
-  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (!open || event.nativeEvent.isComposing) return false
+  function handleKeyDown(event: KeyboardEvent) {
+    if (!open || event.isComposing) return false
     if (event.key === "Escape") {
-      setDismissed((mention as ActiveMention).start)
-    } else if (matches.length === 0) {
-      return false
-    } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      setDismissed(mention!.from)
+      return true
+    }
+    if (matches.length === 0) return false
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
       const step = event.key === "ArrowDown" ? 1 : -1
       const next = (index + step + matches.length) % matches.length
       setHighlight({ key, index: next })
       // Only the arrow keys scroll: a pointer is already over what it highlights.
       document.getElementById(`${listId}-${next}`)?.scrollIntoView({ block: "nearest" })
-    } else if ((event.key === "Enter" && !event.shiftKey) || event.key === "Tab") {
-      choose(matches[index]!)
-    } else {
-      return false
+      return true
     }
-    event.preventDefault()
-    return true
+    if ((event.key === "Enter" && !event.shiftKey) || event.key === "Tab") {
+      choose(matches[index]!)
+      return true
+    }
+    return false
   }
 
+  /**
+   * The suggestion plugin outlives renders, so it reaches the latest loader
+   * and key handler through a ref, synced after each render.
+   */
+  const latest = useRef({ load, handleKeyDown })
+  useLayoutEffect(() => {
+    latest.current = { load, handleKeyDown }
+  })
+
+  const [suggestion] = useState<Omit<SuggestionOptions, "editor">>(() => {
+    let request: AbortController | null = null
+
+    function refresh() {
+      const loader = latest.current.load
+      if (!loader) return
+      request?.abort()
+      const controller = new AbortController()
+      request = controller
+      loader(controller.signal)
+        .then((paths) => {
+          if (!controller.signal.aborted) setFiles(paths)
+        })
+        .catch(() => {
+          if (!controller.signal.aborted) setFiles((current) => current ?? [])
+        })
+    }
+
+    function track(props: SuggestionProps) {
+      const rect = props.clientRect?.()
+      const parent = props.editor.view.dom.offsetParent?.getBoundingClientRect()
+      setMention({
+        from: props.range.from,
+        query: props.query,
+        anchor:
+          rect && parent
+            ? { top: rect.top - parent.top, left: rect.left - parent.left }
+            : { top: 0, left: 0 },
+        command: props.command as MentionCommand,
+      })
+    }
+
+    return {
+      char: "@",
+      allow: () => Boolean(latest.current.load),
+      items: () => [],
+      render: () => ({
+        onStart(props) {
+          refresh()
+          track(props)
+        },
+        onUpdate: track,
+        onKeyDown: ({ event }) => latest.current.handleKeyDown(event),
+        onExit() {
+          setMention(null)
+          setDismissed(null)
+        },
+      }),
+    }
+  })
+
   return {
+    suggestion,
     open,
-    anchor,
+    anchor: mention?.anchor ?? { top: 0, left: 0 },
     query: mention?.query ?? "",
     loading: open && files === null,
+    files,
     matches,
     index,
-    track,
     choose,
     /** Pointing at a file highlights it, so Enter and a click agree on which one. */
     highlightAt: (at: number) => setHighlight({ key, index: at }),
-    close: () => setCaret(null),
-    handleKeyDown,
   }
-}
-
-/**
- * The top-left of a mention's `@`, in the coordinates of the text area's
- * offset parent — the input group the list is positioned in — so the list
- * opens over the mention, on whatever line it was typed.
- */
-function anchorOf(textarea: HTMLTextAreaElement, start: number) {
-  const { top, left } = caretPosition(textarea, start)
-  return { top: textarea.offsetTop + top, left: textarea.offsetLeft + left }
 }

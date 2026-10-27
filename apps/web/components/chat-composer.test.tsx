@@ -44,18 +44,9 @@ test("the new-game composer still offers the template picker", () => {
   assert.doesNotMatch(html, /data-slot="locked-template"/)
 })
 
-test("a composer given a file loader offers @ mentions on its text area", () => {
-  const withMentions = renderToStaticMarkup(
-    <NextIntlClientProvider locale="en" timeZone="UTC" messages={en}>
-      <ChatComposer
-        value=""
-        onValueChange={() => {}}
-        onSubmit={() => {}}
-        loadMentionFiles={async () => []}
-      />
-    </NextIntlClientProvider>
-  )
+test("the composer's text field is the rich editor, seated in the input group", () => {
+  const html = render({})
 
-  assert.match(withMentions, /aria-autocomplete="list"/)
-  assert.doesNotMatch(render({}), /aria-autocomplete/)
+  assert.match(html, /data-slot="input-group-control"/)
+  assert.doesNotMatch(html, /<textarea/)
 })
