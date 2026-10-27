@@ -18,6 +18,8 @@ import {
   PinOffIcon,
   SparklesIcon,
   Tag01Icon,
+  ToggleOffIcon,
+  ToggleOnIcon,
   TranslateIcon,
   UserIcon,
 } from "@hugeicons/core-free-icons"
@@ -66,6 +68,15 @@ import {
   SECTIONS,
 } from "@/lib/settings/sections"
 import { searchSettings } from "@/lib/settings/search"
+import type { GameSettings } from "@/lib/settings/game-preferences"
+import {
+  readGameSettings,
+  updateGameSettings,
+} from "@/lib/settings/game-settings"
+import {
+  toggleActionsFor,
+  type ToggleAction,
+} from "@/lib/settings/setting-actions"
 import { useSearchableSettings } from "@/components/settings/use-searchable-settings"
 import { newGameDraft } from "@/lib/games/new-game-draft"
 import { THEMES } from "@/lib/settings/themes"
@@ -127,13 +138,63 @@ export function CommandPalette({
    * typed; the section rows below still cover browsing.
    */
   const searchableSettings = useSearchableSettings()
+  /**
+   * Settings rows only exist when `searchSettings` found them, which also
+   * matches accents and synonyms cmdk's own filter does not know. Leading
+   * their cmdk value with the query itself makes cmdk keep and rank them
+   * like any match, inside their normal group; `forceMount` would not, since
+   * cmdk still hides a group whose rows all miss its filter.
+   */
+  const settingQuery = parseQuery(search).text
   const settingHits =
     !page && scope !== "games"
-      ? searchSettings(searchableSettings, parseQuery(search).text).slice(
+      ? searchSettings(searchableSettings, settingQuery).slice(
           0,
           MAX_SETTING_HITS
         )
       : []
+
+  /**
+   * The saved game settings, read each time the palette opens, so a toggle
+   * row can say which way it will flip. Until they arrive no toggle is
+   * offered rather than one that might point the wrong way.
+   */
+  const [gameSettings, setGameSettings] = useState<GameSettings | null>(null)
+  useEffect(() => {
+    if (!open) return
+    let current = true
+    readGameSettings()
+      .then((value) => current && setGameSettings(value))
+      .catch(() => current && setGameSettings(null))
+    return () => {
+      current = false
+    }
+  }, [open])
+  const toggleActions = toggleActionsFor(
+    settingHits.map((hit) => hit.id),
+    gameSettings
+  )
+
+  function applyToggle(action: ToggleAction, undo = false) {
+    const next = undo ? !action.next : action.next
+    void updateGameSettings({ [action.key]: next } as Partial<GameSettings>)
+      .then((saved) => {
+        setGameSettings(saved)
+        router.refresh()
+        if (undo) return
+        const title = settingHits.find((hit) => hit.id === action.id)?.title
+        toast.add({
+          title: t(next ? "settingTurnedOn" : "settingTurnedOff", {
+            setting: title ?? "",
+          }),
+          actionProps: {
+            children: t("undo"),
+            onClick: () => applyToggle(action, true),
+          },
+        })
+      })
+      .catch(() => toast.add({ type: "error", title: t("settingNotSaved") }))
+  }
 
   function createFromPrompt(prompt: string) {
     startCreating(async () => {
@@ -343,6 +404,28 @@ export function CommandPalette({
               {showCommands && (
                 <>
                   <CommandGroup heading={t("actions")}>
+                    {toggleActions.map((action) => {
+                      const hit = settingHits.find(
+                        (entry) => entry.id === action.id
+                      )!
+                      const label = t(action.next ? "turnOn" : "turnOff", {
+                        setting: hit.title,
+                      })
+                      return (
+                        <CommandItem
+                          key={`toggle-${action.id}`}
+                          value={`${settingQuery} ${label}`}
+                          keywords={[hit.keywords ?? "", hit.sectionLabel]}
+                          onSelect={() => run(() => applyToggle(action))}
+                        >
+                          <HugeiconsIcon
+                            icon={action.next ? ToggleOnIcon : ToggleOffIcon}
+                            strokeWidth={2}
+                          />
+                          {label}
+                        </CommandItem>
+                      )
+                    })}
                     <CommandItem value={t("newGame")} onSelect={() => go("/")}>
                       <HugeiconsIcon icon={PencilEdit02Icon} strokeWidth={2} />
                       {t("newGame")}
@@ -370,14 +453,7 @@ export function CommandPalette({
                     {settingHits.map((hit) => (
                       <CommandItem
                         key={`setting-${hit.id}`}
-                        /**
-                         * Shown whenever the settings search finds it — it
-                         * also matches accents and synonyms cmdk does not
-                         * know — while the value and keywords still give cmdk
-                         * a fair score to sort it by.
-                         */
-                        forceMount
-                        value={`${hit.title} ${hit.sectionLabel}`}
+                        value={`${settingQuery} ${hit.title} ${hit.sectionLabel}`}
                         keywords={[hit.keywords ?? "", hit.description ?? ""]}
                         onSelect={() =>
                           run(() => openSettings(hit.section, hit.id))
