@@ -72,3 +72,26 @@ export function mentionedPaths(doc: { content?: { content?: unknown[] }[] }): Se
   }
   return paths
 }
+
+export type MessageSegment = { kind: "text"; text: string } | { kind: "mention"; path: string }
+
+/**
+ * A sent message, split into its text and the files it mentions. The game's
+ * listing is not at hand here, so `@` counts as a file only when what follows
+ * ends in an extension — as every path the composer writes does — and `@gun`
+ * typed by hand stays text.
+ */
+export function splitMentions(text: string): MessageSegment[] {
+  const segments: MessageSegment[] = []
+  let last = 0
+  for (const match of text.matchAll(/(^|\s)@([^\s@]+)/g)) {
+    const path = match[2]!
+    if (!/\.[A-Za-z0-9]+$/.test(path)) continue
+    const at = match.index + match[1]!.length
+    if (at > last) segments.push({ kind: "text", text: text.slice(last, at) })
+    segments.push({ kind: "mention", path })
+    last = at + 1 + path.length
+  }
+  if (last < text.length || segments.length === 0) segments.push({ kind: "text", text: text.slice(last) })
+  return segments
+}

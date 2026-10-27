@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import { docToText, mentionedPaths, textToDoc } from "./mention-doc"
+import { docToText, mentionedPaths, splitMentions, textToDoc } from "./mention-doc"
 
 const gun = { type: "mention", attrs: { id: "assets/Guns/AK.gltf", label: "AK.gltf" } }
 
@@ -62,4 +62,15 @@ test("the paths already chipped in a document are listed once each", () => {
   }
 
   assert.deepEqual([...mentionedPaths(doc)], ["assets/Guns/AK.gltf"])
+})
+
+test("a sent message splits into text and the file paths it mentions", () => {
+  assert.deepEqual(splitMentions("Usa @assets/Guns/AK.gltf como arma, @index.html\ny me@mail.com @gun"), [
+    { kind: "text", text: "Usa " },
+    { kind: "mention", path: "assets/Guns/AK.gltf" },
+    { kind: "text", text: " como arma, " },
+    { kind: "mention", path: "index.html" },
+    { kind: "text", text: "\ny me@mail.com @gun" },
+  ])
+  assert.deepEqual(splitMentions("sin menciones"), [{ kind: "text", text: "sin menciones" }])
 })

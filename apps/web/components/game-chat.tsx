@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useCallback, useRef, useState } from "react"
 
 import type { UIMessage } from "ai"
 import { BotIcon, Folder01Icon, PanelRightIcon } from "@hugeicons/core-free-icons"
@@ -9,7 +9,7 @@ import { useTranslations } from "next-intl"
 import { Button } from "@workspace/ui/components/button"
 
 import { ChatThread } from "@/components/chat/chat-thread"
-import { SidePanel, type SidePanelTab } from "@/components/chat/side-panel"
+import { SidePanel, type FileRequest, type SidePanelTab } from "@/components/chat/side-panel"
 import { SubagentPanel } from "@/components/chat/subagent-panel"
 import { GameMenu } from "@/components/game-menu"
 import { MobileSidebarTrigger } from "@/components/mobile-sidebar-trigger"
@@ -139,6 +139,18 @@ export function GameChat({
     setActiveTab(tab)
     setPanelOpen(true)
   }
+
+  /**
+   * A mentioned file's chip opens it in the Files tab. Each click is a new
+   * request, even for the file already selected, so the tree reveals it again
+   * after the reader folded its folder away.
+   */
+  const [fileRequest, setFileRequest] = useState<FileRequest | null>(null)
+  const openFile = useCallback((path: string) => {
+    setFileRequest((current) => ({ path, nonce: (current?.nonce ?? 0) + 1 }))
+    setActiveTab("files")
+    setPanelOpen(true)
+  }, [])
 
   function closePanel() {
     setPanelOpen(false)
@@ -311,6 +323,7 @@ export function GameChat({
           onSelectedRunIdChange={setSelectedRunId}
           onSubagentPanelOpenChange={onSubagentPanelOpenChange}
           onSubagentRunsChange={setSubagentRuns}
+          onOpenFile={openFile}
         />
       </div>
 
@@ -328,6 +341,7 @@ export function GameChat({
         onActiveTabChange={onSidePanelTabChange}
         onClose={closePanel}
         layoutRef={layoutRef}
+        fileRequest={fileRequest}
       />
 
       {/**

@@ -58,6 +58,7 @@ export function ChatThread({
   onSelectedRunIdChange,
   onSubagentPanelOpenChange,
   onSubagentRunsChange,
+  onOpenFile,
 }: {
   gameId: string
   templateId: TemplateId
@@ -108,6 +109,8 @@ export function ChatThread({
   onSubagentPanelOpenChange: (open: boolean) => void
   /** Reported upward so the header button can hide itself on a thread with no runs yet — the same up-reporting shape `onRevision` above already uses. */
   onSubagentRunsChange: (runs: SubagentRunRecord[]) => void
+  /** Opens a file mentioned in a sent message in the side panel's Files tab. */
+  onOpenFile?: (path: string) => void
 }) {
   const t = useTranslations("ChatActivity")
 
@@ -255,6 +258,7 @@ export function ChatThread({
                     }
                     onAnswer={onAnswer}
                     onSelectRun={onSelectRun}
+                    onOpenFile={onOpenFile}
                   />
                 </MessageScrollerItem>
               ))}
