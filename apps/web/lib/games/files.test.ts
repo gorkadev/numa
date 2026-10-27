@@ -6,6 +6,7 @@ import {
   contentCacheControl,
   fileContentUrl,
   fileViewOf,
+  filterFileTree,
   findFile,
   isPrefetchableText,
   MAX_VIEW_BYTES,
@@ -139,4 +140,22 @@ test("isPrefetchableText accepts text files within the view limit only", () => {
   assert.equal(isPrefetchableText({ path: "main.js", size: MAX_VIEW_BYTES + 1 }), false)
   assert.equal(isPrefetchableText({ path: "hero.png", size: 10 }), false)
   assert.equal(isPrefetchableText({ path: "ship.glb", size: 10 }), false)
+})
+
+test("filterFileTree keeps matching files and the folders leading to them", () => {
+  const tree = buildFileTree([
+    { path: "index.html", type: "file", size: 1 },
+    { path: "game.js", type: "file", size: 1 },
+    { path: "engine/game-loop.js", type: "file", size: 1 },
+    { path: "engine/physics.js", type: "file", size: 1 },
+    { path: "assets/models/Tree.gltf", type: "file", size: 1 },
+  ])
+
+  const names = (nodes: ReturnType<typeof buildFileTree>): unknown[] =>
+    nodes.map((node) => (node.type === "file" ? node.name : { [node.name]: names(node.children) }))
+
+  assert.deepEqual(names(filterFileTree(tree, "GAME")), [{ engine: ["game-loop.js"] }, "game.js"])
+  assert.deepEqual(names(filterFileTree(tree, "models/tr")), [{ assets: [{ models: ["Tree.gltf"] }] }])
+  assert.deepEqual(filterFileTree(tree, "nothing-like-this"), [])
+  assert.equal(filterFileTree(tree, ""), tree)
 })

@@ -324,10 +324,16 @@ export function AppSidebar({
                         </SidebarMenuButton>
                       }
                     />
+                    {/**
+                     * Capped at 28rem, or less when the viewport has less room
+                     * below the trigger (`--available-height` from the
+                     * positioner), so a long history scrolls inside the
+                     * popover instead of stretching it past the screen.
+                     */}
                     <PopoverContent
                       side="right"
                       align="start"
-                      className="gap-1.5 p-2"
+                      className="max-h-[min(28rem,var(--available-height))] gap-1.5 p-2"
                     >
                       <PopoverHeader className="px-2 pt-1">
                         <PopoverTitle className="text-xs text-muted-foreground">
@@ -341,11 +347,13 @@ export function AppSidebar({
                           </EmptyDescription>
                         </Empty>
                       ) : (
-                        <SidebarMenu>
-                          {games.map((game) => (
-                            <GameRow key={game.id} game={game} closeOnSelect />
-                          ))}
-                        </SidebarMenu>
+                        <div className="no-scrollbar min-h-0 scroll-fade overflow-x-hidden overflow-y-auto overscroll-contain">
+                          <SidebarMenu>
+                            {games.map((game) => (
+                              <GameRow key={game.id} game={game} closeOnSelect />
+                            ))}
+                          </SidebarMenu>
+                        </div>
                       )}
                     </PopoverContent>
                   </Popover>

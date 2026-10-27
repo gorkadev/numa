@@ -2,9 +2,19 @@
 
 import { useEffect, useRef, useState } from "react"
 
+import { PlayIcon } from "@hugeicons/core-free-icons"
+import { HugeiconsIcon } from "@hugeicons/react"
 import { useTranslations } from "next-intl"
 
 import { Button } from "@workspace/ui/components/button"
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@workspace/ui/components/empty"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { Spinner } from "@/components/localized-spinner"
@@ -55,6 +65,7 @@ export function ChatPreviewBody({
   hidden,
   disablePointerEvents,
   allowFullScreen,
+  startGate,
   className,
   ...props
 }: {
@@ -106,6 +117,14 @@ export function ChatPreviewBody({
    * varies.
    */
   allowFullScreen?: boolean
+  /**
+   * Holds the game behind a play button instead of starting it as soon as
+   * the frame mounts. `SidePanel` sets it so opening the panel never starts
+   * a game on its own; `/games/[id]/play` does not, since navigating there
+   * already is the request to play. Once pressed it stays pressed for this
+   * mount, so a reload or a new revision restarts the game directly.
+   */
+  startGate?: boolean
 } & Omit<React.ComponentPropsWithoutRef<"div">, "hidden" | "children">) {
   /**
    * Remounting is the reload. `src` is identical across updates — the sandbox
@@ -116,6 +135,7 @@ export function ChatPreviewBody({
   const t = useTranslations("GamePreview")
   const frameKey = `${revision}:${reloadKey}`
 
+  const [started, setStarted] = useState(!startGate)
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const activeAttemptRef = useRef<string | null>(null)
   const failAttemptRef = useRef<(attemptId: string) => void>(() => {})
@@ -132,6 +152,9 @@ export function ChatPreviewBody({
   useEffect(() => onPhaseChange?.(phase), [onPhaseChange, phase])
 
   useEffect(() => {
+    // Nothing loads, and no slow/timeout clock runs, before play is pressed.
+    if (!started) return
+
     const controller = new AbortController()
     const attemptId = crypto.randomUUID()
     let settled = false
@@ -201,7 +224,7 @@ export function ChatPreviewBody({
       if (activeAttemptRef.current === attemptId)
         activeAttemptRef.current = null
     }
-  }, [frameKey, gameId, previewToken])
+  }, [frameKey, gameId, previewToken, started])
 
   const loading = phase === "starting" || phase === "slow"
   const canRetry = phase === "failed" || phase === "timeout"
@@ -212,8 +235,29 @@ export function ChatPreviewBody({
       hidden={hidden}
       {...props}
     >
-      {loading || canRetry ? (
-        <div className="absolute inset-0 z-10 grid place-items-center gap-3 bg-background p-4 text-center">
+      {!started ? (
+        <Empty className="absolute inset-0 z-10 rounded-none bg-background">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <HugeiconsIcon icon={PlayIcon} strokeWidth={2} />
+            </EmptyMedia>
+            <EmptyTitle>{t("readyTitle")}</EmptyTitle>
+            <EmptyDescription>{t("readyDescription")}</EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button onClick={() => setStarted(true)}>
+              <HugeiconsIcon icon={PlayIcon} strokeWidth={2} data-icon="inline-start" />
+              {t("play")}
+            </Button>
+          </EmptyContent>
+        </Empty>
+      ) : loading || canRetry ? (
+        /**
+         * A centered column, not a grid: a grid filling `inset-0` stretches
+         * its rows over the whole height, which left the spinner near the
+         * top and its message near the bottom.
+         */
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-background p-4 text-center">
           {loading ? (
             <>
               <Spinner />

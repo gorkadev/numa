@@ -280,7 +280,13 @@ export function SettingsDialog({
               </div>
             </div>
 
+            {/**
+             * Keyed by section: one panel serves every section, so without a
+             * fresh `ScrollArea` each switch would open the next section at
+             * the previous one's scroll offset.
+             */}
             <TabsContent
+              key={shownSection}
               value={shownSection}
               render={<ScrollArea className="min-h-0 flex-1" />}
             >

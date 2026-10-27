@@ -20,6 +20,8 @@ type FileTreeProps = {
   onSelect: (path: string) => void
   /** Reports the file under the pointer (`null` once it leaves), so the caller can warm its cache. */
   onPrefetch?: (path: string | null) => void
+  /** Opens every folder, for a search result whose matches would otherwise sit inside closed ones. */
+  expanded?: boolean
   className?: string
 }
 
@@ -34,7 +36,7 @@ type FileTreeProps = {
  * Folders own their open state after that (`defaultOpen`), so a refresh of
  * the tree after a turn does not fold away what the reader opened.
  */
-export function FileTree({ nodes, selectedPath, onSelect, onPrefetch, className }: FileTreeProps) {
+export function FileTree({ nodes, selectedPath, onSelect, onPrefetch, expanded = false, className }: FileTreeProps) {
   return (
     <div className={cn("flex flex-col text-sm", className)}>
       {nodes.map((node) => (
@@ -45,6 +47,7 @@ export function FileTree({ nodes, selectedPath, onSelect, onPrefetch, className 
           selectedPath={selectedPath}
           onSelect={onSelect}
           onPrefetch={onPrefetch}
+          expanded={expanded}
         />
       ))}
     </div>
@@ -57,12 +60,14 @@ function FileTreeItem({
   selectedPath,
   onSelect,
   onPrefetch,
+  expanded,
 }: {
   node: FileTreeNode
   depth: number
   selectedPath: string | null
   onSelect: (path: string) => void
   onPrefetch?: (path: string | null) => void
+  expanded: boolean
 }) {
   if (node.type === "file") {
     const selected = node.path === selectedPath
@@ -90,6 +95,7 @@ function FileTreeItem({
       selectedPath={selectedPath}
       onSelect={onSelect}
       onPrefetch={onPrefetch}
+      expanded={expanded}
     />
   )
 }
@@ -100,16 +106,18 @@ function FolderItem({
   selectedPath,
   onSelect,
   onPrefetch,
+  expanded,
 }: {
   node: Extract<FileTreeNode, { type: "folder" }>
   depth: number
   selectedPath: string | null
   onSelect: (path: string) => void
   onPrefetch?: (path: string | null) => void
+  expanded: boolean
 }) {
   /** Read once: Base UI warns when an uncontrolled Collapsible's `defaultOpen` changes after mount, which selecting a file inside it would do. */
   const [defaultOpen] = useState(
-    () => depth === 0 || (selectedPath?.startsWith(`${node.path}/`) ?? false)
+    () => expanded || depth === 0 || (selectedPath?.startsWith(`${node.path}/`) ?? false)
   )
 
   return (
@@ -141,6 +149,7 @@ function FolderItem({
               selectedPath={selectedPath}
               onSelect={onSelect}
               onPrefetch={onPrefetch}
+              expanded={expanded}
             />
           ))}
         </div>
