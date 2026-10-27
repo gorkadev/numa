@@ -97,9 +97,12 @@ export function FilesTabBody({
    */
   const prefetcher = useMemo(
     () =>
-      createHoverPrefetcher((url) =>
-        fetch(url).then((response) => response.arrayBuffer())
-      ),
+      createHoverPrefetcher(async (url) => {
+        const response = await fetch(url)
+        // A failed read is not cached, so it must not count as warmed either.
+        if (!response.ok) throw new Error(String(response.status))
+        await response.arrayBuffer()
+      }),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- the URLs carry gameId and version; a new prefetcher per version is the point
     [gameId, version]
   )
