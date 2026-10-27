@@ -65,8 +65,14 @@ import {
   SECTION_LABEL_KEYS,
   SECTIONS,
 } from "@/lib/settings/sections"
+import { searchSettings } from "@/lib/settings/search"
+import { useSearchableSettings } from "@/components/settings/use-searchable-settings"
 import { newGameDraft } from "@/lib/games/new-game-draft"
 import { THEMES } from "@/lib/settings/themes"
+
+
+/** Enough to cover a query's real matches without burying games and actions. */
+const MAX_SETTING_HITS = 5
 
 /**
  * The palette is a controlled dialog rather than one owning its own state,
@@ -113,6 +119,21 @@ export function CommandPalette({
   const messageQuery =
     !page && scope !== "commands" ? parseQuery(search).text.trim() : ""
   const messageHits = useMessageHits(messageQuery)
+
+  /**
+   * Individual settings, from the same index and ranking as the settings
+   * dialog's search box, so typing "sign out" finds the row and not just the
+   * section it lives in. Only on the root list and only once something is
+   * typed; the section rows below still cover browsing.
+   */
+  const searchableSettings = useSearchableSettings()
+  const settingHits =
+    !page && scope !== "games"
+      ? searchSettings(searchableSettings, parseQuery(search).text).slice(
+          0,
+          MAX_SETTING_HITS
+        )
+      : []
 
   function createFromPrompt(prompt: string) {
     startCreating(async () => {
@@ -346,6 +367,34 @@ export function CommandPalette({
                     </CommandItem>
                   </CommandGroup>
                   <CommandGroup heading={t("settings")}>
+                    {settingHits.map((hit) => (
+                      <CommandItem
+                        key={`setting-${hit.id}`}
+                        /**
+                         * Shown whenever the settings search finds it — it
+                         * also matches accents and synonyms cmdk does not
+                         * know — while the value and keywords still give cmdk
+                         * a fair score to sort it by.
+                         */
+                        forceMount
+                        value={`${hit.title} ${hit.sectionLabel}`}
+                        keywords={[hit.keywords ?? "", hit.description ?? ""]}
+                        onSelect={() =>
+                          run(() => openSettings(hit.section, hit.id))
+                        }
+                      >
+                        <HugeiconsIcon
+                          icon={SECTIONS.find((entry) => entry.id === hit.section)!.icon}
+                          strokeWidth={2}
+                        />
+                        <span className="min-w-0 flex-1 truncate">
+                          {hit.title}
+                        </span>
+                        <span className="shrink-0 text-xs text-muted-foreground">
+                          {hit.sectionLabel}
+                        </span>
+                      </CommandItem>
+                    ))}
                     <CommandItem onSelect={() => enter("theme")}>
                       <HugeiconsIcon icon={PaintBoardIcon} strokeWidth={2} />
                       {settings("theme")}

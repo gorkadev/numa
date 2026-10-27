@@ -11,6 +11,8 @@ function AppSettingsInner({ billing }: { billing: BillingSummary }) {
   const {
     open,
     section,
+    focusSetting,
+    clearFocusSetting,
     openSettings,
     closeSettings,
     setSection,
@@ -27,6 +29,8 @@ function AppSettingsInner({ billing }: { billing: BillingSummary }) {
       }
       section={section}
       onSectionChange={setSection}
+      focusSetting={focusSetting}
+      onFocusSettingHandled={clearFocusSetting}
       billing={billing}
     />
   )
