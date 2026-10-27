@@ -43,3 +43,19 @@ test("the new-game composer still offers the template picker", () => {
   assert.match(html, /aria-keyshortcuts="Control\+Shift\+V"/)
   assert.doesNotMatch(html, /data-slot="locked-template"/)
 })
+
+test("a composer given a file loader offers @ mentions on its text area", () => {
+  const withMentions = renderToStaticMarkup(
+    <NextIntlClientProvider locale="en" timeZone="UTC" messages={en}>
+      <ChatComposer
+        value=""
+        onValueChange={() => {}}
+        onSubmit={() => {}}
+        loadMentionFiles={async () => []}
+      />
+    </NextIntlClientProvider>
+  )
+
+  assert.match(withMentions, /aria-autocomplete="list"/)
+  assert.doesNotMatch(render({}), /aria-autocomplete/)
+})

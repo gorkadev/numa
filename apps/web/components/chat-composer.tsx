@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useId,
   useRef,
   useState,
   type FormEvent,
@@ -13,6 +14,7 @@ import {
   ArrowUp02Icon,
   AudioWave01FreeIcons,
   Cancel01Icon,
+  File01Icon,
   MagicWand01Icon,
   StopIcon,
   Undo02Icon,
@@ -32,6 +34,7 @@ import {
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip"
 import { useComposerShortcuts } from "@/components/chat/use-composer-shortcuts"
+import { useFileMentions, type MentionFilesLoader } from "@/components/chat/use-file-mentions"
 import { usePromptImprover } from "@/components/chat/use-prompt-improver"
 import { useSpeechDictation } from "@/components/chat/use-speech-dictation"
 import { useIsMac } from "@/hooks/use-is-mac"
@@ -87,6 +90,11 @@ type ChatComposerProps = {
    * allowance request.
    */
   improverMode?: ImproverMode
+  /**
+   * Turns on `@` file mentions: typing `@` lists the game's files and the one
+   * chosen is written into the message as its path. Without it, `@` is text.
+   */
+  loadMentionFiles?: MentionFilesLoader
 }
 
 /** Shared controlled composer for the home screen and active chat thread. */
@@ -106,6 +114,7 @@ export function ChatComposer({
   tasksSlot,
   usageSlot,
   improverMode,
+  loadMentionFiles,
 }: ChatComposerProps) {
   const t = useTranslations("GameComposer")
   const format = useFormatter()
@@ -157,7 +166,15 @@ export function ChatComposer({
   })
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const mentionListId = useId()
   const textareaDisabled = pending || active || improver.improving
+  const mentions = useFileMentions({
+    load: loadMentionFiles,
+    value,
+    setValue: replaceValue,
+    textareaRef,
+    listId: mentionListId,
+  })
 
   /**
    * An effect rather than the `autoFocus` attribute, which only fires on mount:
@@ -207,6 +224,7 @@ export function ChatComposer({
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (mentions.handleKeyDown(event)) return
     if (
       event.key !== "Enter" ||
       event.shiftKey ||
@@ -230,9 +248,88 @@ export function ChatComposer({
             value={value}
             disabled={textareaDisabled}
             placeholder={placeholder ?? t("placeholder")}
-            onChange={(event) => replaceValue(event.target.value)}
+            onChange={(event) => {
+              replaceValue(event.target.value)
+              mentions.track(event.target.value, event.target)
+            }}
+            onSelect={(event) => mentions.track(event.currentTarget.value, event.currentTarget)}
+            onBlur={mentions.close}
             onKeyDown={handleKeyDown}
+            aria-autocomplete={loadMentionFiles ? "list" : undefined}
+            aria-controls={mentions.open ? mentionListId : undefined}
+            aria-activedescendant={
+              mentions.open && mentions.matches.length > 0
+                ? `${mentionListId}-${mentions.index}`
+                : undefined
+            }
           />
+          {mentions.open ? (
+            <div
+              data-slot="mention-list"
+              /**
+               * Opens over the `@` itself, on whichever line it was typed, and
+               * is pulled back left only as far as it takes to stay inside the
+               * composer.
+               */
+              style={{
+                top: mentions.anchor.top,
+                left: `min(${mentions.anchor.left}px, calc(100% - min(26rem, 100%)))`,
+              }}
+              className="absolute z-50 flex max-h-72 w-[min(26rem,100%)] -translate-y-[calc(100%+0.5rem)] flex-col overflow-hidden rounded-2xl bg-popover p-1 text-sm text-popover-foreground shadow-lg ring-1 ring-foreground/5 dark:ring-foreground/10"
+            >
+              {mentions.matches.length > 0 ? (
+                <ul
+                  id={mentionListId}
+                  role="listbox"
+                  aria-label={t("mentionFiles")}
+                  className="no-scrollbar min-h-0 scroll-fade overflow-y-auto overscroll-contain"
+                >
+                  {mentions.matches.map((path, index) => {
+                    const slash = path.lastIndexOf("/")
+                    const name = path.slice(slash + 1)
+                    const hit = mentions.query ? name.toLowerCase().indexOf(mentions.query.toLowerCase()) : -1
+                    return (
+                      <li
+                        key={path}
+                        id={`${mentionListId}-${index}`}
+                        role="option"
+                        aria-selected={index === mentions.index}
+                        /** Keeps focus in the text area, which a click would take. */
+                        onMouseDown={(event) => event.preventDefault()}
+                        onMouseMove={() => mentions.highlightAt(index)}
+                        onClick={() => mentions.choose(path)}
+                        className="flex cursor-default scroll-my-8 items-center gap-2 rounded-xl px-2.5 py-1.5 aria-selected:bg-accent aria-selected:text-accent-foreground"
+                      >
+                        <HugeiconsIcon icon={File01Icon} strokeWidth={2} className="size-4 shrink-0 text-muted-foreground" />
+                        <span className="shrink-0">
+                          {hit === -1 ? (
+                            name
+                          ) : (
+                            <>
+                              {name.slice(0, hit)}
+                              <strong className="font-semibold">
+                                {name.slice(hit, hit + mentions.query.length)}
+                              </strong>
+                              {name.slice(hit + mentions.query.length)}
+                            </>
+                          )}
+                        </span>
+                        {slash !== -1 ? (
+                          <span className="min-w-0 truncate text-xs text-muted-foreground">
+                            {path.slice(0, slash)}
+                          </span>
+                        ) : null}
+                      </li>
+                    )
+                  })}
+                </ul>
+              ) : (
+                <p className="px-2.5 py-1.5 text-muted-foreground">
+                  {mentions.loading ? t("mentionLoading") : t("mentionEmpty")}
+                </p>
+              )}
+            </div>
+          ) : null}
           <InputGroupAddon align="block-end" className="justify-start">
             {!active && tierId && onTierChange ? (
               <ModelPicker

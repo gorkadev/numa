@@ -41,6 +41,8 @@ import { UsageFooter } from "@/components/chat/usage-footer"
 import { thinkingLabelKey } from "@/lib/games/build-progress"
 import type { SubagentRunRecord } from "@/lib/games/harness/records"
 import { deriveTaskStrip, shouldShowTaskStrip } from "@/lib/games/plan-tasks"
+import type { FileTreeNode } from "@/lib/games/files"
+import { mentionFiles } from "@/lib/games/mentions"
 import { collectThreadSubagentRuns } from "@/lib/games/tool-parts"
 
 export function ChatThread({
@@ -108,6 +110,17 @@ export function ChatThread({
   onSubagentRunsChange: (runs: SubagentRunRecord[]) => void
 }) {
   const t = useTranslations("ChatActivity")
+
+  /** The same listing the Files tab reads, flattened for the composer's `@` picker. */
+  const loadMentionFiles = useCallback(
+    async (signal: AbortSignal) => {
+      const response = await fetch(`/api/games/${gameId}/files`, { signal })
+      if (!response.ok) throw new Error(String(response.status))
+      const { tree } = (await response.json()) as { tree: FileTreeNode[] }
+      return mentionFiles(tree)
+    },
+    [gameId]
+  )
   const {
     messages,
     error,
@@ -300,6 +313,7 @@ export function ChatThread({
           onTierChange={setTierId}
           templateId={templateId}
           improverMode="change"
+          loadMentionFiles={loadMentionFiles}
           autoFocus
           pending={pending}
           placeholder={t("placeholder")}

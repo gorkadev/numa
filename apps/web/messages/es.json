@@ -307,6 +307,9 @@
     }
   },
   "GameComposer": {
+    "mentionFiles": "Archivos",
+    "mentionLoading": "Cargando archivos…",
+    "mentionEmpty": "Ningún archivo coincide",
     "placeholder": "Describe el juego que quieres crear…",
     "sendMessage": "Enviar mensaje",
     "stopGenerating": "Detener la generación",
