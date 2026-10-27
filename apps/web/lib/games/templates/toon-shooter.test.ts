@@ -5,7 +5,7 @@ import path from "node:path"
 import test from "node:test"
 
 import { getTemplate, isTemplateId } from "./catalog"
-import { readGameSeed, readTemplateContract, readTemplateSeed } from "./seed"
+import { readGameSeed, readTemplateAssetLock, readTemplateContract, readTemplateSeed } from "./seed"
 
 test("licensed legacy kits have clean picker and planner-facing contracts", async () => {
   const obsoleteWarning = /license[- ]risk|missing.local.evidence|no bundled|absent.license|unknown.license|no incluye documentación|with this risk/i
@@ -41,42 +41,53 @@ test("Toon Shooter registers a validated immutable seed", async () => {
   }
 })
 
-test("Toon Shooter declares every seeded model and its complete local dependency closure", async () => {
-  const seed = await readGameSeed("toon-shooter", 1)
+test("Toon Shooter locks every declared model and nothing undeclared", async () => {
+  const lock = await readTemplateAssetLock("toon-shooter", 1)
   const contract = await readTemplateContract("toon-shooter", 1)
-  assert.ok(contract)
+  assert.ok(lock && contract)
   const { models, sharedAssets = [] } = contract.manifest
-  const files = new Map(seed.files.map(({ relativePath, contents }) => [relativePath, contents]))
+  const locked = Object.keys(lock.files)
   const modelPaths = models.map((model) => model.path).sort()
-  assert.deepEqual([...files.keys()].filter((file) => file.startsWith("assets/toon-shooter/") && file.endsWith(".gltf")).sort(), modelPaths)
+  assert.deepEqual(locked.filter((file) => file.endsWith(".gltf")).sort(), modelPaths)
   assert.equal(new Set(models.map((model) => model.id)).size, 74)
   const declared = new Set([...modelPaths, ...sharedAssets.map((asset) => asset.path), ...models.flatMap((model) => [model.bufferPath, model.atlasPath]).filter(Boolean)])
   const groups: Record<string, number> = {}
-  for (const model of models) {
-    groups[model.path.split("/")[2]!] = (groups[model.path.split("/")[2]!] ?? 0) + 1
-    const gltf = JSON.parse(files.get(model.path)!.toString("utf8"))
-    assert.deepEqual((model.animations ?? []).map((clip) => clip.name).sort(), (gltf.animations ?? []).map((clip: { name: string }) => clip.name).sort())
-    for (const entry of [...(gltf.buffers ?? []), ...(gltf.images ?? [])]) {
-      if (!entry.uri || entry.uri.startsWith("data:")) continue
-      assert.ok(!/^[a-z]+:/i.test(entry.uri), "no remote dependencies")
-      const dependency = path.posix.join(path.posix.dirname(model.path), decodeURIComponent(entry.uri))
-      assert.ok(files.has(dependency), dependency)
-      assert.ok(declared.has(dependency), dependency)
-    }
-  }
+  for (const model of models) groups[model.path.split("/")[2]!] = (groups[model.path.split("/")[2]!] ?? 0) + 1
   assert.deepEqual(groups, { Characters: 3, Environment: 55, Guns: 16 })
-  assert.ok([...files.keys()].filter((file) => file.startsWith("assets/toon-shooter/")).every((file) => declared.has(file)))
+  assert.ok(locked.every((file) => file.startsWith("assets/toon-shooter/") && declared.has(file)))
 })
 
-// Portable source-fidelity receipt: no dependency on the author's Downloads folder.
-test("Toon Shooter asset bytes match the approved complete source pack", async () => {
-  const seed = await readTemplateSeed("toon-shooter", 1)
-  const assets = seed.files.filter((file) => file.relativePath.startsWith("assets/toon-shooter/"))
-  assert.equal(assets.length, 74)
-  assert.equal(assets.reduce((sum, file) => sum + file.contents.length, 0), 11894462)
+// Portable source-fidelity receipt over the lock. Provisioning rejects any blob
+// whose SHA-256 differs from its entry, so this pins the approved bytes.
+test("Toon Shooter asset lock matches the approved complete source pack", async () => {
+  const lock = await readTemplateAssetLock("toon-shooter", 1)
+  assert.ok(lock)
+  const entries = Object.entries(lock.files).sort(([a], [b]) => a < b ? -1 : 1)
+  assert.equal(entries.length, 74)
+  assert.equal(entries.reduce((sum, [, entry]) => sum + entry.size, 0), 11894462)
   const hash = createHash("sha256")
-  for (const file of assets.sort((a, b) => a.relativePath < b.relativePath ? -1 : 1)) {
-    hash.update(file.relativePath).update("\0").update(file.contents)
-  }
-  assert.equal(hash.digest("hex"), "b5206dc08183c88f4443863cce3672523b397d65266bf3bf91c941360836925c")
+  for (const [relativePath, entry] of entries) hash.update(`${relativePath}\0${entry.sha256}\n`)
+  assert.equal(hash.digest("hex"), "25be19af32803a11e99c6d70122b5ed74ce0d30ad6403269f85721bfba8916c4")
+})
+
+test("a game seed gets its template assets from the bucket, not the repository", async () => {
+  const lock = await readTemplateAssetLock("toon-shooter", 1)
+  assert.ok(lock)
+  const blobs = new Map(Object.values(lock.files).map((entry) => [entry.sha256, entry]))
+  const requested: string[] = []
+  const fakeFetch = (async (input: string | URL | Request) => {
+    const url = String(input)
+    requested.push(url)
+    // Right size, wrong bytes: the real blobs are not in the repository.
+    return new Response(new Uint8Array(blobs.get(url.slice(url.lastIndexOf("/") + 1))!.size))
+  }) as typeof fetch
+
+  await assert.rejects(
+    readGameSeed("toon-shooter", 1, { baseUrl: "https://assets.example", fetch: fakeFetch }),
+    /does not match its lock/
+  )
+  assert.ok(requested.length > 0)
+  assert.ok(requested.every((url) => /^https:\/\/assets\.example\/blobs\/[0-9a-f]{64}$/.test(url)))
+  const repositorySeed = await readTemplateSeed("toon-shooter", 1)
+  assert.ok(!repositorySeed.files.some((file) => file.relativePath.startsWith("assets/") || file.relativePath === "ASSETS.lock.json"))
 })

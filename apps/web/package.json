@@ -13,6 +13,7 @@
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
     "snapshot:build": "node --env-file=.env.local scripts/build-game-snapshot.ts",
+    "template-assets": "tsx scripts/template-assets.ts",
     "perf:trace": "node --env-file=.env.local scripts/perf-trace.ts"
   },
   "dependencies": {

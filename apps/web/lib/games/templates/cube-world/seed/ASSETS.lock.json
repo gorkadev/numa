@@ -1,0 +1,433 @@
+{
+  "version": 1,
+  "files": {
+    "assets/cube-world/Animals/Cat.gltf": {
+      "sha256": "78d9ebc9eb8d1c34f7f7fc5c1680d2f456d8f5b2252058972bb289b7bc8a3ff6",
+      "size": 356040
+    },
+    "assets/cube-world/Animals/Chick.gltf": {
+      "sha256": "476aaee508a66e5c1318622196ceab244029eba1af110a701bcb6eaba92bebc1",
+      "size": 202015
+    },
+    "assets/cube-world/Animals/Chicken.gltf": {
+      "sha256": "4d932f4116985d3d07fe602d2cfa50a62bc8ff0f7a1ca8617c1ebdf5669400f8",
+      "size": 219103
+    },
+    "assets/cube-world/Animals/Dog.gltf": {
+      "sha256": "25ba579bdf0379547b16bcd476728526e6f2e4f41f5c95db7cb692775ea387d5",
+      "size": 418457
+    },
+    "assets/cube-world/Animals/Horse.gltf": {
+      "sha256": "cf7649d7bb4c1a04954d1162b64be3388fd885da4284dfe2634be80ba8db41f1",
+      "size": 362781
+    },
+    "assets/cube-world/Animals/Pig.gltf": {
+      "sha256": "d721e08403675db8f608a30d02952a0bc94e501871fb6c8a6ad19488ad03bbb5",
+      "size": 428160
+    },
+    "assets/cube-world/Animals/Raccoon.gltf": {
+      "sha256": "371ca77312b919a38e960ca5899aa65edc46476d2dc0fbe3577056e7ce3e83fb",
+      "size": 352639
+    },
+    "assets/cube-world/Animals/Sheep.gltf": {
+      "sha256": "326e4970731ea76162c2d474c13db12142622b9102533d1920a73f41f87326e0",
+      "size": 334973
+    },
+    "assets/cube-world/Animals/Wolf.gltf": {
+      "sha256": "fe0c12bb71727e2c52034db681319ee1400525ad27e6c513831de0d1ed65ff26",
+      "size": 368427
+    },
+    "assets/cube-world/Block_Grass.gltf": {
+      "sha256": "e2dde03b02e38ac6677a5c50c6922318ff86d7d497668b33704761df7477755b",
+      "size": 11216
+    },
+    "assets/cube-world/Blocks/Block_Blank.gltf": {
+      "sha256": "538e2bdaf17f7ba23273193cda0e7e1dcd64372ce9fbd23e589c4a3b7dc9a3f0",
+      "size": 17696
+    },
+    "assets/cube-world/Blocks/Block_Brick.gltf": {
+      "sha256": "1fdeec291ba2665e0bb15ab82348639af9ea454157c4afdce2854b567f1ce09c",
+      "size": 37913
+    },
+    "assets/cube-world/Blocks/Block_Cheese.gltf": {
+      "sha256": "51aa15bc617376d1dfe21984385c2689bce8a357615114129a5afcbb78283120",
+      "size": 51663
+    },
+    "assets/cube-world/Blocks/Block_Coal.gltf": {
+      "sha256": "1931755e1bd8fb91f5a45d84ea1fc9b0cd3613454cd7a193453da76d7e08f4b6",
+      "size": 72355
+    },
+    "assets/cube-world/Blocks/Block_Crate.gltf": {
+      "sha256": "e861023e5714fc79298f310297d2a8778b2d12698dc5a99666fb7a9dc1e32f55",
+      "size": 36536
+    },
+    "assets/cube-world/Blocks/Block_Crystal.gltf": {
+      "sha256": "8e9f624b3ede697155d431f8c9efbd48d8f280dd8db5e6cf088e14ec3667f480",
+      "size": 168934
+    },
+    "assets/cube-world/Blocks/Block_Diamond.gltf": {
+      "sha256": "5d209643db79eb2825a4b43fe62b6c958062ce0fa3b56e218687c7ca49a7b009",
+      "size": 180160
+    },
+    "assets/cube-world/Blocks/Block_Dirt.gltf": {
+      "sha256": "c7945d45f317446be05a884d3f5d5be989507ad657c898e5726aeb8ba6595520",
+      "size": 11215
+    },
+    "assets/cube-world/Blocks/Block_GreyBricks.gltf": {
+      "sha256": "66b87e3580ee5d5a7537fc9636ee95dcb2f5f7c44fbd9f62510ae7ab8417ebb6",
+      "size": 67349
+    },
+    "assets/cube-world/Blocks/Block_Ice.gltf": {
+      "sha256": "56bc35e0c5823a9d10d15bd995aec6795fb0bfe7c7d25cad8d85defc09f1ba3c",
+      "size": 11214
+    },
+    "assets/cube-world/Blocks/Block_Metal.gltf": {
+      "sha256": "d10ad67479beb50e48874421e69df7ae2e5fd82d6d3361bba71d5d53f6bdd754",
+      "size": 63233
+    },
+    "assets/cube-world/Blocks/Block_Snow.gltf": {
+      "sha256": "935764e22fcf71929e90c21220a0788f32b410d43afe255c99573d581ab9d87d",
+      "size": 11215
+    },
+    "assets/cube-world/Blocks/Block_Stone.gltf": {
+      "sha256": "61a87b1f3ff4fe0dd37cf05e149c7487ce8c6c0c0f571fb0a23c6084cf73f07b",
+      "size": 9061
+    },
+    "assets/cube-world/Blocks/Block_WoodPlanks.gltf": {
+      "sha256": "191efa72071601b02a747de7e142b1c4b1befaa6dc0b727e01521d714ecf5e5a",
+      "size": 43006
+    },
+    "assets/cube-world/Character_Male_1.gltf": {
+      "sha256": "115a112834453eddb9eee06cb014b729d374ec61c08ee23c1610941c604d6a68",
+      "size": 849542
+    },
+    "assets/cube-world/Characters/Character_Female_1.gltf": {
+      "sha256": "e964fa235a490678fa7e630327403f0fb7b619b3aacceab5cc2139c53ce8bf07",
+      "size": 868447
+    },
+    "assets/cube-world/Characters/Character_Female_2.gltf": {
+      "sha256": "4d8131f22cd1c7c21d7e207f861706c0aafc982ed7c9c137a3520880473c4ef3",
+      "size": 922785
+    },
+    "assets/cube-world/Characters/Character_Male_2.gltf": {
+      "sha256": "27722e29a224bfa04440f759490fa226c56d5cffc6b86d52bc0aceacc3c69ba7",
+      "size": 833973
+    },
+    "assets/cube-world/Crystal_Small.gltf": {
+      "sha256": "5ba846a8688282c80563c196ffd32f8e4c82f8c0635b1ca708ec065798fa08c0",
+      "size": 13053
+    },
+    "assets/cube-world/Enemies/Demon.gltf": {
+      "sha256": "8f4daf85b4e0924a3c30f4b204b08adb2bbb990f6efda4dddc5e8c687eb7d810",
+      "size": 320858
+    },
+    "assets/cube-world/Enemies/Giant.gltf": {
+      "sha256": "13e58586c478da58fd3e92872a1843db1fbf8ffccd9d996bfeb213aab2a114e8",
+      "size": 351807
+    },
+    "assets/cube-world/Enemies/Hedgehog.gltf": {
+      "sha256": "e0450200e7a897cecfff825df5955f61296c7b87f8f59a295b5fad25952b0c1d",
+      "size": 139420
+    },
+    "assets/cube-world/Enemies/Skeleton.gltf": {
+      "sha256": "72d6dd0c3e6038131618538a0a01233004af2d5e19ba3ed959b7ea08ce707119",
+      "size": 433607
+    },
+    "assets/cube-world/Enemies/Skeleton_Armor.gltf": {
+      "sha256": "e81043792f4ecc70de105715eae5805c3ccda6a81f0c304b987fbf93982a7e7c",
+      "size": 609665
+    },
+    "assets/cube-world/Enemies/Wizard.gltf": {
+      "sha256": "3e3313548501d069aac0ef66cba24bcbdf1671c8264ab9f7ef90255cba9ec62f",
+      "size": 355667
+    },
+    "assets/cube-world/Enemies/Yeti.gltf": {
+      "sha256": "03988fb8bc28271e99678885bd5b3ea52fe1f3f06f4ca8e180c33effc41d45ca",
+      "size": 313757
+    },
+    "assets/cube-world/Enemies/Zombie.gltf": {
+      "sha256": "c4802b78266314a357d9329f58f87c1974249bb2eb5d2a01b5934c88b1f50843",
+      "size": 342611
+    },
+    "assets/cube-world/Environment/Bamboo.gltf": {
+      "sha256": "c740c1d45c4c09756038fc7ae8c36d91e25dcf279c66642a77627dbbf16c1abd",
+      "size": 91150
+    },
+    "assets/cube-world/Environment/Bamboo_Mid.gltf": {
+      "sha256": "e620a32bab4be8cf226926290facd444c5e661847b1712e8d1536c9162d1bed2",
+      "size": 54031
+    },
+    "assets/cube-world/Environment/Bamboo_Small.gltf": {
+      "sha256": "f2d85ab43be36de3abcca52304a7f5fc79a5be1f432d79fed2d2847c77de0e69",
+      "size": 35598
+    },
+    "assets/cube-world/Environment/Bush.gltf": {
+      "sha256": "2e1e490f8018c9956ec001936d529d5883a21ef0778a7f8a22cd67027d3b08ee",
+      "size": 107148
+    },
+    "assets/cube-world/Environment/Button.gltf": {
+      "sha256": "4d19140492bb166dab43c2198ce3bf31cd37369af9b6bab7afa5459e816efaa3",
+      "size": 16026
+    },
+    "assets/cube-world/Environment/Cart.gltf": {
+      "sha256": "710e69623c27f3ca944ccaa9c80bf16a9a6f5fcb47f3fd1ba86bebc5c72b99fc",
+      "size": 10488
+    },
+    "assets/cube-world/Environment/Chest_Closed.gltf": {
+      "sha256": "1d04f0172f63952c0afcf62ca4d5fbbfd348cea1dc37185184c40c699c9f5fdf",
+      "size": 194897
+    },
+    "assets/cube-world/Environment/Chest_Open.gltf": {
+      "sha256": "5019039c71047e142e7dab7be4fbf43a1f3c10a0e00edfec1ddb2edca3bc22d1",
+      "size": 196454
+    },
+    "assets/cube-world/Environment/Crystal_Big.gltf": {
+      "sha256": "f59b61527ad1596811cfc5082ba74c2af15aca1f30eb6e6cd5b35a3a09d9d49d",
+      "size": 19612
+    },
+    "assets/cube-world/Environment/DeadTree_1.gltf": {
+      "sha256": "71cc94823df5830d373c00428fd6258cb47cd9f87d8c1446065b0d9f0c7cbbf0",
+      "size": 19671
+    },
+    "assets/cube-world/Environment/DeadTree_2.gltf": {
+      "sha256": "aaa699d11a8c46953c2bf9f5491a7f49d7c30d094c404ab64b249e4e7b2ae4b8",
+      "size": 41585
+    },
+    "assets/cube-world/Environment/DeadTree_3.gltf": {
+      "sha256": "de36c4c0bdfda26df1f3fc388fcbb4bdded92b98e12d874468a3b0b1ae838794",
+      "size": 63809
+    },
+    "assets/cube-world/Environment/Door_Closed.gltf": {
+      "sha256": "7c56fa7e0d41cd0345cdfaaff3b4e660fea125c08b9e071cfb95037c9e8fe578",
+      "size": 15623
+    },
+    "assets/cube-world/Environment/Fence_Center.gltf": {
+      "sha256": "fddc948a54d567616a6a664b0fa28890a05bcd0347dcfca59698c8a576a56688",
+      "size": 15049
+    },
+    "assets/cube-world/Environment/Fence_Corner.gltf": {
+      "sha256": "e21caa5e59710855c26eca79e6a45244d64c28dd1a87c0c9564437db20f679e0",
+      "size": 16602
+    },
+    "assets/cube-world/Environment/Fence_End.gltf": {
+      "sha256": "ec925273b3f243bf8e1d2ec0fcc9eb9f685e63559cc922a272ce27ad3ff49b8f",
+      "size": 14408
+    },
+    "assets/cube-world/Environment/Fence_T.gltf": {
+      "sha256": "f6589b31404e2ecbef072b0664a055427d05d6fe375cb90a2de1dcb1dda00059",
+      "size": 20343
+    },
+    "assets/cube-world/Environment/Flowers_1.gltf": {
+      "sha256": "a79267e588fb84207655b42ebefaffd1f248c2ecc8f852ba30fd8a65fb4d7cfb",
+      "size": 162928
+    },
+    "assets/cube-world/Environment/Flowers_2.gltf": {
+      "sha256": "04068581f19bb875eb29cf118a67d9320f2ea410409353231a97e0f8f9c64899",
+      "size": 200640
+    },
+    "assets/cube-world/Environment/Grass_Big.gltf": {
+      "sha256": "8249d23c9497792c1b783dc7666f92e0a7dac9726bae809c24b744c39fc7a00d",
+      "size": 22196
+    },
+    "assets/cube-world/Environment/Grass_Small.gltf": {
+      "sha256": "5be1187acea72259e55bf223a743b23e91f4167543dbe53a24da20c650932066",
+      "size": 14997
+    },
+    "assets/cube-world/Environment/Key.gltf": {
+      "sha256": "eb3e5e3194177a839e4860d7bd56a087ec5d290a57dfaa96a9308f5ab1fbe94d",
+      "size": 26691
+    },
+    "assets/cube-world/Environment/Lever_Left.gltf": {
+      "sha256": "4c0b857eb38ef3808007bbb662f747abd8621185f049ce1b0ce84e438eecd488",
+      "size": 31007
+    },
+    "assets/cube-world/Environment/Lever_Right.gltf": {
+      "sha256": "699b0cdf5c9c3e1b91b808d9c1a97984d3dfa0067e2e71212d174d12c22a0f00",
+      "size": 31104
+    },
+    "assets/cube-world/Environment/Mushroom.gltf": {
+      "sha256": "99a04171502c28b0a46ca34a8153bb949ae35d1bb3d3d37a077333d69cb5e639",
+      "size": 58445
+    },
+    "assets/cube-world/Environment/Plant_2.gltf": {
+      "sha256": "a39874a6a17050d46735468c7a43272732aa9950ab412aef98e305ca2c007a02",
+      "size": 29356
+    },
+    "assets/cube-world/Environment/Plant_3.gltf": {
+      "sha256": "b9f4e12c603b92b77e025d6c32c2e57aa4ae3e156c0cea84fd7df8690c75504c",
+      "size": 56543
+    },
+    "assets/cube-world/Environment/Rail_Corner.gltf": {
+      "sha256": "acf2280b9bc253e71fffd9671f482d2b21f83e394b50a9b4b39f0e0c284cd66d",
+      "size": 18866
+    },
+    "assets/cube-world/Environment/Rail_Incline.gltf": {
+      "sha256": "2eeaed6c87b5e7b02aca2281848139e47069c6dd6cb380d5a5609f929d087037",
+      "size": 16401
+    },
+    "assets/cube-world/Environment/Rail_Straight.gltf": {
+      "sha256": "8bb140eb048520c137877f2136e7df7b4816419ffd9bdf8b826c229494975df6",
+      "size": 15333
+    },
+    "assets/cube-world/Environment/Rock1.gltf": {
+      "sha256": "8aafa87d57cdf4649480ed09c78e292d2573f2a53855f9dabeb5deb9d33d3b77",
+      "size": 12911
+    },
+    "assets/cube-world/Environment/Rock2.gltf": {
+      "sha256": "b1450d24b1f18730502d3e4eb18273c8cc151b086ae2bea280181fd7f26f3a6f",
+      "size": 22839
+    },
+    "assets/cube-world/Environment/Tree_2.gltf": {
+      "sha256": "a3dcf4fc33b70e6844afdb9f8f6a2543b373f6973f438b0377e3309b08acabee",
+      "size": 51504
+    },
+    "assets/cube-world/Environment/Tree_3.gltf": {
+      "sha256": "acbbf1ed786a58ce2f31843a59127e38c7cde70e7ba2e34af01df37aabca9004",
+      "size": 72502
+    },
+    "assets/cube-world/Goblin.gltf": {
+      "sha256": "5287770ca8fb4baaa7769d80e4a183411341d8ef391e28667436af13bbe3abe5",
+      "size": 313257
+    },
+    "assets/cube-world/Pixel-Blocks/Block_Blank.gltf": {
+      "sha256": "55afb31c21b0dd0d0c721a1a967a1d494ef2b6053945b79f5f1c014d3c79c709",
+      "size": 18161
+    },
+    "assets/cube-world/Pixel-Blocks/Block_Square.gltf": {
+      "sha256": "e2fe3c16166bb29b53727b4fe6a9526e680e481da37cc4a959f3b12125e259a5",
+      "size": 18162
+    },
+    "assets/cube-world/Pixel-Blocks/Bricks_Dark.gltf": {
+      "sha256": "9f4d318e5190bf198699c0687a055ce0534e15cd43d14cced56fa1399a4826ec",
+      "size": 18161
+    },
+    "assets/cube-world/Pixel-Blocks/Bricks_Grey.gltf": {
+      "sha256": "730b944ad95d0690f1093ef1f8d0161ae62879b13b86d57be9e867ddfb7bb317",
+      "size": 18161
+    },
+    "assets/cube-world/Pixel-Blocks/Bricks_Red.gltf": {
+      "sha256": "16157d0e8c704cccf377c5d1eebb587b567e16a7f2ddcb7bb160c899449f7fc5",
+      "size": 18160
+    },
+    "assets/cube-world/Pixel-Blocks/Bricks_Yellow.gltf": {
+      "sha256": "6369f7d5280867a2ecf49b56d4a2f58609206f5674dbbf0c55d434d74b58e197",
+      "size": 18163
+    },
+    "assets/cube-world/Pixel-Blocks/Coal.gltf": {
+      "sha256": "f74407e1291f5ad1f512746e80825338081858adfc2a783b7c38c8908f15282b",
+      "size": 18154
+    },
+    "assets/cube-world/Pixel-Blocks/Diamond.gltf": {
+      "sha256": "a39bc256484fc7fb524169466744862307ee643b4eab1e01774529c26f3b59e5",
+      "size": 18157
+    },
+    "assets/cube-world/Pixel-Blocks/Dirt.gltf": {
+      "sha256": "9d71b691bafcec41bfca3cf2ad9eee93c447e0fd3f03bcc98e68f779c4c6856e",
+      "size": 18154
+    },
+    "assets/cube-world/Pixel-Blocks/Exclamation.gltf": {
+      "sha256": "92351b15ae356b33cd399eb62d69c1c7e34eb5d9540cc76a503ba73d9e47580f",
+      "size": 18161
+    },
+    "assets/cube-world/Pixel-Blocks/Grass.gltf": {
+      "sha256": "1c93cc83e8f18d5c533b2a14577492cc29300c316eb8a47a26df9d90a9e5fce8",
+      "size": 18155
+    },
+    "assets/cube-world/Pixel-Blocks/Ice.gltf": {
+      "sha256": "48f29fefbca282ff7658ac0f7870db2a91ab9790d729ed52edcea0016d5d8bc0",
+      "size": 18153
+    },
+    "assets/cube-world/Pixel-Blocks/Leaves.gltf": {
+      "sha256": "1560c6a2aec053300f9a8d9074c678a6d7c3117bdc748b72f7c66b3c603d595e",
+      "size": 18156
+    },
+    "assets/cube-world/Pixel-Blocks/QuestionMark.gltf": {
+      "sha256": "f1bcaa6134153e0407a0c97a76fe258820cd77ddcac14065a8b36b520ab145f4",
+      "size": 18162
+    },
+    "assets/cube-world/Pixel-Blocks/Snow.gltf": {
+      "sha256": "cf41cea852fea40957315e18e5ce89f340a0b3bf45b4d1a4c7cfa4a489d38852",
+      "size": 18154
+    },
+    "assets/cube-world/Pixel-Blocks/Stone.gltf": {
+      "sha256": "c5a16b4e493b2ccd6e45d5721da21244dcefc5bfa0b3131aa96ed48801be818d",
+      "size": 18155
+    },
+    "assets/cube-world/Pixel-Blocks/Wood.gltf": {
+      "sha256": "040e3fd1a46146a9f0db7830754c401e2307f6e852dbc8c692bfc5497c3668b5",
+      "size": 18154
+    },
+    "assets/cube-world/Pixel-Blocks/WoodPlanks.gltf": {
+      "sha256": "c4d00874ccf9fd55cc02e14ea5c8fc60fd254c9bda16ec8b563f15e31bcf0fc7",
+      "size": 18160
+    },
+    "assets/cube-world/Tools/Axe_Diamond.gltf": {
+      "sha256": "66f2797566a1db6f5fd1395e737745d3b13261f39b11b95fc1d3eaca0a2a27d5",
+      "size": 22764
+    },
+    "assets/cube-world/Tools/Axe_Gold.gltf": {
+      "sha256": "d28498958723b593550eef8b00eb143c164cb0bb0d8b2764cc45795912dd7654",
+      "size": 22761
+    },
+    "assets/cube-world/Tools/Axe_Stone.gltf": {
+      "sha256": "c39d7088d127f9b46b3ea7fe2eb242436a6b378034d19bb6b4acdca4c0fb655c",
+      "size": 22762
+    },
+    "assets/cube-world/Tools/Axe_Wood.gltf": {
+      "sha256": "36926f891b207baf349055cf6148f350f1907a1e7e3b84434e96a4c58fb478c1",
+      "size": 22761
+    },
+    "assets/cube-world/Tools/Pickaxe_Diamond.gltf": {
+      "sha256": "9365cf0b42274319b8b1d624d6c0498ab6610bb04f45e91813c31467fd798184",
+      "size": 26826
+    },
+    "assets/cube-world/Tools/Pickaxe_Gold.gltf": {
+      "sha256": "dda0c23c36f73bcb9afb1f58ae89a11905f7a2d2cd4a7902fe061dccbec7d863",
+      "size": 26823
+    },
+    "assets/cube-world/Tools/Pickaxe_Stone.gltf": {
+      "sha256": "4aa63de6e069fe6e21efd648bff6221b36151ae1617d079fb22d2010c7435da1",
+      "size": 26824
+    },
+    "assets/cube-world/Tools/Pickaxe_Wood.gltf": {
+      "sha256": "a975f105588ee4d52a428808f0277465455ac11b2e4f031e472d9f21826b991e",
+      "size": 26823
+    },
+    "assets/cube-world/Tools/Shovel_Diamond.gltf": {
+      "sha256": "ee05a50f1987f4007e957868fa3e5d727fb2bc5d9f279fc35f502bf07a6ec99b",
+      "size": 18736
+    },
+    "assets/cube-world/Tools/Shovel_Gold.gltf": {
+      "sha256": "51483c2608f4b67f59c763834b83e182d4176a5fe3cd74896a89a6bf9ccee8b4",
+      "size": 18733
+    },
+    "assets/cube-world/Tools/Shovel_Stone.gltf": {
+      "sha256": "8f2d39b844049783bc51b7d10b2dca5a4a96a211008abf5a8947091fedc6a6ae",
+      "size": 18734
+    },
+    "assets/cube-world/Tools/Shovel_Wood.gltf": {
+      "sha256": "a9f98e46cb547d280e0e2829d3ad270d27544ce9bca8cd809a9d5bfad4bff28d",
+      "size": 18733
+    },
+    "assets/cube-world/Tools/Sword_Diamond.gltf": {
+      "sha256": "995b2c891ae213c0b16ce5d8c1f84b3e328dd77b21bc6466dc2ffa8cf19a41bb",
+      "size": 15629
+    },
+    "assets/cube-world/Tools/Sword_Gold.gltf": {
+      "sha256": "5971d475c90673236ddb35154e03f8d9857a352efa29c38bae851241c1e162b6",
+      "size": 15626
+    },
+    "assets/cube-world/Tools/Sword_Stone.gltf": {
+      "sha256": "2f03f45933504c9e60c4eb5b6b7a49ba45d00f100fde32588c2c5e3994cccc5f",
+      "size": 15755
+    },
+    "assets/cube-world/Tools/Sword_Wood.gltf": {
+      "sha256": "ab59ba68721a10fa0d85094ee4bd4fa7a8fc71cf5568cce2c586f5f1cc39731d",
+      "size": 15710
+    },
+    "assets/cube-world/Tree_1.gltf": {
+      "sha256": "f4f4bd56416e432721cdc1f42c2ca2a17793660455ca494fe3bb44a738cd02f4",
+      "size": 69360
+    }
+  }
+}

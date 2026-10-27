@@ -30,7 +30,9 @@ export default defineConfig({
     // bundler cannot see them — they are data copied into each new sandbox, not
     // modules. Template contracts use visible root-level TEMPLATE.md and
     // ASSETS.json names, so this ordinary recursive glob includes them without
-    // depending on hidden-file matching semantics.
+    // depending on hidden-file matching semantics. Template asset bytes are not
+    // here: each seed carries an ASSETS.lock.json and provisioning downloads the
+    // locked blobs from R2 (TEMPLATE_ASSETS_URL), see templates/asset-lock.ts.
     extensions: [
       additionalFiles({
         files: ["./lib/games/runtime/**", "./lib/games/templates/**"],

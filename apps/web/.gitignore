@@ -1,3 +1,5 @@
 .clerk/
 
 .trigger
+# Local mirror of template asset bytes (they live in R2, see scripts/template-assets.ts)
+.template-assets/

@@ -1,0 +1,285 @@
+{
+  "version": 1,
+  "files": {
+    "assets/fantasy-cards/0_Card_Back.gltf": {
+      "sha256": "c0250a9855ab6670ac658ef6e6736fff0bc80b4e1698c7bd56200eb0eff1e624",
+      "size": 1829
+    },
+    "assets/fantasy-cards/0_Card_Container.bin": {
+      "sha256": "c585c826691132fe8a63537184b2def3cbacbcbea859fb02c3eedfa752c39224",
+      "size": 4548
+    },
+    "assets/fantasy-cards/0_Card_Container.gltf": {
+      "sha256": "7d74c981ff65c0cf62fcbce4a79bb5a84001fe6835f821ecee4fcdb80bc6b05d",
+      "size": 1517
+    },
+    "assets/fantasy-cards/0_Card_Front.bin": {
+      "sha256": "14bacb137bc207597292fc6c2e49db61623009645f80f23210ce091ca1548bbf",
+      "size": 7296
+    },
+    "assets/fantasy-cards/0_Card_Front.gltf": {
+      "sha256": "a5b8efb99d6fc01f5c95ee852af4f0a49f9406b970cd7ef736d2fc274747d9a6",
+      "size": 2967
+    },
+    "assets/fantasy-cards/0_Card_Mask.bin": {
+      "sha256": "116fcf20b30a1cc85b2a72e9f6486d963a96133bdceb0a32584e0fd3d3eb97af",
+      "size": 900
+    },
+    "assets/fantasy-cards/0_Card_Mask.gltf": {
+      "sha256": "6e774a49ffe8cb23e33824096eac56f85be0b3710c00aa6b95f3591d997b1d44",
+      "size": 1665
+    },
+    "assets/fantasy-cards/0_Card_back.bin": {
+      "sha256": "b5ef459c6e8d02a4a85eb1a879c4c840d85e0b180097b8e5bc951a4c9cabf623",
+      "size": 120168
+    },
+    "assets/fantasy-cards/10_Beehive.bin": {
+      "sha256": "aca81834117e5b935fefd0138751ca16c49baae43c66e1ad67187b80ebc32e6b",
+      "size": 310804
+    },
+    "assets/fantasy-cards/10_Beehive.gltf": {
+      "sha256": "fcabe4416af80d7a34633f8f96273ad516ae536530082044fcb432eb528bcde3",
+      "size": 4233
+    },
+    "assets/fantasy-cards/11_Polinization.bin": {
+      "sha256": "8b927f083bba1bc9eeeac79243e8ada5c6a238825ccd580701c60beac2271b17",
+      "size": 269440
+    },
+    "assets/fantasy-cards/11_Polinization.gltf": {
+      "sha256": "86916afd7b100c4a945eb664acd4cef45fa1024f4fe5b64cac0b947fcc84a564",
+      "size": 4418
+    },
+    "assets/fantasy-cards/12_Mimic.bin": {
+      "sha256": "648fb72b151ec984a2a88e330dbc6dd16254a08d7cb18f9fe7f14f677a33f61b",
+      "size": 503844
+    },
+    "assets/fantasy-cards/12_Mimic.gltf": {
+      "sha256": "5ee0bec1217c3a4021ddb0445534b2b3902a0c45cf1a214f38d62c7907184e53",
+      "size": 4727
+    },
+    "assets/fantasy-cards/13_SeaMonster.bin": {
+      "sha256": "a3d8e8430b7d301e0f76dee5e3ab2498821eca283a1b95cdfe434839217d75e3",
+      "size": 1634084
+    },
+    "assets/fantasy-cards/13_SeaMonster.gltf": {
+      "sha256": "4a3e751cd9f0623f83c7aefc0a4b01583976492772978d5e80c8064a14bd86ba",
+      "size": 4270
+    },
+    "assets/fantasy-cards/14_Coin.bin": {
+      "sha256": "84280e8795885a802956804a87f861762b2eef4d1a5f6054ca5123385dfc2189",
+      "size": 68496
+    },
+    "assets/fantasy-cards/14_Coin.gltf": {
+      "sha256": "d5fe3a3a5d204225d85f3e52fefbff6a5178c7a5d491ec40db88113205e090d6",
+      "size": 3012
+    },
+    "assets/fantasy-cards/15_Cult.bin": {
+      "sha256": "50a0376fd8fa5b0626812244fb4d2f919ed9feb026afd39279479867264dc6d8",
+      "size": 745204
+    },
+    "assets/fantasy-cards/15_Cult.gltf": {
+      "sha256": "66a257a29ad2c38782305b05575620470c6138a92a6693dca552f7cacdf823d4",
+      "size": 5234
+    },
+    "assets/fantasy-cards/16_Belltowers.bin": {
+      "sha256": "3f8fd5c2a00d075a4217bd7946bc69e8ede30b9ed0fa3f15789a1fb8aaf68412",
+      "size": 1627604
+    },
+    "assets/fantasy-cards/16_Belltowers.gltf": {
+      "sha256": "b3b8b3e45ec2e08ee362fd2c63f4bfcfb638073976e33fd65c21b1a36fc8462c",
+      "size": 4254
+    },
+    "assets/fantasy-cards/17_Rebirth.bin": {
+      "sha256": "9f6af693cf65d05b94fe3112d591608a240d3680aee080ec122deb901ceae3b1",
+      "size": 250560
+    },
+    "assets/fantasy-cards/17_Rebirth.gltf": {
+      "sha256": "feba951e7cf5cdb1a46cd546724958717667d94e2891ef7368cf87acde84bd6c",
+      "size": 3135
+    },
+    "assets/fantasy-cards/18_WaterDragon.bin": {
+      "sha256": "d81eaeac163b2a0d2a01cd3fd293e2639593ef88fb939a9685fb027c4e8a544b",
+      "size": 170556
+    },
+    "assets/fantasy-cards/18_WaterDragon.gltf": {
+      "sha256": "613bb3e657f35474bfb528666044b6545afd8a3bc28dc7d337f5aaaa45c9aae9",
+      "size": 4648
+    },
+    "assets/fantasy-cards/19_OceanTreasure.bin": {
+      "sha256": "072ef93490788657182a33dac69b9def5d5c675fc02714c378693988b193597e",
+      "size": 673576
+    },
+    "assets/fantasy-cards/19_OceanTreasure.gltf": {
+      "sha256": "254f92023bb2f38856d6aefcbbc82f08ff70ba565cc295f40a7160845bc897c6",
+      "size": 2962
+    },
+    "assets/fantasy-cards/1_Fireball.bin": {
+      "sha256": "680d2ad25198977c1354ee623cc853dcf1857fdc2b35e4bc2fca759b6090896a",
+      "size": 55684
+    },
+    "assets/fantasy-cards/1_Fireball.gltf": {
+      "sha256": "ed0bdb13470004dd88b1ff0947dfc72f219d7babed04e893ad39196255daf430",
+      "size": 4225
+    },
+    "assets/fantasy-cards/20_Element_Fire.bin": {
+      "sha256": "3eadc49614f90e1085a1b2f6adcc484ee963710ea1e802033f13fa636418aa27",
+      "size": 52284
+    },
+    "assets/fantasy-cards/20_Element_Fire.gltf": {
+      "sha256": "885ca5c4fb69e011a80de9484aaa2b2127611d11206c4c9e49560c7b5d1524a2",
+      "size": 4236
+    },
+    "assets/fantasy-cards/21_Element_Lightning.bin": {
+      "sha256": "12e9bb1a099d5d7f437fad5fd85aae2e36ca0e5828ef4b4bcc515c57b008d105",
+      "size": 89940
+    },
+    "assets/fantasy-cards/21_Element_Lightning.gltf": {
+      "sha256": "5ab93c5e4bced0bbaa54decba0263a88cd6fc0182374420bd37ad01b9f648dd3",
+      "size": 5473
+    },
+    "assets/fantasy-cards/22_Element_Air.bin": {
+      "sha256": "52a9997c31f02bb860a0dea2b7a378616bb0b320b5a40f45e32e2f3486cdcc0e",
+      "size": 51412
+    },
+    "assets/fantasy-cards/22_Element_Air.gltf": {
+      "sha256": "5c7faa0b10231255b48a68ffef39f6359b390f619d43040579ca49307fe2b7a6",
+      "size": 4235
+    },
+    "assets/fantasy-cards/23_Element_Water.bin": {
+      "sha256": "df8286106e355c9e97dfdc19bad30b14adcae802d7d760583cd3f5f85269bdae",
+      "size": 57524
+    },
+    "assets/fantasy-cards/23_Element_Water.gltf": {
+      "sha256": "0e51a40badef0c0c20745493cdd15e766b7dff0f51e37947e388761f134a6224",
+      "size": 4671
+    },
+    "assets/fantasy-cards/24_Element_Dark.bin": {
+      "sha256": "5f2489f68b2afa549648b12385856fff31d0a113f1301c01051b3ba9a37a9b59",
+      "size": 41628
+    },
+    "assets/fantasy-cards/24_Element_Dark.gltf": {
+      "sha256": "b0ef1c07a49274ad3ae8fae7059a9672015559a8b9bce7f6e425dfffdc818c19",
+      "size": 4623
+    },
+    "assets/fantasy-cards/25_Element_Earth.bin": {
+      "sha256": "0e101d8652d6e273f6d82c8bad6ec63ee82b4a1af2f97167f656f538f6149a22",
+      "size": 31572
+    },
+    "assets/fantasy-cards/25_Element_Earth.gltf": {
+      "sha256": "4bf018d39122c508be9896dc837ad0f5b2b8e5fc97cccb161466f2ca130a7bf2",
+      "size": 4417
+    },
+    "assets/fantasy-cards/26_BloodRing.bin": {
+      "sha256": "21363b77d923e71afa3655dff7e9b33ceaf9503b980ea22965eaee645d5ef5df",
+      "size": 94984
+    },
+    "assets/fantasy-cards/26_BloodRing.gltf": {
+      "sha256": "3d178d15ac68786a69c87eda405c80464a959e85758413045d0abc6e1a4cb6b9",
+      "size": 2934
+    },
+    "assets/fantasy-cards/27_Book.bin": {
+      "sha256": "35198d2d7daac15af38d1c1a88372ad20ccf8eea3a5cdaea6c4e28984e7b1c5e",
+      "size": 301244
+    },
+    "assets/fantasy-cards/27_Book.gltf": {
+      "sha256": "16ce2f4b89be9961ce0e0bd745846cbf23a81d4e74cd81c299f7a7057d516c4b",
+      "size": 3540
+    },
+    "assets/fantasy-cards/28_RollDice.bin": {
+      "sha256": "ebddb91d433fb29d47e795c03e868e7f5b08e2d3e68cfe84cbfeb4b667e84a85",
+      "size": 132064
+    },
+    "assets/fantasy-cards/28_RollDice.gltf": {
+      "sha256": "a02c689cbdf5cc25760c50bcddf0fb25d6e20a0621b327a2b78fedc601ef8e9e",
+      "size": 4229
+    },
+    "assets/fantasy-cards/29_Block.bin": {
+      "sha256": "4d3dce464a4f8ab3f05ee150dfdfaf44213a9c583b19b353c791c5f24f6a3b46",
+      "size": 885856
+    },
+    "assets/fantasy-cards/29_Block.gltf": {
+      "sha256": "fa5f97b062d29e3c7b849cdbd0bd20d53c435fec869ff83525e0929f2ebe9e2a",
+      "size": 4801
+    },
+    "assets/fantasy-cards/2_TrenchcoatMushrooms.bin": {
+      "sha256": "2c250cecbeed0b84bf2032c3cb5137af49396266b146d35d34108dc86e2d761e",
+      "size": 387284
+    },
+    "assets/fantasy-cards/2_TrenchcoatMushrooms.gltf": {
+      "sha256": "c30e4c1935c57d1ae8a16ad0a7a8a2d1022b9f05be558b9d84ea39bca237bc15",
+      "size": 4665
+    },
+    "assets/fantasy-cards/30_Wizard.bin": {
+      "sha256": "118cef41fc91ba6c1699131d7c85775651f8849ecb426c750f3b4d0aa6f9a302",
+      "size": 243456
+    },
+    "assets/fantasy-cards/30_Wizard.gltf": {
+      "sha256": "3618dc64ae8a388c664dac29b737a4b47b9f2dcb8fb17bad8f064a7c1b5aa1d6",
+      "size": 5076
+    },
+    "assets/fantasy-cards/3_Monk.bin": {
+      "sha256": "761044d4cecf90a4d5db6e16951e02c99ce9512d712ba528b6eb856cb0b65199",
+      "size": 374604
+    },
+    "assets/fantasy-cards/3_Monk.gltf": {
+      "sha256": "1ccc66aad540414d1b455f5fe6aec4eb978ddc4d3442d00f565ee6c8272485bd",
+      "size": 4601
+    },
+    "assets/fantasy-cards/4_Market.bin": {
+      "sha256": "1a499d02736828457b840c95ecee82af2b148d375a184ae46f69c1b323caffea",
+      "size": 1169200
+    },
+    "assets/fantasy-cards/4_Market.gltf": {
+      "sha256": "51123670d5c217c25736a6b79f54327cdd76d2b613ea540975c382a968b25b14",
+      "size": 4245
+    },
+    "assets/fantasy-cards/5_Steal.bin": {
+      "sha256": "f2ad540bdcb2e7f254ff20d1a9488681601918fec12a41490c396b0cffbf5957",
+      "size": 89432
+    },
+    "assets/fantasy-cards/5_Steal.gltf": {
+      "sha256": "3fdab25e0795491373002733d14df46b37c42c342fe0d44d5f2dad5f34733386",
+      "size": 4212
+    },
+    "assets/fantasy-cards/6_King.bin": {
+      "sha256": "4be4a1e02f29c34626ebaf2aeab7148a1a7644ac2269cca4c4632dad8b319af7",
+      "size": 359356
+    },
+    "assets/fantasy-cards/6_King.gltf": {
+      "sha256": "a49aefa0536a12332b9001723ac9b0dd25a9620a096b14b15ea67c49deb6dc6b",
+      "size": 4619
+    },
+    "assets/fantasy-cards/7_StinkTrap.bin": {
+      "sha256": "a23c599b03da84df467c6c71d2e075e1b57a3ac6867716e584dddff5085aa320",
+      "size": 218348
+    },
+    "assets/fantasy-cards/7_StinkTrap.gltf": {
+      "sha256": "59aa896ba532894e269a00df905a57e01a81884cfc07b772b3efbe738f368437",
+      "size": 4242
+    },
+    "assets/fantasy-cards/8_LightningWizard.bin": {
+      "sha256": "a7b529cbab0c57986a8aaa9fb24b78187af70624c4ef81c8665e60c95fe7b154",
+      "size": 750768
+    },
+    "assets/fantasy-cards/8_LightningWizard.gltf": {
+      "sha256": "2bd602fab4b884e1f7c5473e76aa84701c27d53db90096b2b8176f7f53a80447",
+      "size": 5504
+    },
+    "assets/fantasy-cards/9_Hypnosis.bin": {
+      "sha256": "ce6ea43e64adc10c84af23902b16ede30f35170ea7a9bf11ee75b0ec35af3a67",
+      "size": 298172
+    },
+    "assets/fantasy-cards/9_Hypnosis.gltf": {
+      "sha256": "da0d40739e337703d9953ed153aab6cd44040623a13e1735992c21679cc765be",
+      "size": 4620
+    },
+    "assets/fantasy-cards/Cards_Atlas.png": {
+      "sha256": "35e077841d89032552fa98743dbdc47dd0671f8cccddce88ca5f0821af737f7e",
+      "size": 28281
+    },
+    "assets/fantasy-cards/License.txt": {
+      "sha256": "27fc2ce5cb99d02a5ccf73fa2a80570ca26ac2729d275815443c88c8529394d1",
+      "size": 531
+    }
+  }
+}

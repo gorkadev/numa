@@ -9,6 +9,14 @@ import {
   readSeedDirectory,
   type RuntimeSeed,
 } from "../runtime-seed"
+import {
+  fetchLockedAssets,
+  parseAssetLock,
+  templateAssetsBaseUrl,
+  TEMPLATE_ASSET_LOCK_PATH,
+  type AssetLock,
+  type FetchLockedAssetsOptions,
+} from "./asset-lock"
 
 export const TEMPLATE_DESCRIPTOR_PATH = "TEMPLATE.md"
 export const TEMPLATE_MANIFEST_PATH = "ASSETS.json"
@@ -290,7 +298,8 @@ function validateTemplateContract(
   templateId: string,
   templateVersion: number,
   templateSeed: RuntimeSeed,
-  mergedSeed: RuntimeSeed
+  mergedSeed: RuntimeSeed,
+  lock: AssetLock | undefined
 ): TemplateContract {
   const templateFiles = seedFileMap(templateSeed)
   const descriptor = requireSeedFile(templateFiles, TEMPLATE_DESCRIPTOR_PATH).toString("utf8").trim()
@@ -314,8 +323,9 @@ function validateTemplateContract(
     ...manifest.vendor.commonRuntimeDependencies,
   ]
 
+  // Locked assets are checked by path only; their bytes stay in object storage.
   for (const declaredPath of declaredPaths) {
-    if (declaredPath) requireSeedFile(mergedFiles, declaredPath)
+    if (declaredPath && !lock?.files[declaredPath]) requireSeedFile(mergedFiles, declaredPath)
   }
 
   for (const [vendorPath, provenance] of Object.entries(manifest.provenance.three)) {
@@ -330,14 +340,17 @@ function validateTemplateContract(
   return { descriptor, manifest }
 }
 
+type TemplateLayer = { seed: RuntimeSeed; lock: AssetLock | undefined }
+
 /**
  * Resolves exactly one persisted template version. Unknown historical values
  * fail closed rather than accidentally provisioning a different starter kit.
+ * The asset lock is split off: it describes the seed, it is not part of it.
  */
-export async function readTemplateSeed(
+async function readTemplateLayer(
   templateId: string,
   templateVersion: number
-): Promise<RuntimeSeed> {
+): Promise<TemplateLayer> {
   const key = templateKey(templateId, templateVersion)
 
   if (!(key in TEMPLATE_SEED_DIRECTORIES)) {
@@ -345,15 +358,41 @@ export async function readTemplateSeed(
   }
 
   const directory = TEMPLATE_SEED_DIRECTORIES[key]
-  return directory ? readSeedDirectory(directory) : { folders: [], files: [] }
+  if (!directory) return { seed: { folders: [], files: [] }, lock: undefined }
+
+  const { folders, files } = await readSeedDirectory(directory)
+  const lockFile = files.find((file) => file.relativePath === TEMPLATE_ASSET_LOCK_PATH)
+  return {
+    seed: { folders, files: files.filter((file) => file !== lockFile) },
+    lock: lockFile ? parseAssetLock(lockFile.contents) : undefined,
+  }
 }
 
-/** Returns the validated contract for a selected template, never for none@1. */
+/** The template's files kept in the repository, without its locked assets. */
+export async function readTemplateSeed(
+  templateId: string,
+  templateVersion: number
+): Promise<RuntimeSeed> {
+  return (await readTemplateLayer(templateId, templateVersion)).seed
+}
+
+/** The template's asset lock, or undefined when it ships no remote assets. */
+export async function readTemplateAssetLock(
+  templateId: string,
+  templateVersion: number
+): Promise<AssetLock | undefined> {
+  return (await readTemplateLayer(templateId, templateVersion)).lock
+}
+
+/**
+ * Returns the validated contract for a selected template, never for none@1.
+ * It reads the manifest and lock only, never the asset bytes.
+ */
 export async function readTemplateContract(
   templateId: string,
   templateVersion: number
 ): Promise<TemplateContract | undefined> {
-  const templateSeed = await readTemplateSeed(templateId, templateVersion)
+  const { seed: templateSeed, lock } = await readTemplateLayer(templateId, templateVersion)
   if (templateId === "none" && templateVersion === 1) return undefined
 
   const runtimeSeed = await readRuntimeSeed()
@@ -361,27 +400,36 @@ export async function readTemplateContract(
     templateId,
     templateVersion,
     templateSeed,
-    mergeRuntimeSeeds(runtimeSeed, templateSeed)
+    mergeRuntimeSeeds(runtimeSeed, templateSeed),
+    lock
   )
 }
 
 /**
  * Builds and validates the complete initial filesystem for one game from the
  * common runtime plus the version selected when that game's row was created.
+ * The contract is checked before any asset is downloaded.
  */
 export async function readGameSeed(
   templateId: string,
-  templateVersion: number
+  templateVersion: number,
+  assets: Partial<FetchLockedAssetsOptions> = {}
 ): Promise<RuntimeSeed> {
-  const [runtimeSeed, templateSeed] = await Promise.all([
+  const [runtimeSeed, { seed: templateSeed, lock }] = await Promise.all([
     readRuntimeSeed(),
-    readTemplateSeed(templateId, templateVersion),
+    readTemplateLayer(templateId, templateVersion),
   ])
   const seed = mergeRuntimeSeeds(runtimeSeed, templateSeed)
 
   if (!(templateId === "none" && templateVersion === 1)) {
-    validateTemplateContract(templateId, templateVersion, templateSeed, seed)
+    validateTemplateContract(templateId, templateVersion, templateSeed, seed, lock)
   }
 
-  return seed
+  if (!lock) return seed
+
+  const lockedAssets = await fetchLockedAssets(lock, {
+    ...assets,
+    baseUrl: assets.baseUrl ?? templateAssetsBaseUrl(),
+  })
+  return mergeRuntimeSeeds(seed, lockedAssets)
 }
