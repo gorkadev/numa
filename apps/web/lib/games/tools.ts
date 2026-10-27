@@ -10,9 +10,6 @@ import {
   type ToolError,
 } from "@/lib/games/game-path"
 
-/** Re-exported so existing callers (`harness/ownership.ts`) keep their import. */
-export { resolveGamePath }
-
 /**
  * Ceiling on what a single `read_file` may pull back.
  *
