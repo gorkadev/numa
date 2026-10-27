@@ -6,6 +6,9 @@ import { usePathname, useRouter } from "next/navigation"
 import { useLocale, useTranslations } from "next-intl"
 import { useTheme } from "next-themes"
 import {
+  ArrowDown02Icon,
+  ArrowUp02Icon,
+  CornerDownLeftIcon,
   Delete02Icon,
   LayoutTemplateIcon,
   MessageCircleIcon,
@@ -21,6 +24,7 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react"
 import type { Game } from "@workspace/db/schema"
 import { Spinner } from "@workspace/ui/components/spinner"
+import { Kbd } from "@workspace/ui/components/kbd"
 import { toast } from "@workspace/ui/components/toast"
 import {
   CommandDialog,
@@ -194,6 +198,13 @@ export function CommandPalette({
         }
         title={t("commandPalette")}
         description={t("commandPaletteDescription")}
+        /**
+         * Anchored by its top edge, like every palette, so it does not jump
+         * as filtering shrinks the list; the edge sits half the full
+         * palette's height (~29rem: input, 24rem of list, hints) above the
+         * middle, so a full palette is centred exactly.
+         */
+        className="top-[max(1rem,calc(50svh-14.5rem))] sm:max-w-xl"
       >
         <CommandInput
           placeholder={
@@ -214,7 +225,13 @@ export function CommandPalette({
             }
           }}
         />
-        <CommandList>
+        {/**
+         * Taller than the default list, and faded at whichever edge still has
+         * rows past it — the same `scroll-fade` the sidebar's history uses.
+         * On a window too short for the full palette it also stops 1rem
+         * short of the bottom, matching the 1rem the top edge keeps.
+         */}
+        <CommandList className="max-h-[min(24rem,calc(100svh-7rem))] scroll-fade">
           {/* cmdk counts only filtered rows, so it would show beside the always-there Create row. */}
           {!quickPrompt && <CommandEmpty>{t("noResults")}</CommandEmpty>}
           {page === "theme" && (
@@ -440,6 +457,7 @@ export function CommandPalette({
             </CommandGroup>
           )}
         </CommandList>
+        <PaletteHints />
       </CommandDialog>
       {currentGame && (
         <GameActionDialogs
@@ -552,4 +570,50 @@ function useMessageHits(query: string): MessageHit[] {
   }, [query])
 
   return result.query === query ? result.hits : []
+}
+
+/**
+ * The keys the palette answers to, along its bottom edge. Hidden on touch-
+ * sized screens, which have no keyboard to press them with.
+ *
+ * The negative margins undo the `Command` root's 4px padding, so the divider
+ * runs edge to edge and the row is centred in the band below it rather than
+ * sitting 4px high. Arrows and Enter are icons, not `↑ ↓ ↵`: Inter draws
+ * those glyphs off its line box's middle, so as text they look misaligned
+ * in a key even when the box is exactly centred.
+ */
+function PaletteHints() {
+  const t = useTranslations("Shell")
+
+  return (
+    <div className="-mx-1 -mb-1 hidden items-center gap-4 border-t px-4 py-2.5 text-xs text-muted-foreground sm:flex">
+      <span className="flex items-center gap-1.5">
+        <Kbd>
+          <HugeiconsIcon icon={ArrowUp02Icon} strokeWidth={2} />
+        </Kbd>
+        <Kbd>
+          <HugeiconsIcon icon={ArrowDown02Icon} strokeWidth={2} />
+        </Kbd>
+        {t("paletteHintNavigate")}
+      </span>
+      <span className="flex items-center gap-1.5">
+        <Kbd>
+          <HugeiconsIcon icon={CornerDownLeftIcon} strokeWidth={2} />
+        </Kbd>
+        {t("paletteHintSelect")}
+      </span>
+      <span className="flex items-center gap-1.5">
+        <Kbd>&gt;</Kbd>
+        {t("paletteHintActions")}
+      </span>
+      <span className="flex items-center gap-1.5">
+        <Kbd>#</Kbd>
+        {t("paletteHintGames")}
+      </span>
+      <span className="ms-auto flex items-center gap-1.5">
+        <Kbd>Esc</Kbd>
+        {t("paletteHintClose")}
+      </span>
+    </div>
+  )
 }
