@@ -1,16 +1,23 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 import { ArrowLeft01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Button } from "@workspace/ui/components/button"
+import { cn } from "@workspace/ui/lib/utils"
 import { useTranslations } from "next-intl"
 
 import { FileTree } from "@/components/chat/file-tree"
 import { FileViewer } from "@/components/chat/file-viewer"
 import { Spinner } from "@/components/localized-spinner"
-import { findFile, type FileTreeNode } from "@/lib/games/files"
+import {
+  fileContentUrl,
+  findFile,
+  isPrefetchableText,
+  type FileTreeNode,
+} from "@/lib/games/files"
+import { createHoverPrefetcher } from "@/lib/games/hover-prefetch"
 
 type TreeState =
   | { status: "loading" }
@@ -19,7 +26,7 @@ type TreeState =
 
 /**
  * The game directory, fetched when the tab mounts and again whenever the
- * revision moves — a turn that wrote files is exactly when the listing goes
+ * version moves — a turn that wrote files is exactly when the listing goes
  * stale, so there is nothing to poll for in between. The first fetch is also
  * what resumes an archived sandbox, so its loading state says so.
  *
@@ -27,7 +34,7 @@ type TreeState =
  * loading state: the tree only changes by a file or two per turn, and
  * blanking it would throw away the reader's place.
  */
-function useFileTree(gameId: string, revision: number) {
+function useFileTree(gameId: string, version: number) {
   const [state, setState] = useState<TreeState>({ status: "loading" })
   const [attempt, setAttempt] = useState(0)
 
@@ -47,7 +54,7 @@ function useFileTree(gameId: string, revision: number) {
       })
 
     return () => controller.abort()
-  }, [gameId, revision, attempt])
+  }, [gameId, version, attempt])
 
   function retry() {
     setState({ status: "loading" })
@@ -60,7 +67,8 @@ function useFileTree(gameId: string, revision: number) {
 type FilesTabBodyProps = {
   gameId: string
   previewToken: string
-  revision: number
+  /** The game version: the last turn's file revision, or the last finished turn's time on a fresh page load. */
+  version: number
   /** Owned by `SidePanel`, which stays mounted, so switching tabs and back reopens the same file. */
   selectedPath: string | null
   onSelectPath: (path: string | null) => void
@@ -75,12 +83,26 @@ type FilesTabBodyProps = {
 export function FilesTabBody({
   gameId,
   previewToken,
-  revision,
+  version,
   selectedPath,
   onSelectPath,
 }: FilesTabBodyProps) {
   const t = useTranslations("ChatFiles")
-  const { state, retry } = useFileTree(gameId, revision)
+  const { state, retry } = useFileTree(gameId, version)
+  /**
+   * Warms the browser's HTTP cache for a text file the pointer rests on, so
+   * the click that usually follows opens it from cache. One prefetcher per
+   * version: a new version is a new set of URLs, and the old "already
+   * loaded" set no longer says anything about them.
+   */
+  const prefetcher = useMemo(
+    () =>
+      createHoverPrefetcher((url) =>
+        fetch(url).then((response) => response.arrayBuffer())
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the URLs carry gameId and version; a new prefetcher per version is the point
+    [gameId, version]
+  )
 
   if (state.status === "loading") {
     return (
@@ -107,10 +129,24 @@ export function FilesTabBody({
     state.tree.length === 0 ? (
       <p className="p-2 text-sm text-muted-foreground">{t("empty")}</p>
     ) : (
-      <FileTree nodes={state.tree} selectedPath={selectedPath} onSelect={onSelectPath} />
+      <FileTree
+        nodes={state.tree}
+        selectedPath={selectedPath}
+        onSelect={(path) => {
+          // A click already loads the file; a hover still pending would only duplicate it.
+          prefetcher.hover(null)
+          onSelectPath(path)
+        }}
+        onPrefetch={(path) => {
+          const file = path ? findFile(state.tree, path) : undefined
+          prefetcher.hover(
+            file && isPrefetchableText(file) ? fileContentUrl(gameId, file.path, version) : null
+          )
+        }}
+      />
     )
   const detail = selected ? (
-    <FileViewer gameId={gameId} previewToken={previewToken} revision={revision} file={selected} />
+    <FileViewer gameId={gameId} previewToken={previewToken} version={version} file={selected} />
   ) : (
     <p className="p-4 text-sm text-muted-foreground">
       {selectedPath ? t("missing") : t("selectFile")}
@@ -118,30 +154,55 @@ export function FilesTabBody({
   )
 
   return (
-    <>
-      <div className="flex min-h-0 flex-1 flex-col @2xl:hidden">
-        {selectedPath ? (
-          <>
-            <div className="shrink-0 p-2">
-              <Button variant="ghost" size="sm" onClick={() => onSelectPath(null)}>
-                <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} />
-                {t("back")}
-              </Button>
-            </div>
-            <div className="min-h-0 flex-1 overflow-hidden">{detail}</div>
-          </>
-        ) : (
-          <div className="no-scrollbar min-h-0 flex-1 scroll-fade overflow-y-auto overscroll-contain p-2">
-            {tree}
-          </div>
+    <FilesLayout tree={tree} detail={detail} fileOpen={selectedPath !== null} onBack={() => onSelectPath(null)} />
+  )
+}
+
+/**
+ * One tree and one viewer, rearranged by the `@2xl:` container query rather
+ * than rendered once per layout: the viewer fetches, so a second copy hidden
+ * with CSS would still request every file twice. Below the breakpoint the
+ * tree gives way to the open file and a back button brings it back.
+ */
+export function FilesLayout({
+  tree,
+  detail,
+  fileOpen,
+  onBack,
+}: {
+  tree: React.ReactNode
+  detail: React.ReactNode
+  fileOpen: boolean
+  onBack: () => void
+}) {
+  const t = useTranslations("ChatFiles")
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col @2xl:flex-row">
+      <div
+        className={cn(
+          "no-scrollbar min-h-0 flex-1 scroll-fade overflow-y-auto overscroll-contain p-2 @2xl:w-64 @2xl:flex-none @2xl:border-e",
+          fileOpen && "max-@2xl:hidden"
         )}
+      >
+        {tree}
       </div>
-      <div className="hidden min-h-0 flex-1 @2xl:flex">
-        <div className="no-scrollbar min-h-0 w-64 shrink-0 scroll-fade overflow-y-auto overscroll-contain border-e p-2">
-          {tree}
-        </div>
-        <div className="min-h-0 min-w-0 flex-1 overflow-hidden">{detail}</div>
+      <div
+        className={cn(
+          "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
+          !fileOpen && "max-@2xl:hidden"
+        )}
+      >
+        {fileOpen ? (
+          <div className="shrink-0 p-2 @2xl:hidden">
+            <Button variant="ghost" size="sm" onClick={onBack}>
+              <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} />
+              {t("back")}
+            </Button>
+          </div>
+        ) : null}
+        <div className="min-h-0 flex-1 overflow-hidden">{detail}</div>
       </div>
-    </>
+    </div>
   )
 }

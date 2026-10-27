@@ -1,7 +1,16 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import { buildFileTree, fileViewOf, findFile, previewAssetUrl } from "./files"
+import {
+  buildFileTree,
+  contentCacheControl,
+  fileContentUrl,
+  fileViewOf,
+  findFile,
+  isPrefetchableText,
+  MAX_VIEW_BYTES,
+  previewAssetUrl,
+} from "./files"
 
 test("buildFileTree nests a flat listing, folders first and names sorted", () => {
   const tree = buildFileTree([
@@ -104,4 +113,24 @@ test("findFile returns the file node at a path, and nothing for folders or gaps"
   })
   assert.equal(findFile(tree, "assets"), undefined)
   assert.equal(findFile(tree, "missing.js"), undefined)
+})
+
+test("fileContentUrl names the file and the version it was read at", () => {
+  assert.equal(
+    fileContentUrl("g1", "assets/level 1.json", 1700000000000),
+    "/api/games/g1/files/content?path=assets%2Flevel+1.json&v=1700000000000"
+  )
+})
+
+test("contentCacheControl caches a versioned read for good and nothing else", () => {
+  assert.equal(contentCacheControl("1700000000000"), "private, max-age=31536000, immutable")
+  assert.equal(contentCacheControl(null), "no-store, private")
+  assert.equal(contentCacheControl(""), "no-store, private")
+})
+
+test("isPrefetchableText accepts text files within the view limit only", () => {
+  assert.equal(isPrefetchableText({ path: "main.js", size: 10 }), true)
+  assert.equal(isPrefetchableText({ path: "main.js", size: MAX_VIEW_BYTES + 1 }), false)
+  assert.equal(isPrefetchableText({ path: "hero.png", size: 10 }), false)
+  assert.equal(isPrefetchableText({ path: "ship.glb", size: 10 }), false)
 })

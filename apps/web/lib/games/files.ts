@@ -138,19 +138,49 @@ export function fileViewOf(path: string): FileView {
 }
 
 /**
+ * The largest file the viewer shows as text. Past this the highlighter would
+ * spend seconds on one render; a game's own sources sit far below it. The
+ * tree already reports every size, so the client skips the request for a
+ * larger file and the server refuses one that slips through.
+ */
+export const MAX_VIEW_BYTES = 512 * 1024
+
+/**
  * Where the viewer loads a media asset from: the preview proxy, which already
  * serves the game directory behind its signed token and sandbox CSP. The
- * revision is a cache key — the agent rewrites assets in place, and without
- * it the browser would keep showing the old bytes under the same URL.
+ * version is a cache key — the agent rewrites assets in place, and without it
+ * the browser would keep showing the old bytes under the same URL.
  */
 export function previewAssetUrl(
   gameId: string,
   previewToken: string,
   path: string,
-  revision: number
+  version: number
 ): string {
   const encoded = path.split("/").map(encodeURIComponent).join("/")
-  return `/api/games/${gameId}/preview/${previewToken}/${encoded}?v=${revision}`
+  return `/api/games/${gameId}/preview/${previewToken}/${encoded}?v=${version}`
+}
+
+/**
+ * The content endpoint's URL for one file at one version of the game.
+ *
+ * The version is what makes the response safe to cache forever: it changes
+ * whenever a turn rewrites files, so a changed file is always a new URL and
+ * the browser's own HTTP cache answers every repeat visit without a request.
+ */
+export function fileContentUrl(gameId: string, path: string, version: number): string {
+  const query = new URLSearchParams({ path, v: String(version) })
+  return `/api/games/${gameId}/files/content?${query}`
+}
+
+/** The content endpoint's `Cache-Control`: immutable for a versioned read, uncached otherwise. */
+export function contentCacheControl(version: string | null): string {
+  return version ? "private, max-age=31536000, immutable" : "no-store, private"
+}
+
+/** Whether hovering a file is worth warming the cache for: text the viewer will actually request. */
+export function isPrefetchableText(file: { path: string; size: number }): boolean {
+  return fileViewOf(file.path).kind === "code" && file.size <= MAX_VIEW_BYTES
 }
 
 /** The file node at `path`, or `undefined` once a refresh no longer lists it. */

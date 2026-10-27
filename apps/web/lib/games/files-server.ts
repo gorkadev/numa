@@ -1,6 +1,6 @@
 import { DaytonaFileNotFoundError } from "@daytona/sdk"
 
-import type { GameFileEntry } from "@/lib/games/files"
+import { MAX_VIEW_BYTES, type GameFileEntry } from "@/lib/games/files"
 import { GAME_DIR, resolveGamePath } from "@/lib/games/game-path"
 
 /**
@@ -12,7 +12,6 @@ export type GameFs = {
     path: string,
     options?: { depth?: number }
   ): Promise<{ name: string; path?: string; isDir: boolean; size: number }[]>
-  getFileDetails(path: string): Promise<{ isDir: boolean; size: number }>
   downloadFile(path: string): Promise<Buffer>
 }
 
@@ -23,13 +22,6 @@ export type GameFs = {
  * copied dependency tree, not a limit anyone should reach.
  */
 export const FILE_TREE_DEPTH = 8
-
-/**
- * The largest file the viewer shows. Past this the highlighter would spend
- * seconds on one render and the response would dwarf everything else on the
- * page; a game's own sources sit far below it.
- */
-export const MAX_VIEW_BYTES = 512 * 1024
 
 export async function listGameFiles(fs: GameFs): Promise<GameFileEntry[]> {
   const entries = await fs.listFiles(GAME_DIR, { depth: FILE_TREE_DEPTH })
@@ -44,34 +36,35 @@ export async function listGameFiles(fs: GameFs): Promise<GameFileEntry[]> {
 
 export type ReadGameFileResult =
   | { ok: true; path: string; content: string }
-  | { ok: false; reason: "invalid_path" | "not_found" | "directory" }
+  | { ok: false; reason: "invalid_path" | "not_found" }
   | { ok: false; reason: "too_large" | "binary"; size: number }
 
 /**
- * Reads one file as text for the viewer.
+ * Reads one file as text for the viewer, in a single sandbox call.
  *
  * The path goes through `resolveGamePath`, the same guard the agent's own
  * tools use, so a request can never name anything outside the game
- * directory. The size is checked before downloading: refusing a large file
- * after pulling it out of the sandbox would pay for the transfer anyway.
+ * directory. There is no metadata call ahead of the download: the client
+ * already knows each size from the tree and never asks for an oversized
+ * file, so checking first would add a round trip to every normal read just
+ * to save one on a request the UI does not make.
  */
 export async function readGameTextFile(fs: GameFs, input: string): Promise<ReadGameFileResult> {
   const resolved = resolveGamePath(input)
   if ("error" in resolved) return { ok: false, reason: "invalid_path" }
 
-  let details: { isDir: boolean; size: number }
+  let bytes: Buffer
   try {
-    details = await fs.getFileDetails(resolved.path)
+    bytes = await fs.downloadFile(resolved.path)
   } catch (error) {
     if (error instanceof DaytonaFileNotFoundError) return { ok: false, reason: "not_found" }
     throw error
   }
 
-  if (details.isDir) return { ok: false, reason: "directory" }
-  if (details.size > MAX_VIEW_BYTES) return { ok: false, reason: "too_large", size: details.size }
+  if (bytes.length > MAX_VIEW_BYTES) return { ok: false, reason: "too_large", size: bytes.length }
 
-  const content = (await fs.downloadFile(resolved.path)).toString("utf-8")
-  if (content.includes("\u0000")) return { ok: false, reason: "binary", size: details.size }
+  const content = bytes.toString("utf-8")
+  if (content.includes("\u0000")) return { ok: false, reason: "binary", size: bytes.length }
 
   return { ok: true, path: resolved.relative, content }
 }

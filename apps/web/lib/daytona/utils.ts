@@ -238,6 +238,15 @@ export async function getGameSandbox(gameId: string): Promise<SandboxResult> {
 }
 
 /**
+ * Resumes an existing sandbox by id, without provisioning one and without
+ * the static server `startGameServer` also ensures — for a caller that only
+ * reads files, that health check is a process exec it never needs.
+ */
+export async function resumeGameSandbox(sandboxId: string): Promise<SandboxResult> {
+  return resumeSandbox(await daytona.get(sandboxId))
+}
+
+/**
  * Port the game's static server listens on inside the sandbox. Nothing else in
  * the sandbox is expected to bind it, which is what makes "something answers on
  * this port" a sufficient health check.

@@ -250,6 +250,8 @@ export type SidePanelProps = {
   /** Lazy-mount flag for the preview frame, owned by `game-chat.tsx` for the same reason it owned it before 10c: see that file's comment on `previewMounted`. */
   previewMounted: boolean
   revision: number
+  /** The version the Files tab reads at — `game-chat.tsx` derives it from `revision` and the last finished turn. */
+  filesVersion: number
   subagentRuns: SubagentRunRecord[]
   selectedRunId: string | null
   onSelectRun: (agentId: string | null) => void
@@ -295,6 +297,7 @@ export function SidePanel({
   previewToken,
   previewMounted,
   revision,
+  filesVersion,
   subagentRuns,
   selectedRunId,
   onSelectRun,
@@ -602,7 +605,7 @@ export function SidePanel({
               <FilesTabBody
                 gameId={gameId}
                 previewToken={previewToken}
-                revision={revision}
+                version={filesVersion}
                 selectedPath={selectedFilePath}
                 onSelectPath={setSelectedFilePath}
               />

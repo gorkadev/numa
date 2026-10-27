@@ -32,6 +32,7 @@ export function GameChat({
   pinned = false,
   templateId,
   previewToken,
+  lastTurnFinishedAt = 0,
   initialMessages,
   initialSessions,
   initialPrompt,
@@ -56,6 +57,12 @@ export function GameChat({
    * shown broken.
    */
   previewToken?: string
+  /**
+   * When the last turn finished, in epoch ms (0 for none) — the Files tab's
+   * version on a fresh page load, before any turn in this session has
+   * reported a `revision` of its own.
+   */
+  lastTurnFinishedAt?: number
   initialMessages: UIMessage[]
   initialSessions?: Record<
     string,
@@ -200,6 +207,13 @@ export function GameChat({
   const previewPressed = effectivePanelOpen && effectiveTab === "preview"
   const agentsPressed = effectivePanelOpen && effectiveTab === "agents"
   const filesPressed = effectivePanelOpen && effectiveTab === "files"
+  /**
+   * `revision` is the `Date.now()` the agent stamps on a turn that changed
+   * files, but it starts at 0 on every page load. The last finished turn's
+   * time stands in until then, so a reload never reuses a cached read from
+   * before the turns it missed.
+   */
+  const filesVersion = revision || lastTurnFinishedAt
 
   return (
     <div ref={layoutRef} className="flex h-svh overflow-hidden">
@@ -305,6 +319,7 @@ export function GameChat({
         previewToken={previewToken}
         previewMounted={previewMounted}
         revision={revision}
+        filesVersion={filesVersion}
         subagentRuns={subagentRuns}
         selectedRunId={selectedRunId}
         onSelectRun={setSelectedRunId}

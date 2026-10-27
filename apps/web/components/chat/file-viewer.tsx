@@ -18,7 +18,7 @@ import { useFormatter, useTranslations } from "next-intl"
 
 import { Spinner } from "@/components/localized-spinner"
 import { useHighlightedCode } from "@/hooks/use-highlighted-code"
-import { fileViewOf, previewAssetUrl } from "@/lib/games/files"
+import { fileContentUrl, fileViewOf, MAX_VIEW_BYTES, previewAssetUrl } from "@/lib/games/files"
 import type { ReadGameFileResult } from "@/lib/games/files-server"
 
 export type ViewedFile = { name: string; path: string; size: number }
@@ -26,7 +26,8 @@ export type ViewedFile = { name: string; path: string; size: number }
 type FileViewerProps = {
   gameId: string
   previewToken: string
-  revision: number
+  /** The game version files are read at — see `fileContentUrl` for why it keys the cache. */
+  version: number
   file: ViewedFile
 }
 
@@ -38,17 +39,18 @@ type FileViewerProps = {
  * already serves the game directory: an SVG is drawn through `<img>`, where
  * its scripts never run, rather than inlined into this page.
  */
-export function FileViewer({ gameId, previewToken, revision, file }: FileViewerProps) {
+export function FileViewer({ gameId, previewToken, version, file }: FileViewerProps) {
   const view = fileViewOf(file.path)
-  const src = previewAssetUrl(gameId, previewToken, file.path, revision)
+  const src = previewAssetUrl(gameId, previewToken, file.path, version)
 
   switch (view.kind) {
     case "code":
+      if (file.size > MAX_VIEW_BYTES) return <FileNotice file={file} messageKey="tooLarge" />
       return (
         <TextFile
           key={file.path}
           gameId={gameId}
-          revision={revision}
+          version={version}
           file={file}
           language={view.language}
         />
@@ -92,16 +94,16 @@ function MediaFrame({ children }: { children: React.ReactNode }) {
 type TextState =
   | { status: "loading" }
   | { status: "failed" }
-  | { status: "done"; result: Extract<ReadGameFileResult, { ok: true }> | Extract<ReadGameFileResult, { reason: "too_large" | "binary" | "directory" }> }
+  | { status: "done"; result: Extract<ReadGameFileResult, { ok: true }> | Extract<ReadGameFileResult, { reason: "too_large" | "binary" }> }
 
 function TextFile({
   gameId,
-  revision,
+  version,
   file,
   language,
 }: {
   gameId: string
-  revision: number
+  version: number
   file: ViewedFile
   language: string
 }) {
@@ -111,9 +113,7 @@ function TextFile({
 
   useEffect(() => {
     const controller = new AbortController()
-    const query = new URLSearchParams({ path: file.path })
-
-    fetch(`/api/games/${gameId}/files/content?${query}`, { signal: controller.signal })
+    fetch(fileContentUrl(gameId, file.path, version), { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error(String(response.status))
         setState({ status: "done", result: await response.json() })
@@ -123,7 +123,7 @@ function TextFile({
       })
 
     return () => controller.abort()
-  }, [gameId, file.path, revision, attempt])
+  }, [gameId, file.path, version, attempt])
 
   if (state.status === "loading") {
     return (

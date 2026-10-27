@@ -18,7 +18,7 @@ function render(node: React.ReactNode, messages: object = en, locale = "en") {
   )
 }
 
-const base = { gameId: "g1", previewToken: "tok", revision: 2 }
+const base = { gameId: "g1", previewToken: "tok", version: 2 }
 
 test("FileViewer shows an image, SVG included, through the preview proxy", () => {
   const png = render(<FileViewer {...base} file={{ name: "hero.png", path: "assets/hero.png", size: 10 }} />)
@@ -49,6 +49,13 @@ test("FileViewer starts a text file in its loading state", () => {
   const html = render(<FileViewer {...base} file={{ name: "main.js", path: "main.js", size: 10 }} />)
 
   assert.match(html, /Loading main\.js/)
+})
+
+test("FileViewer explains an oversized text file without requesting it", () => {
+  const html = render(<FileViewer {...base} file={{ name: "huge.js", path: "huge.js", size: 10 * 1024 * 1024 }} />)
+
+  assert.match(html, /too large to preview/)
+  assert.doesNotMatch(html, /Loading/)
 })
 
 test("FileCode renders the text with line numbers, copy and wrap controls", () => {

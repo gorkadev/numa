@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 
-import { startGameServer } from "@/lib/daytona/utils"
+import { resumeGameSandbox } from "@/lib/daytona/utils"
+import { contentCacheControl } from "@/lib/games/files"
 import { readGameTextFile } from "@/lib/games/files-server"
 import { getGame } from "@/lib/games/queries"
 
@@ -8,9 +9,16 @@ const privateHeaders = { "cache-control": "no-store, private" }
 
 /**
  * One file's text, for the Files tab viewer: `?path=` relative to the game
- * directory. Access follows `../route.ts` — owner only, never provisioning.
+ * directory, `?v=` the game version it is read at. Access follows
+ * `../route.ts` — owner only, never provisioning — but the sandbox is only
+ * resumed, not given a static server: reading text needs neither the server
+ * nor its health check, and every call skipped is one less round trip.
  *
- * A file the viewer cannot show as text (too large, binary, a directory)
+ * A versioned answer is cached by the browser for good (`contentCacheControl`):
+ * the version changes whenever a turn rewrites files, so the same URL always
+ * means the same bytes. Errors are never cached.
+ *
+ * A file the viewer cannot show as text (too large, binary)
  * still answers 200 with the reason, because that is a normal outcome the
  * tab renders, not a failed request. Only a bad path and a missing file are
  * errors.
@@ -20,7 +28,8 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params
-  const path = new URL(request.url).searchParams.get("path") ?? ""
+  const { searchParams } = new URL(request.url)
+  const path = searchParams.get("path") ?? ""
   const game = await getGame(id)
 
   if (!game?.sandboxId) {
@@ -28,7 +37,7 @@ export async function GET(
   }
 
   try {
-    const { sandbox } = await startGameServer(game.sandboxId)
+    const { sandbox } = await resumeGameSandbox(game.sandboxId)
     const result = await readGameTextFile(sandbox.fs, path)
 
     if (!result.ok && result.reason === "invalid_path") {
@@ -38,7 +47,17 @@ export async function GET(
       return new Response(null, { status: 404, headers: privateHeaders })
     }
 
-    return NextResponse.json(result, { headers: privateHeaders })
+    return NextResponse.json(result, {
+      /**
+       * `Vary: Cookie` keys the browser's copy to the session that fetched it,
+       * so another account signing in on the same browser can never be served
+       * this owner's file from cache without passing the check above.
+       */
+      headers: {
+        "cache-control": contentCacheControl(searchParams.get("v")),
+        vary: "Cookie",
+      },
+    })
   } catch {
     return new Response(null, { status: 503, headers: privateHeaders })
   }

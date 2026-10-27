@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server"
 import { NextIntlClientProvider } from "next-intl"
 
 import en from "../../messages/en.json"
-import { FilesTabBody } from "./files-tab"
+import { FilesLayout, FilesTabBody } from "./files-tab"
 
 Object.assign(globalThis, { React })
 
@@ -15,7 +15,7 @@ test("FilesTabBody starts the sandbox before showing the tree", () => {
       <FilesTabBody
         gameId="g1"
         previewToken="tok"
-        revision={0}
+        version={0}
         selectedPath={null}
         onSelectPath={() => {}}
       />
@@ -23,4 +23,16 @@ test("FilesTabBody starts the sandbox before showing the tree", () => {
   )
 
   assert.match(html, /Starting the sandbox/)
+})
+
+test("FilesLayout mounts the open file once for both layouts", () => {
+  const html = renderToStaticMarkup(
+    <NextIntlClientProvider locale="en" messages={en}>
+      <FilesLayout tree={<span>TREE</span>} detail={<span>DETAIL</span>} fileOpen onBack={() => {}} />
+    </NextIntlClientProvider>
+  )
+
+  assert.equal(html.match(/DETAIL/g)?.length, 1)
+  assert.equal(html.match(/TREE/g)?.length, 1)
+  assert.match(html, /Back to files/)
 })

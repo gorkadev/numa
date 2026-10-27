@@ -8,10 +8,10 @@ import { GAME_DIR } from "@/lib/games/game-path"
 import {
   FILE_TREE_DEPTH,
   listGameFiles,
-  MAX_VIEW_BYTES,
   readGameTextFile,
   type GameFs,
 } from "./files-server"
+import { MAX_VIEW_BYTES } from "./files"
 
 type FakeFile = { content?: Buffer; isDir?: boolean }
 
@@ -29,13 +29,10 @@ function fakeFs(files: Record<string, FakeFile>): GameFs & { listed: unknown[] }
         size: file.content?.length ?? 0,
       }))
     },
-    async getFileDetails(path) {
-      const file = files[path.slice(GAME_DIR.length + 1)]
-      if (!file) throw new DaytonaFileNotFoundError("missing")
-      return { isDir: Boolean(file.isDir), size: file.content?.length ?? 0 }
-    },
     async downloadFile(path) {
-      return files[path.slice(GAME_DIR.length + 1)]!.content!
+      const file = files[path.slice(GAME_DIR.length + 1)]
+      if (!file?.content) throw new DaytonaFileNotFoundError("missing")
+      return file.content
     },
   }
 }
@@ -72,23 +69,26 @@ test("readGameTextFile refuses paths that leave the game directory", async () =>
   assert.deepEqual(await readGameTextFile(fs, "/etc/passwd"), { ok: false, reason: "invalid_path" })
 })
 
-test("readGameTextFile reports a missing file and a directory", async () => {
-  const fs = fakeFs({ assets: { isDir: true } })
-
-  assert.deepEqual(await readGameTextFile(fs, "nope.js"), { ok: false, reason: "not_found" })
-  assert.deepEqual(await readGameTextFile(fs, "assets"), { ok: false, reason: "directory" })
+test("readGameTextFile reports a missing file", async () => {
+  assert.deepEqual(await readGameTextFile(fakeFs({}), "nope.js"), { ok: false, reason: "not_found" })
 })
 
-test("readGameTextFile refuses files over the view limit without downloading them", async () => {
-  const big = Buffer.alloc(MAX_VIEW_BYTES + 1, "a")
-  const fs = fakeFs({ "big.txt": { content: big } })
-  fs.downloadFile = async () => assert.fail("downloaded an oversized file")
+test("readGameTextFile reads with a single download and refuses oversized content", async () => {
+  const fs = fakeFs({ "big.txt": { content: Buffer.alloc(MAX_VIEW_BYTES + 1, "a") } })
+  let downloads = 0
+  const download = fs.downloadFile
+  fs.downloadFile = async (path) => {
+    downloads += 1
+    return download(path)
+  }
 
   assert.deepEqual(await readGameTextFile(fs, "big.txt"), {
     ok: false,
     reason: "too_large",
     size: MAX_VIEW_BYTES + 1,
   })
+  assert.equal(downloads, 1)
+  assert.deepEqual(Object.keys(fs).sort(), ["downloadFile", "listFiles", "listed"])
 })
 
 test("readGameTextFile refuses binary content", async () => {

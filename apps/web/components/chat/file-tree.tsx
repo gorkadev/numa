@@ -18,6 +18,8 @@ type FileTreeProps = {
   nodes: FileTreeNode[]
   selectedPath: string | null
   onSelect: (path: string) => void
+  /** Reports the file under the pointer (`null` once it leaves), so the caller can warm its cache. */
+  onPrefetch?: (path: string | null) => void
   className?: string
 }
 
@@ -32,7 +34,7 @@ type FileTreeProps = {
  * Folders own their open state after that (`defaultOpen`), so a refresh of
  * the tree after a turn does not fold away what the reader opened.
  */
-export function FileTree({ nodes, selectedPath, onSelect, className }: FileTreeProps) {
+export function FileTree({ nodes, selectedPath, onSelect, onPrefetch, className }: FileTreeProps) {
   return (
     <div className={cn("flex flex-col text-sm", className)}>
       {nodes.map((node) => (
@@ -42,6 +44,7 @@ export function FileTree({ nodes, selectedPath, onSelect, className }: FileTreeP
           depth={0}
           selectedPath={selectedPath}
           onSelect={onSelect}
+          onPrefetch={onPrefetch}
         />
       ))}
     </div>
@@ -53,11 +56,13 @@ function FileTreeItem({
   depth,
   selectedPath,
   onSelect,
+  onPrefetch,
 }: {
   node: FileTreeNode
   depth: number
   selectedPath: string | null
   onSelect: (path: string) => void
+  onPrefetch?: (path: string | null) => void
 }) {
   if (node.type === "file") {
     const selected = node.path === selectedPath
@@ -68,6 +73,8 @@ function FileTreeItem({
         size="sm"
         className={cn("w-full justify-start font-normal", selected && "bg-muted")}
         aria-current={selected ? "true" : undefined}
+        onPointerEnter={() => onPrefetch?.(node.path)}
+        onPointerLeave={() => onPrefetch?.(null)}
         onClick={() => onSelect(node.path)}
       >
         <HugeiconsIcon icon={File01Icon} strokeWidth={2} />
@@ -77,7 +84,13 @@ function FileTreeItem({
   }
 
   return (
-    <FolderItem node={node} depth={depth} selectedPath={selectedPath} onSelect={onSelect} />
+    <FolderItem
+      node={node}
+      depth={depth}
+      selectedPath={selectedPath}
+      onSelect={onSelect}
+      onPrefetch={onPrefetch}
+    />
   )
 }
 
@@ -86,11 +99,13 @@ function FolderItem({
   depth,
   selectedPath,
   onSelect,
+  onPrefetch,
 }: {
   node: Extract<FileTreeNode, { type: "folder" }>
   depth: number
   selectedPath: string | null
   onSelect: (path: string) => void
+  onPrefetch?: (path: string | null) => void
 }) {
   /** Read once: Base UI warns when an uncontrolled Collapsible's `defaultOpen` changes after mount, which selecting a file inside it would do. */
   const [defaultOpen] = useState(
@@ -125,6 +140,7 @@ function FolderItem({
               depth={depth + 1}
               selectedPath={selectedPath}
               onSelect={onSelect}
+              onPrefetch={onPrefetch}
             />
           ))}
         </div>
