@@ -1,4 +1,3 @@
-import Link from "next/link"
 import { Tick02Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
@@ -203,9 +202,14 @@ function TopUpCard({
              * otherwise — the same handoff `packages/ui`'s own
              * `pagination.tsx` makes. Without this the primitive warns and
              * applies button semantics to a link.
+             *
+             * A plain anchor rather than `next/link` on every checkout button:
+             * `/checkout` redirects to Polar, and a client-side navigation
+             * first fetches it as an RSC payload, fails cross-origin with
+             * "Failed to fetch", and only then falls back to a full load.
              */
             nativeButton={false}
-            render={<Link href={`/checkout?products=${productId}`} />}
+            render={<a href={`/checkout?products=${productId}`} />}
           >
             {buyLabel}
           </Button>
@@ -349,6 +353,16 @@ export default async function PricingPage({
               <Button className="w-full" variant="outline" disabled>
                 {t("currentPlan")}
               </Button>
+            ) : hasPaidPlan ? (
+              /**
+               * A paid plan already includes everything on Free, and the
+               * checkout route answers a Free "purchase" by provisioning the
+               * customer and redirecting home, which looks like nothing
+               * happened. Leaving a paid plan goes through the billing portal.
+               */
+              <Button className="w-full" variant="outline" disabled>
+                {t("includedInPlan")}
+              </Button>
             ) : (
               <Button
                 className="w-full"
@@ -362,7 +376,7 @@ export default async function PricingPage({
                  */
                 nativeButton={false}
                 render={
-                  <Link href={`/checkout?products=${POLAR_PRODUCT_FREE_ID}`} />
+                  <a href={`/checkout?products=${POLAR_PRODUCT_FREE_ID}`} />
                 }
               >
                 {t("getStarted")}
@@ -415,7 +429,7 @@ export default async function PricingPage({
                 className="w-full"
                 nativeButton={false}
                 render={
-                  <Link href={`/checkout?products=${POLAR_PRODUCT_PRO_ID}`} />
+                  <a href={`/checkout?products=${POLAR_PRODUCT_PRO_ID}`} />
                 }
               >
                 {t("upgrade")}
@@ -477,7 +491,7 @@ export default async function PricingPage({
                 className="w-full"
                 nativeButton={false}
                 render={
-                  <Link href={`/checkout?products=${POLAR_PRODUCT_MAX_ID}`} />
+                  <a href={`/checkout?products=${POLAR_PRODUCT_MAX_ID}`} />
                 }
               >
                 {t("upgrade")}
