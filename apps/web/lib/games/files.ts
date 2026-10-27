@@ -136,3 +136,34 @@ export function fileViewOf(path: string): FileView {
   if (BINARY_EXTENSIONS.has(extension)) return { kind: "binary" }
   return { kind: "code", language: "text" }
 }
+
+/**
+ * Where the viewer loads a media asset from: the preview proxy, which already
+ * serves the game directory behind its signed token and sandbox CSP. The
+ * revision is a cache key — the agent rewrites assets in place, and without
+ * it the browser would keep showing the old bytes under the same URL.
+ */
+export function previewAssetUrl(
+  gameId: string,
+  previewToken: string,
+  path: string,
+  revision: number
+): string {
+  const encoded = path.split("/").map(encodeURIComponent).join("/")
+  return `/api/games/${gameId}/preview/${previewToken}/${encoded}?v=${revision}`
+}
+
+/** The file node at `path`, or `undefined` once a refresh no longer lists it. */
+export function findFile(
+  nodes: FileTreeNode[],
+  path: string
+): Extract<FileTreeNode, { type: "file" }> | undefined {
+  for (const node of nodes) {
+    if (node.type === "file") {
+      if (node.path === path) return node
+    } else if (path.startsWith(`${node.path}/`)) {
+      return findFile(node.children, path)
+    }
+  }
+  return undefined
+}

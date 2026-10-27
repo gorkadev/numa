@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import { buildFileTree, fileViewOf } from "./files"
+import { buildFileTree, fileViewOf, findFile, previewAssetUrl } from "./files"
 
 test("buildFileTree nests a flat listing, folders first and names sorted", () => {
   const tree = buildFileTree([
@@ -81,4 +81,27 @@ test("fileViewOf treats models, fonts and archives as binary", () => {
 test("fileViewOf opens anything else as plain text", () => {
   assert.deepEqual(fileViewOf("Makefile"), { kind: "code", language: "text" })
   assert.deepEqual(fileViewOf("shader.frag"), { kind: "code", language: "text" })
+})
+
+test("previewAssetUrl points at the preview proxy with each segment encoded", () => {
+  assert.equal(
+    previewAssetUrl("g1", "tok", "assets/my sprite#1.png", 3),
+    "/api/games/g1/preview/tok/assets/my%20sprite%231.png?v=3"
+  )
+})
+
+test("findFile returns the file node at a path, and nothing for folders or gaps", () => {
+  const tree = buildFileTree([
+    { path: "assets", type: "directory" },
+    { path: "assets/hero.png", type: "file", size: 4 },
+  ])
+
+  assert.deepEqual(findFile(tree, "assets/hero.png"), {
+    type: "file",
+    name: "hero.png",
+    path: "assets/hero.png",
+    size: 4,
+  })
+  assert.equal(findFile(tree, "assets"), undefined)
+  assert.equal(findFile(tree, "missing.js"), undefined)
 })

@@ -3,7 +3,7 @@
 import { useRef, useState } from "react"
 
 import type { UIMessage } from "ai"
-import { BotIcon, PanelRightIcon } from "@hugeicons/core-free-icons"
+import { BotIcon, Folder01Icon, PanelRightIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useTranslations } from "next-intl"
 import { Button } from "@workspace/ui/components/button"
@@ -181,12 +181,16 @@ export function GameChat({
    */
   const previewAvailable = Boolean(previewToken)
   const agentsAvailable = hasSubagentRuns
+  /** Files read the same sandbox the preview serves, so they exist exactly when it does. */
+  const filesAvailable = previewAvailable
   const effectiveTab: SidePanelTab | null =
     activeTab === "preview" && previewAvailable
       ? "preview"
       : activeTab === "agents" && agentsAvailable
         ? "agents"
-        : previewAvailable
+        : activeTab === "files" && filesAvailable
+          ? "files"
+          : previewAvailable
           ? "preview"
           : agentsAvailable
             ? "agents"
@@ -195,6 +199,7 @@ export function GameChat({
 
   const previewPressed = effectivePanelOpen && effectiveTab === "preview"
   const agentsPressed = effectivePanelOpen && effectiveTab === "agents"
+  const filesPressed = effectivePanelOpen && effectiveTab === "files"
 
   return (
     <div ref={layoutRef} className="flex h-svh overflow-hidden">
@@ -256,6 +261,24 @@ export function GameChat({
             >
               <HugeiconsIcon icon={BotIcon} strokeWidth={2} />
               <span className="sr-only">{t("panelTitle")}</span>
+            </Button>
+          ) : null}
+          {filesAvailable ? (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              /**
+               * Desktop only: on a narrow viewport `SidePanel` is the
+               * preview `Drawer`, which has no Files tab to open onto.
+               */
+              className="aria-pressed:bg-muted aria-pressed:text-foreground max-md:hidden"
+              onClick={() => (filesPressed ? closePanel() : openPanel("files"))}
+              aria-pressed={filesPressed}
+            >
+              <HugeiconsIcon icon={Folder01Icon} strokeWidth={2} />
+              <span className="sr-only">
+                {filesPressed ? t("hideFiles") : t("showFiles")}
+              </span>
             </Button>
           ) : null}
           <GameMenu gameId={gameId} title={title} pinned={pinned} />
