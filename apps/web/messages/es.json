@@ -460,6 +460,8 @@
     "actions": "Acciones",
     "changeTheme": "Cambiar tema…",
     "changeLanguage": "Cambiar idioma…",
+    "changeDefaultTier": "Cambiar nivel por defecto…",
+    "defaultTierSaved": "Las partidas nuevas empiezan en {tier}",
     "turnOn": "Activar {setting}",
     "turnOff": "Desactivar {setting}",
     "settingTurnedOn": "{setting}: activado",

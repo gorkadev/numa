@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { useLocale, useTranslations } from "next-intl"
 import { useTheme } from "next-themes"
 import {
+  AiBrain01Icon,
   ArrowDown02Icon,
   ArrowUp02Icon,
   CornerDownLeftIcon,
@@ -67,6 +68,7 @@ import {
   SECTION_LABEL_KEYS,
   SECTIONS,
 } from "@/lib/settings/sections"
+import { DEFAULT_TIER_ID, TIERS, type TierId } from "@/lib/ai/model-catalog"
 import { searchSettings } from "@/lib/settings/search"
 import type { GameSettings } from "@/lib/settings/game-preferences"
 import {
@@ -106,6 +108,7 @@ export function CommandPalette({
   const gameMenu = useTranslations("GameMenu")
   const settings = useTranslations("Settings")
   const composer = useTranslations("GameComposer")
+  const gameSettingsText = useTranslations("Settings.game")
   const { openSettings } = useSettingsDialog()
   const { theme, setTheme } = useTheme()
   const locale = useLocale()
@@ -174,6 +177,20 @@ export function CommandPalette({
     settingHits.map((hit) => hit.id),
     gameSettings
   )
+
+  function saveDefaultTier(tierId: TierId) {
+    void updateGameSettings({ defaultTierId: tierId })
+      .then((saved) => {
+        setGameSettings(saved)
+        router.refresh()
+        toast.add({
+          title: t("defaultTierSaved", {
+            tier: composer(`tiers.${tierId}.label`),
+          }),
+        })
+      })
+      .catch(() => toast.add({ type: "error", title: t("settingNotSaved") }))
+  }
 
   function applyToggle(action: ToggleAction, undo = false) {
     const next = undo ? !action.next : action.next
@@ -295,7 +312,9 @@ export function CommandPalette({
           placeholder={
             page === "templates"
               ? t("newGameFromTemplate")
-              : page
+              : page === "defaultTier"
+                ? gameSettingsText("defaultTier")
+                : page
                 ? settings(page)
                 : t("searchGamesAndActions")
           }
@@ -330,6 +349,21 @@ export function CommandPalette({
                 >
                   <HugeiconsIcon icon={option.icon} strokeWidth={2} />
                   {settings(option.label)}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          )}
+          {page === "defaultTier" && (
+            <CommandGroup heading={gameSettingsText("defaultTier")}>
+              {TIERS.map((tier) => (
+                <CommandItem
+                  key={tier.id}
+                  data-checked={
+                    (gameSettings?.defaultTierId ?? DEFAULT_TIER_ID) === tier.id
+                  }
+                  onSelect={() => run(() => saveDefaultTier(tier.id))}
+                >
+                  {composer(`tiers.${tier.id}.label`)}
                 </CommandItem>
               ))}
             </CommandGroup>
@@ -448,6 +482,14 @@ export function CommandPalette({
                       <HugeiconsIcon icon={PaintBoardIcon} strokeWidth={2} />
                       {t("changeTheme")}
                       <ShortcutHint label="toggleTheme" />
+                    </CommandItem>
+                    <CommandItem
+                      value={t("changeDefaultTier")}
+                      keywords={[gameSettingsText("defaultTier")]}
+                      onSelect={() => enter("defaultTier")}
+                    >
+                      <HugeiconsIcon icon={AiBrain01Icon} strokeWidth={2} />
+                      {t("changeDefaultTier")}
                     </CommandItem>
                     <CommandItem
                       value={t("changeLanguage")}

@@ -460,6 +460,8 @@
     "actions": "Actions",
     "changeTheme": "Change theme…",
     "changeLanguage": "Change language…",
+    "changeDefaultTier": "Change default tier…",
+    "defaultTierSaved": "New games start on {tier}",
     "turnOn": "Turn on {setting}",
     "turnOff": "Turn off {setting}",
     "settingTurnedOn": "{setting} turned on",
