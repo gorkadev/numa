@@ -461,6 +461,7 @@
     "changeTheme": "Change theme…",
     "changeLanguage": "Change language…",
     "changeDefaultTier": "Change default tier…",
+    "confirmSignOut": "Press Enter again to sign out",
     "defaultTierSaved": "New games start on {tier}",
     "turnOn": "Turn on {setting}",
     "turnOff": "Turn off {setting}",

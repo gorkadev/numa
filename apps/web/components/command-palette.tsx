@@ -11,6 +11,7 @@ import {
   ArrowUp02Icon,
   CornerDownLeftIcon,
   Delete02Icon,
+  Logout01Icon,
   LayoutTemplateIcon,
   MessageCircleIcon,
   PaintBoardIcon,
@@ -69,6 +70,7 @@ import {
   SECTIONS,
 } from "@/lib/settings/sections"
 import { DEFAULT_TIER_ID, TIERS, type TierId } from "@/lib/ai/model-catalog"
+import { authClient } from "@/lib/auth-client"
 import { searchSettings } from "@/lib/settings/search"
 import type { GameSettings } from "@/lib/settings/game-preferences"
 import {
@@ -122,6 +124,13 @@ export function CommandPalette({
    */
   const [pages, setPages] = useState<PalettePage[]>([])
   const [search, setSearch] = useState("")
+  /**
+   * Sign out takes two Enters: the first only arms the row, which then says
+   * what the next Enter does. Typing or closing the palette disarms it, so a
+   * stray Enter later never signs anyone out.
+   */
+  const [signOutArmed, setSignOutArmed] = useState(false)
+
   const page = pages.at(-1)
 
   /**
@@ -177,6 +186,20 @@ export function CommandPalette({
     settingHits.map((hit) => hit.id),
     gameSettings
   )
+
+  async function signOutNow() {
+    try {
+      const { error } = await authClient.signOut()
+      if (error) throw error
+      router.push("/sign-in")
+    } catch {
+      toast.add({
+        type: "error",
+        title: t("couldNotSignOut"),
+        description: t("pleaseTryAgain"),
+      })
+    }
+  }
 
   function saveDefaultTier(tierId: TierId) {
     void updateGameSettings({ defaultTierId: tierId })
@@ -243,6 +266,7 @@ export function CommandPalette({
     if (!open) {
       setPages([])
       setSearch("")
+      setSignOutArmed(false)
     }
   }
   const setOpen = onOpenChange
@@ -319,7 +343,10 @@ export function CommandPalette({
                 : t("searchGamesAndActions")
           }
           value={search}
-          onValueChange={setSearch}
+          onValueChange={(value) => {
+            setSearch(value)
+            setSignOutArmed(false)
+          }}
           onKeyDown={(event) => {
             if (event.key !== "Backspace") return
             const previous = backFrom(pages, search)
@@ -498,6 +525,25 @@ export function CommandPalette({
                     >
                       <HugeiconsIcon icon={TranslateIcon} strokeWidth={2} />
                       {t("changeLanguage")}
+                    </CommandItem>
+                    <CommandItem
+                      value={t("signOut")}
+                      keywords={["log out", "logout", settings("signOut")]}
+                      className={
+                        signOutArmed
+                          ? "text-destructive data-selected:text-destructive data-selected:*:[svg]:text-destructive"
+                          : undefined
+                      }
+                      onSelect={() => {
+                        if (!signOutArmed) {
+                          setSignOutArmed(true)
+                          return
+                        }
+                        run(() => void signOutNow())
+                      }}
+                    >
+                      <HugeiconsIcon icon={Logout01Icon} strokeWidth={2} />
+                      {signOutArmed ? t("confirmSignOut") : t("signOut")}
                     </CommandItem>
                     <CommandItem onSelect={() => enter("templates")}>
                       <HugeiconsIcon
