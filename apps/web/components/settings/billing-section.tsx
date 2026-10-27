@@ -355,7 +355,7 @@ export function BillingSection({ active }: { active: boolean }) {
   return (
     <div className="flex flex-col gap-8">
       <SettingsGroup title={t("planGroup")} description={t("planGroupDescription")}>
-        <SettingsRow>
+        <SettingsRow settingId="current-plan">
           <ItemContent>
             <ItemTitle>{t("currentPlan")}</ItemTitle>
             {subscription.status && (
@@ -389,7 +389,7 @@ export function BillingSection({ active }: { active: boolean }) {
             />
           </ItemActions>
         </SettingsRow>
-        <SettingsRow>
+        <SettingsRow settingId="credits">
           <ItemContent>
             <ItemTitle>{t("credits")}</ItemTitle>
             <ItemDescription>{t("creditsDescription")}</ItemDescription>
@@ -439,7 +439,7 @@ export function BillingSection({ active }: { active: boolean }) {
             </ItemActions>
           </SettingsRow>
         )}
-        <SettingsRow>
+        <SettingsRow settingId="manage-plan">
           <ItemContent>
             <ItemTitle>{t("managePlan")}</ItemTitle>
             <ItemDescription>{t("managePlanDescription")}</ItemDescription>
@@ -455,7 +455,7 @@ export function BillingSection({ active }: { active: boolean }) {
             </Button>
           </ItemActions>
         </SettingsRow>
-        <SettingsRow>
+        <SettingsRow settingId="billing-portal">
           <ItemContent>
             <ItemTitle>{t("billingPortal")}</ItemTitle>
             <ItemDescription>{t("billingPortalDescription")}</ItemDescription>
@@ -485,7 +485,7 @@ export function BillingSection({ active }: { active: boolean }) {
         </SettingsRow>
         {(details.plan === "pro" || details.plan === "max") &&
           subscription.currentPeriod && (
-            <SettingsRow>
+            <SettingsRow settingId="cancel-subscription">
               <ItemContent>
                 <ItemTitle>
                   {subscription.cancellation
@@ -519,6 +519,7 @@ export function BillingSection({ active }: { active: boolean }) {
       </SettingsGroup>
 
       <SettingsGroup
+        settingId="billing-history"
         title={t("historyTitle")}
         description={t("historyDescription")}
       >

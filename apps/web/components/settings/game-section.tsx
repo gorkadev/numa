@@ -93,7 +93,7 @@ export function GameSettingsSection() {
   return (
     <div className="flex flex-col gap-8">
       <SettingsGroup title={t("newGameTitle")}>
-        <SettingsRow>
+        <SettingsRow settingId="default-tier">
           <ItemContent>
             <ItemTitle id="settings-default-tier">{t("defaultTier")}</ItemTitle>
             <ItemDescription>{t("defaultTierDescription")}</ItemDescription>
@@ -131,7 +131,7 @@ export function GameSettingsSection() {
         </SettingsRow>
       </SettingsGroup>
       <SettingsGroup title={t("chatTitle")}>
-        <SettingsRow>
+        <SettingsRow settingId="session-stats">
           <ItemContent>
             <ItemTitle id="settings-session-stats">
               {t("sessionStats")}
@@ -151,7 +151,7 @@ export function GameSettingsSection() {
             )}
           </ItemActions>
         </SettingsRow>
-        <SettingsRow>
+        <SettingsRow settingId="wrap-code">
           <ItemContent>
             <ItemTitle id="settings-wrap-code">{t("wrapCode")}</ItemTitle>
             <ItemDescription>{t("wrapCodeDescription")}</ItemDescription>
@@ -174,7 +174,7 @@ export function GameSettingsSection() {
         title={t("improverTitle")}
         description={t("improverDescription", IMPROVER_DAILY_LIMIT)}
       >
-        <SettingsRow>
+        <SettingsRow settingId="improver-overage">
           <ItemContent>
             <ItemTitle id="settings-improver-overage">
               {t("improverOverage")}

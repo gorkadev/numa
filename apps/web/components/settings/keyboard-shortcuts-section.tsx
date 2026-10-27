@@ -23,7 +23,7 @@ export function KeyboardShortcutsSection() {
   const isMac = useIsMac()
 
   return (
-    <div className="flex flex-col gap-6">
+    <div data-setting-id="shortcuts" className="flex flex-col gap-6">
       {SHORTCUT_GROUPS.map((group) => (
         <SettingsGroup
           key={group.title}

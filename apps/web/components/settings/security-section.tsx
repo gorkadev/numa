@@ -32,6 +32,7 @@ function SecuritySkeleton() {
   return (
     <div className="flex flex-col gap-8">
       <SettingsGroup
+        settingId="two-factor"
         title={t("twoFactor")}
         description={t("twoFactorDescription")}
       >
@@ -83,6 +84,7 @@ export function SecuritySection() {
   return (
     <div className="flex flex-col gap-8">
       <SettingsGroup
+        settingId="two-factor"
         title={t("twoFactor")}
         description={t("twoFactorDescription")}
         action={
