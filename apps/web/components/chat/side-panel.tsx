@@ -266,7 +266,12 @@ export type SidePanelProps = {
    * the panel is the only thing sharing that row's width with the chat.
    */
   layoutRef: React.RefObject<HTMLDivElement | null>
+  /** A file to open from outside the tab — a mention chip in the thread. */
+  fileRequest?: FileRequest | null
 }
+
+/** A request to open a file; `nonce` tells a repeat click on the same file from no click. */
+export type FileRequest = { path: string; nonce: number }
 
 /**
  * The single docked pane on the right side of `game-chat.tsx`, replacing
@@ -306,6 +311,7 @@ export function SidePanel({
   onActiveTabChange,
   onClose,
   layoutRef,
+  fileRequest = null,
 }: SidePanelProps) {
   const t = useTranslations("ChatAgents")
   const isMobile = useIsMobile()
@@ -325,6 +331,12 @@ export function SidePanel({
   const [previewPhase, setPreviewPhase] = useState<PreviewPhase>("starting")
   /** Kept here rather than in the Files tab, which unmounts while another tab is shown, so coming back reopens the same file. */
   const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null)
+  /** A new request selects its file, adjusted during render rather than in an effect. */
+  const [seenFileRequest, setSeenFileRequest] = useState(fileRequest)
+  if (fileRequest !== seenFileRequest) {
+    setSeenFileRequest(fileRequest)
+    if (fileRequest) setSelectedFilePath(fileRequest.path)
+  }
 
   const requestReload = useCallback(() => {
     if (reloadInFlightRef.current) return
@@ -608,6 +620,7 @@ export function SidePanel({
                 version={filesVersion}
                 selectedPath={selectedFilePath}
                 onSelectPath={setSelectedFilePath}
+                revealKey={fileRequest?.nonce ?? 0}
               />
             </div>
           ) : null}

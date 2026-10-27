@@ -5,6 +5,7 @@ import { Fragment, memo, useMemo } from "react"
 import type { UIMessage } from "ai"
 import { Bubble, BubbleContent } from "@workspace/ui/components/bubble"
 import { Message, MessageContent } from "@workspace/ui/components/message"
+import { MentionText } from "@/components/chat/mention-text"
 
 import { AskPlayer, AskPlayerAnswer } from "@/components/chat/ask-player"
 import { showsMessageActions } from "@/components/chat/actions-visibility"
@@ -51,6 +52,8 @@ type ChatMessageProps = {
    * also drive the thread-header button onto the same panel state.
    */
   onSelectRun: (agentId: string) => void
+  /** Opens a file the player mentioned in the side panel's Files tab. */
+  onOpenFile?: (path: string) => void
 }
 
 function ChatMessageImpl({
@@ -61,6 +64,7 @@ function ChatMessageImpl({
   thinkingKey,
   onAnswer,
   onSelectRun,
+  onOpenFile,
 }: ChatMessageProps) {
   /**
    * Recomputed only when the messages making up this row actually change —
@@ -185,10 +189,15 @@ function ChatMessageImpl({
                * Only the agent's half is markdown. What the player typed is
                * their own text, and running it through a renderer would
                * reformat it — an asterisk they meant literally would silently
-               * turn into emphasis on their own message.
+               * turn into emphasis on their own message. The one thing read
+               * out of it is the files it mentions, shown as chips.
                */}
               <BubbleContent>
-                {isUser ? block.text : <Markdown>{block.text}</Markdown>}
+                {isUser ? (
+                  <MentionText text={block.text} onOpenFile={onOpenFile} />
+                ) : (
+                  <Markdown>{block.text}</Markdown>
+                )}
               </BubbleContent>
             </Bubble>
           )
@@ -293,6 +302,7 @@ export const ChatMessage = memo(ChatMessageImpl, (prev, next) => {
     prev.thinkingKey === next.thinkingKey &&
     prev.onAnswer === next.onAnswer &&
     prev.onSelectRun === next.onSelectRun &&
+    prev.onOpenFile === next.onOpenFile &&
     messagesEqual(prev.messages, next.messages)
   )
 })

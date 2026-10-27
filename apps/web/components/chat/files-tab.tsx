@@ -72,6 +72,12 @@ type FilesTabBodyProps = {
   /** Owned by `SidePanel`, which stays mounted, so switching tabs and back reopens the same file. */
   selectedPath: string | null
   onSelectPath: (path: string | null) => void
+  /**
+   * Bumped when a file is opened from outside the tab. The tree remounts on
+   * it, which re-reads its open folders from the selection and so reveals a
+   * file inside a folder the reader had folded away.
+   */
+  revealKey?: number
 }
 
 /**
@@ -86,6 +92,7 @@ export function FilesTabBody({
   version,
   selectedPath,
   onSelectPath,
+  revealKey = 0,
 }: FilesTabBodyProps) {
   const t = useTranslations("ChatFiles")
   const { state, retry } = useFileTree(gameId, version)
@@ -133,6 +140,7 @@ export function FilesTabBody({
       <p className="p-2 text-sm text-muted-foreground">{t("empty")}</p>
     ) : (
       <FileTree
+        key={revealKey}
         nodes={state.tree}
         selectedPath={selectedPath}
         onSelect={(path) => {

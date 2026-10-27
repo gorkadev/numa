@@ -43,3 +43,10 @@ test("the new-game composer still offers the template picker", () => {
   assert.match(html, /aria-keyshortcuts="Control\+Shift\+V"/)
   assert.doesNotMatch(html, /data-slot="locked-template"/)
 })
+
+test("before the editor mounts, its place holds the old text area's resting height", () => {
+  const html = render({})
+
+  assert.match(html, /data-slot="composer-editor" class="[^"]*\bmin-h-16\b/)
+  assert.doesNotMatch(html, /<textarea/)
+})

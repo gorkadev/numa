@@ -307,6 +307,9 @@
     }
   },
   "GameComposer": {
+    "mentionFiles": "Files",
+    "mentionLoading": "Loading files…",
+    "mentionEmpty": "No matching files",
     "placeholder": "Describe the game you want to build…",
     "sendMessage": "Send message",
     "stopGenerating": "Stop generating",
