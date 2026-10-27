@@ -17,13 +17,23 @@ export function rankMentions(paths: string[], query: string): string[] {
 
   const scored: { path: string; score: number }[] = []
   for (const path of paths) {
-    const lower = path.toLowerCase()
-    const name = lower.slice(lower.lastIndexOf("/") + 1)
-    const score = name.startsWith(needle) ? 0 : name.includes(needle) ? 1 : lower.includes(needle) ? 2 : -1
+    const score = fileQueryScore(path, needle)
     if (score !== -1) scored.push({ path, score })
   }
 
   return scored
     .sort((a, b) => a.score - b.score || a.path.length - b.path.length)
     .map(({ path }) => path)
+}
+
+/**
+ * How well a path answers a lowercase query: 0 for a file name starting with
+ * it, 1 for a file name containing it, 2 for a path containing it, -1 for no
+ * match. Shared by the composer's `@` list and the Files tab's search, so the
+ * two never disagree about which files a query finds.
+ */
+export function fileQueryScore(path: string, needle: string): number {
+  const lower = path.toLowerCase()
+  const name = lower.slice(lower.lastIndexOf("/") + 1)
+  return name.startsWith(needle) ? 0 : name.includes(needle) ? 1 : lower.includes(needle) ? 2 : -1
 }

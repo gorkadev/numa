@@ -1,3 +1,5 @@
+import { fileQueryScore } from "./mentions"
+
 /**
  * One entry of a sandbox listing, relative to the game directory — the same
  * shape `list_files` hands the model, so both readers of the sandbox agree on
@@ -186,6 +188,22 @@ export function contentCacheControl(version: string | null): string {
 /** Whether hovering a file is worth warming the cache for: text the viewer will actually request. */
 export function isPrefetchableText(file: { path: string; size: number }): boolean {
   return fileViewOf(file.path).kind === "code" && file.size <= MAX_VIEW_BYTES
+}
+
+/**
+ * The tree cut down to the files a search query finds, keeping every folder
+ * on the way to one so each result still shows where it lives. Folders left
+ * with nothing inside are dropped. An empty query returns the tree itself.
+ */
+export function filterFileTree(tree: FileTreeNode[], query: string): FileTreeNode[] {
+  const needle = query.trim().toLowerCase()
+  if (!needle) return tree
+
+  return tree.flatMap((node): FileTreeNode[] => {
+    if (node.type === "file") return fileQueryScore(node.path, needle) === -1 ? [] : [node]
+    const children = filterFileTree(node.children, needle)
+    return children.length ? [{ ...node, children }] : []
+  })
 }
 
 /** The file node at `path`, or `undefined` once a refresh no longer lists it. */

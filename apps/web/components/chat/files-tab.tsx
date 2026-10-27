@@ -2,9 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react"
 
-import { ArrowLeft01Icon } from "@hugeicons/core-free-icons"
+import { ArrowLeft01Icon, Cancel01Icon, Search01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Button } from "@workspace/ui/components/button"
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@workspace/ui/components/input-group"
 import { cn } from "@workspace/ui/lib/utils"
 import { useTranslations } from "next-intl"
 
@@ -13,6 +19,7 @@ import { FileViewer } from "@/components/chat/file-viewer"
 import { Spinner } from "@/components/localized-spinner"
 import {
   fileContentUrl,
+  filterFileTree,
   findFile,
   isPrefetchableText,
   type FileTreeNode,
@@ -113,6 +120,7 @@ export function FilesTabBody({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- the URLs carry gameId and version; a new prefetcher per version is the point
     [gameId, version]
   )
+  const [query, setQuery] = useState("")
 
   if (state.status === "loading") {
     return (
@@ -135,13 +143,25 @@ export function FilesTabBody({
   }
 
   const selected = selectedPath ? findFile(state.tree, selectedPath) : undefined
+  const searching = query.trim() !== ""
+  const shown = filterFileTree(state.tree, query)
   const tree =
     state.tree.length === 0 ? (
       <p className="p-2 text-sm text-muted-foreground">{t("empty")}</p>
+    ) : shown.length === 0 ? (
+      <p className="p-2 text-sm break-words text-muted-foreground">
+        {t("noMatches", { query: query.trim() })}
+      </p>
     ) : (
+      /**
+       * Searching remounts the tree with every folder open, since a match is
+       * no use inside a closed one; clearing the search remounts it again
+       * with the usual folders, rather than leaving the whole tree unfolded.
+       */
       <FileTree
-        key={revealKey}
-        nodes={state.tree}
+        key={searching ? "search" : revealKey}
+        nodes={shown}
+        expanded={searching}
         selectedPath={selectedPath}
         onSelect={(path) => {
           // A click already loads the file; a hover still pending would only duplicate it.
@@ -164,8 +184,42 @@ export function FilesTabBody({
     </p>
   )
 
+  const search =
+    state.tree.length === 0 ? null : (
+      <InputGroup>
+        <InputGroupAddon>
+          <HugeiconsIcon icon={Search01Icon} strokeWidth={2} />
+        </InputGroupAddon>
+        <InputGroupInput
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Escape" && query) {
+              event.stopPropagation()
+              setQuery("")
+            }
+          }}
+          placeholder={t("search")}
+          aria-label={t("search")}
+        />
+        {query ? (
+          <InputGroupAddon align="inline-end">
+            <InputGroupButton size="icon-xs" aria-label={t("clearSearch")} onClick={() => setQuery("")}>
+              <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />
+            </InputGroupButton>
+          </InputGroupAddon>
+        ) : null}
+      </InputGroup>
+    )
+
   return (
-    <FilesLayout tree={tree} detail={detail} fileOpen={selectedPath !== null} onBack={() => onSelectPath(null)} />
+    <FilesLayout
+      search={search}
+      tree={tree}
+      detail={detail}
+      fileOpen={selectedPath !== null}
+      onBack={() => onSelectPath(null)}
+    />
   )
 }
 
@@ -176,11 +230,14 @@ export function FilesTabBody({
  * tree gives way to the open file and a back button brings it back.
  */
 export function FilesLayout({
+  search,
   tree,
   detail,
   fileOpen,
   onBack,
 }: {
+  /** Stays put above the tree while the tree scrolls beneath it. */
+  search?: React.ReactNode
   tree: React.ReactNode
   detail: React.ReactNode
   fileOpen: boolean
@@ -192,11 +249,14 @@ export function FilesLayout({
     <div className="flex min-h-0 flex-1 flex-col @2xl:flex-row">
       <div
         className={cn(
-          "no-scrollbar min-h-0 flex-1 scroll-fade overflow-y-auto overscroll-contain p-2 @2xl:w-64 @2xl:flex-none @2xl:border-e",
+          "flex min-h-0 flex-1 flex-col @2xl:w-64 @2xl:flex-none @2xl:border-e",
           fileOpen && "max-@2xl:hidden"
         )}
       >
-        {tree}
+        {search ? <div className="shrink-0 p-2 pb-0">{search}</div> : null}
+        <div className="no-scrollbar min-h-0 flex-1 scroll-fade overflow-y-auto overscroll-contain p-2">
+          {tree}
+        </div>
       </div>
       <div
         className={cn(
