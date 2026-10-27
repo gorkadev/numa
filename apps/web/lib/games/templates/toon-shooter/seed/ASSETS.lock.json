@@ -1,0 +1,301 @@
+{
+  "version": 1,
+  "files": {
+    "assets/toon-shooter/Characters/Character_Enemy.gltf": {
+      "sha256": "60c77a900ddd76086bb0d8c8e4cc87685dcc889f871c17b9d5bfefe94fa8894a",
+      "size": 2274104
+    },
+    "assets/toon-shooter/Characters/Character_Hazmat.gltf": {
+      "sha256": "43d8c6d6e7e95647f24da08d10570a2a29cd7f1e924546bb085b09c62deddc6e",
+      "size": 2325520
+    },
+    "assets/toon-shooter/Characters/Character_Soldier.gltf": {
+      "sha256": "d1395255f7cfa8f766369e37e724fa44e2895a46a719d17f720c9c78b014a901",
+      "size": 2343513
+    },
+    "assets/toon-shooter/Environment/Barrier_Fixed.gltf": {
+      "sha256": "be7083a033b4ca831f28b36db5b3a5a17c5f46395aa68040c722afa77ea3e85e",
+      "size": 207178
+    },
+    "assets/toon-shooter/Environment/Barrier_Large.gltf": {
+      "sha256": "737157e7051c967f93f19795f4df1a8fe44e1a82c8733aa4fecf20cfde6902c2",
+      "size": 161083
+    },
+    "assets/toon-shooter/Environment/Barrier_Single.gltf": {
+      "sha256": "e8e61072f47204af36125bb7b18ea016f2a7dd35111113a284b9998d7867128e",
+      "size": 17441
+    },
+    "assets/toon-shooter/Environment/Barrier_Trash.gltf": {
+      "sha256": "37a5de7ce2be8aaa4c9025cce0ffa05878956666c761e6375ce6a68fde6e6532",
+      "size": 169375
+    },
+    "assets/toon-shooter/Environment/BearTrap_Closed.gltf": {
+      "sha256": "d7216a801131b6a308e0c488851b32e5fccd5f4158e65ecaf94f3354ca607104",
+      "size": 33602
+    },
+    "assets/toon-shooter/Environment/BearTrap_Open.gltf": {
+      "sha256": "c01dea665d645d57dea56c2e41b7f1e2e37266d5ffc48c4e3d5fb8f9368a4a32",
+      "size": 33601
+    },
+    "assets/toon-shooter/Environment/BrickWall_1.gltf": {
+      "sha256": "f7216fb22d6189cc2b47d1325a3be9b51b7e377028327fbf28296ced326522bd",
+      "size": 10334
+    },
+    "assets/toon-shooter/Environment/BrickWall_2.gltf": {
+      "sha256": "fecc8c1c6539f461ecb1c5928f117b90b6702aae36385b2178b07ebc5738a925",
+      "size": 18111
+    },
+    "assets/toon-shooter/Environment/CardboardBoxes_1.gltf": {
+      "sha256": "7ba49ee8897707832bbedd0053abab6823fe1f4e6243239e81c7d9c302091028",
+      "size": 10679
+    },
+    "assets/toon-shooter/Environment/CardboardBoxes_2.gltf": {
+      "sha256": "8c5a53d9dfb5ab8159f0d03c1478acc6ed73be74e84622bb8af20da27927e4c3",
+      "size": 10840
+    },
+    "assets/toon-shooter/Environment/CardboardBoxes_3.gltf": {
+      "sha256": "42c2565003956f69769e63711e97e629713c21ca865bec0f3aefd30930c79f88",
+      "size": 34343
+    },
+    "assets/toon-shooter/Environment/CardboardBoxes_4.gltf": {
+      "sha256": "bfe9fd494f232b92a090d2e736654b497ccaf195e8f2bd78dc759e08446cb4ac",
+      "size": 34772
+    },
+    "assets/toon-shooter/Environment/Container_Long.gltf": {
+      "sha256": "e3d6c74d60b7c28fb428cbe4d3a8a869f74698d3d40da2ef45970c0d85693182",
+      "size": 82360
+    },
+    "assets/toon-shooter/Environment/Container_Small.gltf": {
+      "sha256": "06f63543dc0f22006042ca304b681b18ad741c0f20bf6d442f38059216d9ab27",
+      "size": 57078
+    },
+    "assets/toon-shooter/Environment/Crate.gltf": {
+      "sha256": "33c070385f5f722ad0213476a66ab999afd45e2507574258920abb86bb4aa99e",
+      "size": 17892
+    },
+    "assets/toon-shooter/Environment/Debris_BrokenCar.gltf": {
+      "sha256": "ab1f6d968a3a121e0412c8d57c5b2dafc785f2d331e5d4fb2a44ed22ff222b17",
+      "size": 131668
+    },
+    "assets/toon-shooter/Environment/Debris_Papers_1.gltf": {
+      "sha256": "f261ab31d631f7ea3199dcac05a4cfd7e3477c61d1b06e6a0e7d1e9325c6c579",
+      "size": 3566
+    },
+    "assets/toon-shooter/Environment/Debris_Papers_2.gltf": {
+      "sha256": "aece9786c08b3c9e07074caf020d47f85d07b4c7c6e408b09a35acd1a48206d9",
+      "size": 3847
+    },
+    "assets/toon-shooter/Environment/Debris_Papers_3.gltf": {
+      "sha256": "b92d479e5ca346c4f0b2e26ee6d9e2b17018859ffd85713262e8e95f97538e8c",
+      "size": 3132
+    },
+    "assets/toon-shooter/Environment/Debris_Pile.gltf": {
+      "sha256": "5bcf8a02200a208dc2a912acb9b335610d8c1b83581b1978ef1f7ede5e005bc4",
+      "size": 36734
+    },
+    "assets/toon-shooter/Environment/Debris_Tires.gltf": {
+      "sha256": "a28bebd43439357da75c09643ed70793820bf7216703098aabc0ea9d325ee198",
+      "size": 106891
+    },
+    "assets/toon-shooter/Environment/ExplodingBarrel.gltf": {
+      "sha256": "da05e6f6dd1a84734ee48d6fde77c3cea7a094b820ff1f9a2db85be8f882a18a",
+      "size": 26314
+    },
+    "assets/toon-shooter/Environment/ExplodingBarrel_Spilled.gltf": {
+      "sha256": "6b56d50d91590a149e724a62f9478efafe512ff762f3b71ab8f8e740118783d7",
+      "size": 33772
+    },
+    "assets/toon-shooter/Environment/Fence.gltf": {
+      "sha256": "e367f4509366ccb581b0d444393f7f5a3d51219d95bea2fee5cbd9dbe10530a4",
+      "size": 9800
+    },
+    "assets/toon-shooter/Environment/Fence_Long.gltf": {
+      "sha256": "2c3bab7642a5745f283e20a749650479c9ee11a130b0b42c4b075ff6fbcca4a4",
+      "size": 9805
+    },
+    "assets/toon-shooter/Environment/GasCan.gltf": {
+      "sha256": "9c52e14470d820dae2b359794c32aeedd1ce9264f6286d23eb571574e7134e79",
+      "size": 39211
+    },
+    "assets/toon-shooter/Environment/GasTank.gltf": {
+      "sha256": "b04b319602a155b4637a021654bc6c3f5f9b6a18dbf00db347361a9ed16a35d3",
+      "size": 45315
+    },
+    "assets/toon-shooter/Environment/Health.gltf": {
+      "sha256": "1b8c20ea344bdc5fdf63d304f299306036a7ff3cf183aed7ab72e3a02250d777",
+      "size": 36391
+    },
+    "assets/toon-shooter/Environment/Key.gltf": {
+      "sha256": "75679b705b1d252e44ec4d717ce41eff99364069da5f9e57382257f941faec87",
+      "size": 17557
+    },
+    "assets/toon-shooter/Environment/Landmine.gltf": {
+      "sha256": "0066b828b29f0e60a84a81910fc9da0cfe264083e24285fe95414d7641fd6a8e",
+      "size": 18550
+    },
+    "assets/toon-shooter/Environment/MetalFence.gltf": {
+      "sha256": "d186d36cb09030ade0956ef0898859f0abfd81d53c3cc16b12737634cd8ca799",
+      "size": 120224
+    },
+    "assets/toon-shooter/Environment/Pallet.gltf": {
+      "sha256": "3e0a92324eebcac32eb6fb258892a3fd6d42d7aa32eeddc68d76824ac237bbec",
+      "size": 13938
+    },
+    "assets/toon-shooter/Environment/Pallet_Broken.gltf": {
+      "sha256": "d40339720baee6736105934d5097e7233bd33580550641deb2f79210c57dc499",
+      "size": 21615
+    },
+    "assets/toon-shooter/Environment/Pipes.gltf": {
+      "sha256": "0dc0b88055fe3585e3198911feffb84e3ecbfe3efe45cd8c8f94bfbc744ad796",
+      "size": 28494
+    },
+    "assets/toon-shooter/Environment/SackTrench.gltf": {
+      "sha256": "c7cc248197df4938775c30a6c39e22d1e8a06f7ae2e6f4a4e8ea373d2701d488",
+      "size": 25095
+    },
+    "assets/toon-shooter/Environment/SackTrench_Small.gltf": {
+      "sha256": "03e51a8b00654d8121989544384d9d4a1ec88062c6d6daecaf778e9663ddb9f2",
+      "size": 13899
+    },
+    "assets/toon-shooter/Environment/Sign.gltf": {
+      "sha256": "10af98acc50707c31e2bcb6d2cbadaab766fb68cfa6b552f8d5ba96e5bfa5a7c",
+      "size": 14328
+    },
+    "assets/toon-shooter/Environment/Sofa.gltf": {
+      "sha256": "7c35f83169e9bf50163fbb398f62987fa478d5023e946f87204af493448a3d2f",
+      "size": 20214
+    },
+    "assets/toon-shooter/Environment/Sofa_Small.gltf": {
+      "sha256": "60d8ca5eef8ea730f9cadc3dfe6a6357d08bde0353868e6354d630aee208f42d",
+      "size": 13882
+    },
+    "assets/toon-shooter/Environment/StreetLight.gltf": {
+      "sha256": "c9bb671b1852193ee1c10227be87d42f6b19f664c1a570f235b6dd41b6a3f655",
+      "size": 15197
+    },
+    "assets/toon-shooter/Environment/Structure_1.gltf": {
+      "sha256": "9d8271f6858b10d3e9caf1d01e019a4405896c78b2e056cdac77ca66dd3d0261",
+      "size": 335130
+    },
+    "assets/toon-shooter/Environment/Structure_2.gltf": {
+      "sha256": "b8ca708c7b193e0210f2eeabf7eb4e3f669baef7b66afbb71fd24dbe428e30f6",
+      "size": 443202
+    },
+    "assets/toon-shooter/Environment/Structure_3.gltf": {
+      "sha256": "d1bb55a3c13c1d10d67449e5562d8dcadffcf48cd661961f3850b6910fb6ddc7",
+      "size": 439060
+    },
+    "assets/toon-shooter/Environment/Structure_4.gltf": {
+      "sha256": "aa63a3db278841078d0e288375f34c0740b1870f91c02c9117218d9e303c321a",
+      "size": 449315
+    },
+    "assets/toon-shooter/Environment/Tank.gltf": {
+      "sha256": "2e4e9b3412c73910c2de15b3ad08d6e271a775e8cec6de2acd005ace2acac85a",
+      "size": 147897
+    },
+    "assets/toon-shooter/Environment/TrafficCone.gltf": {
+      "sha256": "a3b80ba81d3cd51d030dd840137eb79774d2bb04be2908d133e8894de15d4ea0",
+      "size": 11626
+    },
+    "assets/toon-shooter/Environment/TrashContainer.gltf": {
+      "sha256": "0f66eae415195afbc624d736ef94e640d79ef3056ebbea05b05539c60dbabb8c",
+      "size": 27344
+    },
+    "assets/toon-shooter/Environment/TrashContainer_Open.gltf": {
+      "sha256": "9dfd920081e58b8d26340fcfc37873223c7389908299f56ff38e04784c4d967b",
+      "size": 81642
+    },
+    "assets/toon-shooter/Environment/Tree_1.gltf": {
+      "sha256": "1b6a4151829cfc4741dce5516b6dc9bc10ab4fa068d310059f4ea0a7f33d2be6",
+      "size": 64892
+    },
+    "assets/toon-shooter/Environment/Tree_2.gltf": {
+      "sha256": "ef1974d63922d9d1d70b41c9846f4fa0502a8333805235b911dc5db3d34cd4e0",
+      "size": 44241
+    },
+    "assets/toon-shooter/Environment/Tree_3.gltf": {
+      "sha256": "0adda17287f51ec86608e32a3e3b46c36d419bb4f686ed8735b9ef780348a6d1",
+      "size": 62572
+    },
+    "assets/toon-shooter/Environment/Tree_4.gltf": {
+      "sha256": "2578453c262b719c4d7a85c8c5ee90cdb2da419069bd7e1e260c3c001285dddc",
+      "size": 29749
+    },
+    "assets/toon-shooter/Environment/WaterTank_Floor.gltf": {
+      "sha256": "098095d2d555479e22812f6187216a3cad0c1a6beb07d1736b51da26da91e960",
+      "size": 35272
+    },
+    "assets/toon-shooter/Environment/WaterTank_Platform.gltf": {
+      "sha256": "8d0829482ee093103196d8b0dc18c01a289fe13588d921f6277ffb2d2c7bb52f",
+      "size": 48073
+    },
+    "assets/toon-shooter/Environment/WoodPlanks.gltf": {
+      "sha256": "5f5a47fb63617ff854f608ce4e2fd65198fdae65588ae5e3ee1306e37e635664",
+      "size": 15063
+    },
+    "assets/toon-shooter/Guns/AK.gltf": {
+      "sha256": "7320d771b829e2dcc0e4463a608d1be9b7217bdf0fdf109e8961a83af1854010",
+      "size": 81180
+    },
+    "assets/toon-shooter/Guns/FireGrenade.gltf": {
+      "sha256": "d1254b7d3f610e12b341d2b66ed63520eb3770e79d24bd701d21684202e36d8b",
+      "size": 43296
+    },
+    "assets/toon-shooter/Guns/Grenade.gltf": {
+      "sha256": "77cc4e69c9f384fbb0b64efa257acbcc73f4e35521edf005dc6029af3aead930",
+      "size": 35175
+    },
+    "assets/toon-shooter/Guns/GrenadeLauncher.gltf": {
+      "sha256": "63831363d97614952c07b16bddec66bb94fbf24d2722c0f566082871319fe689",
+      "size": 78520
+    },
+    "assets/toon-shooter/Guns/Knife_1.gltf": {
+      "sha256": "1a36353f369672783881dac2fd244d8f371469b0e2618e63d84bc4098a8ce2aa",
+      "size": 36439
+    },
+    "assets/toon-shooter/Guns/Knife_2.gltf": {
+      "sha256": "779ab8827c3c0075e451b5760379465b8f439e1a3118ea8959a6aacc83449bb3",
+      "size": 38279
+    },
+    "assets/toon-shooter/Guns/Pistol.gltf": {
+      "sha256": "d6a917c62aa04a1e448a0d2dd6106387d745f9c0638aa790a902e6d860bca68e",
+      "size": 59603
+    },
+    "assets/toon-shooter/Guns/Revolver.gltf": {
+      "sha256": "b88428def63c97a5bd0e987b4086da4392549d8731766f12a01612722c0ed71d",
+      "size": 84580
+    },
+    "assets/toon-shooter/Guns/Revolver_Small.gltf": {
+      "sha256": "20688e8853a0abbe2d65813b3ba11b60e01e6f20f8c7acb0131333c2d62ba516",
+      "size": 77084
+    },
+    "assets/toon-shooter/Guns/RocketLauncher.gltf": {
+      "sha256": "fba272ee05c70e33600acdf72c3f53bb22e3a62a881fbfde129f21dc48956b35",
+      "size": 72757
+    },
+    "assets/toon-shooter/Guns/SMG.gltf": {
+      "sha256": "f2972f78dc4749a82e33353c09e272fd64ceed25ef41f598109f707c9e9696bd",
+      "size": 63255
+    },
+    "assets/toon-shooter/Guns/ShortCannon.gltf": {
+      "sha256": "1425983df1d435d5a53ddf9254c4c36af18b5f9d627c795b60045b2d1cba1548",
+      "size": 34087
+    },
+    "assets/toon-shooter/Guns/Shotgun.gltf": {
+      "sha256": "98f8f5a3bd94f6edc6ec9fb2517a8340be77ba88e0f5817e33c3b2a4602f881b",
+      "size": 68766
+    },
+    "assets/toon-shooter/Guns/Shovel.gltf": {
+      "sha256": "6e014aa04380e3ac4d8df18cc14e655ac1c3d57f0add4d3f6f1fa3aa81843136",
+      "size": 36243
+    },
+    "assets/toon-shooter/Guns/Sniper.gltf": {
+      "sha256": "e266e8c6166229d1fa35384f280c722522e8a1b143fd4aad533d7b6e7f417daf",
+      "size": 116733
+    },
+    "assets/toon-shooter/Guns/Sniper_2.gltf": {
+      "sha256": "92d4e99c3dc80de7bd2209c4bbed5ce9675db274e070f0e1ea8616d52c97cf6e",
+      "size": 82122
+    }
+  }
+}
