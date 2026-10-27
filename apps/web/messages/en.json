@@ -458,6 +458,8 @@
     "paletteHintClose": "Close",
     "noResults": "No results found.",
     "actions": "Actions",
+    "changeTheme": "Change theme…",
+    "changeLanguage": "Change language…",
     "turnOn": "Turn on {setting}",
     "turnOff": "Turn off {setting}",
     "settingTurnedOn": "{setting} turned on",

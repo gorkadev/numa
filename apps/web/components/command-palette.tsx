@@ -434,6 +434,29 @@ export function CommandPalette({
                       {t("newGame")}
                       <ShortcutHint label="newGame" />
                     </CommandItem>
+                    {/**
+                     * Verbs, under Actions: they open a picker and change the
+                     * value. The Settings group below only lists rows that
+                     * navigate to a setting, so search results for Theme or
+                     * Language no longer sit next to a same-named picker.
+                     */}
+                    <CommandItem
+                      value={t("changeTheme")}
+                      keywords={[settings("theme")]}
+                      onSelect={() => enter("theme")}
+                    >
+                      <HugeiconsIcon icon={PaintBoardIcon} strokeWidth={2} />
+                      {t("changeTheme")}
+                      <ShortcutHint label="toggleTheme" />
+                    </CommandItem>
+                    <CommandItem
+                      value={t("changeLanguage")}
+                      keywords={[settings("language")]}
+                      onSelect={() => enter("language")}
+                    >
+                      <HugeiconsIcon icon={TranslateIcon} strokeWidth={2} />
+                      {t("changeLanguage")}
+                    </CommandItem>
                     <CommandItem onSelect={() => enter("templates")}>
                       <HugeiconsIcon
                         icon={LayoutTemplateIcon}
@@ -474,15 +497,6 @@ export function CommandPalette({
                         </span>
                       </CommandItem>
                     ))}
-                    <CommandItem onSelect={() => enter("theme")}>
-                      <HugeiconsIcon icon={PaintBoardIcon} strokeWidth={2} />
-                      {settings("theme")}
-                      <ShortcutHint label="toggleTheme" />
-                    </CommandItem>
-                    <CommandItem onSelect={() => enter("language")}>
-                      <HugeiconsIcon icon={TranslateIcon} strokeWidth={2} />
-                      {settings("language")}
-                    </CommandItem>
                     {SECTIONS.map((section) => (
                       <CommandItem
                         key={section.id}
