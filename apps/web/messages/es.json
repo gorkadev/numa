@@ -322,34 +322,50 @@
     "openModelPicker": "Elegir nivel de modelo",
     "templateLocked": "La plantilla se fija al crear el juego",
     "openTemplatePicker": "Elegir plantilla de juego",
+    "viewMoreTemplates": "Ver más",
+    "templateDialogDescription": "Elige el kit de inicio de tu nuevo juego.",
+    "templateSearchPlaceholder": "Buscar plantillas",
+    "templateSearchEmpty": "Ninguna plantilla coincide con tu búsqueda.",
+    "templateViewLabel": "Vista",
+    "templateViewList": "Una por fila",
+    "templateViewGrid": "Cuadrícula",
+    "templateDialogCancel": "Cancelar",
+    "templateDialogSelect": "Seleccionar",
     "templates": {
       "none": {
         "label": "Sin plantilla",
-        "tagline": "Empieza con el entorno de ejecución estándar del juego."
+        "tagline": "Un lienzo en blanco sobre el motor de juego estándar.",
+        "description": "Sin arte de partida: el juego se construye desde cero sobre el motor estándar, con formas, colores y efectos hechos en código. Ideal si tienes una idea muy concreta o buscas un estilo minimalista."
       },
       "fantasy-cards": {
         "label": "Cartas de fantasía",
-        "tagline": "Empieza con una base para un juego de cartas de fantasía."
+        "tagline": "Cartas 3D de fantasía con hechizos, criaturas y tesoros.",
+        "description": "30 cartas 3D ilustradas (magos, dragones, elementos, trampas y tesoros) y piezas de carta en blanco, todas con una sola textura. Pensado para duelos de cartas, deck builders y juegos de mesa; el tablero, las reglas y los efectos se construyen a su alrededor."
       },
       "cube-world": {
         "label": "Mundo de cubos",
-        "tagline": "Empieza con un pequeño kit de aventuras 3D."
+        "tagline": "Un mundo 3D de bloques con héroes, animales y monstruos.",
+        "description": "107 modelos 3D de estilo vóxel: un héroe animado, personajes, animales y enemigos, además de bloques de terreno, árboles, herramientas, cofres y construcciones. Encaja con exploración, supervivencia, granjas y pequeñas aventuras."
       },
       "toon-shooter": {
         "label": "Disparos de dibujos animados",
-        "tagline": "Empieza con un kit completo de disparos 3D de dibujos animados."
+        "tagline": "Soldados, armas y campos de batalla 3D de estilo cartoon.",
+        "description": "74 modelos 3D de estilo cartoon: 3 soldados animados, 16 armas desde cuchillos hasta lanzacohetes y 55 piezas de escenario como barricadas, cajas, barriles explosivos, un tanque y muros de ladrillo. Pensado para shooters de arena, supervivencia por oleadas y acción cenital."
       },
       "platformer": {
         "label": "Plataformas",
-        "tagline": "Empieza con un kit colorido de plataformas de scroll lateral."
+        "tagline": "Plataformas, monedas y enemigos 3D de colores vivos.",
+        "description": "109 modelos 3D coloridos: un héroe animado, enemigos, plataformas flotantes, pinchos, sierras, cañones, palancas, monedas, gemas, corazones, llaves y una bandera de meta. Ideal para plataformas de scroll lateral o en 3D con saltos, coleccionables y vidas."
       },
       "tiny-swords": {
         "label": "Tiny Swords",
-        "tagline": "Empieza con un kit de reino 2D en pixel art."
+        "tagline": "Un reino 2D en pixel art visto desde arriba.",
+        "description": "Guerreros, arqueros, lanceros, monjes y trabajadores animados en cinco colores de facción, con castillos, casas, torres, ovejas, árboles, oro y un terreno de islas con acantilados y espuma. Encaja con estrategia, tower defense, acción cenital y juegos de construcción."
       },
       "legacy-fantasy": {
         "label": "Legacy Fantasy",
-        "tagline": "Empieza con un kit de plataformas 2D en un bosque, en vista lateral."
+        "tagline": "Una aventura 2D en pixel art por el bosque, en vista lateral.",
+        "description": "Un héroe con espada que corre, salta, ataca y muere, jabalíes, abejas y caracoles a los que enfrentarse, y un bosque de tiles, árboles, rocas, cofres, pociones y fondos con parallax. Pensado para plataformas, salas tipo metroidvania y acción de scroll lateral."
       }
     },
     "startDictation": "Iniciar dictado",
