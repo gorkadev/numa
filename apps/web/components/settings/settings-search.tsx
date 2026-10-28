@@ -81,7 +81,10 @@ export function SettingsSearch({
       </div>
       <ComboboxContent anchor={anchorRef} className="w-80">
         <ComboboxEmpty>{settings("searchNoResults")}</ComboboxEmpty>
-        <ComboboxList aria-label={settings("searchResultsLabel")}>
+        <ComboboxList
+          aria-label={settings("searchResultsLabel")}
+          className="scroll-fade"
+        >
           {(setting: SearchableSetting) => {
             const section = SECTIONS.find(
               (entry) => entry.id === setting.section
