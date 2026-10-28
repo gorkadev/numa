@@ -71,6 +71,7 @@ function SessionsSkeleton() {
   return (
     <div className="flex flex-col gap-4">
       <SettingsGroup
+        settingId="sessions"
         title={t("sessions")}
         description={t("sessionsDescription")}
       >
@@ -211,6 +212,7 @@ export function SessionsSection() {
   if (sessionError)
     return (
       <SettingsGroup
+        settingId="sessions"
         title={t("sessions")}
         description={t("sessionsDescription")}
       >
@@ -241,6 +243,7 @@ export function SessionsSection() {
   return (
     <div className="flex flex-col gap-4">
       <SettingsGroup
+        settingId="sessions"
         title={t("sessions")}
         description={t("sessionsDescription")}
       >

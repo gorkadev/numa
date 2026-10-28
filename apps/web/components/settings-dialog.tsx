@@ -1,7 +1,6 @@
 "use client"
 
-import { useState } from "react"
-import { Search01Icon } from "@hugeicons/core-free-icons"
+import { useEffect, useRef, useState } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Dialog,
@@ -9,11 +8,6 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@workspace/ui/components/dialog"
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@workspace/ui/components/input-group"
 import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import {
   Sidebar,
@@ -55,7 +49,10 @@ import {
   SettingsRow,
   SettingsRows,
 } from "@/components/settings/settings-group"
+import { revealSetting } from "@/components/settings/reveal-setting"
+import { SettingsSearch } from "@/components/settings/settings-search"
 import { ThemePicker } from "@/components/settings/theme-picker"
+import type { SearchableSetting } from "@/lib/settings/search"
 import { LocaleSwitcher } from "@/components/locale-switcher"
 import { useTranslations } from "next-intl"
 
@@ -96,12 +93,17 @@ export function SettingsDialog({
   onOpenChange,
   section,
   onSectionChange,
+  focusSetting = null,
+  onFocusSettingHandled,
   billing,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   section: SectionId
   onSectionChange: (section: SectionId) => void
+  /** A row to scroll to on open, from the command palette (`?setting=`). */
+  focusSetting?: string | null
+  onFocusSettingHandled?: () => void
   billing: BillingSummary
 }) {
   /**
@@ -128,6 +130,33 @@ export function SettingsDialog({
 
   if (open && section !== shownSection) setShownSection(section)
 
+  /**
+   * A search result switches section and then scrolls to its row; the wait
+   * for the row is cancelled by the next result or by unmounting.
+   */
+  /**
+   * State rather than a ref: the dialog's portal mounts its content after the
+   * first open render, and the `?setting=` effect below has to run again once
+   * the content exists.
+   */
+  const [content, setContent] = useState<HTMLDivElement | null>(null)
+  const stopRevealRef = useRef<() => void>(() => {})
+
+  useEffect(() => () => stopRevealRef.current(), [])
+
+  useEffect(() => {
+    if (!open || !focusSetting || !content) return
+    stopRevealRef.current()
+    stopRevealRef.current = revealSetting(content, focusSetting)
+    onFocusSettingHandled?.()
+  }, [open, focusSetting, content, onFocusSettingHandled])
+
+  function revealResult(setting: SearchableSetting) {
+    stopRevealRef.current()
+    onSectionChange(setting.section)
+    if (content) stopRevealRef.current = revealSetting(content, setting.id)
+  }
+
   const activeSection = SECTIONS.find((entry) => entry.id === shownSection)!
   const sectionLabel = t(SECTION_LABEL_KEYS[activeSection.id])
 
@@ -149,7 +178,10 @@ export function SettingsDialog({
          * `min-w-0` lets this shrink to the dialog and leaves the overflow to
          * the one element equipped to scroll it.
          */}
-        <div className="flex min-w-0 flex-col md:h-[560px] md:flex-row">
+        <div
+          ref={setContent}
+          className="flex min-w-0 flex-col md:h-[560px] md:flex-row"
+        >
           {/**
            * `w-60` (unprefixed) replaces the default `w-(--sidebar-width)`
            * outright rather than fighting it at `md`: this pane's width is
@@ -162,27 +194,8 @@ export function SettingsDialog({
             className="hidden w-60 shrink-0 border-r border-border bg-sidebar md:flex"
           >
             <SidebarContent className="gap-0">
-              {/**
-               * Presentational for now: no `onChange`, no filtering. It is
-               * here because the nav's shape is what this pass is about, and
-               * a search field changes where the eye lands and how much
-               * vertical room the groups get — decisions that are cheaper to
-               * make now than after the groups are tuned around its absence.
-               */}
               <div className="px-2 py-4">
-                <InputGroup>
-                  <InputGroupAddon>
-                    <HugeiconsIcon
-                      icon={Search01Icon}
-                      className="size-4"
-                      strokeWidth={2}
-                    />
-                  </InputGroupAddon>
-                  <InputGroupInput
-                    placeholder={t("searchPlaceholder")}
-                    aria-label={t("searchAccessibleLabel")}
-                  />
-                </InputGroup>
+                <SettingsSearch onSelect={revealResult} />
               </div>
 
               {SECTION_GROUPS.map((group) => (
@@ -293,7 +306,10 @@ export function SettingsDialog({
               <div className="p-6">
                 {shownSection === "general" && (
                   <>
-                    <section className="flex flex-col gap-4">
+                    <section
+                      data-setting-id="theme"
+                      className="flex flex-col gap-4"
+                    >
                       <SettingsHeading
                         title={t("theme")}
                         description={t("themeDescription")}
@@ -301,7 +317,7 @@ export function SettingsDialog({
                       <ThemePicker />
                     </section>
                     <SettingsRows className="mt-6">
-                      <SettingsRow>
+                      <SettingsRow settingId="language">
                         <ItemContent>
                           <ItemTitle>{t("language")}</ItemTitle>
                           <ItemDescription id="settings-language-description">

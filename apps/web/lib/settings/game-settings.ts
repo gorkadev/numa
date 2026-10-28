@@ -17,6 +17,7 @@ async function readSettingsRow(userId: string) {
       improverOverageBilling: userSettings.improverOverageBilling,
       defaultTierId: userSettings.defaultTierId,
       showSessionStats: userSettings.showSessionStats,
+      wrapCodeBlocks: userSettings.wrapCodeBlocks,
     })
     .from(userSettings)
     .where(eq(userSettings.userId, userId))

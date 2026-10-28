@@ -1,5 +1,5 @@
 /** The palette's nested pages; the root list is the empty stack. */
-export type PalettePage = "theme" | "language" | "templates"
+export type PalettePage = "theme" | "language" | "templates" | "defaultTier" | "signOut"
 
 /**
  * The stack after a Backspace, or `null` when the key should only edit the

@@ -24,6 +24,7 @@ export function SettingsGroup({
   title,
   description,
   action,
+  settingId,
   className,
   children,
 }: {
@@ -31,11 +32,16 @@ export function SettingsGroup({
   description?: React.ReactNode
   /** Rendered at the end of the heading row — "Add", "Revoke all", etc. */
   action?: React.ReactNode
+  /** The settings search index id a result scrolls to (`lib/settings/search-index.ts`). */
+  settingId?: string
   className?: string
   children: React.ReactNode
 }) {
   return (
-    <section className={cn("flex flex-col gap-3", className)}>
+    <section
+      data-setting-id={settingId}
+      className={cn("flex flex-col gap-3", className)}
+    >
       <SettingsHeading
         title={title}
         description={description}
@@ -128,11 +134,16 @@ export function SettingsRows({
  * so a row is written exactly as it was before.
  */
 export function SettingsRow({
+  settingId,
   className,
   ...props
-}: React.ComponentProps<typeof Item>) {
+}: React.ComponentProps<typeof Item> & {
+  /** The settings search index id a result scrolls to (`lib/settings/search-index.ts`). */
+  settingId?: string
+}) {
   return (
     <Item
+      data-setting-id={settingId}
       {...props}
       className={cn("rounded-none border-0 bg-transparent", className)}
     />

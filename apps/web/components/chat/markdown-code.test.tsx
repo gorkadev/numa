@@ -6,6 +6,7 @@ import { NextIntlClientProvider } from "next-intl"
 
 import en from "../../messages/en.json"
 import es from "../../messages/es.json"
+import { CodeWrapProvider } from "./code-wrap"
 import { MarkdownCode } from "./markdown-code"
 import { Markdown } from "./markdown"
 
@@ -81,4 +82,14 @@ test("unknown languages and growing source retain readable fallback", () => {
     assert.match(html, /data-slot="code-block-content"/)
     assert.ok(html.includes(source.replace(/\n$/, "").split("\n")[0]!))
   }
+})
+
+test("fences start unwrapped when the player turned wrapping off", () => {
+  const html = render(
+    <CodeWrapProvider wrap={false}>
+      <MarkdownCode className="language-ts">{"const x = 1\n"}</MarkdownCode>
+    </CodeWrapProvider>
+  )
+  assert.match(html, /aria-pressed="false"/)
+  assert.doesNotMatch(html, /data-wrap="/)
 })

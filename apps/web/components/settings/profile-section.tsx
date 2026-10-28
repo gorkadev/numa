@@ -237,7 +237,7 @@ export function ProfileSection() {
   return (
     <div className="flex flex-col gap-8">
       <SettingsGroup>
-        <SettingsRow>
+        <SettingsRow settingId="profile-picture">
           <ItemContent>
             <ItemTitle>{t("profilePicture")}</ItemTitle>
             <ItemDescription>
@@ -268,7 +268,7 @@ export function ProfileSection() {
             </Avatar>
           </ItemActions>
         </SettingsRow>
-        <SettingsRow>
+        <SettingsRow settingId="full-name">
           <ItemContent>
             <ItemTitle>{t("fullName")}</ItemTitle>
           </ItemContent>
@@ -291,7 +291,7 @@ export function ProfileSection() {
             />
           </ItemActions>
         </SettingsRow>
-        <SettingsRow>
+        <SettingsRow settingId="email">
           <ItemContent>
             <ItemTitle>{t("email")}</ItemTitle>
             <ItemDescription>
@@ -306,6 +306,7 @@ export function ProfileSection() {
 
       {(accountsLoading || accountsError || accounts.length > 0) && (
         <SettingsGroup
+          settingId="connected-accounts"
           title={t("connectedAccounts")}
           description={t("connectedAccountsDescription")}
         >
@@ -363,7 +364,7 @@ export function ProfileSection() {
       )}
 
       <SettingsGroup>
-        <SettingsRow>
+        <SettingsRow settingId="sign-out">
           <ItemContent>
             <ItemTitle>{t("signOut")}</ItemTitle>
             <ItemDescription>{t("endSessionOnDevice")}</ItemDescription>

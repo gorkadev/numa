@@ -8,6 +8,7 @@ test("a user with no settings row reads the defaults", () => {
     improverOverageBilling: false,
     defaultTierId: null,
     showSessionStats: true,
+    wrapCodeBlocks: true,
   })
 })
 
@@ -17,14 +18,21 @@ test("a stored tier that is no longer a tier reads as no preference", () => {
       improverOverageBilling: true,
       defaultTierId: "turbo",
       showSessionStats: false,
+      wrapCodeBlocks: false,
     }),
-    { improverOverageBilling: true, defaultTierId: null, showSessionStats: false }
+    {
+      improverOverageBilling: true,
+      defaultTierId: null,
+      showSessionStats: false,
+      wrapCodeBlocks: false,
+    }
   )
   assert.equal(
     gameSettingsOf({
       improverOverageBilling: false,
       defaultTierId: "pro",
       showSessionStats: true,
+      wrapCodeBlocks: true,
     }).defaultTierId,
     "pro"
   )
@@ -40,6 +48,10 @@ test("a patch accepts one known field at a time and nothing else", () => {
   assert.deepEqual(gameSettingsPatchSchema.parse({ improverOverageBilling: true }), {
     improverOverageBilling: true,
   })
+  assert.deepEqual(gameSettingsPatchSchema.parse({ wrapCodeBlocks: false }), {
+    wrapCodeBlocks: false,
+  })
+  assert.throws(() => gameSettingsPatchSchema.parse({ wrapCodeBlocks: "yes" }))
   assert.throws(() => gameSettingsPatchSchema.parse({ defaultTierId: "turbo" }))
   assert.throws(() => gameSettingsPatchSchema.parse({ defaultTierId: null }))
   assert.throws(() => gameSettingsPatchSchema.parse({ showSessionStats: "no" }))

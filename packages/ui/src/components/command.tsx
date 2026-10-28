@@ -158,16 +158,25 @@ function CommandSeparator({
   )
 }
 
+/**
+ * `variant="destructive"` matches `DropdownMenuItem`'s, keyed on cmdk's
+ * `data-selected` where the menu keys on focus, so a destructive row reads
+ * the same in a palette as in a menu.
+ */
 function CommandItem({
   className,
   children,
+  variant = "default",
   ...props
-}: React.ComponentProps<typeof CommandPrimitive.Item>) {
+}: React.ComponentProps<typeof CommandPrimitive.Item> & {
+  variant?: "default" | "destructive"
+}) {
   return (
     <CommandPrimitive.Item
       data-slot="command-item"
+      data-variant={variant}
       className={cn(
-        "group/command-item relative flex min-h-7 cursor-default items-center gap-2 rounded-xl px-2 py-1.5 text-sm outline-hidden select-none in-data-[slot=dialog-content]:rounded-2xl data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 data-selected:bg-muted data-selected:text-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-selected:*:[svg]:text-foreground",
+        "group/command-item relative flex min-h-7 cursor-default items-center gap-2 rounded-xl px-2 py-1.5 text-sm outline-hidden select-none in-data-[slot=dialog-content]:rounded-2xl data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 data-selected:bg-muted not-data-[variant=destructive]:data-selected:text-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 not-data-[variant=destructive]:data-selected:*:[svg]:text-foreground data-[variant=destructive]:text-destructive data-[variant=destructive]:data-selected:bg-destructive/10 dark:data-[variant=destructive]:data-selected:bg-destructive/20 data-[variant=destructive]:*:[svg]:text-destructive",
         className
       )}
       {...props}

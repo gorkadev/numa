@@ -24,7 +24,7 @@ function unavailable(error: unknown): Response {
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ orderId: string; document: string }> }
 ) {
   const session = await requireSession()
@@ -48,6 +48,14 @@ export async function GET(
 
     if (!destination) {
       return new Response(null, { status: 404, headers: privateHeaders })
+    }
+
+    /**
+     * The settings dialog asks for JSON so it can show a pending state and
+     * start the download in place; a plain link still gets the redirect.
+     */
+    if (request.headers.get("accept")?.includes("application/json")) {
+      return NextResponse.json({ url: destination }, { headers: privateHeaders })
     }
 
     return NextResponse.redirect(destination, { headers: privateHeaders })

@@ -22,13 +22,20 @@ function AlertDialogPortal({ ...props }: AlertDialogPrimitive.Portal.Props) {
   )
 }
 
+/**
+ * `forceRender` defaults to true for the same reason as `DialogOverlay`: Base
+ * UI skips a nested dialog's backdrop, so an alert opened from inside another
+ * dialog — Settings, for instance — would paint no dim or blur.
+ */
 function AlertDialogOverlay({
   className,
+  forceRender = true,
   ...props
 }: AlertDialogPrimitive.Backdrop.Props) {
   return (
     <AlertDialogPrimitive.Backdrop
       data-slot="alert-dialog-overlay"
+      forceRender={forceRender}
       className={cn(
         "fixed inset-0 isolate z-50 bg-black/30 duration-100 supports-backdrop-filter:backdrop-blur-sm data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
         className

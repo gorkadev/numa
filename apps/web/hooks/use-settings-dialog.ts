@@ -9,9 +9,14 @@ import {
   isSectionId,
   type SectionId,
 } from "@/lib/settings/sections"
+import { isSettingId } from "@/lib/settings/search-index"
+import {
+  SETTING_PARAM,
+  SETTINGS_PARAM,
+  settingsParams,
+} from "@/lib/settings/settings-url"
 
 /** The query param the dialog's open state and section live in. */
-const SETTINGS_PARAM = "settings"
 
 /**
  * The settings dialog's open state and active section, addressed entirely
@@ -47,6 +52,9 @@ export function useSettingsDialog() {
   const rawSection = searchParams.get(SETTINGS_PARAM)
   const open = rawSection !== null
   const section = isSectionId(rawSection) ? rawSection : DEFAULT_SECTION_ID
+  /** A row the command palette asked the dialog to scroll to, if any. */
+  const rawSetting = searchParams.get(SETTING_PARAM)
+  const focusSetting = open && isSettingId(rawSetting) ? rawSetting : null
 
   /**
    * Every other query param on the current URL is carried forward
@@ -54,14 +62,8 @@ export function useSettingsDialog() {
    * opened from, not a navigation away from it.
    */
   const navigate = useCallback(
-    (nextSection: SectionId | null) => {
-      const params = new URLSearchParams(searchParams.toString())
-
-      if (nextSection === null) {
-        params.delete(SETTINGS_PARAM)
-      } else {
-        params.set(SETTINGS_PARAM, nextSection)
-      }
+    (nextSection: SectionId | null, setting?: string) => {
+      const params = settingsParams(searchParams, nextSection, setting)
 
       const query = params.toString()
       window.history.replaceState(
@@ -74,7 +76,8 @@ export function useSettingsDialog() {
   )
 
   const openSettings = useCallback(
-    (nextSection: SectionId = DEFAULT_SECTION_ID) => navigate(nextSection),
+    (nextSection: SectionId = DEFAULT_SECTION_ID, setting?: string) =>
+      navigate(nextSection, setting),
     [navigate]
   )
 
@@ -93,9 +96,17 @@ export function useSettingsDialog() {
     }
   }, [open, openSettings, closeSettings])
 
+  /** Drops the row to reveal once the dialog has scrolled to it. */
+  const clearFocusSetting = useCallback(
+    () => navigate(section),
+    [navigate, section]
+  )
+
   return {
     open,
     section,
+    focusSetting,
+    clearFocusSetting,
     openSettings,
     closeSettings,
     setSection,

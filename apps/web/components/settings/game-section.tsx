@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select"
+import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Switch } from "@workspace/ui/components/switch"
 import { toast } from "@workspace/ui/components/toast"
 
@@ -51,6 +52,7 @@ export function GameSettingsSection() {
           improverOverageBilling: false,
           defaultTierId: null,
           showSessionStats: true,
+          wrapCodeBlocks: true,
         })
       )
   }, [])
@@ -76,6 +78,13 @@ export function GameSettingsSection() {
     })
   }
 
+  /**
+   * Skeletons stand in for the controls until the saved values arrive, so a
+   * control never paints the default first and then jumps to the real value.
+   * The labels around them are static and render straight away.
+   */
+  const loading = settings === null
+
   const tierItems = TIERS.map((tier) => ({
     value: tier.id,
     label: tiers(`${tier.id}.label`),
@@ -84,68 +93,107 @@ export function GameSettingsSection() {
   return (
     <div className="flex flex-col gap-8">
       <SettingsGroup title={t("newGameTitle")}>
-        <SettingsRow>
+        <SettingsRow settingId="default-tier">
           <ItemContent>
             <ItemTitle id="settings-default-tier">{t("defaultTier")}</ItemTitle>
             <ItemDescription>{t("defaultTierDescription")}</ItemDescription>
           </ItemContent>
           <ItemActions>
-            <Select
-              value={settings?.defaultTierId ?? DEFAULT_TIER_ID}
-              onValueChange={(value) => {
-                if (isTierId(value)) change({ defaultTierId: value })
-              }}
-              items={tierItems}
-            >
-              <SelectTrigger
-                aria-labelledby="settings-default-tier"
-                disabled={settings === null || saving}
-                className="w-full sm:w-auto"
+            {loading ? (
+              <Skeleton className="h-8 w-18 rounded-2xl" />
+            ) : (
+              <Select
+                value={settings.defaultTierId ?? DEFAULT_TIER_ID}
+                onValueChange={(value) => {
+                  if (isTierId(value)) change({ defaultTierId: value })
+                }}
+                items={tierItems}
               >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  {tierItems.map((item) => (
-                    <SelectItem key={item.value} value={item.value}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
+                <SelectTrigger
+                  aria-labelledby="settings-default-tier"
+                  disabled={saving}
+                  className="w-full sm:w-auto"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {tierItems.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>
+                        {item.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            )}
           </ItemActions>
         </SettingsRow>
       </SettingsGroup>
       <SettingsGroup title={t("chatTitle")}>
-        <SettingsRow>
+        <SettingsRow settingId="session-stats">
           <ItemContent>
-            <ItemTitle id="settings-session-stats">{t("sessionStats")}</ItemTitle>
+            <ItemTitle id="settings-session-stats">
+              {t("sessionStats")}
+            </ItemTitle>
             <ItemDescription>{t("sessionStatsDescription")}</ItemDescription>
           </ItemContent>
           <ItemActions>
-            <Switch
-              aria-labelledby="settings-session-stats"
-              checked={settings?.showSessionStats ?? true}
-              disabled={settings === null || saving}
-              onCheckedChange={(next) => change({ showSessionStats: next })}
-            />
+            {loading ? (
+              <Skeleton className="h-5 w-8 rounded-2xl" />
+            ) : (
+              <Switch
+                aria-labelledby="settings-session-stats"
+                checked={settings.showSessionStats}
+                disabled={saving}
+                onCheckedChange={(next) => change({ showSessionStats: next })}
+              />
+            )}
+          </ItemActions>
+        </SettingsRow>
+        <SettingsRow settingId="wrap-code">
+          <ItemContent>
+            <ItemTitle id="settings-wrap-code">{t("wrapCode")}</ItemTitle>
+            <ItemDescription>{t("wrapCodeDescription")}</ItemDescription>
+          </ItemContent>
+          <ItemActions>
+            {loading ? (
+              <Skeleton className="h-5 w-8 rounded-2xl" />
+            ) : (
+              <Switch
+                aria-labelledby="settings-wrap-code"
+                checked={settings.wrapCodeBlocks}
+                disabled={saving}
+                onCheckedChange={(next) => change({ wrapCodeBlocks: next })}
+              />
+            )}
           </ItemActions>
         </SettingsRow>
       </SettingsGroup>
-      <SettingsGroup title={t("improverTitle")} description={t("improverDescription", IMPROVER_DAILY_LIMIT)}>
-        <SettingsRow>
+      <SettingsGroup
+        title={t("improverTitle")}
+        description={t("improverDescription", IMPROVER_DAILY_LIMIT)}
+      >
+        <SettingsRow settingId="improver-overage">
           <ItemContent>
-            <ItemTitle id="settings-improver-overage">{t("improverOverage")}</ItemTitle>
+            <ItemTitle id="settings-improver-overage">
+              {t("improverOverage")}
+            </ItemTitle>
             <ItemDescription>{t("improverOverageDescription")}</ItemDescription>
           </ItemContent>
           <ItemActions>
-            <Switch
-              aria-labelledby="settings-improver-overage"
-              checked={settings?.improverOverageBilling ?? false}
-              disabled={settings === null || saving}
-              onCheckedChange={(next) => change({ improverOverageBilling: next })}
-            />
+            {loading ? (
+              <Skeleton className="h-5 w-8 rounded-2xl" />
+            ) : (
+              <Switch
+                aria-labelledby="settings-improver-overage"
+                checked={settings.improverOverageBilling}
+                disabled={saving}
+                onCheckedChange={(next) =>
+                  change({ improverOverageBilling: next })
+                }
+              />
+            )}
           </ItemActions>
         </SettingsRow>
       </SettingsGroup>

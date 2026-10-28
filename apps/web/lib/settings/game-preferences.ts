@@ -8,6 +8,8 @@ export type GameSettings = {
   defaultTierId: TierId | null
   /** Whether the chat footer shows the session statistics button. */
   showSessionStats: boolean
+  /** Whether code blocks start with line wrapping on. */
+  wrapCodeBlocks: boolean
 }
 
 /**
@@ -21,6 +23,7 @@ export function gameSettingsOf(
         improverOverageBilling: boolean
         defaultTierId: string | null
         showSessionStats: boolean
+        wrapCodeBlocks: boolean
       }
     | undefined
 ): GameSettings {
@@ -28,6 +31,7 @@ export function gameSettingsOf(
     improverOverageBilling: row?.improverOverageBilling ?? false,
     defaultTierId: isTierId(row?.defaultTierId) ? row.defaultTierId : null,
     showSessionStats: row?.showSessionStats ?? true,
+    wrapCodeBlocks: row?.wrapCodeBlocks ?? true,
   }
 }
 
@@ -41,6 +45,7 @@ export const gameSettingsPatchSchema = z.union([
   z.strictObject({ improverOverageBilling: z.boolean() }),
   z.strictObject({ defaultTierId: tierIdSchema }),
   z.strictObject({ showSessionStats: z.boolean() }),
+  z.strictObject({ wrapCodeBlocks: z.boolean() }),
 ])
 
 export type GameSettingsPatch = z.infer<typeof gameSettingsPatchSchema>

@@ -187,7 +187,7 @@ export function PasskeysSection() {
   }
 
   return (
-    <section className="flex flex-col gap-3">
+    <section data-setting-id="passkeys" className="flex flex-col gap-3">
       <SettingsHeading
         title={t("passkeys")}
         description={t("passkeysDescription")}

@@ -4,6 +4,7 @@ import * as React from "react"
 import { renderToStaticMarkup } from "react-dom/server"
 import { NextIntlClientProvider } from "next-intl"
 
+import { CodeWrapProvider } from "./code-wrap"
 import en from "../../messages/en.json"
 import es from "../../messages/es.json"
 import { FileCode, FileViewer } from "./file-viewer"
@@ -66,6 +67,19 @@ test("FileCode renders the text with line numbers, copy and wrap controls", () =
   assert.equal(html.match(/data-slot="code-block-line"/g)?.length, 2)
   assert.match(html, /aria-label="Copy code"/)
   assert.match(html, /aria-label="Wrap lines"/)
+  assert.match(html, /aria-pressed="true"/)
+  assert.match(html, /data-wrap="true"/)
+})
+
+test("FileCode starts unwrapped when the player turned wrapping off", () => {
+  const html = render(
+    <CodeWrapProvider wrap={false}>
+      <FileCode path="a.js" language="javascript" content={"const a = 1\n"} />
+    </CodeWrapProvider>
+  )
+
+  assert.match(html, /aria-pressed="false"/)
+  assert.doesNotMatch(html, /data-wrap="/)
 })
 
 test("FileViewer opens a glTF model in the 3D viewer, loading it from the preview proxy", () => {

@@ -6,10 +6,13 @@ import { usePathname, useRouter } from "next/navigation"
 import { useLocale, useTranslations } from "next-intl"
 import { useTheme } from "next-themes"
 import {
+  AiBrain01Icon,
   ArrowDown02Icon,
   ArrowUp02Icon,
   CornerDownLeftIcon,
   Delete02Icon,
+  Cancel01Icon,
+  Logout01Icon,
   LayoutTemplateIcon,
   MessageCircleIcon,
   PaintBoardIcon,
@@ -18,6 +21,8 @@ import {
   PinOffIcon,
   SparklesIcon,
   Tag01Icon,
+  ToggleOffIcon,
+  ToggleOnIcon,
   TranslateIcon,
   UserIcon,
 } from "@hugeicons/core-free-icons"
@@ -65,8 +70,25 @@ import {
   SECTION_LABEL_KEYS,
   SECTIONS,
 } from "@/lib/settings/sections"
+import { DEFAULT_TIER_ID, TIERS, type TierId } from "@/lib/ai/model-catalog"
+import { authClient } from "@/lib/auth-client"
+import { searchSettings } from "@/lib/settings/search"
+import type { GameSettings } from "@/lib/settings/game-preferences"
+import {
+  readGameSettings,
+  updateGameSettings,
+} from "@/lib/settings/game-settings"
+import {
+  toggleActionsFor,
+  type ToggleAction,
+} from "@/lib/settings/setting-actions"
+import { useSearchableSettings } from "@/components/settings/use-searchable-settings"
 import { newGameDraft } from "@/lib/games/new-game-draft"
 import { THEMES } from "@/lib/settings/themes"
+
+
+/** Enough to cover a query's real matches without burying games and actions. */
+const MAX_SETTING_HITS = 5
 
 /**
  * The palette is a controlled dialog rather than one owning its own state,
@@ -89,6 +111,7 @@ export function CommandPalette({
   const gameMenu = useTranslations("GameMenu")
   const settings = useTranslations("Settings")
   const composer = useTranslations("GameComposer")
+  const gameSettingsText = useTranslations("Settings.game")
   const { openSettings } = useSettingsDialog()
   const { theme, setTheme } = useTheme()
   const locale = useLocale()
@@ -113,6 +136,102 @@ export function CommandPalette({
   const messageQuery =
     !page && scope !== "commands" ? parseQuery(search).text.trim() : ""
   const messageHits = useMessageHits(messageQuery)
+
+  /**
+   * Individual settings, from the same index and ranking as the settings
+   * dialog's search box, so typing "sign out" finds the row and not just the
+   * section it lives in. Only on the root list and only once something is
+   * typed; the section rows below still cover browsing.
+   */
+  const searchableSettings = useSearchableSettings()
+  /**
+   * Settings rows only exist when `searchSettings` found them, which also
+   * matches accents and synonyms cmdk's own filter does not know. Leading
+   * their cmdk value with the query itself makes cmdk keep and rank them
+   * like any match, inside their normal group; `forceMount` would not, since
+   * cmdk still hides a group whose rows all miss its filter.
+   */
+  const settingQuery = parseQuery(search).text
+  const settingHits =
+    !page && scope !== "games"
+      ? searchSettings(searchableSettings, settingQuery).slice(
+          0,
+          MAX_SETTING_HITS
+        )
+      : []
+
+  /**
+   * The saved game settings, read each time the palette opens, so a toggle
+   * row can say which way it will flip. Until they arrive no toggle is
+   * offered rather than one that might point the wrong way.
+   */
+  const [gameSettings, setGameSettings] = useState<GameSettings | null>(null)
+  useEffect(() => {
+    if (!open) return
+    let current = true
+    readGameSettings()
+      .then((value) => current && setGameSettings(value))
+      .catch(() => current && setGameSettings(null))
+    return () => {
+      current = false
+    }
+  }, [open])
+  const toggleActions = toggleActionsFor(
+    settingHits.map((hit) => hit.id),
+    gameSettings
+  )
+
+  async function signOutNow() {
+    try {
+      const { error } = await authClient.signOut()
+      if (error) throw error
+      router.push("/sign-in")
+    } catch {
+      toast.add({
+        type: "error",
+        title: t("couldNotSignOut"),
+        description: t("pleaseTryAgain"),
+      })
+    }
+  }
+
+  function saveDefaultTier(tierId: TierId) {
+    void updateGameSettings({ defaultTierId: tierId })
+      .then((saved) => {
+        setGameSettings(saved)
+        router.refresh()
+        toast.add({
+          title: t("defaultTierSaved", {
+            tier: composer(`tiers.${tierId}.label`),
+          }),
+        })
+      })
+      .catch(() => toast.add({ type: "error", title: t("settingNotSaved") }))
+  }
+
+  function applyToggle(action: ToggleAction, undo = false) {
+    const next = undo ? !action.next : action.next
+    void updateGameSettings({ [action.key]: next } as Partial<GameSettings>)
+      .then((saved) => {
+        setGameSettings(saved)
+        router.refresh()
+        if (undo) return
+        const title = settingHits.find((hit) => hit.id === action.id)?.title
+        const toastId = toast.add({
+          title: t(next ? "settingTurnedOn" : "settingTurnedOff", {
+            setting: title ?? "",
+          }),
+          actionProps: {
+            children: t("undo"),
+            onClick: () => {
+              toast.close(toastId)
+              applyToggle(action, true)
+            },
+          },
+        })
+      })
+      .catch(() => toast.add({ type: "error", title: t("settingNotSaved") }))
+  }
 
   function createFromPrompt(prompt: string) {
     startCreating(async () => {
@@ -210,12 +329,18 @@ export function CommandPalette({
           placeholder={
             page === "templates"
               ? t("newGameFromTemplate")
-              : page
+              : page === "defaultTier"
+                ? gameSettingsText("defaultTier")
+                : page === "signOut"
+                ? t("signOut")
+                : page
                 ? settings(page)
                 : t("searchGamesAndActions")
           }
           value={search}
-          onValueChange={setSearch}
+          onValueChange={(value) => {
+            setSearch(value)
+          }}
           onKeyDown={(event) => {
             if (event.key !== "Backspace") return
             const previous = backFrom(pages, search)
@@ -249,6 +374,21 @@ export function CommandPalette({
               ))}
             </CommandGroup>
           )}
+          {page === "defaultTier" && (
+            <CommandGroup heading={gameSettingsText("defaultTier")}>
+              {TIERS.map((tier) => (
+                <CommandItem
+                  key={tier.id}
+                  data-checked={
+                    (gameSettings?.defaultTierId ?? DEFAULT_TIER_ID) === tier.id
+                  }
+                  onSelect={() => run(() => saveDefaultTier(tier.id))}
+                >
+                  {composer(`tiers.${tier.id}.label`)}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          )}
           {page === "language" && (
             <CommandGroup heading={settings("language")}>
               {LOCALE_OPTIONS.map((option) => (
@@ -260,6 +400,26 @@ export function CommandPalette({
                   {option.label}
                 </CommandItem>
               ))}
+            </CommandGroup>
+          )}
+          {/**
+           * Signing out is the one action here that cannot be undone from the
+           * palette, so it asks first on a page of its own: the reader sees
+           * both outcomes, and Backspace or Cancel leaves without signing out.
+           */}
+          {page === "signOut" && (
+            <CommandGroup heading={t("signOutQuestion")}>
+              <CommandItem
+                variant="destructive"
+                onSelect={() => run(() => void signOutNow())}
+              >
+                <HugeiconsIcon icon={Logout01Icon} strokeWidth={2} />
+                {t("signOut")}
+              </CommandItem>
+              <CommandItem onSelect={() => setPages(pages.slice(0, -1))}>
+                <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />
+                {settings("cancel")}
+              </CommandItem>
             </CommandGroup>
           )}
           {page === "templates" && (
@@ -322,6 +482,28 @@ export function CommandPalette({
               {showCommands && (
                 <>
                   <CommandGroup heading={t("actions")}>
+                    {toggleActions.map((action) => {
+                      const hit = settingHits.find(
+                        (entry) => entry.id === action.id
+                      )!
+                      const label = t(action.next ? "turnOn" : "turnOff", {
+                        setting: hit.title,
+                      })
+                      return (
+                        <CommandItem
+                          key={`toggle-${action.id}`}
+                          value={`${settingQuery} ${label}`}
+                          keywords={[hit.keywords ?? "", hit.sectionLabel]}
+                          onSelect={() => run(() => applyToggle(action))}
+                        >
+                          <HugeiconsIcon
+                            icon={action.next ? ToggleOnIcon : ToggleOffIcon}
+                            strokeWidth={2}
+                          />
+                          {label}
+                        </CommandItem>
+                      )
+                    })}
                     <CommandItem value={t("newGame")} onSelect={() => go("/")}>
                       <HugeiconsIcon icon={PencilEdit02Icon} strokeWidth={2} />
                       {t("newGame")}
@@ -333,6 +515,45 @@ export function CommandPalette({
                         strokeWidth={2}
                       />
                       {t("newGameFromTemplate")}
+                    </CommandItem>
+                    {/**
+                     * Verbs, under Actions: they open a picker and change the
+                     * value. The Settings group below only lists rows that
+                     * navigate to a setting, so search results for Theme or
+                     * Language no longer sit next to a same-named picker.
+                     */}
+                    <CommandItem
+                      value={t("changeTheme")}
+                      keywords={[settings("theme")]}
+                      onSelect={() => enter("theme")}
+                    >
+                      <HugeiconsIcon icon={PaintBoardIcon} strokeWidth={2} />
+                      {t("changeTheme")}
+                      <ShortcutHint label="toggleTheme" />
+                    </CommandItem>
+                    <CommandItem
+                      value={t("changeDefaultTier")}
+                      keywords={[gameSettingsText("defaultTier")]}
+                      onSelect={() => enter("defaultTier")}
+                    >
+                      <HugeiconsIcon icon={AiBrain01Icon} strokeWidth={2} />
+                      {t("changeDefaultTier")}
+                    </CommandItem>
+                    <CommandItem
+                      value={t("changeLanguage")}
+                      keywords={[settings("language")]}
+                      onSelect={() => enter("language")}
+                    >
+                      <HugeiconsIcon icon={TranslateIcon} strokeWidth={2} />
+                      {t("changeLanguage")}
+                    </CommandItem>
+                    <CommandItem
+                      value={t("signOutEllipsis")}
+                      keywords={["log out", "logout", settings("signOut")]}
+                      onSelect={() => enter("signOut")}
+                    >
+                      <HugeiconsIcon icon={Logout01Icon} strokeWidth={2} />
+                      {t("signOutEllipsis")}
                     </CommandItem>
                   </CommandGroup>
                   <CommandGroup heading={t("goTo")}>
@@ -346,15 +567,27 @@ export function CommandPalette({
                     </CommandItem>
                   </CommandGroup>
                   <CommandGroup heading={t("settings")}>
-                    <CommandItem onSelect={() => enter("theme")}>
-                      <HugeiconsIcon icon={PaintBoardIcon} strokeWidth={2} />
-                      {settings("theme")}
-                      <ShortcutHint label="toggleTheme" />
-                    </CommandItem>
-                    <CommandItem onSelect={() => enter("language")}>
-                      <HugeiconsIcon icon={TranslateIcon} strokeWidth={2} />
-                      {settings("language")}
-                    </CommandItem>
+                    {settingHits.map((hit) => (
+                      <CommandItem
+                        key={`setting-${hit.id}`}
+                        value={`${settingQuery} ${hit.title} ${hit.sectionLabel}`}
+                        keywords={[hit.keywords ?? "", hit.description ?? ""]}
+                        onSelect={() =>
+                          run(() => openSettings(hit.section, hit.id))
+                        }
+                      >
+                        <HugeiconsIcon
+                          icon={SECTIONS.find((entry) => entry.id === hit.section)!.icon}
+                          strokeWidth={2}
+                        />
+                        <span className="min-w-0 flex-1 truncate">
+                          {hit.title}
+                        </span>
+                        <span className="shrink-0 text-xs text-muted-foreground">
+                          {hit.sectionLabel}
+                        </span>
+                      </CommandItem>
+                    ))}
                     {SECTIONS.map((section) => (
                       <CommandItem
                         key={section.id}
@@ -457,7 +690,7 @@ export function CommandPalette({
             </CommandGroup>
           )}
         </CommandList>
-        <PaletteHints />
+        <PaletteHints inPage={page !== undefined} />
       </CommandDialog>
       {currentGame && (
         <GameActionDialogs
@@ -582,7 +815,7 @@ function useMessageHits(query: string): MessageHit[] {
  * those glyphs off its line box's middle, so as text they look misaligned
  * in a key even when the box is exactly centred.
  */
-function PaletteHints() {
+function PaletteHints({ inPage }: { inPage: boolean }) {
   const t = useTranslations("Shell")
 
   return (
@@ -602,14 +835,28 @@ function PaletteHints() {
         </Kbd>
         {t("paletteHintSelect")}
       </span>
-      <span className="flex items-center gap-1.5">
-        <Kbd>&gt;</Kbd>
-        {t("paletteHintActions")}
-      </span>
-      <span className="flex items-center gap-1.5">
-        <Kbd>#</Kbd>
-        {t("paletteHintGames")}
-      </span>
+      {/**
+       * The `>` and `#` prefixes only mean something on the root list (see
+       * `scope`); inside a page, Backspace on an empty search goes back a
+       * level instead (see `backFrom`).
+       */}
+      {inPage ? (
+        <span className="flex items-center gap-1.5">
+          <Kbd>⌫</Kbd>
+          {t("paletteHintBack")}
+        </span>
+      ) : (
+        <>
+          <span className="flex items-center gap-1.5">
+            <Kbd>&gt;</Kbd>
+            {t("paletteHintActions")}
+          </span>
+          <span className="flex items-center gap-1.5">
+            <Kbd>#</Kbd>
+            {t("paletteHintGames")}
+          </span>
+        </>
+      )}
       <span className="ms-auto flex items-center gap-1.5">
         <Kbd>Esc</Kbd>
         {t("paletteHintClose")}

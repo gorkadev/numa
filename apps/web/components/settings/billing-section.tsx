@@ -1,17 +1,21 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState, useTransition } from "react"
 import { useFormatter, useLocale, useTranslations } from "next-intl"
 import Link from "next/link"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import { Skeleton } from "@workspace/ui/components/skeleton"
+import { Spinner } from "@workspace/ui/components/spinner"
+import { toast } from "@workspace/ui/components/toast"
 
 import {
   SettingsGroup,
   SettingsRow,
 } from "@/components/settings/settings-group"
+import { CancelSubscriptionDialog } from "@/components/settings/cancel-subscription-dialog"
 import type { BillingDetails } from "@/lib/polar/billing-details"
+import { resumeSubscriptionAction } from "@/lib/polar/cancellation-actions"
 import {
   ItemActions,
   ItemContent,
@@ -182,6 +186,74 @@ function UnavailableBilling({ onRetry }: { onRetry: () => void }) {
   )
 }
 
+/**
+ * Fetches the document's signed URL first so the button can show progress,
+ * then starts the download in place; Polar serves it as an attachment.
+ */
+function OrderDocumentButton({
+  href,
+  children,
+}: {
+  href: string
+  children: React.ReactNode
+}) {
+  const t = useTranslations("Billing")
+  const [pending, setPending] = useState(false)
+
+  async function open() {
+    setPending(true)
+    try {
+      const response = await fetch(href, {
+        headers: { accept: "application/json" },
+        cache: "no-store",
+      })
+      if (!response.ok) throw new Error("Document request failed")
+      const { url } = (await response.json()) as { url?: unknown }
+      if (typeof url !== "string") throw new Error("Invalid document URL")
+      window.location.assign(url)
+    } catch {
+      toast.add({ type: "error", title: t("documentUnavailable") })
+    } finally {
+      setPending(false)
+    }
+  }
+
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      disabled={pending}
+      onClick={() => void open()}
+    >
+      {pending && <Spinner data-icon="inline-start" />}
+      {children}
+    </Button>
+  )
+}
+
+function ResumeSubscriptionButton({ onResumed }: { onResumed: () => void }) {
+  const t = useTranslations("Billing")
+  const [pending, startTransition] = useTransition()
+
+  function resume() {
+    startTransition(async () => {
+      if ((await resumeSubscriptionAction()) === "ok") {
+        toast.add({ title: t("resumedTitle") })
+        onResumed()
+        return
+      }
+      toast.add({ type: "error", title: t("resumeFailed") })
+    })
+  }
+
+  return (
+    <Button size="sm" disabled={pending} onClick={resume}>
+      {pending && <Spinner data-icon="inline-start" />}
+      {t("resumeSubscription")}
+    </Button>
+  )
+}
+
 function FactValue({ value }: { value: string | number | null }) {
   return <span className="text-sm text-muted-foreground">{value ?? "—"}</span>
 }
@@ -283,7 +355,7 @@ export function BillingSection({ active }: { active: boolean }) {
   return (
     <div className="flex flex-col gap-8">
       <SettingsGroup title={t("planGroup")} description={t("planGroupDescription")}>
-        <SettingsRow>
+        <SettingsRow settingId="current-plan">
           <ItemContent>
             <ItemTitle>{t("currentPlan")}</ItemTitle>
             {subscription.status && (
@@ -317,7 +389,7 @@ export function BillingSection({ active }: { active: boolean }) {
             />
           </ItemActions>
         </SettingsRow>
-        <SettingsRow>
+        <SettingsRow settingId="credits">
           <ItemContent>
             <ItemTitle>{t("credits")}</ItemTitle>
             <ItemDescription>{t("creditsDescription")}</ItemDescription>
@@ -367,7 +439,7 @@ export function BillingSection({ active }: { active: boolean }) {
             </ItemActions>
           </SettingsRow>
         )}
-        <SettingsRow>
+        <SettingsRow settingId="manage-plan">
           <ItemContent>
             <ItemTitle>{t("managePlan")}</ItemTitle>
             <ItemDescription>{t("managePlanDescription")}</ItemDescription>
@@ -383,7 +455,7 @@ export function BillingSection({ active }: { active: boolean }) {
             </Button>
           </ItemActions>
         </SettingsRow>
-        <SettingsRow>
+        <SettingsRow settingId="billing-portal">
           <ItemContent>
             <ItemTitle>{t("billingPortal")}</ItemTitle>
             <ItemDescription>{t("billingPortalDescription")}</ItemDescription>
@@ -393,15 +465,61 @@ export function BillingSection({ active }: { active: boolean }) {
               variant="outline"
               size="sm"
               nativeButton={false}
-              render={<Link href="/api/billing/portal" />}
+              /**
+               * A plain anchor, not `next/link`: the route redirects to Polar,
+               * and a client-side navigation would first try to fetch it as an
+               * RSC payload, fail cross-origin, then fall back to a full load
+               * in this tab.
+               */
+              render={
+                <a
+                  href="/api/billing/portal"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                />
+              }
             >
               {t("openBillingPortal")}
             </Button>
           </ItemActions>
         </SettingsRow>
+        {(details.plan === "pro" || details.plan === "max") &&
+          subscription.currentPeriod && (
+            <SettingsRow settingId="cancel-subscription">
+              <ItemContent>
+                <ItemTitle>
+                  {subscription.cancellation
+                    ? t("resumeSubscription")
+                    : t("cancelSubscription")}
+                </ItemTitle>
+                <ItemDescription>
+                  {subscription.cancellation
+                    ? t("resumeSubscriptionDescription", {
+                        date:
+                          formatDate(subscription.cancellation.at, locale) ?? "",
+                      })
+                    : t("cancelSubscriptionDescription")}
+                </ItemDescription>
+              </ItemContent>
+              <ItemActions>
+                {subscription.cancellation ? (
+                  <ResumeSubscriptionButton onResumed={retry} />
+                ) : (
+                  <CancelSubscriptionDialog
+                    plan={details.plan}
+                    endsAt={
+                      formatDate(subscription.currentPeriod.end, locale) ?? ""
+                    }
+                    onCancelled={retry}
+                  />
+                )}
+              </ItemActions>
+            </SettingsRow>
+          )}
       </SettingsGroup>
 
       <SettingsGroup
+        settingId="billing-history"
         title={t("historyTitle")}
         description={t("historyDescription")}
       >
@@ -445,24 +563,14 @@ export function BillingSection({ active }: { active: boolean }) {
                     value={formatCurrency(order.amount, order.currency, locale)}
                   />
                   {isSameOriginPath(order.invoiceHref) && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      nativeButton={false}
-                      render={<Link href={order.invoiceHref} />}
-                    >
+                    <OrderDocumentButton href={order.invoiceHref}>
                       {t("invoice")}
-                    </Button>
+                    </OrderDocumentButton>
                   )}
                   {isSameOriginPath(order.receiptHref) && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      nativeButton={false}
-                      render={<Link href={order.receiptHref} />}
-                    >
+                    <OrderDocumentButton href={order.receiptHref}>
                       {t("receipt")}
-                    </Button>
+                    </OrderDocumentButton>
                   )}
                 </div>
               </ItemActions>
