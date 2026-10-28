@@ -31,11 +31,16 @@ function objectUrl(base: string, key: string): string {
 
 export async function putAttachment(key: string, body: ArrayBuffer, mediaType: string): Promise<void> {
   const { client, base } = bucket()
-  const response = await client.fetch(objectUrl(base, key), {
+  /**
+   * Signed first and sent with plain `fetch`: `client.fetch` hands the body on
+   * as a stream, which goes out chunked under Next.js, and R2 refuses a PUT
+   * without a length (411). A buffer body gets its `content-length` set.
+   */
+  const signed = await client.sign(objectUrl(base, key), {
     method: "PUT",
-    body,
-    headers: { "content-type": mediaType },
+    headers: { "content-type": mediaType, "x-amz-content-sha256": "UNSIGNED-PAYLOAD" },
   })
+  const response = await fetch(signed.url, { method: "PUT", headers: signed.headers, body })
 
   if (!response.ok) throw new Error(`R2 upload failed with ${response.status}`)
 }

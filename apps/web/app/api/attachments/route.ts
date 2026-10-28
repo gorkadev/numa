@@ -45,7 +45,8 @@ export async function POST(request: Request) {
 
   try {
     await putAttachment(attachmentKey(session.user.id, id), await file.arrayBuffer(), mediaType)
-  } catch {
+  } catch (error) {
+    console.error("Attachment upload failed", error)
     return new Response(null, { status: 503, headers: privateHeaders })
   }
 
