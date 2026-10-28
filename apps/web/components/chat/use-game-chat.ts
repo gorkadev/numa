@@ -1,5 +1,6 @@
 "use client"
 
+import type { AttachmentPart } from "@/lib/games/attachments"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { useChat } from "@ai-sdk/react"
@@ -40,6 +41,7 @@ export function useGameChat({
   initialMessages,
   initialSessions,
   initialPrompt,
+  initialFiles,
   initialTierId,
   onRevision,
 }: {
@@ -60,6 +62,8 @@ export function useGameChat({
    * string. It is a message that has not been sent yet, not history.
    */
   initialPrompt?: string
+  /** The files attached to `initialPrompt`, sent with it. */
+  initialFiles?: AttachmentPart[]
   /**
    * The tier the home screen's picker was on, handed over in the query string
    * beside the prompt it created the game with. It seeds the picker here so the
@@ -451,10 +455,10 @@ export function useGameChat({
    * `clientData` on every turn; both are set from this same state, so they
    * cannot disagree.
    */
-  function handleSubmit(text: string) {
+  function handleSubmit(text: string, files: AttachmentPart[] = []) {
     dispatchBuildProgress({ type: "submit" })
     setFailureKind(null)
-    sendMessage({ text, metadata: outgoingMetadata(tierId) })
+    sendMessage({ text, files, metadata: outgoingMetadata(tierId) })
     setInput("")
   }
 
@@ -482,12 +486,12 @@ export function useGameChat({
     if (threadMessages.length === 0) {
       queueMicrotask(() => {
         dispatchBuildProgress({ type: "submit" })
-        sendMessage({ text: initialPrompt, metadata: outgoingMetadata(tierId) })
+        sendMessage({ text: initialPrompt, files: initialFiles, metadata: outgoingMetadata(tierId) })
       })
     }
 
     window.history.replaceState(null, "", `/games/${gameId}`)
-  }, [dispatchBuildProgress, gameId, initialPrompt, sendMessage, threadMessages.length, tierId])
+  }, [dispatchBuildProgress, gameId, initialFiles, initialPrompt, sendMessage, threadMessages.length, tierId])
 
   /**
    * A stable per-call answer handler, built once around `addToolOutput`

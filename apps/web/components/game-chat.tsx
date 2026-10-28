@@ -1,5 +1,6 @@
 "use client"
 
+import type { AttachmentPart } from "@/lib/games/attachments"
 import { useCallback, useRef, useState } from "react"
 
 import type { UIMessage } from "ai"
@@ -36,6 +37,7 @@ export function GameChat({
   initialMessages,
   initialSessions,
   initialPrompt,
+  initialFiles,
   initialTierId,
   contextWindows,
   showSessionStats,
@@ -69,6 +71,8 @@ export function GameChat({
     { publicAccessToken: string; lastEventId?: string }
   >
   initialPrompt?: string
+  /** The files attached to `initialPrompt`. */
+  initialFiles?: AttachmentPart[]
   /** The tier the home screen's picker was on, when the game came from there. */
   initialTierId?: TierId
   /** Each tier's orchestrator window, resolved on the server (see `strongContextWindows`). */
@@ -316,6 +320,7 @@ export function GameChat({
           initialMessages={initialMessages}
           initialSessions={initialSessions}
           initialPrompt={initialPrompt}
+          initialFiles={initialFiles}
           initialTierId={initialTierId}
           showSessionStats={showSessionStats}
           contextWindows={contextWindows}

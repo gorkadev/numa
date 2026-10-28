@@ -313,6 +313,15 @@
     }
   },
   "GameComposer": {
+    "attachFiles": "Adjuntar archivos",
+    "removeAttachment": "Quitar {name}",
+    "attachmentsFull": "Hasta {count} archivos por mensaje",
+    "attachmentProblem": {
+      "type": "Tipo de archivo no admitido",
+      "size": "Supera los {size} MB",
+      "empty": "El archivo está vacío",
+      "upload": "No se pudo subir"
+    },
     "mentionFiles": "Archivos",
     "mentionLoading": "Cargando archivos…",
     "mentionEmpty": "Ningún archivo coincide",

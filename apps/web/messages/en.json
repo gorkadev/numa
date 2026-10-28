@@ -313,6 +313,15 @@
     }
   },
   "GameComposer": {
+    "attachFiles": "Attach files",
+    "removeAttachment": "Remove {name}",
+    "attachmentsFull": "Up to {count} files per message",
+    "attachmentProblem": {
+      "type": "This file type is not supported",
+      "size": "Larger than {size} MB",
+      "empty": "The file is empty",
+      "upload": "Upload failed"
+    },
     "mentionFiles": "Files",
     "mentionLoading": "Loading files…",
     "mentionEmpty": "No matching files",

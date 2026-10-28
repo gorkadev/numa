@@ -1,5 +1,6 @@
 "use client"
 
+import type { AttachmentPart } from "@/lib/games/attachments"
 import { useCallback, useEffect, useMemo, useState } from "react"
 
 import type { UIMessage } from "ai"
@@ -51,6 +52,7 @@ export function ChatThread({
   initialMessages,
   initialSessions,
   initialPrompt,
+  initialFiles,
   initialTierId,
   contextWindows,
   showSessionStats,
@@ -78,6 +80,8 @@ export function ChatThread({
    * string. It is a message that has not been sent yet, not history.
    */
   initialPrompt?: string
+  /** The files attached to `initialPrompt`. */
+  initialFiles?: AttachmentPart[]
   /**
    * The tier the home screen's picker was on, handed over in the query string
    * beside the prompt it created the game with. It seeds the picker here so the
@@ -144,6 +148,7 @@ export function ChatThread({
     initialMessages,
     initialSessions,
     initialPrompt,
+    initialFiles,
     initialTierId,
     onRevision,
   })
@@ -306,6 +311,7 @@ export function ChatThread({
           value={input}
           onValueChange={setInput}
           onSubmit={send}
+          attachable
           /**
            * `stopBuild` sends a `stop` chunk on the session's input channel
            * (`stopGeneration`), which aborts the agent's `streamText` call while
