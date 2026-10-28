@@ -31,6 +31,26 @@ test("undeclaredAssetPaths lists files the manifest does not account for", () =>
   )
 })
 
+test("sprite sheets and tilesets are declared assets", () => {
+  const manifest2d = parseTemplateManifest(
+    Buffer.from(
+      JSON.stringify({
+        template: { id: "kit2d", version: 1 },
+        assetRoot: "assets/kit2d",
+        models: [],
+        sprites: [{ id: "w", path: "assets/kit2d/W.png", category: "unit", frameWidth: 64, frameHeight: 64, frames: 4 }],
+        tilesets: [{ id: "t", path: "assets/kit2d/T.png", tileSize: 64, columns: 9, rows: 6 }],
+        provenance: { three: {} },
+        vendor: { threeRevision: "r185", commonRuntimeDependencies: [] },
+      })
+    )
+  )
+  assert.deepEqual(
+    undeclaredAssetPaths(manifest2d, ["assets/kit2d/W.png", "assets/kit2d/T.png", "assets/kit2d/W.aseprite"]),
+    ["assets/kit2d/W.aseprite"]
+  )
+})
+
 test("every locked asset of the shipped templates is declared", async () => {
   const { readTemplateAssetLock, readTemplateContract } = await import("./seed")
   for (const id of ["cube-world", "fantasy-cards", "platformer", "toon-shooter"]) {

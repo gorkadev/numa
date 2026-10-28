@@ -47,7 +47,7 @@ function fakeEngine() {
 
 /** The four UV corners of a quad, as [u, v] pairs rounded for comparison. */
 function quadUvs(geometry: InstanceType<typeof THREE.BufferGeometry>, quad = 0) {
-  const uv = geometry.getAttribute("uv")
+  const uv = geometry.getAttribute("uv") as InstanceType<typeof THREE.BufferAttribute>
   return [0, 1, 2, 3].map((corner) => {
     const index = quad * 4 + corner
     return [Number(uv.getX(index).toFixed(4)), Number(uv.getY(index).toFixed(4))]
@@ -180,9 +180,8 @@ test("a tile layer turns a grid of tile names into one mesh, row 0 at the top", 
   })
   assert.equal(layer.mesh.geometry.getAttribute("position").count, 8, "two quads, empty cells cost nothing")
   // Tile 1 is column 1, row 0 of a 9x6 atlas.
-  assert.deepEqual(quadUvs(layer.mesh.geometry, 0), [[1 / 9, 1], [2 / 9, 1], [1 / 9, 5 / 6], [2 / 9, 5 / 6]].map(
-    ([u, v]) => [Number(u.toFixed(4)), Number(v.toFixed(4))]
-  ))
+  const expected: [number, number][] = [[1 / 9, 1], [2 / 9, 1], [1 / 9, 5 / 6], [2 / 9, 5 / 6]]
+  assert.deepEqual(quadUvs(layer.mesh.geometry, 0), expected.map(([u, v]) => [Number(u.toFixed(4)), Number(v.toFixed(4))]))
   assert.deepEqual(layer.cellToWorld(1, 1), { x: 1, y: -1 })
   assert.deepEqual(layer.worldToCell(1.2, -0.8), { column: 1, row: 1 })
   assert.equal(layer.mesh.material.toneMapped, false)
@@ -209,7 +208,7 @@ test("autotile16 picks the piece of a 4x4 block from each land cell's four neigh
     [9, 10, 11],
     [18, 19, 20],
   ])
-  assert.equal(tiles[0][0], null)
+  assert.equal(tiles[0]?.[0], null)
 
   const strips = [
     [1, 0, 1, 1, 1],
@@ -217,7 +216,7 @@ test("autotile16 picks the piece of a 4x4 block from each land cell's four neigh
     [1, 0, 1, 0, 0],
   ]
   const elevated = autotile16(strips, { column: 5, row: 0, columns: 9 })
-  assert.deepEqual([elevated[0][0], elevated[1][0], elevated[2][0]], [8, 17, 26], "vertical strip")
-  assert.deepEqual(elevated[0].slice(2), [32, 33, 34], "horizontal strip")
-  assert.equal(elevated[2][2], 35, "single")
+  assert.deepEqual([elevated[0]?.[0], elevated[1]?.[0], elevated[2]?.[0]], [8, 17, 26], "vertical strip")
+  assert.deepEqual(elevated[0]?.slice(2), [32, 33, 34], "horizontal strip")
+  assert.equal(elevated[2]?.[2], 35, "single")
 })

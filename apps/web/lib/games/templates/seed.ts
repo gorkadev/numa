@@ -68,6 +68,46 @@ const animationCategorySchema = z.enum([
 
 const pointSchema = z.tuple([z.number(), z.number(), z.number()])
 
+const spriteCategorySchema = z.enum([
+  "unit",
+  "building",
+  "resource",
+  "decoration",
+  "effect",
+  "ui",
+  "terrain",
+])
+
+const pixelsSchema = z.number().int().positive()
+
+/** One sprite sheet: a single row (or grid) of equal frames read left to right, top to bottom. */
+const spriteSchema = z
+  .object({
+    id: z.string().min(1),
+    path: manifestPathSchema,
+    category: spriteCategorySchema,
+    /** Given, never inferred: a sheet's height is not always its frame width. */
+    frameWidth: pixelsSchema,
+    frameHeight: pixelsSchema,
+    frames: pixelsSchema,
+    fps: pixelsSchema.optional(),
+    /** False for one-shot animations such as attacks; absent means it loops. */
+    loop: z.boolean().optional(),
+  })
+  .strict()
+
+const tilesetSchema = z
+  .object({
+    id: z.string().min(1),
+    path: manifestPathSchema,
+    tileSize: pixelsSchema,
+    columns: pixelsSchema,
+    rows: pixelsSchema,
+    /** Names for atlas indices, counted left to right, top to bottom. */
+    tiles: z.record(z.string().min(1), z.number().int().nonnegative()).optional(),
+  })
+  .strict()
+
 const templateManifestSchema = z
   .object({
     template: z
@@ -100,6 +140,10 @@ const templateManifestSchema = z
         })
         .strict()
     ),
+    /** 2D templates: sprite sheets and images, drawn with the engine's sprites.js. */
+    sprites: z.array(spriteSchema).optional(),
+    /** 2D templates: tile atlases, drawn with the engine's tilemap.js. */
+    tilesets: z.array(tilesetSchema).optional(),
     sharedAssets: z
       .array(
         z
@@ -275,6 +319,8 @@ export function parseTemplateManifest(contents: Buffer): TemplateManifest {
 export function undeclaredAssetPaths(manifest: TemplateManifest, paths: Iterable<string>): string[] {
   const declared = new Set<string | undefined>([
     ...manifest.models.flatMap((model) => [model.path, model.bufferPath, model.atlasPath]),
+    ...(manifest.sprites?.map((sprite) => sprite.path) ?? []),
+    ...(manifest.tilesets?.map((tileset) => tileset.path) ?? []),
     ...(manifest.sharedAssets?.map((asset) => asset.path) ?? []),
     manifest.licenseEvidence?.path,
   ])
@@ -348,6 +394,8 @@ function validateTemplateContract(
   const mergedFiles = seedFileMap(mergedSeed)
   const declaredPaths = [
     ...manifest.models.flatMap((model) => [model.path, model.bufferPath, model.atlasPath]),
+    ...(manifest.sprites?.map((sprite) => sprite.path) ?? []),
+    ...(manifest.tilesets?.map((tileset) => tileset.path) ?? []),
     ...(manifest.sharedAssets?.map((asset) => asset.path) ?? []),
     manifest.licenseEvidence?.path,
     ...Object.keys(manifest.provenance.three),

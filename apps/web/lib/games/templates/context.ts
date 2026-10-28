@@ -7,7 +7,7 @@ import { eq } from "drizzle-orm"
 import { readPlanAssetReceipt } from "../harness/plan-store"
 import { hasSuccessfulGameFileWrites, type AssetReceipt } from "../harness/plan-validation"
 
-import { renderTemplateModelInventory } from "./inventory"
+import { renderTemplateContext, selectedTemplateReadinessPolicy, templateAssetCatalog } from "./inventory"
 import { readTemplateContract } from "./seed"
 
 /**
@@ -16,26 +16,7 @@ import { readTemplateContract } from "./seed"
  * having to discover or parse a manifest from the sandbox on its own.
  */
 
-export const selectedTemplateReadinessPolicy = `### Initial asset readiness contract
-
-For a fresh selected-template build with an accepted asset receipt, initialize \`window.__NUMA_VERIFY_READY__ = false\` before starting any initial asset loads. Request only the receipt's declared eager models on initial page load (at most six); load optional models only lazily in response to subsequent user actions. Wait for every declared eager model request and every required dependency (including referenced buffers and textures) to finish successfully and for the playable UI to be ready, then set \`window.__NUMA_VERIFY_READY__ = true\` before gameplay verification scenarios or user interactions. A required load failure must leave the flag false and show an error, never signal success. Do not set it merely because requests were started or the network appears idle. This readiness handshake applies to fresh selected-template builds with an accepted receipt, not no-template or historical no-receipt turns.`
-
-function renderTemplateContext(contract: NonNullable<Awaited<ReturnType<typeof readTemplateContract>>>): string {
-  const { manifest } = contract
-  const modelSummary = renderTemplateModelInventory(manifest.models)
-  const sharedAssets = manifest.sharedAssets?.map((asset) => `\`${asset.path}\``).join(", ") ?? "none"
-  const loaders = Object.keys(manifest.provenance.three).map((file) => `\`${file}\``).join(", ")
-  const verification = manifest.verification
-  const licenseRisk = manifest.licenseRisk
-    ? `- License-risk warning: ${manifest.licenseRisk.note} Source pack: \`${manifest.licenseRisk.sourcePack}\`; exposure acceptance is recorded.\n`
-    : ""
-  const verificationSummary = verification
-    ? `- Required browser hooks: ${verification.requiredSelectors.map((selector) => `\`${selector}\``).join(", ")}\n- Declarative verification scenarios: ${verification.scenarios.map((scenario) => `\`${scenario.name}\``).join(", ")}`
-    : "- No template-defined browser verification contract."
-
-  return `## Selected starter template\n\nThe persisted selection is \`${manifest.template.id}@${manifest.template.version}\`. This contract was validated before the sandbox was created; use it as the source of truth.\n\n### Template descriptor\n\n${contract.descriptor}\n\n### Asset manifest and verification summary\n\n- Asset root: \`${manifest.assetRoot}\`
-- Models (${manifest.models.length}):\n${modelSummary}\n- Shared assets: ${sharedAssets}\n- Seeded loader files: ${loaders}\n- Three.js revision: ${manifest.vendor.threeRevision}\n${licenseRisk}${verificationSummary}\n\nDo not invent asset paths or assume unlisted source-pack files are available.\n\n${selectedTemplateReadinessPolicy}`
-}
+export { selectedTemplateReadinessPolicy }
 
 export type TemplateAssetVerificationPolicy = {
   /** Trusted manifest paths selected by the accepted plan receipt for first-page loading. */
@@ -114,11 +95,7 @@ export async function readGameTemplateBuildContext(gameId: string): Promise<Game
   return {
     templateContext: renderTemplateContext(contract),
     isFreshGameBuild,
-    assetCatalog: {
-      modelIds: contract.manifest.models.map((model) => model.id),
-      sharedAssetIds: contract.manifest.sharedAssets?.map((asset) => asset.id) ?? [],
-      requiresAssetReceipt: isFreshGameBuild,
-    },
+    assetCatalog: templateAssetCatalog(contract.manifest, isFreshGameBuild),
   }
 }
 
