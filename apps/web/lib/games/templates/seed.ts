@@ -49,6 +49,10 @@ const modelCategorySchema = z.enum([
   "structure",
   "prop",
   "tool",
+  "platform",
+  "hazard",
+  "mechanism",
+  "pickup",
 ])
 
 const animationCategorySchema = z.enum([
@@ -59,7 +63,10 @@ const animationCategorySchema = z.enum([
   "death",
   "jump",
   "emote",
+  "interact",
 ])
+
+const pointSchema = z.tuple([z.number(), z.number(), z.number()])
 
 const templateManifestSchema = z
   .object({
@@ -78,6 +85,8 @@ const templateManifestSchema = z
           bufferPath: manifestPathSchema.optional(),
           atlasPath: manifestPathSchema.optional(),
           category: modelCategorySchema.optional(),
+          /** Scene-space box in model units, so placement and scale need no guessing. */
+          bounds: z.object({ min: pointSchema, max: pointSchema }).strict().optional(),
           animations: z
             .array(
               z
@@ -223,6 +232,14 @@ const TEMPLATE_SEED_DIRECTORIES: Readonly<Record<string, string | undefined>> =
       "games",
       "templates",
       "cube-world",
+      "seed"
+    ),
+    "platformer@1": path.join(
+      process.cwd(),
+      "lib",
+      "games",
+      "templates",
+      "platformer",
       "seed"
     ),
   }

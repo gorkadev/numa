@@ -1,0 +1,449 @@
+{
+  "version": 1,
+  "files": {
+    "assets/platformer/Character/Character.gltf": {
+      "sha256": "5913c61c972d752cdce20db1281e2fe48fdb55a5baf8b298fc432c8c30b11232",
+      "size": 1035242
+    },
+    "assets/platformer/Character/Character_Gun.gltf": {
+      "sha256": "e1ef45cb81d331be9dbe1318043e0e77fc9627af6c08e7941ef17a491c5daf99",
+      "size": 1106956
+    },
+    "assets/platformer/Cubes/Cube_Bricks.gltf": {
+      "sha256": "4e3d48b83114b08bce8aef55f4b05889003d660129aa744476abd20fec7cfc5a",
+      "size": 69286
+    },
+    "assets/platformer/Cubes/Cube_Crate.gltf": {
+      "sha256": "3038fb1fad5897bc6d510004276d810955c2de8acd918d6fc8421038cb1dacc4",
+      "size": 17752
+    },
+    "assets/platformer/Cubes/Cube_Default.gltf": {
+      "sha256": "93639e17d8479dec27b2091f2e97a67111785217a938022427b624664da4caaf",
+      "size": 13433
+    },
+    "assets/platformer/Cubes/Cube_Dirt_Single.gltf": {
+      "sha256": "8b38cbd66c0cae7f759bd5d41c32c8d430074d8c6986c41908538f4806f9c13d",
+      "size": 19594
+    },
+    "assets/platformer/Cubes/Cube_Exclamation.gltf": {
+      "sha256": "931b810c706eaa36c9a436f06134bf62883e27aaef365210a5cf13329a6b0496",
+      "size": 49092
+    },
+    "assets/platformer/Cubes/Cube_Grass_Single.gltf": {
+      "sha256": "79d72c01739d9e9a1ef07d148949624059241aac429a0de2328f33b85ab3b684",
+      "size": 27599
+    },
+    "assets/platformer/Cubes/Cube_Question.gltf": {
+      "sha256": "705f7b9372c682105a17058e91ee3901d441ded1c2484a28d202989c649b4eca",
+      "size": 51763
+    },
+    "assets/platformer/Cubes/Cube_Spikes.gltf": {
+      "sha256": "b8f975219c2feb07dc891a9abf4bc1cf99ed37f7cf117b1cdaa31985944e058c",
+      "size": 21107
+    },
+    "assets/platformer/Enemies/Bee.gltf": {
+      "sha256": "87cd6344076ec58cc51015ce7cd08136d796c6990201997c70aed8f6cb902b3d",
+      "size": 279338
+    },
+    "assets/platformer/Enemies/Crab.gltf": {
+      "sha256": "e88cd87ccb578d64871b488941d51050f8d5355e6146dd9403025bd95c6218a7",
+      "size": 331530
+    },
+    "assets/platformer/Enemies/Enemy.gltf": {
+      "sha256": "9fb84bc698c7b57ff1884e2a5706d6fffcad1b7b73b8a90c1afdc42022e79129",
+      "size": 257016
+    },
+    "assets/platformer/Enemies/Skull.gltf": {
+      "sha256": "0b66f4f9456fd511a63193320706b76b13a220bf7d1a256869174b94bacca628",
+      "size": 201704
+    },
+    "assets/platformer/License.txt": {
+      "sha256": "de990ef6fc68cffd7fd1ae342c4d0c823b541b8848d8f76bca5d3339f4de6f6e",
+      "size": 374
+    },
+    "assets/platformer/Mechanics/Arrow.gltf": {
+      "sha256": "ec1d8a30c50ed2cd7f3c88fee0f058098ebdc17cb2909acfecfe56433aebf14b",
+      "size": 6348
+    },
+    "assets/platformer/Mechanics/Arrow_Side.gltf": {
+      "sha256": "e026f3801d7efcef7caad085e36e4e24f40df978b9acea1db35f581c6ad8f0d0",
+      "size": 10461
+    },
+    "assets/platformer/Mechanics/Arrow_Up.gltf": {
+      "sha256": "c59b9286a6f9c36af8a47514783bd33e32ccae5b646f74bd702d5046e842ad32",
+      "size": 10461
+    },
+    "assets/platformer/Mechanics/Bomb.gltf": {
+      "sha256": "e3ea6385b783bb58c74d547570177ee9c404a5a1f6a39ea398b38e11d617fda9",
+      "size": 34892
+    },
+    "assets/platformer/Mechanics/Bouncer.gltf": {
+      "sha256": "be8c73337c55dfc37ea087fd5458f47e8e9edad8ac22b58df68ab30a954fe9b0",
+      "size": 46994
+    },
+    "assets/platformer/Mechanics/Bridge_Modular.gltf": {
+      "sha256": "48ad2085b3882aed1d4de41afc499c5a43b464cd1329fc16d5e66becec1ae4f9",
+      "size": 51652
+    },
+    "assets/platformer/Mechanics/Bridge_Modular_Center.gltf": {
+      "sha256": "1ecce5fdceed55c5c1de90cc244bcee54a0d1abf0eac37fd0acd45fe701b0827",
+      "size": 33413
+    },
+    "assets/platformer/Mechanics/Bridge_Small.gltf": {
+      "sha256": "6ebc0d297f42fb01be7c78d86f40257b55d4d0b75b73724ccf46ecff2cd5e7bc",
+      "size": 97199
+    },
+    "assets/platformer/Mechanics/Cannon.gltf": {
+      "sha256": "ace26e9dc0d49c10948e3e5372d81135ee9779873d0815e9bb61c4339acb12c6",
+      "size": 78249
+    },
+    "assets/platformer/Mechanics/Cannonball.gltf": {
+      "sha256": "b5e1db3e8a2c8e5a0a3ccbe2cabff6122297685083ff6d0a5d7a8e3f449c9704",
+      "size": 11598
+    },
+    "assets/platformer/Mechanics/Chest.gltf": {
+      "sha256": "4610592625ace65eb9ed770279e43d811f61dfc3bd46306069fbb658047fd612",
+      "size": 496230
+    },
+    "assets/platformer/Mechanics/Door.gltf": {
+      "sha256": "88c1dcaebf94991e683f7e386e657a7bdb56ca05f1e29deddc56a43ac6ab5cdb",
+      "size": 34692
+    },
+    "assets/platformer/Mechanics/Fence_1.gltf": {
+      "sha256": "82ad9ce07d3a3259c0b9088658b581783ef0acda9b3cc69c19b0dc587490b7af",
+      "size": 9267
+    },
+    "assets/platformer/Mechanics/Fence_Corner.gltf": {
+      "sha256": "533ea9592d2bb46747919953ee8e8f884cbcd3d4d6f1897f7128b41af3e18350",
+      "size": 15499
+    },
+    "assets/platformer/Mechanics/Fence_Middle.gltf": {
+      "sha256": "2d771c3c1292c92421470a080b20d4df4c2a2917b3b9adddd0b3bbc144b1117a",
+      "size": 14570
+    },
+    "assets/platformer/Mechanics/Goal_Flag.gltf": {
+      "sha256": "283c3eeda571ea7920aa9dbd8f601a99e33c6f757a81eed4231eb7140023475e",
+      "size": 13719
+    },
+    "assets/platformer/Mechanics/Hazard_Cylinder.gltf": {
+      "sha256": "bfdfe5dd97739b98f22b29b08236dd742113dd90cd9ec3acd68d825ae14a80ee",
+      "size": 38158
+    },
+    "assets/platformer/Mechanics/Hazard_Saw.gltf": {
+      "sha256": "77132f5e0af1a7b7024047d656bd21fef5dd5b438e7ec0a072029c1e43ccc0e9",
+      "size": 52021
+    },
+    "assets/platformer/Mechanics/Hazard_SpikeTrap.gltf": {
+      "sha256": "17797be6fb97a49140eb202944399229c97d4ca95cbe009780036e6788a757c4",
+      "size": 43187
+    },
+    "assets/platformer/Mechanics/Lever.gltf": {
+      "sha256": "2e51b8a35c82bd1901cc3b469506baf7134064c5b0f1ef0b45660a51650b00da",
+      "size": 29766
+    },
+    "assets/platformer/Mechanics/Numbers_0.gltf": {
+      "sha256": "75e647da68bb196c0a9aad446b1e03c4f4bd593a704f6a10d6f10a560892273d",
+      "size": 16615
+    },
+    "assets/platformer/Mechanics/Numbers_1.gltf": {
+      "sha256": "dab7783bc6b2cfe881f6319aa111c1b0c10a4ab93378d017db45cfcebc59a46f",
+      "size": 7910
+    },
+    "assets/platformer/Mechanics/Numbers_2.gltf": {
+      "sha256": "400ac859fc778073b6fb022a74da501017ca75d11e14aeaba466e5f0c4e7ca45",
+      "size": 13476
+    },
+    "assets/platformer/Mechanics/Numbers_3.gltf": {
+      "sha256": "de1fac9b3266350c22db9bd32dfb4594160f595503d68eb5997a7919be6a0a61",
+      "size": 16522
+    },
+    "assets/platformer/Mechanics/Numbers_4.gltf": {
+      "sha256": "ac7b162b91bb5008ab7ffd87fe7768cbf2329dc6947dd8d62b0cc60e6aa0abef",
+      "size": 18824
+    },
+    "assets/platformer/Mechanics/Numbers_5.gltf": {
+      "sha256": "3b804ccdf5ab16a4ae3a29a712951e28b2b14bd4b39317d86131a84413283706",
+      "size": 16679
+    },
+    "assets/platformer/Mechanics/Numbers_6.gltf": {
+      "sha256": "9d25f6a5d273a579df5ca0cfc363afa5b648ee1d6c15aa5a93a9d48fc717faba",
+      "size": 18247
+    },
+    "assets/platformer/Mechanics/Numbers_7.gltf": {
+      "sha256": "a2d8386d62f39a7289e546caaf43bca4cebfaf9f96ae547efeccbc2547ff9cd3",
+      "size": 11941
+    },
+    "assets/platformer/Mechanics/Numbers_8.gltf": {
+      "sha256": "36480c83043fb71d16877846090315d1fe310163133f27421105107a53667b05",
+      "size": 18473
+    },
+    "assets/platformer/Mechanics/Numbers_9.gltf": {
+      "sha256": "a872d74ff1721df3a0f6399afa7d4811fbaa5b431f155afde7fbb9e437c8a3d9",
+      "size": 18473
+    },
+    "assets/platformer/Mechanics/Pipe_90.gltf": {
+      "sha256": "a71656f89b1fa6f2a9899ce6459e9851b03cd0c8b8b5e10e583b3072f96b7383",
+      "size": 10824
+    },
+    "assets/platformer/Mechanics/Pipe_End.gltf": {
+      "sha256": "131a860cb2da07aff1faad25a954ae8a1aec24cf165db279699633e73d758a51",
+      "size": 67628
+    },
+    "assets/platformer/Mechanics/Pipe_Straight.gltf": {
+      "sha256": "6a75465ed77835cb9828d495357f4dba7389ae3f50170c97b7f3d260ecc1e9d9",
+      "size": 36523
+    },
+    "assets/platformer/Mechanics/Pipe_T.gltf": {
+      "sha256": "1037a1e99c2a703bb9d778302dac2b71914ab73ee8836c1b9f4c9890868fc8ed",
+      "size": 15526
+    },
+    "assets/platformer/Mechanics/Plant_Large.gltf": {
+      "sha256": "9c57042cb7a9e07d9066890c11ef9c2a357303a038e20a8c1a922f31f5896f6b",
+      "size": 38829
+    },
+    "assets/platformer/Mechanics/Plant_Small.gltf": {
+      "sha256": "8250648e70d35f22f9d790b919e8a3dc3d8b9a882630dae9e5782a06fe2f5b6f",
+      "size": 19694
+    },
+    "assets/platformer/Mechanics/Spikes.gltf": {
+      "sha256": "b071d0c0c7176ebaf5a5e8e050d9a3d7002054f1581094ed9c5d371b2d0e600b",
+      "size": 51022
+    },
+    "assets/platformer/Mechanics/SpikyBall.gltf": {
+      "sha256": "7d040a537c8223b7aac927f65430dd82f06704e2c533e24f776cd4925b447a57",
+      "size": 39224
+    },
+    "assets/platformer/Mechanics/Stairs.gltf": {
+      "sha256": "e27fccab3c4a9e36f276f0453410c34cc1aa216aab1e1c7b749ce90825831d0a",
+      "size": 17125
+    },
+    "assets/platformer/Mechanics/Stairs_Modular_End.gltf": {
+      "sha256": "4afcff73efdd97d36c2d6f260750e6756e3f8ce779009cf4e63f4503f3507d91",
+      "size": 43350
+    },
+    "assets/platformer/Mechanics/Stairs_Modular_Middle.gltf": {
+      "sha256": "3989b1068102b02d7c4881f413869d63ddb071cb27e9c6801cef68f3522e93a7",
+      "size": 36503
+    },
+    "assets/platformer/Mechanics/Stairs_Modular_Start.gltf": {
+      "sha256": "36ac725897d4178bd924a523da13f0027442da2d8c6aaae795892f5786f599de",
+      "size": 43160
+    },
+    "assets/platformer/Mechanics/Stairs_Small.gltf": {
+      "sha256": "2347547251de27211b55acda316bdaffe1490184b5ec28f70d68f9ab9dab98ad",
+      "size": 46160
+    },
+    "assets/platformer/Mechanics/Tower.gltf": {
+      "sha256": "2c351e87e9f2ba7753ddf09efd1d6436a7b514d5004773008eefcc12b1e8be25",
+      "size": 155917
+    },
+    "assets/platformer/Nature/Bush.gltf": {
+      "sha256": "114cd9dffc48aff7f4e1acd01c0e70803ba0799710c3b44f1626908bcedfe089",
+      "size": 47883
+    },
+    "assets/platformer/Nature/Bush_Fruit.gltf": {
+      "sha256": "e680eb29eada0bc1d82680dec2bced644c06f15dd6def9736ee02ac5ba1132e0",
+      "size": 54212
+    },
+    "assets/platformer/Nature/Cloud_1.gltf": {
+      "sha256": "b712e52a298dcbfe0467852aff19c036ba9a83a4db0f2bb4076384b98caf37d6",
+      "size": 12723
+    },
+    "assets/platformer/Nature/Cloud_2.gltf": {
+      "sha256": "3b67cdbd76315a41f7199ff761500975dfde8b54ede5780cbde2044d34d77e58",
+      "size": 17315
+    },
+    "assets/platformer/Nature/Cloud_3.gltf": {
+      "sha256": "fc8e4fa2da9d9eb2047d5c234d361426d45d3efb844603006a481b7dfa066130",
+      "size": 19568
+    },
+    "assets/platformer/Nature/Fruit.gltf": {
+      "sha256": "d70e8f3b268c5c033a40646da3a8b4cb1eca17e431deeaa4f56a6d6f19834fcd",
+      "size": 19742
+    },
+    "assets/platformer/Nature/Grass_1.gltf": {
+      "sha256": "82a44e4638e9ad1f325a7d4ae75af5f33bae8e76a37984d66910892638a9b387",
+      "size": 3522
+    },
+    "assets/platformer/Nature/Grass_2.gltf": {
+      "sha256": "45e7103b5c5f0ec4ca5db5fecacb61f9cf8c685529c4fc9d51f0b6e5c255dd25",
+      "size": 4645
+    },
+    "assets/platformer/Nature/Grass_3.gltf": {
+      "sha256": "b41d0e095e3a5ca1ffad3057502c560fd2d2b4c2b7e7adbbf4bddeb4b43b8dd9",
+      "size": 5765
+    },
+    "assets/platformer/Nature/RockPlatform_Tall.gltf": {
+      "sha256": "6cde4992a41dae0fecf069660d1b331b31714079c4122813748489b813b876e3",
+      "size": 10922
+    },
+    "assets/platformer/Nature/RockPlatforms_1.gltf": {
+      "sha256": "21122b80da613ec148aa3bdcc59be6f20c5ed60a1d2b52dd381874b665cbbead",
+      "size": 27948
+    },
+    "assets/platformer/Nature/RockPlatforms_2.gltf": {
+      "sha256": "2037124faf2e97bc69a1c32c93229b166900f3cb8b2be267516fcd72bd7b1c73",
+      "size": 50352
+    },
+    "assets/platformer/Nature/RockPlatforms_3.gltf": {
+      "sha256": "8eb940861a278a4d5af04d60494f0684f9c061d1dcfab6932409d40e53693d27",
+      "size": 29644
+    },
+    "assets/platformer/Nature/RockPlatforms_Large.gltf": {
+      "sha256": "3316601ca7688b4f8c4df5f04fdc2b71ce59ba9ee057267ee438e1bd0f2cf94e",
+      "size": 15923
+    },
+    "assets/platformer/Nature/RockPlatforms_Medium.gltf": {
+      "sha256": "2aa4624faec12e8b63cc65d44c256658b1d215118bf108119a782c8337e6208a",
+      "size": 10929
+    },
+    "assets/platformer/Nature/Rock_1.gltf": {
+      "sha256": "c0695ff28a950877872cca641a69f1a180c358cc43fa184c9be7aed542bda8b4",
+      "size": 8040
+    },
+    "assets/platformer/Nature/Rock_2.gltf": {
+      "sha256": "15d61f3661a8f8d9a945e43bf0986e30bdc9f391c588e2da0ce769aca14c8647",
+      "size": 12313
+    },
+    "assets/platformer/Nature/Tree.gltf": {
+      "sha256": "3dccc3668294821e3715c70700d4da34233a413d743219a67061b17a8137a69a",
+      "size": 86900
+    },
+    "assets/platformer/Nature/Tree_Fruit.gltf": {
+      "sha256": "3c30b66747253177e7bbd81e78908df1b0becdbc87b482042e7f9db633a4bd3d",
+      "size": 124169
+    },
+    "assets/platformer/Pickups/Coin.gltf": {
+      "sha256": "c521f874e5f46666022c9360924a7ec37e2e91fac070afece64872ffdc9c8b8b",
+      "size": 20862
+    },
+    "assets/platformer/Pickups/Gem_Blue.gltf": {
+      "sha256": "3389224bfeadea464112134fda21d6d99bf63d2d8f1a42400e16a63e36472307",
+      "size": 5832
+    },
+    "assets/platformer/Pickups/Gem_Green.gltf": {
+      "sha256": "8c43ed999d1d46113a9f84ceb4b05c0dda7fbc93d0dcce15555fb2d26d9cac5e",
+      "size": 6471
+    },
+    "assets/platformer/Pickups/Gem_Pink.gltf": {
+      "sha256": "021238d55415e791eb98133680d1861bd6f2d065b9ee5400eff444c1c1b71f1f",
+      "size": 3777
+    },
+    "assets/platformer/Pickups/Heart.gltf": {
+      "sha256": "0a9f44a3a8c1ca210dba1a3bf27a3fd2404bc8130e3c9ae4b3c291a4074810b8",
+      "size": 16102
+    },
+    "assets/platformer/Pickups/Heart_Half.gltf": {
+      "sha256": "d0910b3a7fa6bdcbb6a6501fa09e2a75fcce2e2eba0c51b218b1291c1cec3a0d",
+      "size": 10232
+    },
+    "assets/platformer/Pickups/Heart_Outline.gltf": {
+      "sha256": "e8043870ead94387a0d7ac97c8f7921e195d59a38ffbca7b76081aea21a79d74",
+      "size": 14828
+    },
+    "assets/platformer/Pickups/Key.gltf": {
+      "sha256": "590eb3223e230689da2d1d69387566a533590fdb313e5afed57745d1964c48a8",
+      "size": 17410
+    },
+    "assets/platformer/Pickups/Star.gltf": {
+      "sha256": "f67636d352ed594dba8c0bc8e6c31ef96b373d79b0bbc8b75c45e8e3c2535f05",
+      "size": 15749
+    },
+    "assets/platformer/Pickups/Star_Outline.gltf": {
+      "sha256": "0b2432a2171d394b558922268f727cea53ea2343e5af127097178ab6cf57e4c8",
+      "size": 21617
+    },
+    "assets/platformer/Pickups/Thunder.gltf": {
+      "sha256": "132503375a337dc7d4e902247525a9cc2b527825059e1b4b963d528b0f4d0d5b",
+      "size": 6785
+    },
+    "assets/platformer/Platforms/2D/Cube_Dirt_1x1Center.gltf": {
+      "sha256": "c1dd0c2f88f8cd10804fb765e772f3355d549c1a7489cbdd90796a8bbc4aa6df",
+      "size": 10431
+    },
+    "assets/platformer/Platforms/2D/Cube_Dirt_1x1End.gltf": {
+      "sha256": "8fa5c39161f29a8388cb340ccbf97cf945166b0e049a1b217562d6f188c735a2",
+      "size": 15016
+    },
+    "assets/platformer/Platforms/2D/Cube_Grass_1x1Center.gltf": {
+      "sha256": "3c2a1e7dbc5a3cb3e1a861908e94ba25b5bda7b073103786f0cfb691b428cf03",
+      "size": 15230
+    },
+    "assets/platformer/Platforms/2D/Cube_Grass_1x1End.gltf": {
+      "sha256": "1b86211d8d5a713754a6fc83b622efec9d82ab7c905df0bd5ee38af54099c1d9",
+      "size": 21414
+    },
+    "assets/platformer/Platforms/3D/Cube_Dirt_Center_Tall.bin": {
+      "sha256": "694e094f131003d62e65c2289e9a1a11b675160166820873dfd5cedfdfb37264",
+      "size": 104
+    },
+    "assets/platformer/Platforms/3D/Cube_Dirt_Center_Tall.gltf": {
+      "sha256": "70a9ae8e39247ec77581626f467b6886104f485078426aa4b46672843d71a99e",
+      "size": 2670
+    },
+    "assets/platformer/Platforms/3D/Cube_Dirt_Corner_Tall.gltf": {
+      "sha256": "8d6a8e8cea94cc780e5834f35148fc1905f6ac599557ac3bbb2517fdf9530e53",
+      "size": 9315
+    },
+    "assets/platformer/Platforms/3D/Cube_Dirt_Side_Tall.gltf": {
+      "sha256": "4f94f00dd896ed8ddf4af0211ca3c1afd959596585e33855a438206e9f816434",
+      "size": 7026
+    },
+    "assets/platformer/Platforms/3D/Cube_Grass_Bottom_Tall.gltf": {
+      "sha256": "ae55ebfeb1a6227abdbe0763f4f5ef3a194500569d23b52e1a0a10c7e7abcc0c",
+      "size": 2495
+    },
+    "assets/platformer/Platforms/3D/Cube_Grass_Center_Tall.gltf": {
+      "sha256": "26e27e88529a86ff1ee3167599dc2ea09182c6c3ac1fbd42c2ff9887f5357189",
+      "size": 2530
+    },
+    "assets/platformer/Platforms/3D/Cube_Grass_CornerBottom_Tall.gltf": {
+      "sha256": "3ec59fda9e623d5c8cd9868fa33dd92b5b46e03a833a4f9ee9cc4ef97e1d8182",
+      "size": 9306
+    },
+    "assets/platformer/Platforms/3D/Cube_Grass_CornerCenter_Tall.gltf": {
+      "sha256": "c6163c3e23a0a8806f3ff5763ccc008057394b890a57b37bed2c0d87adff3c27",
+      "size": 8503
+    },
+    "assets/platformer/Platforms/3D/Cube_Grass_Corner_Tall.gltf": {
+      "sha256": "cc2b3972c3891a62ff8cf8b8b50809cb601b0cb5cd5595db368db7418de82264",
+      "size": 12414
+    },
+    "assets/platformer/Platforms/3D/Cube_Grass_SideBottom_Tall.gltf": {
+      "sha256": "e75b353b37557ffe992bab32691e733e02ed41adb957a27e58a1e452ca27a98f",
+      "size": 7029
+    },
+    "assets/platformer/Platforms/3D/Cube_Grass_SideCenter_Tall.gltf": {
+      "sha256": "8e2976dc78e254f41dc3607a8bee9958688d341240382b5ee8d7743d0035f56e",
+      "size": 6639
+    },
+    "assets/platformer/Platforms/3D/Cube_Grass_Side_Tall.gltf": {
+      "sha256": "79a4d9c2eef61ad087764b5f8936d0f911e24aedf7361f19233a36b2f28a97c0",
+      "size": 9038
+    },
+    "assets/platformer/Platforms/Single-Height/Cube_Dirt_Center.gltf": {
+      "sha256": "31c7d2a85167eb51b15b0c7c43cbeb6c4cc378ad6fb4a20bf1c99c0ba4979ab9",
+      "size": 2651
+    },
+    "assets/platformer/Platforms/Single-Height/Cube_Dirt_Corner.gltf": {
+      "sha256": "11cae5d27e2ff3186a9cec10cf8d89f4a7ca291b12a2a34030a3e391a507bce8",
+      "size": 9919
+    },
+    "assets/platformer/Platforms/Single-Height/Cube_Dirt_Side.gltf": {
+      "sha256": "606cead0987256ec265945d40900fec092144a0ba167e6aa4fb7db266015878e",
+      "size": 7340
+    },
+    "assets/platformer/Platforms/Single-Height/Cube_Grass_Center.gltf": {
+      "sha256": "0898b2a7b52a4abb7890919d3f5cc9efbf3d6ddc90f10afb856e0dda66ba1b10",
+      "size": 4318
+    },
+    "assets/platformer/Platforms/Single-Height/Cube_Grass_Corner.gltf": {
+      "sha256": "13be01d116db28e1057b413cee34c54569f0a34f7a7cc5c785f571b1968b98e2",
+      "size": 13209
+    },
+    "assets/platformer/Platforms/Single-Height/Cube_Grass_Side.gltf": {
+      "sha256": "feab1aaef02bebb99a7f35acd33e96ffd087d0695689f04fb638796607abbbd9",
+      "size": 9427
+    }
+  }
+}

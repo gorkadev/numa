@@ -338,6 +338,10 @@
       "toon-shooter": {
         "label": "Toon Shooter",
         "tagline": "Start with a complete cartoon 3D shooter kit."
+      },
+      "platformer": {
+        "label": "Platformer",
+        "tagline": "Start with a colorful side-scrolling platformer kit."
       }
     },
     "startDictation": "Start dictation",

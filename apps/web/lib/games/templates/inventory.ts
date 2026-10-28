@@ -2,6 +2,7 @@ export type TemplateInventoryModel = {
   id: string
   path: string
   category?: string
+  bounds?: { min: readonly number[]; max: readonly number[] }
   animations?: readonly { name: string; category: string }[]
 }
 
@@ -22,10 +23,13 @@ export function renderTemplateModelInventory(models: readonly TemplateInventoryM
       const entries = group
         .sort((left, right) => compare(left.id, right.id) || compare(left.path, right.path))
         .map((model) => {
+          const bounds = model.bounds
+            ? `; bounds: min [${model.bounds.min.join(", ")}] max [${model.bounds.max.join(", ")}]`
+            : ""
           const animations = model.animations?.length
             ? `; animations: ${model.animations.map((animation) => `\`${animation.name}\` (${animation.category})`).join(", ")}`
             : ""
-          return `- ${model.id}: \`${model.path}\`${animations}`
+          return `- ${model.id}: \`${model.path}\`${bounds}${animations}`
         })
       return `#### ${category} (${group.length})\n${entries.join("\n")}`
     })

@@ -338,6 +338,10 @@
       "toon-shooter": {
         "label": "Disparos de dibujos animados",
         "tagline": "Empieza con un kit completo de disparos 3D de dibujos animados."
+      },
+      "platformer": {
+        "label": "Plataformas",
+        "tagline": "Empieza con un kit colorido de plataformas de scroll lateral."
       }
     },
     "startDictation": "Iniciar dictado",
