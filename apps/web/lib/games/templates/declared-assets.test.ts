@@ -33,7 +33,7 @@ test("undeclaredAssetPaths lists files the manifest does not account for", () =>
 
 test("every locked asset of the shipped templates is declared", async () => {
   const { readTemplateAssetLock, readTemplateContract } = await import("./seed")
-  for (const id of ["cube-world", "fantasy-cards", "toon-shooter"]) {
+  for (const id of ["cube-world", "fantasy-cards", "platformer", "toon-shooter"]) {
     const [lock, contract] = await Promise.all([readTemplateAssetLock(id, 1), readTemplateContract(id, 1)])
     assert.ok(lock && contract)
     assert.deepEqual(undeclaredAssetPaths(contract.manifest, Object.keys(lock.files)), [], id)

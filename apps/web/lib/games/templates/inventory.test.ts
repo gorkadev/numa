@@ -5,7 +5,7 @@ import test from "node:test"
 
 import { renderTemplateModelInventory, type TemplateInventoryModel } from "./inventory"
 
-for (const [template, expectedCount] of [["cube-world", 107], ["fantasy-cards", 34], ["toon-shooter", 74]] as const) {
+for (const [template, expectedCount] of [["cube-world", 107], ["fantasy-cards", 34], ["platformer", 109], ["toon-shooter", 74]] as const) {
   test(`${template} renders the complete grouped manifest inventory`, () => {
     const manifest = JSON.parse(readFileSync(join(process.cwd(), "lib/games/templates", template, "seed/ASSETS.json"), "utf8")) as { models: TemplateInventoryModel[] }
     assert.equal(manifest.models.length, expectedCount)
@@ -22,7 +22,8 @@ for (const [template, expectedCount] of [["cube-world", 107], ["fantasy-cards", 
       const animationText = model.animations?.length
         ? `; animations: ${model.animations.map(({ name, category }) => `\`${name}\` (${category})`).join(", ")}`
         : ""
-      const line = `- ${model.id}: \`${model.path}\`${animationText}`
+      const boundsText = model.bounds ? `; bounds: min [${model.bounds.min.join(", ")}] max [${model.bounds.max.join(", ")}]` : ""
+      const line = `- ${model.id}: \`${model.path}\`${boundsText}${animationText}`
       assert.equal(rendered.split("\n").filter((entry) => entry === line).length, 1, line)
     }
     const headings = rendered.split("\n").filter((line) => line.startsWith("#### "))

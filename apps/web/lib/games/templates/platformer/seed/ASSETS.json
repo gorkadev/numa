@@ -1,0 +1,2214 @@
+{
+ "template": {
+  "id": "platformer",
+  "version": 1
+ },
+ "assetRoot": "assets/platformer",
+ "models": [
+  {
+   "id": "character",
+   "path": "assets/platformer/Character/Character.gltf",
+   "category": "player",
+   "bounds": {
+    "min": [
+     -1.7,
+     0.01,
+     -0.74
+    ],
+    "max": [
+     1.7,
+     3.76,
+     0.83
+    ]
+   },
+   "animations": [
+    {
+     "name": "Death",
+     "category": "death"
+    },
+    {
+     "name": "Duck",
+     "category": "reaction"
+    },
+    {
+     "name": "HitReact",
+     "category": "reaction"
+    },
+    {
+     "name": "Idle",
+     "category": "idle"
+    },
+    {
+     "name": "Idle_Gun",
+     "category": "idle"
+    },
+    {
+     "name": "Idle_Shoot",
+     "category": "attack"
+    },
+    {
+     "name": "Jump",
+     "category": "jump"
+    },
+    {
+     "name": "Jump_Idle",
+     "category": "jump"
+    },
+    {
+     "name": "Jump_Land",
+     "category": "jump"
+    },
+    {
+     "name": "No",
+     "category": "emote"
+    },
+    {
+     "name": "Punch",
+     "category": "attack"
+    },
+    {
+     "name": "Run",
+     "category": "locomotion"
+    },
+    {
+     "name": "Run_Gun",
+     "category": "locomotion"
+    },
+    {
+     "name": "Run_Shoot",
+     "category": "attack"
+    },
+    {
+     "name": "Walk",
+     "category": "locomotion"
+    },
+    {
+     "name": "Walk_Gun",
+     "category": "locomotion"
+    },
+    {
+     "name": "Wave",
+     "category": "emote"
+    },
+    {
+     "name": "Yes",
+     "category": "emote"
+    }
+   ]
+  },
+  {
+   "id": "character-gun",
+   "path": "assets/platformer/Character/Character_Gun.gltf",
+   "category": "player",
+   "bounds": {
+    "min": [
+     -2.51,
+     -0.69,
+     -0.74
+    ],
+    "max": [
+     1.7,
+     3.76,
+     0.83
+    ]
+   },
+   "animations": [
+    {
+     "name": "Death",
+     "category": "death"
+    },
+    {
+     "name": "Duck",
+     "category": "reaction"
+    },
+    {
+     "name": "HitReact",
+     "category": "reaction"
+    },
+    {
+     "name": "Idle",
+     "category": "idle"
+    },
+    {
+     "name": "Idle_Gun",
+     "category": "idle"
+    },
+    {
+     "name": "Idle_Shoot",
+     "category": "attack"
+    },
+    {
+     "name": "Jump",
+     "category": "jump"
+    },
+    {
+     "name": "Jump_Idle",
+     "category": "jump"
+    },
+    {
+     "name": "Jump_Land",
+     "category": "jump"
+    },
+    {
+     "name": "No",
+     "category": "emote"
+    },
+    {
+     "name": "Punch",
+     "category": "attack"
+    },
+    {
+     "name": "Run",
+     "category": "locomotion"
+    },
+    {
+     "name": "Run_Gun",
+     "category": "locomotion"
+    },
+    {
+     "name": "Run_Shoot",
+     "category": "attack"
+    },
+    {
+     "name": "Walk",
+     "category": "locomotion"
+    },
+    {
+     "name": "Walk_Gun",
+     "category": "locomotion"
+    },
+    {
+     "name": "Wave",
+     "category": "emote"
+    },
+    {
+     "name": "Yes",
+     "category": "emote"
+    }
+   ]
+  },
+  {
+   "id": "bee",
+   "path": "assets/platformer/Enemies/Bee.gltf",
+   "category": "enemy",
+   "bounds": {
+    "min": [
+     -1.43,
+     0.01,
+     -0.67
+    ],
+    "max": [
+     1.43,
+     1.88,
+     0.8
+    ]
+   },
+   "animations": [
+    {
+     "name": "Bite_Front",
+     "category": "attack"
+    },
+    {
+     "name": "Death",
+     "category": "death"
+    },
+    {
+     "name": "Flying",
+     "category": "locomotion"
+    },
+    {
+     "name": "HitRecieve",
+     "category": "reaction"
+    }
+   ]
+  },
+  {
+   "id": "crab",
+   "path": "assets/platformer/Enemies/Crab.gltf",
+   "category": "enemy",
+   "bounds": {
+    "min": [
+     -1.27,
+     -0.01,
+     -0.67
+    ],
+    "max": [
+     1.27,
+     1.5,
+     0.71
+    ]
+   },
+   "animations": [
+    {
+     "name": "Bite_Front",
+     "category": "attack"
+    },
+    {
+     "name": "Bite_InPlace",
+     "category": "attack"
+    },
+    {
+     "name": "Dance",
+     "category": "emote"
+    },
+    {
+     "name": "Death",
+     "category": "death"
+    },
+    {
+     "name": "HitRecieve",
+     "category": "reaction"
+    },
+    {
+     "name": "Idle",
+     "category": "idle"
+    },
+    {
+     "name": "Jump",
+     "category": "jump"
+    },
+    {
+     "name": "No",
+     "category": "emote"
+    },
+    {
+     "name": "Walk",
+     "category": "locomotion"
+    },
+    {
+     "name": "Yes",
+     "category": "emote"
+    }
+   ]
+  },
+  {
+   "id": "enemy",
+   "path": "assets/platformer/Enemies/Enemy.gltf",
+   "category": "enemy",
+   "bounds": {
+    "min": [
+     -0.99,
+     -0.03,
+     -0.67
+    ],
+    "max": [
+     0.99,
+     1.62,
+     0.71
+    ]
+   },
+   "animations": [
+    {
+     "name": "Bite_Front",
+     "category": "attack"
+    },
+    {
+     "name": "Bite_InPlace",
+     "category": "attack"
+    },
+    {
+     "name": "Dance",
+     "category": "emote"
+    },
+    {
+     "name": "Death",
+     "category": "death"
+    },
+    {
+     "name": "HitRecieve",
+     "category": "reaction"
+    },
+    {
+     "name": "Idle",
+     "category": "idle"
+    },
+    {
+     "name": "Jump",
+     "category": "jump"
+    },
+    {
+     "name": "No",
+     "category": "emote"
+    },
+    {
+     "name": "Walk",
+     "category": "locomotion"
+    },
+    {
+     "name": "Yes",
+     "category": "emote"
+    }
+   ]
+  },
+  {
+   "id": "skull",
+   "path": "assets/platformer/Enemies/Skull.gltf",
+   "category": "enemy",
+   "bounds": {
+    "min": [
+     -0.7,
+     -0.07,
+     -0.71
+    ],
+    "max": [
+     0.7,
+     1.43,
+     0.72
+    ]
+   },
+   "animations": [
+    {
+     "name": "Bite_Front",
+     "category": "attack"
+    },
+    {
+     "name": "Bite_InPlace",
+     "category": "attack"
+    },
+    {
+     "name": "Dance",
+     "category": "emote"
+    },
+    {
+     "name": "Death",
+     "category": "death"
+    },
+    {
+     "name": "HitRecieve",
+     "category": "reaction"
+    },
+    {
+     "name": "Idle",
+     "category": "idle"
+    },
+    {
+     "name": "Jump",
+     "category": "jump"
+    },
+    {
+     "name": "No",
+     "category": "emote"
+    },
+    {
+     "name": "Walk",
+     "category": "locomotion"
+    },
+    {
+     "name": "Yes",
+     "category": "emote"
+    }
+   ]
+  },
+  {
+   "id": "bush",
+   "path": "assets/platformer/Nature/Bush.gltf",
+   "category": "vegetation",
+   "bounds": {
+    "min": [
+     -1.76,
+     0.03,
+     -1.76
+    ],
+    "max": [
+     1.76,
+     2.26,
+     1.76
+    ]
+   }
+  },
+  {
+   "id": "bush-fruit",
+   "path": "assets/platformer/Nature/Bush_Fruit.gltf",
+   "category": "vegetation",
+   "bounds": {
+    "min": [
+     -1.76,
+     0.03,
+     -1.76
+    ],
+    "max": [
+     1.76,
+     2.26,
+     1.76
+    ]
+   }
+  },
+  {
+   "id": "cloud-1",
+   "path": "assets/platformer/Nature/Cloud_1.gltf",
+   "category": "prop",
+   "bounds": {
+    "min": [
+     -1.51,
+     -0.14,
+     -1.23
+    ],
+    "max": [
+     1.78,
+     1.98,
+     1.22
+    ]
+   }
+  },
+  {
+   "id": "cloud-2",
+   "path": "assets/platformer/Nature/Cloud_2.gltf",
+   "category": "prop",
+   "bounds": {
+    "min": [
+     -2.01,
+     -0.24,
+     -1.22
+    ],
+    "max": [
+     1.99,
+     2.17,
+     1.22
+    ]
+   }
+  },
+  {
+   "id": "cloud-3",
+   "path": "assets/platformer/Nature/Cloud_3.gltf",
+   "category": "prop",
+   "bounds": {
+    "min": [
+     -2.55,
+     -0.35,
+     -1.75
+    ],
+    "max": [
+     3.3,
+     2.81,
+     1.75
+    ]
+   }
+  },
+  {
+   "id": "fruit",
+   "path": "assets/platformer/Nature/Fruit.gltf",
+   "category": "vegetation",
+   "bounds": {
+    "min": [
+     -0.33,
+     -0.33,
+     -0.36
+    ],
+    "max": [
+     0.55,
+     0.49,
+     0.33
+    ]
+   }
+  },
+  {
+   "id": "grass-1",
+   "path": "assets/platformer/Nature/Grass_1.gltf",
+   "category": "vegetation",
+   "bounds": {
+    "min": [
+     -0.48,
+     0.95,
+     -0.2
+    ],
+    "max": [
+     0.04,
+     1.32,
+     0.2
+    ]
+   }
+  },
+  {
+   "id": "grass-2",
+   "path": "assets/platformer/Nature/Grass_2.gltf",
+   "category": "vegetation",
+   "bounds": {
+    "min": [
+     -0.48,
+     0.94,
+     -0.32
+    ],
+    "max": [
+     0.59,
+     1.42,
+     0.32
+    ]
+   }
+  },
+  {
+   "id": "grass-3",
+   "path": "assets/platformer/Nature/Grass_3.gltf",
+   "category": "vegetation",
+   "bounds": {
+    "min": [
+     -0.48,
+     0.91,
+     -0.32
+    ],
+    "max": [
+     0.59,
+     1.43,
+     0.32
+    ]
+   }
+  },
+  {
+   "id": "rockplatform-tall",
+   "path": "assets/platformer/Nature/RockPlatform_Tall.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.79,
+     0.0,
+     -1.79
+    ],
+    "max": [
+     1.79,
+     4.26,
+     1.79
+    ]
+   }
+  },
+  {
+   "id": "rockplatforms-1",
+   "path": "assets/platformer/Nature/RockPlatforms_1.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -3.34,
+     -0.16,
+     -3.27
+    ],
+    "max": [
+     3.06,
+     5.37,
+     2.61
+    ]
+   }
+  },
+  {
+   "id": "rockplatforms-2",
+   "path": "assets/platformer/Nature/RockPlatforms_2.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -4.7,
+     -0.19,
+     -2.91
+    ],
+    "max": [
+     4.62,
+     4.26,
+     3.83
+    ]
+   }
+  },
+  {
+   "id": "rockplatforms-3",
+   "path": "assets/platformer/Nature/RockPlatforms_3.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -2.94,
+     -0.12,
+     -2.32
+    ],
+    "max": [
+     3.05,
+     4.26,
+     3.12
+    ]
+   }
+  },
+  {
+   "id": "rockplatforms-large",
+   "path": "assets/platformer/Nature/RockPlatforms_Large.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -3.74,
+     0.0,
+     -2.58
+    ],
+    "max": [
+     3.64,
+     3.63,
+     2.58
+    ]
+   }
+  },
+  {
+   "id": "rockplatforms-medium",
+   "path": "assets/platformer/Nature/RockPlatforms_Medium.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -2.4,
+     0.0,
+     -2.41
+    ],
+    "max": [
+     2.4,
+     2.91,
+     2.4
+    ]
+   }
+  },
+  {
+   "id": "rock-1",
+   "path": "assets/platformer/Nature/Rock_1.gltf",
+   "category": "prop",
+   "bounds": {
+    "min": [
+     -0.8,
+     -0.19,
+     -0.71
+    ],
+    "max": [
+     0.81,
+     0.91,
+     0.75
+    ]
+   }
+  },
+  {
+   "id": "rock-2",
+   "path": "assets/platformer/Nature/Rock_2.gltf",
+   "category": "prop",
+   "bounds": {
+    "min": [
+     -0.74,
+     -0.14,
+     -0.64
+    ],
+    "max": [
+     0.9,
+     1.96,
+     0.82
+    ]
+   }
+  },
+  {
+   "id": "tree",
+   "path": "assets/platformer/Nature/Tree.gltf",
+   "category": "vegetation",
+   "bounds": {
+    "min": [
+     -2.77,
+     0.01,
+     -2.77
+    ],
+    "max": [
+     2.77,
+     8.64,
+     2.77
+    ]
+   }
+  },
+  {
+   "id": "tree-fruit",
+   "path": "assets/platformer/Nature/Tree_Fruit.gltf",
+   "category": "vegetation",
+   "bounds": {
+    "min": [
+     -2.77,
+     0.01,
+     -2.77
+    ],
+    "max": [
+     2.77,
+     8.64,
+     2.77
+    ]
+   }
+  },
+  {
+   "id": "cube-bricks",
+   "path": "assets/platformer/Cubes/Cube_Bricks.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.02,
+     -1.0,
+     -1.03
+    ],
+    "max": [
+     1.02,
+     1.03,
+     1.03
+    ]
+   }
+  },
+  {
+   "id": "cube-crate",
+   "path": "assets/platformer/Cubes/Cube_Crate.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.01,
+     -1.01,
+     -1.01
+    ],
+    "max": [
+     1.01,
+     1.01,
+     1.01
+    ]
+   }
+  },
+  {
+   "id": "cube-default",
+   "path": "assets/platformer/Cubes/Cube_Default.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.01,
+     -1.01,
+     -1.01
+    ],
+    "max": [
+     1.01,
+     1.01,
+     1.01
+    ]
+   }
+  },
+  {
+   "id": "cube-dirt-single",
+   "path": "assets/platformer/Cubes/Cube_Dirt_Single.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.0,
+     -1.0,
+     -1.0
+    ],
+    "max": [
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "id": "cube-exclamation",
+   "path": "assets/platformer/Cubes/Cube_Exclamation.gltf",
+   "category": "mechanism",
+   "bounds": {
+    "min": [
+     -1.01,
+     -1.01,
+     -1.01
+    ],
+    "max": [
+     1.01,
+     1.01,
+     1.01
+    ]
+   }
+  },
+  {
+   "id": "cube-grass-single",
+   "path": "assets/platformer/Cubes/Cube_Grass_Single.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.12,
+     -1.0,
+     -1.12
+    ],
+    "max": [
+     1.12,
+     1.0,
+     1.12
+    ]
+   }
+  },
+  {
+   "id": "cube-question",
+   "path": "assets/platformer/Cubes/Cube_Question.gltf",
+   "category": "mechanism",
+   "bounds": {
+    "min": [
+     -1.01,
+     -1.01,
+     -1.01
+    ],
+    "max": [
+     1.01,
+     1.01,
+     1.01
+    ]
+   }
+  },
+  {
+   "id": "cube-spikes",
+   "path": "assets/platformer/Cubes/Cube_Spikes.gltf",
+   "category": "hazard",
+   "bounds": {
+    "min": [
+     -1.58,
+     -1.58,
+     -1.58
+    ],
+    "max": [
+     1.58,
+     1.58,
+     1.58
+    ]
+   }
+  },
+  {
+   "id": "arrow",
+   "path": "assets/platformer/Mechanics/Arrow.gltf",
+   "category": "prop",
+   "bounds": {
+    "min": [
+     -1.06,
+     0.0,
+     -0.51
+    ],
+    "max": [
+     0.79,
+     0.15,
+     0.51
+    ]
+   }
+  },
+  {
+   "id": "arrow-side",
+   "path": "assets/platformer/Mechanics/Arrow_Side.gltf",
+   "category": "prop",
+   "bounds": {
+    "min": [
+     -0.76,
+     0.0,
+     -0.11
+    ],
+    "max": [
+     1.1,
+     2.05,
+     0.25
+    ]
+   }
+  },
+  {
+   "id": "arrow-up",
+   "path": "assets/platformer/Mechanics/Arrow_Up.gltf",
+   "category": "prop",
+   "bounds": {
+    "min": [
+     -0.5,
+     0.0,
+     -0.11
+    ],
+    "max": [
+     0.51,
+     2.7,
+     0.25
+    ]
+   }
+  },
+  {
+   "id": "bomb",
+   "path": "assets/platformer/Mechanics/Bomb.gltf",
+   "category": "hazard",
+   "bounds": {
+    "min": [
+     -0.56,
+     -0.57,
+     -0.56
+    ],
+    "max": [
+     0.56,
+     1.18,
+     0.57
+    ]
+   }
+  },
+  {
+   "id": "bouncer",
+   "path": "assets/platformer/Mechanics/Bouncer.gltf",
+   "category": "mechanism",
+   "bounds": {
+    "min": [
+     -1.1,
+     0.0,
+     -1.1
+    ],
+    "max": [
+     1.1,
+     1.93,
+     1.1
+    ]
+   },
+   "animations": [
+    {
+     "name": "Bouncer_Bounce",
+     "category": "interact"
+    },
+    {
+     "name": "Bouncer_Idle",
+     "category": "idle"
+    }
+   ]
+  },
+  {
+   "id": "bridge-modular",
+   "path": "assets/platformer/Mechanics/Bridge_Modular.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.45,
+     -0.23,
+     -1.06
+    ],
+    "max": [
+     1.5,
+     1.78,
+     1.18
+    ]
+   }
+  },
+  {
+   "id": "bridge-modular-center",
+   "path": "assets/platformer/Mechanics/Bridge_Modular_Center.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.5,
+     -0.09,
+     -1.09
+    ],
+    "max": [
+     1.5,
+     1.99,
+     1.22
+    ]
+   }
+  },
+  {
+   "id": "bridge-small",
+   "path": "assets/platformer/Mechanics/Bridge_Small.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -3.47,
+     -0.28,
+     -1.25
+    ],
+    "max": [
+     3.47,
+     2.34,
+     1.39
+    ]
+   }
+  },
+  {
+   "id": "cannon",
+   "path": "assets/platformer/Mechanics/Cannon.gltf",
+   "category": "mechanism",
+   "bounds": {
+    "min": [
+     -1.12,
+     -0.94,
+     -1.66
+    ],
+    "max": [
+     2.26,
+     2.74,
+     1.66
+    ]
+   }
+  },
+  {
+   "id": "cannonball",
+   "path": "assets/platformer/Mechanics/Cannonball.gltf",
+   "category": "hazard",
+   "bounds": {
+    "min": [
+     -0.56,
+     -0.57,
+     -0.56
+    ],
+    "max": [
+     0.56,
+     0.57,
+     0.56
+    ]
+   }
+  },
+  {
+   "id": "chest",
+   "path": "assets/platformer/Mechanics/Chest.gltf",
+   "category": "mechanism",
+   "bounds": {
+    "min": [
+     -1.07,
+     0.01,
+     -0.95
+    ],
+    "max": [
+     1.07,
+     1.82,
+     0.93
+    ]
+   },
+   "animations": [
+    {
+     "name": "Chest_Close",
+     "category": "interact"
+    },
+    {
+     "name": "Chest_Open",
+     "category": "interact"
+    }
+   ]
+  },
+  {
+   "id": "door",
+   "path": "assets/platformer/Mechanics/Door.gltf",
+   "category": "mechanism",
+   "bounds": {
+    "min": [
+     -1.86,
+     0.01,
+     -0.54
+    ],
+    "max": [
+     1.85,
+     4.25,
+     0.79
+    ]
+   }
+  },
+  {
+   "id": "fence-1",
+   "path": "assets/platformer/Mechanics/Fence_1.gltf",
+   "category": "prop",
+   "bounds": {
+    "min": [
+     -0.75,
+     0.0,
+     -0.13
+    ],
+    "max": [
+     0.0,
+     1.25,
+     0.13
+    ]
+   }
+  },
+  {
+   "id": "fence-corner",
+   "path": "assets/platformer/Mechanics/Fence_Corner.gltf",
+   "category": "prop",
+   "bounds": {
+    "min": [
+     -0.13,
+     0.0,
+     -1.0
+    ],
+    "max": [
+     1.0,
+     1.25,
+     0.13
+    ]
+   }
+  },
+  {
+   "id": "fence-middle",
+   "path": "assets/platformer/Mechanics/Fence_Middle.gltf",
+   "category": "prop",
+   "bounds": {
+    "min": [
+     -1.0,
+     0.0,
+     -0.13
+    ],
+    "max": [
+     1.0,
+     1.25,
+     0.13
+    ]
+   }
+  },
+  {
+   "id": "goal-flag",
+   "path": "assets/platformer/Mechanics/Goal_Flag.gltf",
+   "category": "mechanism",
+   "bounds": {
+    "min": [
+     -0.55,
+     0.0,
+     -0.19
+    ],
+    "max": [
+     0.86,
+     2.33,
+     0.19
+    ]
+   }
+  },
+  {
+   "id": "hazard-cylinder",
+   "path": "assets/platformer/Mechanics/Hazard_Cylinder.gltf",
+   "category": "hazard",
+   "bounds": {
+    "min": [
+     -1.14,
+     -0.02,
+     -1.14
+    ],
+    "max": [
+     1.14,
+     3.86,
+     1.14
+    ]
+   }
+  },
+  {
+   "id": "hazard-saw",
+   "path": "assets/platformer/Mechanics/Hazard_Saw.gltf",
+   "category": "hazard",
+   "bounds": {
+    "min": [
+     -1.5,
+     -1.43,
+     -0.1
+    ],
+    "max": [
+     1.5,
+     1.43,
+     0.1
+    ]
+   }
+  },
+  {
+   "id": "hazard-spiketrap",
+   "path": "assets/platformer/Mechanics/Hazard_SpikeTrap.gltf",
+   "category": "hazard",
+   "bounds": {
+    "min": [
+     -1.0,
+     -0.02,
+     -1.0
+    ],
+    "max": [
+     1.0,
+     0.68,
+     1.0
+    ]
+   },
+   "animations": [
+    {
+     "name": "SpikeTrap_Activate",
+     "category": "interact"
+    }
+   ]
+  },
+  {
+   "id": "lever",
+   "path": "assets/platformer/Mechanics/Lever.gltf",
+   "category": "mechanism",
+   "bounds": {
+    "min": [
+     -0.83,
+     -0.01,
+     -0.25
+    ],
+    "max": [
+     0.59,
+     1.32,
+     0.25
+    ]
+   },
+   "animations": [
+    {
+     "name": "Lever_Off",
+     "category": "interact"
+    },
+    {
+     "name": "Lever_On",
+     "category": "interact"
+    }
+   ]
+  },
+  {
+   "id": "numbers-0",
+   "path": "assets/platformer/Mechanics/Numbers_0.gltf",
+   "category": "prop",
+   "bounds": {
+    "min": [
+     -0.36,
+     -0.56,
+     -0.2
+    ],
+    "max": [
+     0.36,
+     0.56,
+     0.2
+    ]
+   }
+  },
+  {
+   "id": "numbers-1",
+   "path": "assets/platformer/Mechanics/Numbers_1.gltf",
+   "category": "prop",
+   "bounds": {
+    "min": [
+     -0.17,
+     -0.55,
+     -0.15
+    ],
+    "max": [
+     0.17,
+     0.54,
+     0.15
+    ]
+   }
+  },
+  {
+   "id": "numbers-2",
+   "path": "assets/platformer/Mechanics/Numbers_2.gltf",
+   "category": "prop",
+   "bounds": {
+    "min": [
+     -0.36,
+     -0.55,
+     -0.15
+    ],
+    "max": [
+     0.35,
+     0.56,
+     0.15
+    ]
+   }
+  },
+  {
+   "id": "numbers-3",
+   "path": "assets/platformer/Mechanics/Numbers_3.gltf",
+   "category": "prop",
+   "bounds": {
+    "min": [
+     -0.35,
+     -0.55,
+     -0.17
+    ],
+    "max": [
+     0.4,
+     0.56,
+     0.17
+    ]
+   }
+  },
+  {
+   "id": "numbers-4",
+   "path": "assets/platformer/Mechanics/Numbers_4.gltf",
+   "category": "prop",
+   "bounds": {
+    "min": [
+     -0.39,
+     -0.56,
+     -0.15
+    ],
+    "max": [
+     0.35,
+     0.57,
+     0.15
+    ]
+   }
+  },
+  {
+   "id": "numbers-5",
+   "path": "assets/platformer/Mechanics/Numbers_5.gltf",
+   "category": "prop",
+   "bounds": {
+    "min": [
+     -0.35,
+     -0.56,
+     -0.17
+    ],
+    "max": [
+     0.37,
+     0.56,
+     0.17
+    ]
+   }
+  },
+  {
+   "id": "numbers-6",
+   "path": "assets/platformer/Mechanics/Numbers_6.gltf",
+   "category": "prop",
+   "bounds": {
+    "min": [
+     -0.36,
+     -0.56,
+     -0.16
+    ],
+    "max": [
+     0.4,
+     0.55,
+     0.16
+    ]
+   }
+  },
+  {
+   "id": "numbers-7",
+   "path": "assets/platformer/Mechanics/Numbers_7.gltf",
+   "category": "prop",
+   "bounds": {
+    "min": [
+     -0.38,
+     -0.56,
+     -0.16
+    ],
+    "max": [
+     0.39,
+     0.56,
+     0.16
+    ]
+   }
+  },
+  {
+   "id": "numbers-8",
+   "path": "assets/platformer/Mechanics/Numbers_8.gltf",
+   "category": "prop",
+   "bounds": {
+    "min": [
+     -0.36,
+     -0.56,
+     -0.2
+    ],
+    "max": [
+     0.37,
+     0.56,
+     0.2
+    ]
+   }
+  },
+  {
+   "id": "numbers-9",
+   "path": "assets/platformer/Mechanics/Numbers_9.gltf",
+   "category": "prop",
+   "bounds": {
+    "min": [
+     -0.39,
+     -0.54,
+     -0.17
+    ],
+    "max": [
+     0.36,
+     0.55,
+     0.17
+    ]
+   }
+  },
+  {
+   "id": "pipe-90",
+   "path": "assets/platformer/Mechanics/Pipe_90.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -0.87,
+     -1.0,
+     -0.87
+    ],
+    "max": [
+     1.0,
+     0.87,
+     0.87
+    ]
+   }
+  },
+  {
+   "id": "pipe-end",
+   "path": "assets/platformer/Mechanics/Pipe_End.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.09,
+     -1.0,
+     -1.09
+    ],
+    "max": [
+     1.09,
+     1.22,
+     1.09
+    ]
+   }
+  },
+  {
+   "id": "pipe-straight",
+   "path": "assets/platformer/Mechanics/Pipe_Straight.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.04,
+     -1.0,
+     -1.04
+    ],
+    "max": [
+     1.04,
+     1.0,
+     1.04
+    ]
+   }
+  },
+  {
+   "id": "pipe-t",
+   "path": "assets/platformer/Mechanics/Pipe_T.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -0.87,
+     -1.0,
+     -0.87
+    ],
+    "max": [
+     1.0,
+     1.0,
+     0.87
+    ]
+   }
+  },
+  {
+   "id": "plant-large",
+   "path": "assets/platformer/Mechanics/Plant_Large.gltf",
+   "category": "prop",
+   "bounds": {
+    "min": [
+     -0.85,
+     0.0,
+     -0.85
+    ],
+    "max": [
+     0.85,
+     0.39,
+     0.85
+    ]
+   }
+  },
+  {
+   "id": "plant-small",
+   "path": "assets/platformer/Mechanics/Plant_Small.gltf",
+   "category": "prop",
+   "bounds": {
+    "min": [
+     -0.51,
+     0.0,
+     -0.52
+    ],
+    "max": [
+     0.51,
+     0.29,
+     0.52
+    ]
+   }
+  },
+  {
+   "id": "spikes",
+   "path": "assets/platformer/Mechanics/Spikes.gltf",
+   "category": "hazard",
+   "bounds": {
+    "min": [
+     -0.95,
+     0.0,
+     -0.97
+    ],
+    "max": [
+     1.0,
+     3.4,
+     0.86
+    ]
+   }
+  },
+  {
+   "id": "spikyball",
+   "path": "assets/platformer/Mechanics/SpikyBall.gltf",
+   "category": "hazard",
+   "bounds": {
+    "min": [
+     -0.59,
+     -0.6,
+     -0.59
+    ],
+    "max": [
+     0.59,
+     0.6,
+     0.59
+    ]
+   }
+  },
+  {
+   "id": "stairs",
+   "path": "assets/platformer/Mechanics/Stairs.gltf",
+   "category": "mechanism",
+   "bounds": {
+    "min": [
+     -0.88,
+     -1.0,
+     -0.13
+    ],
+    "max": [
+     0.88,
+     1.0,
+     0.13
+    ]
+   }
+  },
+  {
+   "id": "stairs-modular-end",
+   "path": "assets/platformer/Mechanics/Stairs_Modular_End.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.02,
+     -0.1,
+     -1.28
+    ],
+    "max": [
+     1.24,
+     2.32,
+     1.28
+    ]
+   }
+  },
+  {
+   "id": "stairs-modular-middle",
+   "path": "assets/platformer/Mechanics/Stairs_Modular_Middle.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.02,
+     -0.1,
+     -1.28
+    ],
+    "max": [
+     1.24,
+     2.34,
+     1.28
+    ]
+   }
+  },
+  {
+   "id": "stairs-modular-start",
+   "path": "assets/platformer/Mechanics/Stairs_Modular_Start.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.0,
+     -0.09,
+     -1.28
+    ],
+    "max": [
+     1.24,
+     2.34,
+     1.28
+    ]
+   }
+  },
+  {
+   "id": "stairs-small",
+   "path": "assets/platformer/Mechanics/Stairs_Small.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.0,
+     -0.09,
+     -1.28
+    ],
+    "max": [
+     0.64,
+     2.14,
+     1.28
+    ]
+   }
+  },
+  {
+   "id": "tower",
+   "path": "assets/platformer/Mechanics/Tower.gltf",
+   "category": "structure",
+   "bounds": {
+    "min": [
+     -4.62,
+     -0.1,
+     -4.82
+    ],
+    "max": [
+     4.81,
+     14.5,
+     4.16
+    ]
+   }
+  },
+  {
+   "id": "coin",
+   "path": "assets/platformer/Pickups/Coin.gltf",
+   "category": "pickup",
+   "bounds": {
+    "min": [
+     -0.96,
+     -0.96,
+     -0.26
+    ],
+    "max": [
+     0.96,
+     0.96,
+     0.26
+    ]
+   }
+  },
+  {
+   "id": "gem-blue",
+   "path": "assets/platformer/Pickups/Gem_Blue.gltf",
+   "category": "pickup",
+   "bounds": {
+    "min": [
+     -0.49,
+     -1.05,
+     -0.35
+    ],
+    "max": [
+     0.49,
+     1.05,
+     0.35
+    ]
+   }
+  },
+  {
+   "id": "gem-green",
+   "path": "assets/platformer/Pickups/Gem_Green.gltf",
+   "category": "pickup",
+   "bounds": {
+    "min": [
+     -0.75,
+     -0.97,
+     -0.75
+    ],
+    "max": [
+     0.75,
+     0.54,
+     0.75
+    ]
+   }
+  },
+  {
+   "id": "gem-pink",
+   "path": "assets/platformer/Pickups/Gem_Pink.gltf",
+   "category": "pickup",
+   "bounds": {
+    "min": [
+     -0.57,
+     -0.97,
+     -0.57
+    ],
+    "max": [
+     0.57,
+     0.97,
+     0.57
+    ]
+   }
+  },
+  {
+   "id": "heart",
+   "path": "assets/platformer/Pickups/Heart.gltf",
+   "category": "pickup",
+   "bounds": {
+    "min": [
+     -0.74,
+     -0.57,
+     -0.38
+    ],
+    "max": [
+     0.74,
+     0.67,
+     0.38
+    ]
+   }
+  },
+  {
+   "id": "heart-half",
+   "path": "assets/platformer/Pickups/Heart_Half.gltf",
+   "category": "pickup",
+   "bounds": {
+    "min": [
+     -0.74,
+     -0.57,
+     -0.38
+    ],
+    "max": [
+     0.0,
+     0.67,
+     0.38
+    ]
+   }
+  },
+  {
+   "id": "heart-outline",
+   "path": "assets/platformer/Pickups/Heart_Outline.gltf",
+   "category": "pickup",
+   "bounds": {
+    "min": [
+     -0.74,
+     -0.57,
+     -0.03
+    ],
+    "max": [
+     0.74,
+     0.67,
+     0.03
+    ]
+   }
+  },
+  {
+   "id": "key",
+   "path": "assets/platformer/Pickups/Key.gltf",
+   "category": "pickup",
+   "bounds": {
+    "min": [
+     -0.49,
+     -0.49,
+     -0.16
+    ],
+    "max": [
+     1.44,
+     0.49,
+     0.16
+    ]
+   }
+  },
+  {
+   "id": "star",
+   "path": "assets/platformer/Pickups/Star.gltf",
+   "category": "pickup",
+   "bounds": {
+    "min": [
+     -0.76,
+     -0.64,
+     -0.34
+    ],
+    "max": [
+     0.76,
+     0.79,
+     0.34
+    ]
+   }
+  },
+  {
+   "id": "star-outline",
+   "path": "assets/platformer/Pickups/Star_Outline.gltf",
+   "category": "pickup",
+   "bounds": {
+    "min": [
+     -0.76,
+     -0.64,
+     -0.03
+    ],
+    "max": [
+     0.76,
+     0.79,
+     0.03
+    ]
+   }
+  },
+  {
+   "id": "thunder",
+   "path": "assets/platformer/Pickups/Thunder.gltf",
+   "category": "pickup",
+   "bounds": {
+    "min": [
+     -0.63,
+     -0.86,
+     -0.18
+    ],
+    "max": [
+     0.54,
+     0.74,
+     0.18
+    ]
+   }
+  },
+  {
+   "id": "cube-dirt-1x1center",
+   "path": "assets/platformer/Platforms/2D/Cube_Dirt_1x1Center.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.0,
+     -1.0,
+     -1.0
+    ],
+    "max": [
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "id": "cube-dirt-1x1end",
+   "path": "assets/platformer/Platforms/2D/Cube_Dirt_1x1End.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.0,
+     -1.0,
+     -1.0
+    ],
+    "max": [
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "id": "cube-grass-1x1center",
+   "path": "assets/platformer/Platforms/2D/Cube_Grass_1x1Center.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.0,
+     -1.0,
+     -1.12
+    ],
+    "max": [
+     1.0,
+     1.0,
+     1.12
+    ]
+   }
+  },
+  {
+   "id": "cube-grass-1x1end",
+   "path": "assets/platformer/Platforms/2D/Cube_Grass_1x1End.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.12,
+     -1.0,
+     -1.12
+    ],
+    "max": [
+     1.0,
+     1.0,
+     1.12
+    ]
+   }
+  },
+  {
+   "id": "cube-dirt-center",
+   "path": "assets/platformer/Platforms/Single-Height/Cube_Dirt_Center.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.0,
+     -1.0,
+     -1.0
+    ],
+    "max": [
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "id": "cube-dirt-corner",
+   "path": "assets/platformer/Platforms/Single-Height/Cube_Dirt_Corner.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.0,
+     -1.0,
+     -1.0
+    ],
+    "max": [
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "id": "cube-dirt-side",
+   "path": "assets/platformer/Platforms/Single-Height/Cube_Dirt_Side.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.0,
+     -1.0,
+     -1.0
+    ],
+    "max": [
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "id": "cube-grass-center",
+   "path": "assets/platformer/Platforms/Single-Height/Cube_Grass_Center.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.0,
+     -1.0,
+     -1.0
+    ],
+    "max": [
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "id": "cube-grass-corner",
+   "path": "assets/platformer/Platforms/Single-Height/Cube_Grass_Corner.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.12,
+     -1.0,
+     -1.0
+    ],
+    "max": [
+     1.0,
+     1.0,
+     1.12
+    ]
+   }
+  },
+  {
+   "id": "cube-grass-side",
+   "path": "assets/platformer/Platforms/Single-Height/Cube_Grass_Side.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.0,
+     -1.0,
+     -1.0
+    ],
+    "max": [
+     1.0,
+     1.0,
+     1.12
+    ]
+   }
+  },
+  {
+   "id": "cube-dirt-center-tall",
+   "path": "assets/platformer/Platforms/3D/Cube_Dirt_Center_Tall.gltf",
+   "bufferPath": "assets/platformer/Platforms/3D/Cube_Dirt_Center_Tall.bin",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.0,
+     1.0,
+     -1.0
+    ],
+    "max": [
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "id": "cube-dirt-corner-tall",
+   "path": "assets/platformer/Platforms/3D/Cube_Dirt_Corner_Tall.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.0,
+     -1.0,
+     -1.0
+    ],
+    "max": [
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "id": "cube-dirt-side-tall",
+   "path": "assets/platformer/Platforms/3D/Cube_Dirt_Side_Tall.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.0,
+     -1.0,
+     -1.0
+    ],
+    "max": [
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "id": "cube-grass-bottom-tall",
+   "path": "assets/platformer/Platforms/3D/Cube_Grass_Bottom_Tall.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.0,
+     -1.0,
+     -1.0
+    ],
+    "max": [
+     1.0,
+     -1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "id": "cube-grass-center-tall",
+   "path": "assets/platformer/Platforms/3D/Cube_Grass_Center_Tall.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.0,
+     1.0,
+     -1.0
+    ],
+    "max": [
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "id": "cube-grass-cornerbottom-tall",
+   "path": "assets/platformer/Platforms/3D/Cube_Grass_CornerBottom_Tall.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.0,
+     -1.0,
+     -1.0
+    ],
+    "max": [
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "id": "cube-grass-cornercenter-tall",
+   "path": "assets/platformer/Platforms/3D/Cube_Grass_CornerCenter_Tall.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.0,
+     -1.0,
+     -1.0
+    ],
+    "max": [
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "id": "cube-grass-corner-tall",
+   "path": "assets/platformer/Platforms/3D/Cube_Grass_Corner_Tall.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.12,
+     -1.0,
+     -1.0
+    ],
+    "max": [
+     1.0,
+     1.0,
+     1.12
+    ]
+   }
+  },
+  {
+   "id": "cube-grass-sidebottom-tall",
+   "path": "assets/platformer/Platforms/3D/Cube_Grass_SideBottom_Tall.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.0,
+     -1.0,
+     -1.0
+    ],
+    "max": [
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "id": "cube-grass-sidecenter-tall",
+   "path": "assets/platformer/Platforms/3D/Cube_Grass_SideCenter_Tall.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.0,
+     -1.0,
+     1.0
+    ],
+    "max": [
+     1.0,
+     1.0,
+     1.0
+    ]
+   }
+  },
+  {
+   "id": "cube-grass-side-tall",
+   "path": "assets/platformer/Platforms/3D/Cube_Grass_Side_Tall.gltf",
+   "category": "platform",
+   "bounds": {
+    "min": [
+     -1.0,
+     -1.0,
+     -1.0
+    ],
+    "max": [
+     1.0,
+     1.0,
+     1.12
+    ]
+   }
+  }
+ ],
+ "licenseEvidence": {
+  "path": "assets/platformer/License.txt",
+  "license": "CC0-1.0",
+  "sourcePack": "Ultimate Platformer Pack by Quaternius (Platformer Game Kit - Dec 2021)"
+ },
+ "provenance": {
+  "three": {
+   "vendor/three/addons/loaders/GLTFLoader.js": {
+    "sourceUrl": "https://raw.githubusercontent.com/mrdoob/three.js/r185/examples/jsm/loaders/GLTFLoader.js",
+    "sha256": "97642d720f16cc9a0c9844934198e4d0c023bea8e89576d0f7545d03b2d103d2"
+   },
+   "vendor/three/addons/utils/SkeletonUtils.js": {
+    "sourceUrl": "https://raw.githubusercontent.com/mrdoob/three.js/r185/examples/jsm/utils/SkeletonUtils.js",
+    "sha256": "b1632a703206c3d830de9fcbe515696770d04b71a15ee6b50afa6d2c3298c86f"
+   }
+  }
+ },
+ "vendor": {
+  "threeRevision": "r185",
+  "commonRuntimeDependencies": [
+   "vendor/three/addons/utils/BufferGeometryUtils.js"
+  ]
+ }
+}

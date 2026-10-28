@@ -234,6 +234,14 @@ const TEMPLATE_SEED_DIRECTORIES: Readonly<Record<string, string | undefined>> =
       "cube-world",
       "seed"
     ),
+    "platformer@1": path.join(
+      process.cwd(),
+      "lib",
+      "games",
+      "templates",
+      "platformer",
+      "seed"
+    ),
   }
 
 function templateKey(templateId: string, templateVersion: number): string {
