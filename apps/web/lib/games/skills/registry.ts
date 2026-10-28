@@ -1,5 +1,6 @@
 import type { RoleId } from "@/lib/games/harness/roles"
 
+import { engine2dSkill } from "./engine-2d"
 import { engineAudioSkill } from "./engine-audio"
 import { engineCoreSkill } from "./engine-core"
 import { engineFeedbackSkill } from "./engine-feedback"
@@ -30,6 +31,7 @@ export type SkillName =
   | "engine-audio"
   | "engine-systems"
   | "engine-reference"
+  | "engine-2d"
 
 /**
  * A registry entry (agent-skills: Registry Entry Shape). `description` and
@@ -53,6 +55,7 @@ export const SKILLS: Record<SkillName, Skill> = {
   "engine-audio": engineAudioSkill,
   "engine-systems": engineSystemsSkill,
   "engine-reference": engineReferenceSkill,
+  "engine-2d": engine2dSkill,
 }
 
 export const ALL_SKILL_NAMES: SkillName[] = Object.keys(
