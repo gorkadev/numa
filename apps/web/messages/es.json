@@ -346,6 +346,10 @@
       "tiny-swords": {
         "label": "Tiny Swords",
         "tagline": "Empieza con un kit de reino 2D en pixel art."
+      },
+      "legacy-fantasy": {
+        "label": "Legacy Fantasy",
+        "tagline": "Empieza con un kit de plataformas 2D en un bosque, en vista lateral."
       }
     },
     "startDictation": "Iniciar dictado",

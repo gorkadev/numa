@@ -1,0 +1,1097 @@
+{
+  "version": 1,
+  "files": {
+    "assets/legacy-fantasy/LICENSE.txt": {
+      "sha256": "4ff2c83f3c1541b198b9966aa76a92a7b475e5797ccf239bec4fc8e4785cb7fe",
+      "size": 619
+    },
+    "assets/legacy-fantasy/backgrounds/forest-dark.png": {
+      "sha256": "94761e906e8d2205024698c24939a200b4ec06daee736424f35c3824dfab5374",
+      "size": 10849
+    },
+    "assets/legacy-fantasy/backgrounds/forest-light.png": {
+      "sha256": "2e78ecc751a0391318641f9a4a7f7b719324c4ddac215c4d7640483f7ce70b34",
+      "size": 9106
+    },
+    "assets/legacy-fantasy/backgrounds/forest-strip-dark.png": {
+      "sha256": "ecaabc947a57e76028ead4b0069127a1846a74a84841ea6898877bedda1e4e85",
+      "size": 3309
+    },
+    "assets/legacy-fantasy/backgrounds/forest-strip-light.png": {
+      "sha256": "ee1e248dae9cfa088147d0862f3d23179e8f4ca809124127438ebd04257aa25d",
+      "size": 2588
+    },
+    "assets/legacy-fantasy/backgrounds/sky.png": {
+      "sha256": "0f3215506ddb7d610815a1bb6c3c356f3f2db50d202ad65690369382d555dcd9",
+      "size": 5085
+    },
+    "assets/legacy-fantasy/buildings/bench.png": {
+      "sha256": "7c520dbc606f6811da170e04de54efae223d3fbdc67dfa3113d9ac65e307efce",
+      "size": 228
+    },
+    "assets/legacy-fantasy/buildings/bucket.png": {
+      "sha256": "3700343012120d6ed173c7cfebe172cc5bb3d19a953f22e123d8cbcb8be827b6",
+      "size": 337
+    },
+    "assets/legacy-fantasy/buildings/chair.png": {
+      "sha256": "12dfa5378b0cb167c0720047efc404bf6a249ac700fc6be2a9957c7c22b73b2a",
+      "size": 237
+    },
+    "assets/legacy-fantasy/buildings/door.png": {
+      "sha256": "7d85c7a61a8e87f9abba7d0418d9403b5612036aebbceedd9e94f85d27a9c75f",
+      "size": 665
+    },
+    "assets/legacy-fantasy/buildings/fence-post-1.png": {
+      "sha256": "21cad4575d2e8d623c2e61551d9b1a5b9e20cf06134a6ee62f2e20762cac3a30",
+      "size": 111
+    },
+    "assets/legacy-fantasy/buildings/fence-post-2.png": {
+      "sha256": "ff08c178b6e630a2bc5a293d7d8e2a13b11054f6d50c3afb453294f975cbb5c3",
+      "size": 302
+    },
+    "assets/legacy-fantasy/buildings/fence.png": {
+      "sha256": "ec7c3337bb2b400759c0ae000f335e92697e3664c03c6c0e8ee72273f59d9cc8",
+      "size": 481
+    },
+    "assets/legacy-fantasy/buildings/gate.png": {
+      "sha256": "c93da672e6bd7b86fb4062d3a4fcd356ebad4ab549c7e1deb051e0bfc786ec23",
+      "size": 688
+    },
+    "assets/legacy-fantasy/buildings/log-pile.png": {
+      "sha256": "99dd8f2ecc0b900dd78c1e3cdf3cae02232c2bd0bfa5ff406a9fe0bc46d3fa71",
+      "size": 410
+    },
+    "assets/legacy-fantasy/buildings/mine-entrance.png": {
+      "sha256": "efb29f1adf3f91755bf5f23c911f78c0a7af5a3f50c2f7a120a52df8e1b597a2",
+      "size": 5163
+    },
+    "assets/legacy-fantasy/buildings/window-frame.png": {
+      "sha256": "e64bf8dee0a9c702eb7e361c782fa335ad308f55dc65e4cbce0bfc16fb90c8cf",
+      "size": 955
+    },
+    "assets/legacy-fantasy/buildings/window-lattice.png": {
+      "sha256": "5defe64d1b784b66b0e8242154e3c63da8761ef34c33cff4bc175bbd48a30227",
+      "size": 493
+    },
+    "assets/legacy-fantasy/buildings/window-small.png": {
+      "sha256": "81f044952cf808528ed4f3f4981a9dcc75909e79767f1a007eba982732d1f024",
+      "size": 475
+    },
+    "assets/legacy-fantasy/buildings/wooden-shelf.png": {
+      "sha256": "f5c206039ef5f12b55e08acc4c6f6cca236bedf4913b6c38e142714cd3e3ac68",
+      "size": 597
+    },
+    "assets/legacy-fantasy/character/attack.png": {
+      "sha256": "7476ba076ab74041e94fc802847782117052b2d13431cc66109dfc4a9973fba2",
+      "size": 4653
+    },
+    "assets/legacy-fantasy/character/dead.png": {
+      "sha256": "6cda94cc2466861710d389adbfb3fceb7a57bdf50e3c1cd7300a10c2150feb66",
+      "size": 4528
+    },
+    "assets/legacy-fantasy/character/idle.png": {
+      "sha256": "1f59529ef24b1e2bd76fe3080505347f70a3d8a4239573be752fb7b98b5e0908",
+      "size": 2004
+    },
+    "assets/legacy-fantasy/character/jump-air.png": {
+      "sha256": "c5a6d838ff7d4130eb3bbdaff85b4ec8308a269536798fbdd4fd0bdcfadb271c",
+      "size": 5213
+    },
+    "assets/legacy-fantasy/character/jump-end.png": {
+      "sha256": "3272504495b7b8e830b4d13ac712cd137ca93ac0bd428aa735077113a21726d0",
+      "size": 2801
+    },
+    "assets/legacy-fantasy/character/jump-start.png": {
+      "sha256": "e5e29913496b47a29e03e562266278ee0400660861cae947d4e39087408b7367",
+      "size": 3333
+    },
+    "assets/legacy-fantasy/character/jump.png": {
+      "sha256": "7ff96b76c519719e738901b32e0f59c3e1994c9fc35854881fcc696c91cad710",
+      "size": 9656
+    },
+    "assets/legacy-fantasy/character/run.png": {
+      "sha256": "c7f839c21c5fe57d2a2409ec22272e54e62464a76965af920645f3c208936407",
+      "size": 4040
+    },
+    "assets/legacy-fantasy/interior/cage.png": {
+      "sha256": "93efdd55c91de4f95e5f158f3b9f8b4051dd1fbe9ed544a9518fcf215eb83132",
+      "size": 425
+    },
+    "assets/legacy-fantasy/interior/chest-iron-closed.png": {
+      "sha256": "ab6ea199482cb042a2eb9e65f9ef58bc19a7c48be98350b64b7aad204b79f006",
+      "size": 472
+    },
+    "assets/legacy-fantasy/interior/chest-iron-open.png": {
+      "sha256": "db7f7f88006187688eec0cf68b20922636d8aa7e52ce2e1aa47b1070e39d33f7",
+      "size": 640
+    },
+    "assets/legacy-fantasy/interior/crate-large.png": {
+      "sha256": "52657d4ec192e9dba408883c46ac4677dbca75ba634fab35b317c229d1c50c55",
+      "size": 914
+    },
+    "assets/legacy-fantasy/interior/crate-wide.png": {
+      "sha256": "99a16ee812cd205b527af28d43264a1c296aad0e1678557c6a2a65b634dafae8",
+      "size": 380
+    },
+    "assets/legacy-fantasy/interior/crate.png": {
+      "sha256": "51eb3283a642dc8f302f1c7711c1b73f2dbd2d3813309d9c72ab7abed93cf712",
+      "size": 436
+    },
+    "assets/legacy-fantasy/interior/door-boarded.png": {
+      "sha256": "a5dabfa90864935a8d4a77479a1834d40f0de46a7dc179e1b1ba48d055158fef",
+      "size": 618
+    },
+    "assets/legacy-fantasy/interior/door-tall.png": {
+      "sha256": "655764b2dc43f22afa0863a5439714ea7321e9f47098a4c60dd52bb41943b391",
+      "size": 501
+    },
+    "assets/legacy-fantasy/items/chest-closed.png": {
+      "sha256": "8376c2223282a61984cb2e691ed9d705ae63609957680a7ded9823b6e90d081b",
+      "size": 640
+    },
+    "assets/legacy-fantasy/items/chest-open.png": {
+      "sha256": "20e5ec41941cd82e5e1f6a5f6e56b0c816e8def7b592828aa036f38c391043fe",
+      "size": 441
+    },
+    "assets/legacy-fantasy/items/coin.png": {
+      "sha256": "8810e9d2ae916574f78af22ad88850d7cea3f0c053b6027f823561af29bbc7cb",
+      "size": 162
+    },
+    "assets/legacy-fantasy/items/gem-blue.png": {
+      "sha256": "91f648785d11a42f101f530f52841f4bab82da4a8b8fc3d0d519ffeaa4b9a467",
+      "size": 207
+    },
+    "assets/legacy-fantasy/items/honey-chest-open.png": {
+      "sha256": "daa3f2e27a26f39d9a915053f6b50799f239c87a8183b2cfb42602175675178c",
+      "size": 361
+    },
+    "assets/legacy-fantasy/items/honey-chest.png": {
+      "sha256": "6f07b4ddace9a56788e92a1b89a55e0fa34ada4b4ad5a336351876afb1f66311",
+      "size": 446
+    },
+    "assets/legacy-fantasy/items/honey-chunk.png": {
+      "sha256": "5fe85543d4b118594b99376653b341965c933068dfda7024943689cda05756e1",
+      "size": 389
+    },
+    "assets/legacy-fantasy/items/honey-staff.png": {
+      "sha256": "651b02903e1ac5a5313720d5dff40325425c7a75fe4b5719fa77fa9f715eb6b2",
+      "size": 780
+    },
+    "assets/legacy-fantasy/items/honey-torch.png": {
+      "sha256": "4d43fb135b6c129ea95fc4200cd4a54b61a159fb4ffd1cd4f30521291570f55d",
+      "size": 499
+    },
+    "assets/legacy-fantasy/items/key.png": {
+      "sha256": "0c04bf5b49651159ca6ccb2efac4e73642ff6dec0af287eea60ce3790da261c5",
+      "size": 250
+    },
+    "assets/legacy-fantasy/items/potion-large-1.png": {
+      "sha256": "424365a87d10008c8c04c1f72aeb144b813ea17d5c45bdf361e0be763a6c9cf1",
+      "size": 337
+    },
+    "assets/legacy-fantasy/items/potion-large-2.png": {
+      "sha256": "b2bb6cdfca33a05c15bd47b6f0a5c84cab6595b3424dc73083e4efd6c781f4d8",
+      "size": 359
+    },
+    "assets/legacy-fantasy/items/potion-large-3.png": {
+      "sha256": "f48fdb849574c48fa432ae9266b3fb2ddd64b07ae5401497d687a8c566d05558",
+      "size": 362
+    },
+    "assets/legacy-fantasy/items/potion-large-4.png": {
+      "sha256": "d1d58b892286875bd464d0dfe06bcd1c0839a15c2209071ce752667dd4a4758d",
+      "size": 331
+    },
+    "assets/legacy-fantasy/items/potion-large-5.png": {
+      "sha256": "5d6cdf7abcf9f66029524df00f5373f340827f3d428d5c42e5761ff312359bd6",
+      "size": 300
+    },
+    "assets/legacy-fantasy/items/potion-medium-1.png": {
+      "sha256": "34f76bda801e8645285949d8a4cffd9e42605c17daeb554b87b4e9231449e9dd",
+      "size": 283
+    },
+    "assets/legacy-fantasy/items/potion-medium-2.png": {
+      "sha256": "2166d41577add3fd39d64104fb6cfc6144c176b065da040719fcf3bb4f68eadd",
+      "size": 287
+    },
+    "assets/legacy-fantasy/items/potion-medium-3.png": {
+      "sha256": "b412ece1a45077bef3f23092f88e98d440b8dd78b8b2c137dfdcccad8fb7182d",
+      "size": 311
+    },
+    "assets/legacy-fantasy/items/potion-medium-4.png": {
+      "sha256": "b67595d27c23c2ca7162725cc688981b4b42181553d106fc97400b3c2e767928",
+      "size": 276
+    },
+    "assets/legacy-fantasy/items/potion-medium-5.png": {
+      "sha256": "187e2b26da16fef6879f8f8bbe4b3860299e23aa263859c1edb247216fcfdf50",
+      "size": 222
+    },
+    "assets/legacy-fantasy/items/potion-small-1.png": {
+      "sha256": "adc96f00309afc98ff2735f6d0655b22a842188e9a071c76b43d4456fa94f36c",
+      "size": 224
+    },
+    "assets/legacy-fantasy/items/potion-small-2.png": {
+      "sha256": "a9e2c5d1d3e06a10ae3fb58dc69c8960e7dd8d37b181cf7534bbb8350d90f1a8",
+      "size": 225
+    },
+    "assets/legacy-fantasy/items/potion-small-3.png": {
+      "sha256": "73a04d98c9aa1dac4bd2df8142397bdab0e162c926090cc41713a2f3a05a0f5e",
+      "size": 226
+    },
+    "assets/legacy-fantasy/items/potion-small-4.png": {
+      "sha256": "b575d084bb1884507f1b383a445593044ed8fccac1894a371501d68f15edc48c",
+      "size": 208
+    },
+    "assets/legacy-fantasy/items/potion-small-5.png": {
+      "sha256": "38590391e88a2215f04b0b8b3ea6c07c8d5faa1368cecd8f93f4025bc3ef9fc1",
+      "size": 168
+    },
+    "assets/legacy-fantasy/mobs/bee/attack.png": {
+      "sha256": "0a6834d911da290ea67de2c72323ed956f4e1d7bff9e644334a3bf8317cf838c",
+      "size": 2500
+    },
+    "assets/legacy-fantasy/mobs/bee/fly.png": {
+      "sha256": "a47002ad0a8e17270bf5bc3c54907b7db33c9e9339cf0b14fa8e422af8d68c19",
+      "size": 1906
+    },
+    "assets/legacy-fantasy/mobs/bee/hit.png": {
+      "sha256": "a9441e28b1dced1a91e5572e7a12d24d5a5c11cc3eb834ac6dfa508538b66264",
+      "size": 2302
+    },
+    "assets/legacy-fantasy/mobs/boar-black/hit.png": {
+      "sha256": "4854c77553909461dc4cecfa9c4cca83e3c3d1c2fbfa10ae37ce511e389ad8ba",
+      "size": 1219
+    },
+    "assets/legacy-fantasy/mobs/boar-black/idle.png": {
+      "sha256": "bc12b4c2151919e66c20002c763e7e6656346fc5dcdbedca46f66e25526094bb",
+      "size": 1467
+    },
+    "assets/legacy-fantasy/mobs/boar-black/run.png": {
+      "sha256": "999136e1aa18bef255874116c9c9a68291cd04ed863bcf6a3e10661cb26c3d14",
+      "size": 2464
+    },
+    "assets/legacy-fantasy/mobs/boar-black/walk.png": {
+      "sha256": "d4882a297b21cf8a2db687e5ea759394a1c3d19946a41ee6e6ce047e63c56297",
+      "size": 2235
+    },
+    "assets/legacy-fantasy/mobs/boar-white/hit.png": {
+      "sha256": "e8c85ca9f7d5952321ff8668e0037772afb9c8fd7aa3669d78c0ac30c5b416dd",
+      "size": 1255
+    },
+    "assets/legacy-fantasy/mobs/boar-white/idle.png": {
+      "sha256": "7aa07a121e17084f1d43d184053123ee8ccfa67e6104b82ee0a34d4f16443c78",
+      "size": 1487
+    },
+    "assets/legacy-fantasy/mobs/boar-white/run.png": {
+      "sha256": "9512f6a72fdbf6d086d1762eda80993efbdb386c3a1e60ebb39b90768d6efcff",
+      "size": 2706
+    },
+    "assets/legacy-fantasy/mobs/boar-white/walk.png": {
+      "sha256": "3f79458df397426a9219f5fd76e6dd9a507612a2dfaf60bde77e0dce208af8be",
+      "size": 2241
+    },
+    "assets/legacy-fantasy/mobs/boar/hit.png": {
+      "sha256": "0de3f99d0a1cb3b03f35c2a18b4293f57ea40147e4f0e52eff2da3b58c399259",
+      "size": 1245
+    },
+    "assets/legacy-fantasy/mobs/boar/idle.png": {
+      "sha256": "afb92554854885b7cff5c3a3841f51a7a30b8d7cd7de073bd95796cc47c38cba",
+      "size": 1465
+    },
+    "assets/legacy-fantasy/mobs/boar/run.png": {
+      "sha256": "522e5961613e240475f08860250a802ddee4bc98f2ab91ff077fed22ee3e1352",
+      "size": 2687
+    },
+    "assets/legacy-fantasy/mobs/boar/walk.png": {
+      "sha256": "06b842714961393bbe3a11eb781213aa49b611014e5c64d08d387ab0098b42f0",
+      "size": 2167
+    },
+    "assets/legacy-fantasy/mobs/snail/dead.png": {
+      "sha256": "42636592890ef9d12006107ce14dbe644947ecac5ed69ad423f1db8c424d5c09",
+      "size": 2032
+    },
+    "assets/legacy-fantasy/mobs/snail/hide.png": {
+      "sha256": "0d22fc3b15280dffbba3be62d6909a9328d6a3348b912b3b7d557db80a534f4f",
+      "size": 2958
+    },
+    "assets/legacy-fantasy/mobs/snail/walk.png": {
+      "sha256": "3df399a04bb495ba46db713d2426cb4316942e3165aca55836548d803171ebd4",
+      "size": 2983
+    },
+    "assets/legacy-fantasy/props/bowl-green.png": {
+      "sha256": "8085f7a43a21d56a0853d8a2840eb7e70eb36b56f670e0bb5c5b9d8588fc9dc6",
+      "size": 228
+    },
+    "assets/legacy-fantasy/props/bowl-red.png": {
+      "sha256": "ff5661fd6c20d2fbad774f289aab80e40d3b9bd1439e437a9ed257207c78ceab",
+      "size": 230
+    },
+    "assets/legacy-fantasy/props/bush-1.png": {
+      "sha256": "ce8bc07bb66e499ad3e1eac5c321bc1b7f58ca49e0cdf7dd3f604e41f789be49",
+      "size": 2296
+    },
+    "assets/legacy-fantasy/props/bush-2.png": {
+      "sha256": "97db76eb4af838c8645380c5362763629521ceb38ca59eceaff62639335a97cd",
+      "size": 2290
+    },
+    "assets/legacy-fantasy/props/bush-3.png": {
+      "sha256": "9c2fdb7a102af936e7075944f1a31ced19951830e6d6af6284606ee4d28186ec",
+      "size": 2158
+    },
+    "assets/legacy-fantasy/props/bush-4.png": {
+      "sha256": "c28d166afd0aaf3f3d784dffe917143c1b6eb2dbecdbd0406f8f82f2f9556f5f",
+      "size": 1987
+    },
+    "assets/legacy-fantasy/props/bush-5.png": {
+      "sha256": "b9bf5e98232409ca82aab5567d42eb5d29e4e6708a52dee8216dd980ca17ca65",
+      "size": 1626
+    },
+    "assets/legacy-fantasy/props/bush-round.png": {
+      "sha256": "b7b8d863ec1bbeff48a207828dcc309954fa76aba9f85a556fb767d38152bc00",
+      "size": 1467
+    },
+    "assets/legacy-fantasy/props/canopy-1.png": {
+      "sha256": "65a688fc1dfbdad162db37b2f9a9fbcac209029faff9a5d49d6a63e9defa29ef",
+      "size": 4333
+    },
+    "assets/legacy-fantasy/props/canopy-2.png": {
+      "sha256": "bab93c5bf544def14e2267289ce7fcc30be4112fe0e3bf8e104afd8da36f5725",
+      "size": 4084
+    },
+    "assets/legacy-fantasy/props/canopy-3.png": {
+      "sha256": "c79311eb7ee9b22ad9dbfee69732401bea6698a4f27b1c7982de3163a6bf8d20",
+      "size": 3744
+    },
+    "assets/legacy-fantasy/props/canopy-4.png": {
+      "sha256": "ed3f48edbb07ece165aabe8d66d9a8fd44e7005b4931fc542c75d8241aa9e561",
+      "size": 3064
+    },
+    "assets/legacy-fantasy/props/cattail-1.png": {
+      "sha256": "51a47347cb2813905a651df954df1415cdb6d34a755986694887fd97988ac157",
+      "size": 390
+    },
+    "assets/legacy-fantasy/props/cattail-2.png": {
+      "sha256": "7f7731c5c3169ec893dfaafcf849bea1c447acfbbb34b04b9f18ae42cce49a2d",
+      "size": 429
+    },
+    "assets/legacy-fantasy/props/fern.png": {
+      "sha256": "790f1044a39fee09dc5193aad1b1bc73efff54759af5c6ab9f3fcf4611618205",
+      "size": 637
+    },
+    "assets/legacy-fantasy/props/flower-blue.png": {
+      "sha256": "095c90cdfc6c414030abdaca6c4300f250fdf72bebd2730cc8f77b9d2e3a9baf",
+      "size": 372
+    },
+    "assets/legacy-fantasy/props/hive.png": {
+      "sha256": "6caf559973c36ca60216870235893e90e9498800befd1cbff5b34c58d809fc79",
+      "size": 1183
+    },
+    "assets/legacy-fantasy/props/lavender.png": {
+      "sha256": "1f7d2e290a10c01fa9c3136cdf7c9be6fd5a3d7fdf7b0b2c3fd1834a0f80ff2e",
+      "size": 583
+    },
+    "assets/legacy-fantasy/props/mossy-rock-1.png": {
+      "sha256": "8b0adb4758b4ea3d1cd1ea4bb499cf8b2d4684c7ab822e2ac43fb511dddd4555",
+      "size": 1314
+    },
+    "assets/legacy-fantasy/props/mossy-rock-10.png": {
+      "sha256": "bd90d2de539361f860ddaaccb97515e12bd6d662745b8a68385a666ee9984b9c",
+      "size": 667
+    },
+    "assets/legacy-fantasy/props/mossy-rock-11.png": {
+      "sha256": "8334ac32d056bd6e601cf6227968463c734288841689bc91dce8d30859954659",
+      "size": 973
+    },
+    "assets/legacy-fantasy/props/mossy-rock-12.png": {
+      "sha256": "db09bbb3cae420001297b243030aa21214c8c8ef9d1099d234359de739215384",
+      "size": 1305
+    },
+    "assets/legacy-fantasy/props/mossy-rock-13.png": {
+      "sha256": "69ba623927e108175f38181a43756144c7ff7362f4fb9f08d7f13a3c40c91edd",
+      "size": 873
+    },
+    "assets/legacy-fantasy/props/mossy-rock-14.png": {
+      "sha256": "816985c5bb6500503a458dafd3a3f1a7a726fa6771baa4593ed5a12e9b95ded2",
+      "size": 409
+    },
+    "assets/legacy-fantasy/props/mossy-rock-15.png": {
+      "sha256": "c026d5d891693389a0077b0594e3e4cbce520dc8a132b1101990446a2c4ced84",
+      "size": 491
+    },
+    "assets/legacy-fantasy/props/mossy-rock-16.png": {
+      "sha256": "1dcb3a96db013206ef82c4612f02bb69ddf9a9bb701ffbec7ec910a3b97264da",
+      "size": 779
+    },
+    "assets/legacy-fantasy/props/mossy-rock-2.png": {
+      "sha256": "ebef28c74795632d98fee141562cabd34dc22955622b9b47f979c9f0256dba54",
+      "size": 521
+    },
+    "assets/legacy-fantasy/props/mossy-rock-3.png": {
+      "sha256": "ba49d7809c72b1a1010ee630088182154540a1069ea60ffdb4777ec6f7132b51",
+      "size": 529
+    },
+    "assets/legacy-fantasy/props/mossy-rock-4.png": {
+      "sha256": "8f407cb8118ac6f12a41c18797fcd25e851329ddfe984c504a3f38c47257922a",
+      "size": 556
+    },
+    "assets/legacy-fantasy/props/mossy-rock-5.png": {
+      "sha256": "3bab65c2c900324cdcc5c4e94040e2f8bb180e9cdb105f0d6240d7f4227f9e5f",
+      "size": 384
+    },
+    "assets/legacy-fantasy/props/mossy-rock-6.png": {
+      "sha256": "2a0c0c37190d98db532ca8634ab31e26611745cee10c202715f3c699cba519c7",
+      "size": 296
+    },
+    "assets/legacy-fantasy/props/mossy-rock-7.png": {
+      "sha256": "26a76c090e4eb70f90f7beecb28b4bef2fb181e851ec9a3808564af4845f143a",
+      "size": 219
+    },
+    "assets/legacy-fantasy/props/mossy-rock-8.png": {
+      "sha256": "5741fd9ca02a9cd8a36866df18e4b5ca9a49f3c5040f9d62f7f47b9108dbb9ef",
+      "size": 340
+    },
+    "assets/legacy-fantasy/props/mossy-rock-9.png": {
+      "sha256": "7d799af4c1538d8920393f892ff181501f4c4eb96d7d4eaad94885273fe23c80",
+      "size": 217
+    },
+    "assets/legacy-fantasy/props/mound-1.png": {
+      "sha256": "9a5572eab96155fd413f5dc25f9ec66fab11df9dcad4def1434c094fa7d822e7",
+      "size": 1308
+    },
+    "assets/legacy-fantasy/props/mound-2.png": {
+      "sha256": "8b37d3629aa6ef34badb941d33de457033b72c0e3c724977fea7b091be6c5869",
+      "size": 1006
+    },
+    "assets/legacy-fantasy/props/mound-3.png": {
+      "sha256": "ff44d9c764f271a8dedd513e665aa2cda1cf075c012accce9d7eb17df7e6e9c6",
+      "size": 1378
+    },
+    "assets/legacy-fantasy/props/mushroom-1.png": {
+      "sha256": "85fcd479ac7207a72c184004ecef5cddf60ae89ff014631678f79579f22fd2c6",
+      "size": 358
+    },
+    "assets/legacy-fantasy/props/mushroom-2.png": {
+      "sha256": "7fa60a0eb802bc0c9d7d2e7d48997ebd720fa75b4fcbaf95858648ab190dfcff",
+      "size": 658
+    },
+    "assets/legacy-fantasy/props/mushroom-3.png": {
+      "sha256": "2c403d37f7226ba018b9cf82b9d502b6454ffc249a987aa482a408f69846cbfd",
+      "size": 650
+    },
+    "assets/legacy-fantasy/props/mushroom-4.png": {
+      "sha256": "c5b8ef0c8a7108b42b09d3dd37b29b9d5c02b4cb3bc07b645ef25f38387db6dc",
+      "size": 387
+    },
+    "assets/legacy-fantasy/props/mushroom-5.png": {
+      "sha256": "1a5e68b623bc6b2216fa0d158a6af8be4a1718aaded3ac12cf6888fa5fe98f86",
+      "size": 378
+    },
+    "assets/legacy-fantasy/props/mushroom-6.png": {
+      "sha256": "5fa7a5e81ac215b57bb6c8126522b4bc17d904e5dc22542aece508bd66507749",
+      "size": 255
+    },
+    "assets/legacy-fantasy/props/mushroom-7.png": {
+      "sha256": "41fb4e003f009bb84e8b78cb4b67605e4a283f996821fbfb5dce3759d68bdf32",
+      "size": 298
+    },
+    "assets/legacy-fantasy/props/mushroom-8.png": {
+      "sha256": "3b8dc1f7d385cd2a01050923072550a0013a9e7fa7dd61ef8b499d896e45a135",
+      "size": 302
+    },
+    "assets/legacy-fantasy/props/pot-green.png": {
+      "sha256": "8a8e87aee7cea7c409490a09d25a7792edb9f5c53d4746e5616d7095e4ce642f",
+      "size": 294
+    },
+    "assets/legacy-fantasy/props/pot-red.png": {
+      "sha256": "ab761fdc75ad2de4f22b57b21aaf3f723986f6fa491a4efba03ac4b311561f4c",
+      "size": 263
+    },
+    "assets/legacy-fantasy/props/rock-1.png": {
+      "sha256": "4f96bb2b6b7a2b79237d3f95a3da4b9d78d2ed50353fd5c591af39a1193ffae7",
+      "size": 947
+    },
+    "assets/legacy-fantasy/props/rock-10.png": {
+      "sha256": "c8a1273ecbb3107b13e40a6601ef1fe955a789ca0e417804f7a7cf53cc200f91",
+      "size": 484
+    },
+    "assets/legacy-fantasy/props/rock-11.png": {
+      "sha256": "7a55157df13f37851573fc8e5dfbbea41c92dbe1ecec61884e63f14d354b3492",
+      "size": 674
+    },
+    "assets/legacy-fantasy/props/rock-12.png": {
+      "sha256": "d2d09dc9d668e268beffd9ffb655be863f8bc998d6cda0ca6e8bf4e110bec301",
+      "size": 928
+    },
+    "assets/legacy-fantasy/props/rock-13.png": {
+      "sha256": "ef72ce7395f9b5c5de77013fd8c85ec8eb2b4bcaf4c5f41e61787846c9354029",
+      "size": 665
+    },
+    "assets/legacy-fantasy/props/rock-14.png": {
+      "sha256": "770522c99170ac7da16ff610f2297221a4d4cc1531e3034f217b5edfa29e04ef",
+      "size": 287
+    },
+    "assets/legacy-fantasy/props/rock-15.png": {
+      "sha256": "8a3f2c56238e090636b83d97db78f24e6441b5d83932443c143c0e93b5a89f2c",
+      "size": 431
+    },
+    "assets/legacy-fantasy/props/rock-16.png": {
+      "sha256": "0d8272b259d76846d45d951256f4f5d8ef878ae67e63efadef1a11e744fa0d98",
+      "size": 522
+    },
+    "assets/legacy-fantasy/props/rock-2.png": {
+      "sha256": "c18c04cc40917ff0bda231a59b7757dfba48609895c7b7a5db8025aa9e1b0447",
+      "size": 399
+    },
+    "assets/legacy-fantasy/props/rock-3.png": {
+      "sha256": "2831515fc1e420d9cde5b87818ef8c323ecd69e61de30a20191e8ee8a7cc0f45",
+      "size": 413
+    },
+    "assets/legacy-fantasy/props/rock-4.png": {
+      "sha256": "dd6da1ba80ba2f783a87bb66caa3d1a232e0fdb0876ae494a0575cd6b37bf77c",
+      "size": 398
+    },
+    "assets/legacy-fantasy/props/rock-5.png": {
+      "sha256": "41119bba0ee460ded7f4aa5b091b502c855e3c1d9bd0db445e3428fb1e4ea3c5",
+      "size": 298
+    },
+    "assets/legacy-fantasy/props/rock-6.png": {
+      "sha256": "d2b6586bc4f9f869014347d34a5e5946d62cae780877a3d453cac241519c21f8",
+      "size": 251
+    },
+    "assets/legacy-fantasy/props/rock-7.png": {
+      "sha256": "e96fc5e34b5148aed0a194d2d3ab68136525dc22f96db3d085e66353e0bf8024",
+      "size": 196
+    },
+    "assets/legacy-fantasy/props/rock-8.png": {
+      "sha256": "1f09c5473c082ee0e58ca87215ae29583ebe08fe8b10e13229991b5164a516ae",
+      "size": 286
+    },
+    "assets/legacy-fantasy/props/rock-9.png": {
+      "sha256": "6c1463272f9e0c2aae5f3f7695a69f66f7ba4cffb1229906113057bd4b1a03ef",
+      "size": 206
+    },
+    "assets/legacy-fantasy/props/sprout.png": {
+      "sha256": "4be2e9c024fe2740072672efc012572d21e241e729280a6c46b1862c9bbb9632",
+      "size": 173
+    },
+    "assets/legacy-fantasy/props/stake-1.png": {
+      "sha256": "1cdde169404e9607e4a5bc162b2d6436e942d9222504997ff3e0af41cdf930ec",
+      "size": 199
+    },
+    "assets/legacy-fantasy/props/stake-2.png": {
+      "sha256": "0280f425e3f06f1807c04bdc4a53aaa794d27117a7434bcb2afe5eadb00185b2",
+      "size": 211
+    },
+    "assets/legacy-fantasy/props/stake-3.png": {
+      "sha256": "3253a00fed5f55abfaaf761d6ee82ea21361e021029f9bcbc03572b85ffdfeaa",
+      "size": 185
+    },
+    "assets/legacy-fantasy/props/standing-stone-1.png": {
+      "sha256": "8bd3bc8bfea6f8d3932e7c4c616f4894affb83d225de7373c3fb1376b264f496",
+      "size": 705
+    },
+    "assets/legacy-fantasy/props/standing-stone-10.png": {
+      "sha256": "e7c4560548fce3abc9e562fb3e8fc237b6489653360aa954517865adc512d5ae",
+      "size": 534
+    },
+    "assets/legacy-fantasy/props/standing-stone-2.png": {
+      "sha256": "3474439445c5f2d681a9f4e107310f1377d3cfbeea09f3b3dcdf5f47ccbf20e4",
+      "size": 627
+    },
+    "assets/legacy-fantasy/props/standing-stone-3.png": {
+      "sha256": "ee0fc6f3f18b292fff556ff88e2f3ab30c2ae2f92c4845ba054077da2910dbc9",
+      "size": 385
+    },
+    "assets/legacy-fantasy/props/standing-stone-4.png": {
+      "sha256": "7746f2f19e7a0a0bf79c2a18cde16eecdc68799741747158003e9df8ecdce4c9",
+      "size": 569
+    },
+    "assets/legacy-fantasy/props/standing-stone-5.png": {
+      "sha256": "ce810214db9f6913222aa2bdb944f0e3e6bfc2b9be7771da30fd9ebd420d3052",
+      "size": 315
+    },
+    "assets/legacy-fantasy/props/standing-stone-6.png": {
+      "sha256": "3ecee192548256af6ebdd20907fdf89836cd306b4993497cdb82b0d50986fecd",
+      "size": 378
+    },
+    "assets/legacy-fantasy/props/standing-stone-7.png": {
+      "sha256": "425503ec0f1efe98fa40854a8cdacb86507a3addc0d6115596958387109b3bf3",
+      "size": 555
+    },
+    "assets/legacy-fantasy/props/standing-stone-8.png": {
+      "sha256": "3f7da21175b7b38ba28adddac16c07e701f6d6285e26b3d5b5d66ec82b707386",
+      "size": 276
+    },
+    "assets/legacy-fantasy/props/standing-stone-9.png": {
+      "sha256": "890476dff8b5c1a39ba12c94529311e97036ff4e7feaaae5f7b62163f6c68e90",
+      "size": 545
+    },
+    "assets/legacy-fantasy/props/vase-green.png": {
+      "sha256": "c3cf734b7be23b09d7f5f8b1ea4200425952d365f2cc3b54d2b898db53503daa",
+      "size": 531
+    },
+    "assets/legacy-fantasy/props/vase-red.png": {
+      "sha256": "1b2b6858041aac45aa86257d665ecdc76871e9b50ff76309853b74b73a3ccc5c",
+      "size": 480
+    },
+    "assets/legacy-fantasy/props/vine-flower.png": {
+      "sha256": "c533be8a3881dbba11ed928eb236510c505b709932305c522715316c815b4239",
+      "size": 552
+    },
+    "assets/legacy-fantasy/props/water-lily.png": {
+      "sha256": "13c384d1b5697129e429d340eb72df542a6718f4061901ff4686a7962c265f12",
+      "size": 655
+    },
+    "assets/legacy-fantasy/props/water-plant.png": {
+      "sha256": "0b41148fef67ab5607d71fa1e93bc6c789acdf08aa8d4fd76bc277330051085c",
+      "size": 513
+    },
+    "assets/legacy-fantasy/terrain/branch.png": {
+      "sha256": "37709b9ccb4bd5df233f8d3f23ccad5cdca1ea04460b6b16d49e7d7d510bf0b3",
+      "size": 851
+    },
+    "assets/legacy-fantasy/terrain/bridge-plank.png": {
+      "sha256": "0943977920050336a9810c1f2d1017bd32fd11af91944d1a6b0b7c4828ea976b",
+      "size": 351
+    },
+    "assets/legacy-fantasy/terrain/rope-bridge.png": {
+      "sha256": "154224cc0bb91442b64aedc9d1cba17f927c003a3bd0c8563388dd7f019711ee",
+      "size": 1829
+    },
+    "assets/legacy-fantasy/terrain/stone-ledge.png": {
+      "sha256": "a74dc1bcff8c95b31cb2863673cb5eff97a737f0fae2dfe64ee53cfce5740dfb",
+      "size": 351
+    },
+    "assets/legacy-fantasy/terrain/tiles.png": {
+      "sha256": "77047e90171680e2fdc498b02cd907208b0236f71211fc833f0161491a8a5d25",
+      "size": 60122
+    },
+    "assets/legacy-fantasy/terrain/water.png": {
+      "sha256": "4e3151a0db96c9d52b423d0d00f500a203d9b784a7db50d3f2e4652c1eb5436b",
+      "size": 498
+    },
+    "assets/legacy-fantasy/terrain/waterfall.png": {
+      "sha256": "ae0df21505035a5bc5ee94f7dea88c004a11cc5dd7f408d476d2f53c66f6fb6f",
+      "size": 1067
+    },
+    "assets/legacy-fantasy/trees/dark/silhouette-1.png": {
+      "sha256": "21dbdd6352a4c524d348b293831c436d57c1a9cb4f25d2fe7bc116aa99e526c8",
+      "size": 4066
+    },
+    "assets/legacy-fantasy/trees/dark/silhouette-2.png": {
+      "sha256": "238d9f570102b6cbe4fef2a03457ec10a98d6426a75d2b0306410333924da49c",
+      "size": 4243
+    },
+    "assets/legacy-fantasy/trees/dark/silhouette-3.png": {
+      "sha256": "7f8b4420affcd2f7d4b3745668c0b48ba7f28fc182233c436ec0d38966c23ca5",
+      "size": 2821
+    },
+    "assets/legacy-fantasy/trees/dark/silhouette-4.png": {
+      "sha256": "66b82a2d6c7d7c4ffe4ba12da763a360f39c192d6bcd49b0969ced9c6fd922e5",
+      "size": 2157
+    },
+    "assets/legacy-fantasy/trees/dark/silhouette-5.png": {
+      "sha256": "aa4a942bce307c5f62d7eda5f097c9992e4650b31bc7753245d47a3ef8d25cf0",
+      "size": 1588
+    },
+    "assets/legacy-fantasy/trees/dark/tree-1.png": {
+      "sha256": "f053056106440b9fb33c333bcdbaf19510137d794b844dc456154ff0c2b9b3f6",
+      "size": 7830
+    },
+    "assets/legacy-fantasy/trees/dark/tree-2.png": {
+      "sha256": "51221683d87501d5ccd4cafc315fe8ca324a009012b47b91c2df4461db80e1cc",
+      "size": 8059
+    },
+    "assets/legacy-fantasy/trees/dark/tree-3.png": {
+      "sha256": "4a38cfc1e93d1605ca03d837f08837eaa4aef89bc87dd2f82fda3677e0bd6acf",
+      "size": 5744
+    },
+    "assets/legacy-fantasy/trees/dark/tree-4.png": {
+      "sha256": "6e1f8684ee98fbd6a08fdb0316680cbcc811d2fe59b36865eb0c34e0d74f2473",
+      "size": 4111
+    },
+    "assets/legacy-fantasy/trees/dark/tree-5.png": {
+      "sha256": "6767568be0736382fd1d7beaf8ed3d1594aba6a37a30ff0415008af05bdb1b0b",
+      "size": 3080
+    },
+    "assets/legacy-fantasy/trees/golden/silhouette-1.png": {
+      "sha256": "df2a6ea42364fdf70e7a1ab4a18eb83e61c0ae625c2c87efd21a68bed5b4d92b",
+      "size": 4094
+    },
+    "assets/legacy-fantasy/trees/golden/silhouette-2.png": {
+      "sha256": "e453bc6788a62f2b7b6255957c3f548ee3b464d203fdee2a7519e092251fbe90",
+      "size": 4337
+    },
+    "assets/legacy-fantasy/trees/golden/silhouette-3.png": {
+      "sha256": "bb529a3d832cb5d68efe1b5983155aa492222640b231435070b70ba97488b35a",
+      "size": 2860
+    },
+    "assets/legacy-fantasy/trees/golden/silhouette-4.png": {
+      "sha256": "7fc247fedf2f61039daf0f3998863029776b9831aeda25dccdd855e6fc1b6464",
+      "size": 2195
+    },
+    "assets/legacy-fantasy/trees/golden/silhouette-5.png": {
+      "sha256": "236e88f12c3624c5bbfb9616e11a3758ef5c7a789317bdb14f47625f5b398cb8",
+      "size": 1602
+    },
+    "assets/legacy-fantasy/trees/golden/tree-1.png": {
+      "sha256": "06e75763be73f730448703847c6ee0e021c6c1e14a7fdc61b12f2d5f73eef73c",
+      "size": 9971
+    },
+    "assets/legacy-fantasy/trees/golden/tree-2.png": {
+      "sha256": "f2bf7184038f1a86ffaf427cf851610b92900ff3f9d833afed5dbb6d28d14002",
+      "size": 10050
+    },
+    "assets/legacy-fantasy/trees/golden/tree-3.png": {
+      "sha256": "a897e39f7997188200863c84ee5404df7c340fe76078ea3661e385c48bd311f3",
+      "size": 7049
+    },
+    "assets/legacy-fantasy/trees/golden/tree-4.png": {
+      "sha256": "e175f0d4b84d30452d1deb1a7646254c1dc1de9aba85978c5d0a696347754f0b",
+      "size": 4981
+    },
+    "assets/legacy-fantasy/trees/golden/tree-5.png": {
+      "sha256": "58062821092a74ada7f75f6e8ba870a12233f852465c3522bda4d5349cc6ec32",
+      "size": 3634
+    },
+    "assets/legacy-fantasy/trees/green/silhouette-1.png": {
+      "sha256": "35661719647ef3013d1f5e8d5478f096eb01c52cfd310ba15f4e551973028833",
+      "size": 3925
+    },
+    "assets/legacy-fantasy/trees/green/silhouette-2.png": {
+      "sha256": "aad3196e70fa7b084e64c44404a24e5c39fab13914a9865d5ecba01d6cbcd388",
+      "size": 4112
+    },
+    "assets/legacy-fantasy/trees/green/silhouette-3.png": {
+      "sha256": "6bd6520d4dbf678829b59976271e747eed96504f0a48991fc713ca5b993ff503",
+      "size": 2771
+    },
+    "assets/legacy-fantasy/trees/green/silhouette-4.png": {
+      "sha256": "3b88fdcd2f7ff5458dfbfbc21cd097250aef8a3ea9c4b335000bfa9f1f33d580",
+      "size": 2134
+    },
+    "assets/legacy-fantasy/trees/green/silhouette-5.png": {
+      "sha256": "31dc50e56188fb59ce705a409f49fbd6e93832fcc6389f56c457e60be69866bd",
+      "size": 1551
+    },
+    "assets/legacy-fantasy/trees/green/tree-1.png": {
+      "sha256": "4b8e678fddd95e7b383a1d59fc7fae7a414d7c727d9987a25646e9d3f75482e1",
+      "size": 9341
+    },
+    "assets/legacy-fantasy/trees/green/tree-2.png": {
+      "sha256": "332178a68697152c4f42f544d6cbdd9ca7771d7cd3db5e1a8b560b4a775bbd02",
+      "size": 9351
+    },
+    "assets/legacy-fantasy/trees/green/tree-3.png": {
+      "sha256": "34d0c6e6dfe5be79731b993948daa24992a435c54176e05b80975c0c03a78c35",
+      "size": 6718
+    },
+    "assets/legacy-fantasy/trees/green/tree-4.png": {
+      "sha256": "89a3f815ee9687116d06fd6984a4d2552537176badd717b4e7a28a3d86599df5",
+      "size": 4668
+    },
+    "assets/legacy-fantasy/trees/green/tree-5.png": {
+      "sha256": "5dfb65c327ccf2de775ed301b8f617edbffae0d54cfbe21ec1a78f12b95baa4f",
+      "size": 3408
+    },
+    "assets/legacy-fantasy/trees/red/silhouette-1.png": {
+      "sha256": "3a210e3f82c3a9184a5f41a88fc3c9721c4a98c1205b0a42f332d04d86ab5c00",
+      "size": 4071
+    },
+    "assets/legacy-fantasy/trees/red/silhouette-2.png": {
+      "sha256": "a56aed8dda7704148860a017f86ba8274d734177b2befbde0bc1f37ed6fece05",
+      "size": 4277
+    },
+    "assets/legacy-fantasy/trees/red/silhouette-3.png": {
+      "sha256": "b73fe43909b5fcdf605fa09526c6937bb4b304c85867582df2c4b6487405c8b2",
+      "size": 2851
+    },
+    "assets/legacy-fantasy/trees/red/silhouette-4.png": {
+      "sha256": "2263100de153c9065869621ebbfeb3376fe3cca93d84059cebead6a31819a21b",
+      "size": 2168
+    },
+    "assets/legacy-fantasy/trees/red/silhouette-5.png": {
+      "sha256": "98f7ab5963f341a4e46e9f5c3f39a5e1a657a26c7e81d87d221c16f6d3e35105",
+      "size": 1622
+    },
+    "assets/legacy-fantasy/trees/red/tree-1.png": {
+      "sha256": "4c6c8e523114c75745dd744b1958579a36071206f3f9f15eb9c9ddc256eb67db",
+      "size": 9951
+    },
+    "assets/legacy-fantasy/trees/red/tree-2.png": {
+      "sha256": "2dae06f9a296102b11d4f701dfe84970044198a9bb47dddc28628c0053591c4c",
+      "size": 10032
+    },
+    "assets/legacy-fantasy/trees/red/tree-3.png": {
+      "sha256": "29c4eaa08425ef0264ccb8bb234a26a4a2a569b3c07661b42c3dfc822b990f2d",
+      "size": 7099
+    },
+    "assets/legacy-fantasy/trees/red/tree-4.png": {
+      "sha256": "b50e34fa76f08c8bba185b2d46d66f2844d4177575c7be24d85b4ebcaa55462a",
+      "size": 5015
+    },
+    "assets/legacy-fantasy/trees/red/tree-5.png": {
+      "sha256": "d1fca66208adb321ef6161eba94e857e13674d9b053c7e3b3aba292460253072",
+      "size": 3699
+    },
+    "assets/legacy-fantasy/trees/yellow/silhouette-1.png": {
+      "sha256": "af65f06eab1a343d1fe3041b058a5f3d3fe43193ffdd53f298acb19a00aebaf7",
+      "size": 4048
+    },
+    "assets/legacy-fantasy/trees/yellow/silhouette-2.png": {
+      "sha256": "d5cc3087bed03ada036cd48e2f3a0ddcaddc33ed51c2168932a55f3339850e26",
+      "size": 4253
+    },
+    "assets/legacy-fantasy/trees/yellow/silhouette-3.png": {
+      "sha256": "b6fffdd4ac32e53eacd61ce32141d71d8a99d92af0724a975859c84f3679eda7",
+      "size": 2825
+    },
+    "assets/legacy-fantasy/trees/yellow/silhouette-4.png": {
+      "sha256": "f82332caef5bd6852c645e02721f1d7444e55e5a4d09c93cfc54446a62ca486e",
+      "size": 2170
+    },
+    "assets/legacy-fantasy/trees/yellow/silhouette-5.png": {
+      "sha256": "ce7ce4ff8bf21b6af9be60cde8dc2d9bfd2c9ae90c59531221d4ed17eac62662",
+      "size": 1594
+    },
+    "assets/legacy-fantasy/trees/yellow/tree-1.png": {
+      "sha256": "e35fd3b49553e478b07a02ad8b2351f9a6dadaf43809028f569578356b57f921",
+      "size": 9906
+    },
+    "assets/legacy-fantasy/trees/yellow/tree-2.png": {
+      "sha256": "c732750be0d830ecd70c5d1aed33a59c969fc869eecaf3ee46325ce08b2ce432",
+      "size": 9884
+    },
+    "assets/legacy-fantasy/trees/yellow/tree-3.png": {
+      "sha256": "b3fe6aab20c46df5ebdfca7682161a7de8cb360ef19623ebcc4ef76a2bfde7d4",
+      "size": 7033
+    },
+    "assets/legacy-fantasy/trees/yellow/tree-4.png": {
+      "sha256": "27bafddefcd300ab3be2108c19271b0bb17ba9a5a8f490b682da845933e1a5db",
+      "size": 4940
+    },
+    "assets/legacy-fantasy/trees/yellow/tree-5.png": {
+      "sha256": "150dae3fffc4bf2ef8ebccda9c9a72fa34c6576ddd6eb2d8a2fed8767f608f24",
+      "size": 3632
+    },
+    "assets/legacy-fantasy/ui/bar-fill-blue-thin.png": {
+      "sha256": "1830f21077a3ec933940a40f32ad9a56dd39d8b7b0cf428993d01f55ec5c9c6b",
+      "size": 84
+    },
+    "assets/legacy-fantasy/ui/bar-fill-blue.png": {
+      "sha256": "3981adfe18ee928aa8fff37f41aae52f2f7432559529f20cd006439918d464b8",
+      "size": 89
+    },
+    "assets/legacy-fantasy/ui/bar-fill-green-thin.png": {
+      "sha256": "1801ad61669c8d0ddf7b2753001f1ecff4771b68262b2ed655bb7cf5c62f4e06",
+      "size": 84
+    },
+    "assets/legacy-fantasy/ui/bar-fill-green.png": {
+      "sha256": "8b1d80d8138b5df319c223b31d396181d17c16306086cb6aef950eaedc995f9c",
+      "size": 89
+    },
+    "assets/legacy-fantasy/ui/bar-fill-red-thin.png": {
+      "sha256": "f996df5fe52ae3719a224a13ef00f2d47b754ae029d0f035787ea60c7086572a",
+      "size": 84
+    },
+    "assets/legacy-fantasy/ui/bar-fill-red.png": {
+      "sha256": "ef091569c51e51ed3aaba391ab0b1d704d8c1007099492cc5813702c46230042",
+      "size": 89
+    },
+    "assets/legacy-fantasy/ui/bar-fill-yellow-thin.png": {
+      "sha256": "42f84014c20b75047f0adde6f661c5ee9134e25264b8f75ded673ba076c90480",
+      "size": 84
+    },
+    "assets/legacy-fantasy/ui/bar-fill-yellow.png": {
+      "sha256": "f312fe82e8a503c1ad66033fdcd86f3a7a7fa1d4d2cafa1adb97688a639eb7c8",
+      "size": 89
+    },
+    "assets/legacy-fantasy/ui/bar-frame-thin.png": {
+      "sha256": "d576cc1b7d857afd0c2e95c32533299086753699dfe11843b478021e6d8c169c",
+      "size": 107
+    },
+    "assets/legacy-fantasy/ui/bar-frame.png": {
+      "sha256": "f0b8367dfdb0e0807a74aab976ee92fa7ab8736e1614381945abf13d0f2e2ab9",
+      "size": 131
+    },
+    "assets/legacy-fantasy/ui/button-blue.png": {
+      "sha256": "bb84ed3b267a192d47f9b84de0746345aa1ac7c7031baf659dce2f8dd53a310d",
+      "size": 354
+    },
+    "assets/legacy-fantasy/ui/button-gray.png": {
+      "sha256": "1f7c1cc2e54e017e3a8b60bb952a6a9c0ad7ae3483d94f0b1a90c9ed4c475772",
+      "size": 349
+    },
+    "assets/legacy-fantasy/ui/button-green.png": {
+      "sha256": "07e2744d86b7e68ab96d4c064798d364d7a6216f1a1cc9a1595f42ef37da76e4",
+      "size": 350
+    },
+    "assets/legacy-fantasy/ui/button-red.png": {
+      "sha256": "c96c14813f8f767674456e48cc0040deb0528f76f3c9e2acd7b0dc3ec8245fea",
+      "size": 347
+    },
+    "assets/legacy-fantasy/ui/button-yellow.png": {
+      "sha256": "e5f89044db2788a9ef3101545cb2f4e2c518f39e4ac85501e225934ec7d0e049",
+      "size": 348
+    },
+    "assets/legacy-fantasy/ui/icon-arrow-down.png": {
+      "sha256": "329dbeb4b882d36831cd47737cf34e11d7ff6a775d00ad27f192d2c88da42afb",
+      "size": 100
+    },
+    "assets/legacy-fantasy/ui/icon-arrow-left.png": {
+      "sha256": "8fa7889b4e5c06b91e97efc0e7e23a9fba6fe7254164fe5387bb692add82beb2",
+      "size": 119
+    },
+    "assets/legacy-fantasy/ui/icon-arrow-right.png": {
+      "sha256": "7eddb496d96795844bb9ea89deef36178ccc637ff3665785247958c543c33b1e",
+      "size": 112
+    },
+    "assets/legacy-fantasy/ui/icon-arrow-up.png": {
+      "sha256": "e89e07ce2c24c7fd53dd0335bc2ef79ddb33c309cf672929158a9fe433bea528",
+      "size": 103
+    },
+    "assets/legacy-fantasy/ui/icon-chest.png": {
+      "sha256": "b9fccddddab919178969b915816c54753ae8ead6969847213cdba9dc9b37da63",
+      "size": 284
+    },
+    "assets/legacy-fantasy/ui/icon-clock.png": {
+      "sha256": "4b0173a31d744ab42ff64d5468c9cde4faf389b4e42d09b1d78ba57b23cd8413",
+      "size": 163
+    },
+    "assets/legacy-fantasy/ui/icon-close.png": {
+      "sha256": "e0886f6d41144ee6780b604123bbaa5f08b63c53d40cfe88cc0288a4ad7e5403",
+      "size": 118
+    },
+    "assets/legacy-fantasy/ui/icon-exclamation.png": {
+      "sha256": "9ec0960f36438ad2804aa843333bfe63a6de98fcbcc4b86f4201ba286a0ef58f",
+      "size": 84
+    },
+    "assets/legacy-fantasy/ui/icon-home.png": {
+      "sha256": "a9862e3021283b1efb4cbac7dfafe8535a0cbd729edd24d2400ea500c3fcd25f",
+      "size": 133
+    },
+    "assets/legacy-fantasy/ui/icon-pause.png": {
+      "sha256": "964eb3b2c6ee7bc8437fe28353c68ac769bd33396a1646af109816289bfd2296",
+      "size": 90
+    },
+    "assets/legacy-fantasy/ui/icon-player.png": {
+      "sha256": "2af1cc72afa729036dc5ea6c32e4afc413b388f52cd2dd9e14f6f6bb2ef3e0a0",
+      "size": 258
+    },
+    "assets/legacy-fantasy/ui/icon-plus.png": {
+      "sha256": "e7f6a1f76d6e4c7c3d0441e620409ed696f20c09f23694e17fb1bf1190e2fa51",
+      "size": 132
+    },
+    "assets/legacy-fantasy/ui/icon-question.png": {
+      "sha256": "d7b9c3fa87adedac629b74180e6564c60cf0e89d9e9a328e7c2a4b3b547e70d2",
+      "size": 133
+    },
+    "assets/legacy-fantasy/ui/icon-settings.png": {
+      "sha256": "8dbafb9d1a523859b00c130ac27e63d2ca3cd60ec36689459f7e3b58350ef8ba",
+      "size": 319
+    },
+    "assets/legacy-fantasy/ui/icon-skull.png": {
+      "sha256": "7d0078a5207b67dfae49b83bddb253f2e78882f7cb68ee5e41a3ffe566eb6dad",
+      "size": 138
+    },
+    "assets/legacy-fantasy/ui/icon-trophy.png": {
+      "sha256": "11d3cbbd3b89245168075135597ede5e56dc4d76a31336248101680a39f0859a",
+      "size": 326
+    },
+    "assets/legacy-fantasy/ui/minimap-frame.png": {
+      "sha256": "2cc457691cf8c9f9f39eb8073db9bfaab207e2fe06b1e8b8f19233cb79db9051",
+      "size": 798
+    },
+    "assets/legacy-fantasy/ui/panel-paper.png": {
+      "sha256": "80b56218de3fe716c786b1b3dcc186137c61fc337b57156d13fbda7723edea8d",
+      "size": 816
+    },
+    "assets/legacy-fantasy/ui/panel-wood.png": {
+      "sha256": "be0aa8ace1711993e9ba9a0fcb8885952da9188cb817fb28a0eea779f92d8c94",
+      "size": 518
+    },
+    "assets/legacy-fantasy/ui/slot-circle-blue.png": {
+      "sha256": "5d7d69fe8136cad83c213677a281bde5434e94fb3bc54101dfdc1996ea1bd584",
+      "size": 249
+    },
+    "assets/legacy-fantasy/ui/slot-circle-dark.png": {
+      "sha256": "65d99edbb0c69372038352a0358be7bb62e3346f5ff5b68a3a31c70871b28fe7",
+      "size": 226
+    },
+    "assets/legacy-fantasy/ui/slot-circle-empty.png": {
+      "sha256": "6bc8a825f2565e3521d0ea40ed4b3089804c84ee817da49bce35cf1e2990f897",
+      "size": 170
+    },
+    "assets/legacy-fantasy/ui/slot-circle-green.png": {
+      "sha256": "8e361d7b68cff89610240359174866da60bba1781a1599a878cd7228b40dd253",
+      "size": 246
+    },
+    "assets/legacy-fantasy/ui/slot-circle-red.png": {
+      "sha256": "644e17b643dba206591a87c933a462bc6417b959ff9d25910f78e97b000fa6c3",
+      "size": 235
+    },
+    "assets/legacy-fantasy/ui/slot-circle-tan.png": {
+      "sha256": "c213268db7fca422ddfce132e2b3906d2f797cf422562e880fcaefe145bf8920",
+      "size": 250
+    },
+    "assets/legacy-fantasy/ui/slot-circle-yellow.png": {
+      "sha256": "82725d8ef8f0f574438c19489c67e9de1a440b74f1785d961c974b6c0f994f3a",
+      "size": 242
+    },
+    "assets/legacy-fantasy/ui/slot-diamond-blue.png": {
+      "sha256": "17835e7d9fbd36f2bf512813015e4b1eb8c9d94a1349229362ca12e771d4867d",
+      "size": 220
+    },
+    "assets/legacy-fantasy/ui/slot-diamond-dark.png": {
+      "sha256": "312543ce7775c5c67953b2f3e1011e266423b8ed4e64528d87101d0f16bf9e6d",
+      "size": 215
+    },
+    "assets/legacy-fantasy/ui/slot-diamond-empty.png": {
+      "sha256": "9a9ea00b6cf8e3106893f3ef2954b2361ca622dc6657cbaaed5275cc8683ea03",
+      "size": 201
+    },
+    "assets/legacy-fantasy/ui/slot-diamond-green.png": {
+      "sha256": "effd9c907a677bc26f8eff48df060406db9110e4d93d33645ee71d167cfb6778",
+      "size": 219
+    },
+    "assets/legacy-fantasy/ui/slot-diamond-red.png": {
+      "sha256": "975f1698eed196a3296758578af640c32ec99341d0788c081d312ac3800292ea",
+      "size": 218
+    },
+    "assets/legacy-fantasy/ui/slot-diamond-tan.png": {
+      "sha256": "3892dcfb0dffae7ccc1b37fe9e925d17112352b7e758bce8d16f9a6b6660e4de",
+      "size": 222
+    },
+    "assets/legacy-fantasy/ui/slot-diamond-yellow.png": {
+      "sha256": "7d555e78ed304ca2dcbca682bbfc7927692a6baec3b0cb4f5a1c1005bbd0599e",
+      "size": 214
+    },
+    "assets/legacy-fantasy/ui/slot-square-blue.png": {
+      "sha256": "d72f1b092556a2118c0627142f28d2e829525eedb3e50db58b0032a9ae34a551",
+      "size": 143
+    },
+    "assets/legacy-fantasy/ui/slot-square-dark.png": {
+      "sha256": "2c5ef3ff1cfd0b8e0611ff86a5103c88ad3a72c0b8dbe37ba2ddd26545a60eba",
+      "size": 141
+    },
+    "assets/legacy-fantasy/ui/slot-square-empty.png": {
+      "sha256": "0427c4ff6f3563e129a722475a9478a15cf390cc4432185e070755493b70d421",
+      "size": 134
+    },
+    "assets/legacy-fantasy/ui/slot-square-green.png": {
+      "sha256": "7c1f57d6521013f098bb017b29da1a487e39e976fbe1f0238105ef813136e0c6",
+      "size": 142
+    },
+    "assets/legacy-fantasy/ui/slot-square-red.png": {
+      "sha256": "0b5880108412ceb6fd79ea56a8696f3f5deb58e0ac56345afbf72b1cbd4d8b11",
+      "size": 139
+    },
+    "assets/legacy-fantasy/ui/slot-square-tan.png": {
+      "sha256": "aad72492620a544fdf970b29c09b18831130ee9c02ff56b43fe09f22f924671f",
+      "size": 140
+    },
+    "assets/legacy-fantasy/ui/slot-square-yellow.png": {
+      "sha256": "26712155127e38860f49be7fe4dca699289e18064b73845d6baf6a15c76afdeb",
+      "size": 140
+    }
+  }
+}

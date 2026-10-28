@@ -89,6 +89,7 @@ test("the catalog declares every template's dimension", () => {
       "toon-shooter": "3d",
       platformer: "3d",
       "tiny-swords": "2d",
+      "legacy-fantasy": "2d",
     }
   )
 })

@@ -25,7 +25,7 @@ export type GameTemplate = {
 }
 
 /** The closed set accepted from untrusted form data. */
-export const templateIdSchema = z.enum(["none", "fantasy-cards", "cube-world", "toon-shooter", "platformer", "tiny-swords"])
+export const templateIdSchema = z.enum(["none", "fantasy-cards", "cube-world", "toon-shooter", "platformer", "tiny-swords", "legacy-fantasy"])
 
 export type TemplateId = z.infer<typeof templateIdSchema>
 
@@ -71,6 +71,13 @@ export const TEMPLATES: readonly GameTemplate[] = [
     dimension: "2d",
     label: "Tiny Swords",
     tagline: "Start with a 2D pixel-art kingdom kit.",
+  },
+  {
+    id: "legacy-fantasy",
+    version: 1,
+    dimension: "2d",
+    label: "Legacy Fantasy",
+    tagline: "Start with a 2D side-view forest platformer kit.",
   },
 ]
 

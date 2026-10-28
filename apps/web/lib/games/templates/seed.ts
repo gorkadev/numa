@@ -295,6 +295,14 @@ const TEMPLATE_SEED_DIRECTORIES: Readonly<Record<string, string | undefined>> =
       "tiny-swords",
       "seed"
     ),
+    "legacy-fantasy@1": path.join(
+      process.cwd(),
+      "lib",
+      "games",
+      "templates",
+      "legacy-fantasy",
+      "seed"
+    ),
   }
 
 function templateKey(templateId: string, templateVersion: number): string {

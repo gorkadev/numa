@@ -346,6 +346,10 @@
       "tiny-swords": {
         "label": "Tiny Swords",
         "tagline": "Start with a 2D pixel-art kingdom kit."
+      },
+      "legacy-fantasy": {
+        "label": "Legacy Fantasy",
+        "tagline": "Start with a 2D side-view forest platformer kit."
       }
     },
     "startDictation": "Start dictation",
