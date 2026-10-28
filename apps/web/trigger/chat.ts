@@ -41,6 +41,8 @@ import { gameInstructionsFor } from "@/lib/games/instructions"
 import { orchestratorContextInstructions } from "@/lib/games/instructions/orchestrator-context"
 import { readGameDimension, readGameTemplateBuildContext } from "@/lib/games/templates/context"
 import { activityTag } from "@/lib/games/activity"
+import { keepAttachmentParts, resolveAttachments } from "@/lib/games/attachments-model"
+import { readAttachmentBytes } from "@/lib/games/attachments-storage"
 import { gameProgressChunk, withoutGameProgress } from "@/lib/games/build-progress"
 import { gameRevisionChunk } from "@/lib/games/revision"
 import { loadGameThread, saveGameThread } from "@/lib/games/thread"
@@ -668,7 +670,7 @@ export const gameChat = chat.agent({
         userId,
       })
 
-      return messages
+      return keepAttachmentParts(messages)
     }
 
     if (credits.status === "unprovisioned") {
@@ -683,7 +685,7 @@ export const gameChat = chat.agent({
       throw new Error("Out of credits")
     }
 
-    return messages
+    return keepAttachmentParts(messages)
   },
 
   /**
@@ -1017,6 +1019,22 @@ export const gameChat = chat.agent({
         ]
       : gameInstructions
 
+    /**
+     * Attachments are stored as references and only become bytes here, for
+     * the model. The owner comes from the game row, not the message, so a
+     * reference can only reach that user's files. An unreadable file reads as
+     * gone rather than failing the whole turn.
+     */
+    const ownerId = await getGameUserId(chatId)
+    const modelMessages = ownerId
+      ? await resolveAttachments(messages, ownerId, (key) =>
+          readAttachmentBytes(key).catch((error: unknown) => {
+            logger.warn("Attachment unreadable", { chatId, key, error: String(error) })
+            return null
+          })
+        )
+      : messages
+
     return streamText({
       /**
        * Spread first, so every explicit option below still wins. This is what
@@ -1051,7 +1069,7 @@ export const gameChat = chat.agent({
        * prompt if a managed one is ever introduced without it being wired here.
        */
       instructions,
-      messages,
+      messages: modelMessages,
       /**
        * Fires on stop and on cancel. Without it, stopping updates the browser
        * while the model keeps generating server-side.
