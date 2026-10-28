@@ -74,13 +74,18 @@ export function renderTemplateSpriteInventory(sprites: readonly TemplateInventor
   })
 }
 
+/** Tilesets with their named tiles; a tile map repeated across colour variants is listed once. */
 export function renderTemplateTilesetInventory(tilesets: readonly TemplateInventoryTileset[]): string {
+  const firstWithNames = new Map<string, string>()
   return tilesets
     .map((tileset) => {
       const names = Object.entries(tileset.tiles ?? {})
         .map(([name, index]) => `${name}=${index}`)
         .join(", ")
-      return `- ${tileset.id}: \`${tileset.path}\` ${tileset.tileSize} px tiles, ${tileset.columns}x${tileset.rows}${names ? `; tiles: ${names}` : ""}`
+      const sameAs = firstWithNames.get(names)
+      if (names && !sameAs) firstWithNames.set(names, tileset.id)
+      const tiles = !names ? "" : sameAs ? `; tiles: same names as ${sameAs}` : `; tiles: ${names}`
+      return `- ${tileset.id}: \`${tileset.path}\` ${tileset.tileSize} px tiles, ${tileset.columns}x${tileset.rows}${tiles}`
     })
     .join("\n")
 }

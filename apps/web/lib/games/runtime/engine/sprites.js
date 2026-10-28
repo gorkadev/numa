@@ -122,6 +122,8 @@ function describeAnimation(name, animation) {
  * @param {Record<string, { texture: THREE.Texture, frameWidth: number,
  *   frameHeight: number, frames?: number, fps?: number, loop?: boolean }>} options.animations
  * @param {string} [options.animation] First animation; defaults to the first key.
+ * @param {number} [options.frame] Frame the first animation starts on — vary it
+ *   across copies (foam, grass, idle crowds) so they do not move in step.
  * @param {number} [options.pixelsPerUnit] Source pixels per world unit (64 for a 64 px tile grid).
  * @param {[number, number]} [options.anchor]
  * @param {number} [options.layer] Draw-order layer.
@@ -132,6 +134,7 @@ export function createSprite(engine, options) {
   const {
     animations: definitions,
     animation: initial = Object.keys(definitions)[0],
+    frame: startFrame = 0,
     pixelsPerUnit = 64,
     anchor = [0.5, 0.5],
     layer = 1,
@@ -252,6 +255,10 @@ export function createSprite(engine, options) {
   })
 
   sprite.play(initial)
+  if (startFrame) {
+    sprite.setFrame(startFrame % current.frames)
+    time = frame / current.fps
+  }
   setSpriteDepth(object, { layer })
   return sprite
 }

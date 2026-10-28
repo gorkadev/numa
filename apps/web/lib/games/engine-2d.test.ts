@@ -112,6 +112,17 @@ test("frames advance at the animation's fps and loop; a one-shot stops on its la
   assert.deepEqual(finished, ["attack"])
 })
 
+test("a sprite can start part-way through its animation, so a field of copies does not move in step", () => {
+  const engine = fakeEngine()
+  const sprite = createSprite(engine, {
+    animations: { foam: { texture: sheet(3072, 192), frameWidth: 192, frameHeight: 192, frames: 16, fps: 10 } },
+    frame: 5,
+  })
+  assert.equal(sprite.frame, 5)
+  engine.step(0.1)
+  assert.equal(sprite.frame, 6)
+})
+
 test("animations with different frame sizes resize the sprite and keep the anchor on the same point", () => {
   const engine = fakeEngine()
   const sprite = createSprite(engine, {

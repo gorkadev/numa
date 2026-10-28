@@ -100,3 +100,16 @@ test("a 3D template's context keeps its model inventory and readiness contract",
   assert.match(context, /### Initial asset readiness contract/)
   assert.doesNotMatch(context, /engine-2d/)
 })
+
+test("colour variants of one tile map list their tile names once", async () => {
+  const { renderTemplateTilesetInventory } = await import("./inventory")
+  const tiles = { "flat.center": 10 }
+  const text = renderTemplateTilesetInventory([
+    { id: "terrain-color1", path: "assets/k/t1.png", tileSize: 64, columns: 9, rows: 6, tiles },
+    { id: "terrain-color2", path: "assets/k/t2.png", tileSize: 64, columns: 9, rows: 6, tiles },
+  ])
+  assert.equal(
+    text,
+    "- terrain-color1: `assets/k/t1.png` 64 px tiles, 9x6; tiles: flat.center=10\n- terrain-color2: `assets/k/t2.png` 64 px tiles, 9x6; tiles: same names as terrain-color1"
+  )
+})
