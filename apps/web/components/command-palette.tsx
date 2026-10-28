@@ -11,6 +11,7 @@ import {
   ArrowUp02Icon,
   CornerDownLeftIcon,
   Delete02Icon,
+  Cancel01Icon,
   Logout01Icon,
   LayoutTemplateIcon,
   MessageCircleIcon,
@@ -124,13 +125,6 @@ export function CommandPalette({
    */
   const [pages, setPages] = useState<PalettePage[]>([])
   const [search, setSearch] = useState("")
-  /**
-   * Sign out takes two Enters: the first only arms the row, which then says
-   * what the next Enter does. Typing or closing the palette disarms it, so a
-   * stray Enter later never signs anyone out.
-   */
-  const [signOutArmed, setSignOutArmed] = useState(false)
-
   const page = pages.at(-1)
 
   /**
@@ -266,7 +260,6 @@ export function CommandPalette({
     if (!open) {
       setPages([])
       setSearch("")
-      setSignOutArmed(false)
     }
   }
   const setOpen = onOpenChange
@@ -338,6 +331,8 @@ export function CommandPalette({
               ? t("newGameFromTemplate")
               : page === "defaultTier"
                 ? gameSettingsText("defaultTier")
+                : page === "signOut"
+                ? t("signOut")
                 : page
                 ? settings(page)
                 : t("searchGamesAndActions")
@@ -345,7 +340,6 @@ export function CommandPalette({
           value={search}
           onValueChange={(value) => {
             setSearch(value)
-            setSignOutArmed(false)
           }}
           onKeyDown={(event) => {
             if (event.key !== "Backspace") return
@@ -406,6 +400,26 @@ export function CommandPalette({
                   {option.label}
                 </CommandItem>
               ))}
+            </CommandGroup>
+          )}
+          {/**
+           * Signing out is the one action here that cannot be undone from the
+           * palette, so it asks first on a page of its own: the reader sees
+           * both outcomes, and Backspace or Cancel leaves without signing out.
+           */}
+          {page === "signOut" && (
+            <CommandGroup heading={t("signOutQuestion")}>
+              <CommandItem
+                variant="destructive"
+                onSelect={() => run(() => void signOutNow())}
+              >
+                <HugeiconsIcon icon={Logout01Icon} strokeWidth={2} />
+                {t("signOut")}
+              </CommandItem>
+              <CommandItem onSelect={() => setPages(pages.slice(0, -1))}>
+                <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />
+                {settings("cancel")}
+              </CommandItem>
             </CommandGroup>
           )}
           {page === "templates" && (
@@ -534,19 +548,12 @@ export function CommandPalette({
                       {t("changeLanguage")}
                     </CommandItem>
                     <CommandItem
-                      value={t("signOut")}
+                      value={t("signOutEllipsis")}
                       keywords={["log out", "logout", settings("signOut")]}
-                      variant={signOutArmed ? "destructive" : "default"}
-                      onSelect={() => {
-                        if (!signOutArmed) {
-                          setSignOutArmed(true)
-                          return
-                        }
-                        run(() => void signOutNow())
-                      }}
+                      onSelect={() => enter("signOut")}
                     >
                       <HugeiconsIcon icon={Logout01Icon} strokeWidth={2} />
-                      {signOutArmed ? t("confirmSignOut") : t("signOut")}
+                      {t("signOutEllipsis")}
                     </CommandItem>
                   </CommandGroup>
                   <CommandGroup heading={t("goTo")}>
