@@ -43,7 +43,8 @@ export function ReasoningBlock({ parts, streaming }: ReasoningBlockProps) {
     <Trace className="ps-[13px]">
       {parts.map((part, index) => (
         <ReasoningLine
-          key={part.id ?? `reasoning-${index}`}
+          // Position, not `part.id`: providers can repeat an id across steps.
+          key={`reasoning-${index}`}
           text={part.text}
           /**
            * Two sources, both required. An aborted stream never emits
