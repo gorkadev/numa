@@ -7,7 +7,7 @@ import { db } from "@workspace/db"
 import { games } from "@workspace/db/schema"
 import { eq } from "drizzle-orm"
 
-import { GAME_DIR } from "@/lib/games/game-path"
+import { GAME_DIR, GAME_PORT } from "@/lib/games/game-path"
 import { readGameSeed } from "@/lib/games/templates/seed"
 
 import { daytona } from "./client"
@@ -21,7 +21,7 @@ import { daytona } from "./client"
  */
 export type SandboxResult = { sandbox: Sandbox }
 
-export { GAME_DIR }
+export { GAME_DIR, GAME_PORT }
 
 /**
  * Label every sandbox this app creates carries, holding the id of the game it
@@ -245,13 +245,6 @@ export async function getGameSandbox(gameId: string): Promise<SandboxResult> {
 export async function resumeGameSandbox(sandboxId: string): Promise<SandboxResult> {
   return resumeSandbox(await daytona.get(sandboxId))
 }
-
-/**
- * Port the game's static server listens on inside the sandbox. Nothing else in
- * the sandbox is expected to bind it, which is what makes "something answers on
- * this port" a sufficient health check.
- */
-export const GAME_PORT = 3000
 
 /**
  * Exit 0 when the port is already accepting connections. Written in Python

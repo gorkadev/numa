@@ -7,8 +7,9 @@ import {
   createScopedGameTools,
   ownershipOverlaps,
 } from "@/lib/games/harness/ownership"
-import { engineApiIndex } from "@/lib/games/instructions/engine-index"
-import { runtimeInstructions } from "@/lib/games/instructions/runtime"
+import { DIMENSION_PROFILES, type GameDimension } from "@/lib/games/dimension"
+import { engineApiIndexFor } from "@/lib/games/instructions/engine-index"
+import { runtimeInstructionsFor } from "@/lib/games/instructions/runtime"
 import {
   workerInstructions,
   type WorkerFocus,
@@ -16,7 +17,6 @@ import {
 import { readGameTemplateBuildContext } from "@/lib/games/templates/context"
 import {
   mergeSkills,
-  ROLE_DEFAULT_SKILLS,
   skillBodies,
   type SkillName,
 } from "@/lib/games/skills/registry"
@@ -30,7 +30,7 @@ import {
   type RunSubagentResult,
   type SubagentProgress,
 } from "../run-subagent"
-import { rejectDuplicateTaskIds, taskSpecSchema, type TaskSpec } from "../task-spec"
+import { rejectDuplicateTaskIds, taskSpecSchemaFor, type TaskSpec } from "../task-spec"
 import { turnState } from "../turn-state"
 import { noWritesEnvelope, retryPromptAfterNoWrites, wroteNothing } from "../worker-outcome"
 import { createLoadSkillTool } from "./load-skill"
@@ -66,11 +66,13 @@ const POOL_CAP = 3
  * rules — cycles, unknown dependencies, protected or overlapping owns, the
  * template asset receipt — run in `execute` (`validateDispatch`).
  */
-const tasksArraySchema = z
-  .array(taskSpecSchema)
-  .min(1)
-  .max(MAX_TASKS_PER_BATCH)
-  .superRefine(rejectDuplicateTaskIds)
+function tasksArraySchemaFor(skills: readonly SkillName[]) {
+  return z
+    .array(taskSpecSchemaFor(skills))
+    .min(1)
+    .max(MAX_TASKS_PER_BATCH)
+    .superRefine(rejectDuplicateTaskIds)
+}
 
 /**
  * Rejects a batch of ids with a duplicate — the `taskIds` sibling of
@@ -107,9 +109,11 @@ function rejectDuplicateTaskIdStrings(ids: string[], ctx: z.RefinementCtx): void
  * `assetReceipt` replaces the planner's own receipt for a fresh build with a
  * selected template: the eager models the first screen loads, which `verify`
  * then holds the game to.
+ *
+ * Built per dimension: a task's `skills` only accepts the game's profile's.
  */
-const runTasksInputSchema = z.object({
-  tasks: tasksArraySchema.optional().describe(
+const runTasksInputSchemaFor = (skills: readonly SkillName[]) => z.object({
+  tasks: tasksArraySchemaFor(skills).optional().describe(
     "The tasks to dispatch, written by you: each with its own goal, the files it owns, any dependsOn, and acceptance criteria. The normal way to call this tool. Never pass this together with taskIds."
   ),
   taskIds: z
@@ -253,6 +257,7 @@ function describeSchedulerError(error: unknown): string {
  * and the prompt it actually ran with never drift apart.
  */
 function buildInstructions(
+  dimension: GameDimension,
   displayName: string,
   focus: WorkerFocus,
   skills: SkillName[],
@@ -260,9 +265,9 @@ function buildInstructions(
 ): string {
   return [
     workerInstructions(displayName, focus),
-    runtimeInstructions.content,
+    runtimeInstructionsFor(dimension).content,
     templateContext,
-    engineApiIndex,
+    engineApiIndexFor(dimension),
     skillBodies(skills),
   ].join("\n\n")
 }
@@ -341,15 +346,18 @@ function renderOutcomes(outcomes: TaskOutcome[]): string {
  */
 export function createRunTasksTool(
   gameId: string,
+  dimension: GameDimension,
   options: { onStart?: () => void } = {}
 ): Tool {
+  const profile = DIMENSION_PROFILES[dimension]
+
   return tool({
     description: [
       "Dispatch the tasks you broke the build into, each against its own worker. Pass tasks: full task bodies you write yourself.",
       "Each dispatched task's worker is scoped so it can only write the files that task owns. Tasks whose owns do not overlap run concurrently, up to 3 at once; tasks that share a file, or that depend on another task via dependsOn (this batch, or an earlier run_tasks call this turn), run only after what they depend on or conflict with has finished.",
       "The batch is checked before anything starts: no dependency cycle, every dependsOn in this batch or finished earlier this turn, no owns under engine/, vendor/ or .numa/, and no overlapping owns without a dependsOn. After verify has run, one corrective call is allowed.",
     ].join(" "),
-    inputSchema: runTasksInputSchema,
+    inputSchema: runTasksInputSchemaFor(profile.skills),
     /**
      * Concurrency is built entirely inside this generator, not left to the
      * model emitting several tool calls: every task in the batch is
@@ -513,7 +521,7 @@ export function createRunTasksTool(
       /** Drives one task's `runSubagent` run to completion — the same manual-drive pattern `explore.ts` uses (unit 2b's Deviation 1), one call per concurrently running task. */
       async function runOneTask(task: TaskSpec): Promise<void> {
         const role = ROLES[task.role]
-        const skills = mergeSkills(ROLE_DEFAULT_SKILLS[task.role], task.skills)
+        const skills = mergeSkills(profile.roleDefaultSkills[task.role], task.skills)
         const { templateContext } = await readGameTemplateBuildContext(gameId)
 
         /**
@@ -533,7 +541,7 @@ export function createRunTasksTool(
            * same-turn id reuse impossible to collide on.
            */
           agentId: `${task.id}:${randomUUID().slice(0, 8)}`,
-          instructions: buildInstructions(role.displayName, task.role, skills, templateContext),
+          instructions: buildInstructions(dimension, role.displayName, task.role, skills, templateContext),
           skills,
           /**
            * Scoped file tools plus `load_skill` (design.md's role catalogue:
@@ -541,7 +549,7 @@ export function createRunTasksTool(
            * fallback for a skill neither the role's defaults nor this task's
            * own `skills` extra covers.
            */
-          tools: { ...createScopedGameTools(gameId, task.owns), load_skill: createLoadSkillTool() },
+          tools: { ...createScopedGameTools(gameId, task.owns), load_skill: createLoadSkillTool(dimension) },
           prompt,
           abortSignal,
         })

@@ -17,6 +17,7 @@ import {
   type AssetLock,
   type FetchLockedAssetsOptions,
 } from "./asset-lock"
+import { getTemplate, isTemplateId } from "./catalog"
 
 export const TEMPLATE_DESCRIPTOR_PATH = "TEMPLATE.md"
 export const TEMPLATE_MANIFEST_PATH = "ASSETS.json"
@@ -434,6 +435,12 @@ function validateTemplateContract(
 
 type TemplateLayer = { seed: RuntimeSeed; lock: AssetLock | undefined }
 
+/** The runtime a persisted template builds on: its catalog dimension's engine, starter and toolkit. */
+function readTemplateRuntimeSeed(templateId: string): Promise<RuntimeSeed> {
+  if (!isTemplateId(templateId)) throw new Error(`Unknown game template seed: ${templateId}`)
+  return readRuntimeSeed(getTemplate(templateId).dimension)
+}
+
 /**
  * Resolves exactly one persisted template version. Unknown historical values
  * fail closed rather than accidentally provisioning a different starter kit.
@@ -487,7 +494,7 @@ export async function readTemplateContract(
   const { seed: templateSeed, lock } = await readTemplateLayer(templateId, templateVersion)
   if (templateId === "none" && templateVersion === 1) return undefined
 
-  const runtimeSeed = await readRuntimeSeed()
+  const runtimeSeed = await readTemplateRuntimeSeed(templateId)
   return validateTemplateContract(
     templateId,
     templateVersion,
@@ -508,10 +515,13 @@ export async function readGameSeed(
   assets: Partial<FetchLockedAssetsOptions> = {}
 ): Promise<RuntimeSeed> {
   const [runtimeSeed, { seed: templateSeed, lock }] = await Promise.all([
-    readRuntimeSeed(),
+    readTemplateRuntimeSeed(templateId),
     readTemplateLayer(templateId, templateVersion),
   ])
   const seed = mergeRuntimeSeeds(runtimeSeed, templateSeed)
+  if (!seed.files.some((file) => file.relativePath === "index.html")) {
+    throw new Error(`Game seed for ${templateKey(templateId, templateVersion)} has no index.html`)
+  }
 
   if (!(templateId === "none" && templateVersion === 1)) {
     validateTemplateContract(templateId, templateVersion, templateSeed, seed, lock)

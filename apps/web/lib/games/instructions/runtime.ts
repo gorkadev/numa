@@ -1,6 +1,7 @@
 import type { SystemModelMessage } from "ai"
 
-import { GAME_DIR, GAME_PORT } from "@/lib/daytona/utils"
+import { DIMENSION_PROFILES, type GameDimension } from "@/lib/games/dimension"
+import { GAME_DIR, GAME_PORT } from "@/lib/games/game-path"
 
 /**
  * Where the game actually runs.
@@ -8,11 +9,16 @@ import { GAME_DIR, GAME_PORT } from "@/lib/daytona/utils"
  * The paths and the port are imported rather than written out, because this
  * text is a description of `lib/daytona/utils.ts` and a description that can
  * drift from the thing it describes is worse than no description: the model
- * would confidently write to a directory nothing serves.
+ * would confidently write to a directory nothing serves. The fresh directory
+ * listing comes from the game's dimension profile, which decides what the
+ * sandbox is seeded with.
  */
-export const runtimeInstructions: SystemModelMessage = {
-  role: "system",
-  content: `## Where the game lives
+function buildRuntimeInstructions(
+  dimension: GameDimension
+): SystemModelMessage {
+  return {
+    role: "system",
+    content: `## Where the game lives
 
 The game runs in a Linux sandbox of its own, one per game, created the first
 time the user says anything. It survives between turns: files you wrote in an
@@ -26,10 +32,7 @@ game: it is what loads when the player opens the preview.
 A fresh game directory looks like this:
 
 \`\`\`
-index.html      the page the player loads — a 3D welcome screen until you replace it
-logo.svg        the numa mark, used by that welcome screen
-engine/         the game toolkit: engine, input, controls, physics, models,
-                lighting, anim, hud, sound, fx, state, math
+${DIMENSION_PROFILES[dimension].freshDirectory}
 vendor/three/   Three.js r185 and its addons, served locally
 TEMPLATE.md     selected template descriptor, when a template is selected
 ASSETS.json     selected template asset inventory, when a template is selected
@@ -86,4 +89,17 @@ game's own elements.
 
 The player has no console. An error you would have logged is an error nobody
 reads — fail visibly on screen instead, or do not fail.`,
+  }
+}
+
+const RUNTIME_INSTRUCTIONS = {
+  "2d": buildRuntimeInstructions("2d"),
+  "3d": buildRuntimeInstructions("3d"),
+} satisfies Record<GameDimension, SystemModelMessage>
+
+/** The runtime instructions for a game of this dimension. */
+export function runtimeInstructionsFor(
+  dimension: GameDimension
+): SystemModelMessage {
+  return RUNTIME_INSTRUCTIONS[dimension]
 }

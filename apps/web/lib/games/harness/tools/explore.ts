@@ -1,7 +1,8 @@
 import { tool, type Tool, type ToolSet } from "ai"
 import { z } from "zod"
 
-import { runtimeInstructions } from "@/lib/games/instructions/runtime"
+import { runtimeInstructionsFor } from "@/lib/games/instructions/runtime"
+import { readGameDimension } from "@/lib/games/templates/context"
 import { explorerInstructions } from "@/lib/games/instructions/roles/explorer"
 import { createGameTools } from "@/lib/games/tools"
 
@@ -115,9 +116,10 @@ export function createExploreTool(gameId: string): Tool {
         return
       }
 
+      const dimension = await readGameDimension(gameId)
       const run = runSubagent({
         role: ROLES.explorer,
-        instructions: `${explorerInstructions}\n\n${runtimeInstructions.content}`,
+        instructions: `${explorerInstructions}\n\n${runtimeInstructionsFor(dimension).content}`,
         tools,
         prompt: question,
         abortSignal,

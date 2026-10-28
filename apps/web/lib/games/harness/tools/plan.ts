@@ -7,17 +7,18 @@ import {
 } from "ai"
 import { z } from "zod"
 
-import { engineApiIndex } from "@/lib/games/instructions/engine-index"
+import { DIMENSION_PROFILES, type GameDimension } from "@/lib/games/dimension"
+import { engineApiIndexFor } from "@/lib/games/instructions/engine-index"
 import { plannerInstructions } from "@/lib/games/instructions/roles/planner"
 import { readGameTemplateBuildContext } from "@/lib/games/templates/context"
-import { runtimeInstructions } from "@/lib/games/instructions/runtime"
+import { runtimeInstructionsFor } from "@/lib/games/instructions/runtime"
 import { skillBodies, skillIndex } from "@/lib/games/skills/registry"
 import { createGameTools } from "@/lib/games/tools"
 
 import { renderEnvelope, type SubagentEnvelope } from "../envelope"
 import {
   planAssessmentSchema,
-  planTasksSchema,
+  planTasksSchemaFor,
   validatePlanAssessment,
   validatePlanTasks,
   type PlanAssessment,
@@ -28,9 +29,6 @@ import { ROLES } from "../roles"
 import { runSubagent, type RunSubagentResult, type SubagentProgress } from "../run-subagent"
 import type { TaskSpec } from "../task-spec"
 import { createLoadSkillTool } from "./load-skill"
-
-/** The only skill pushed into the planner's own instructions by default (design.md's role catalogue: "roles/planner, runtime, engine-core, skill index"). */
-const PLANNER_PUSHED_SKILLS = ["engine-core"] as const
 
 /** How many of the planner's final steps may only call `submit_plan`. */
 const FORCED_SUBMIT_STEPS = 2
@@ -54,22 +52,31 @@ function plannerReadTools(gameId: string): ToolSet {
   )
 }
 
+/**
+ * The planner's skills are its dimension profile's planner defaults
+ * (design.md's role catalogue: "roles/planner, runtime, engine-core, skill
+ * index"), and its index lists only the rest of that profile's skills.
+ */
 async function buildPlannerInstructions(gameId: string): Promise<{
+  dimension: GameDimension
   instructions: string
   assetCatalog: PlanAssetCatalog
 }> {
-  const { templateContext, isFreshGameBuild, assetCatalog } =
+  const { dimension, templateContext, isFreshGameBuild, assetCatalog } =
     await readGameTemplateBuildContext(gameId)
+  const profile = DIMENSION_PROFILES[dimension]
+  const pushed = profile.roleDefaultSkills.planner
 
   return {
+    dimension,
     instructions: [
       plannerInstructions,
-      runtimeInstructions.content,
+      runtimeInstructionsFor(dimension).content,
       templateContext,
       `## Game state\nThis is a factual ${isFreshGameBuild ? "fresh" : "existing"} game build: ${isFreshGameBuild ? "no successful game-file writes are persisted" : "successful game-file writes are already persisted"}. This fact does not prescribe a task count.`,
-      engineApiIndex,
-      skillBodies(PLANNER_PUSHED_SKILLS),
-      skillIndex(PLANNER_PUSHED_SKILLS),
+      engineApiIndexFor(dimension),
+      skillBodies(pushed),
+      skillIndex(pushed, profile.skills),
     ]
       .filter((section) => section.length > 0)
       .join("\n\n"),
@@ -113,7 +120,7 @@ function planTaskSummaries(submission: SubmittedPlan | undefined): PlanTaskSumma
  * another's submission.
  *
  * Validation happens in two layers (see `plan-validation.ts`'s own comment
- * on `planTasksSchema`): `inputSchema` rejects too many tasks, an unknown
+ * on `planTasksSchemaFor`): `inputSchema` rejects too many tasks, an unknown
  * role or skill, or a duplicate id as a correctable schema error before this
  * `execute` ever runs; `execute` then runs `validatePlanTasks` for the
  * cross-task checks a static schema cannot express (acyclic `dependsOn`, no
@@ -124,6 +131,7 @@ function planTaskSummaries(submission: SubmittedPlan | undefined): PlanTaskSumma
  */
 function buildSubmitPlanTool(
   gameId: string,
+  dimension: GameDimension,
   assetCatalog: PlanAssetCatalog
 ): { tool: Tool; takeSubmission: () => SubmittedPlan | undefined } {
   let submission: SubmittedPlan | undefined
@@ -143,7 +151,7 @@ function buildSubmitPlanTool(
         .describe(
           "The plan's design, in markdown: what you are building and why, in enough detail for a worker who has read nothing else about this turn to follow it."
         ),
-      tasks: planTasksSchema,
+      tasks: planTasksSchemaFor(DIMENSION_PROFILES[dimension].skills),
       assessment: planAssessmentSchema,
     }),
     execute: async ({ design, tasks, assessment }) => {
@@ -270,18 +278,23 @@ export function createPlanTool(
     > {
       options.onStart?.()
 
-      const { instructions, assetCatalog } = await buildPlannerInstructions(gameId)
-      const { tool: submitPlanTool, takeSubmission } = buildSubmitPlanTool(gameId, assetCatalog)
+      const { dimension, instructions, assetCatalog } = await buildPlannerInstructions(gameId)
+      const { tool: submitPlanTool, takeSubmission } = buildSubmitPlanTool(
+        gameId,
+        dimension,
+        assetCatalog
+      )
 
       const tools: ToolSet = {
         ...plannerReadTools(gameId),
-        load_skill: createLoadSkillTool(),
+        load_skill: createLoadSkillTool(dimension),
         submit_plan: submitPlanTool,
       }
 
       const run = runSubagent({
         role: ROLES.planner,
         instructions,
+        skills: [...DIMENSION_PROFILES[dimension].roleDefaultSkills.planner],
         tools,
         prompt: brief,
         abortSignal,

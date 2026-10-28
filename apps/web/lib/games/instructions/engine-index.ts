@@ -1,5 +1,7 @@
-import { readFileSync, readdirSync } from "node:fs"
+import { readFileSync } from "node:fs"
 import path from "node:path"
+
+import { DIMENSION_PROFILES, type GameDimension } from "@/lib/games/dimension"
 
 /**
  * Where the engine's own source lives, resolved the same way
@@ -182,8 +184,8 @@ function extractExports(source: string): EngineExport[] {
   return exports
 }
 
-function renderFileSection(fileName: string, source: string): string {
-  const fileExports = extractExports(source)
+function renderFileSection(fileName: string, source: string, omit: readonly string[]): string {
+  const fileExports = extractExports(source).filter(({ name }) => !omit.includes(name))
   if (fileExports.length === 0) return ""
 
   const lines = fileExports.map(({ name, signature, doc }) => {
@@ -199,38 +201,52 @@ const HEADER = `## Engine API index
 Every exported function and const from engine/*.js, generated from the actual source: names and parameter lists exactly as written, plus a one-line summary where the source has one. This lists the engine's exports — build from it and the engine skills (load_skill for the full reference of an area) rather than reading engine source. Workers may read at most 2 engine files, for a detail neither covers; when you need more than one, request them in the SAME step.`
 
 /**
- * Builds the whole index from `engineDir`'s own `*.js` files, sorted by name
- * so the output is stable across runs. A pure function of the directory it
- * is pointed at, so it can be exercised directly against the real engine
- * folder without going through this module's own `ENGINE_DIR`/import-time
- * wiring — the module-level `engineApiIndex` below is just this, called
- * once against `ENGINE_DIR` at import time.
+ * Builds the whole index from one dimension's engine files, sorted by their
+ * sandbox name so the output is stable across runs. `engineFiles` maps each
+ * sandbox file name to its source in `engineDir` (a 2D sandbox's
+ * `index.js` has its own source); exports named in `omit` are left out.
+ * A pure function of its inputs, so it can be exercised directly against
+ * the real engine folder.
  */
-export function buildEngineApiIndex(engineDir: string): string {
-  const files = readdirSync(engineDir)
+export function buildEngineApiIndex(
+  engineDir: string,
+  engineFiles: Readonly<Record<string, string>>,
+  omit: readonly string[] = []
+): string {
+  const files = Object.keys(engineFiles)
     .filter((name) => name.endsWith(".js"))
     .sort()
 
   const sections = files
-    .map((file) => renderFileSection(file, readFileSync(path.join(engineDir, file), "utf8")))
+    .map((file) =>
+      renderFileSection(file, readFileSync(path.join(engineDir, engineFiles[file]!), "utf8"), omit)
+    )
     .filter((section) => section.length > 0)
 
   return [HEADER, ...sections].join("\n\n")
 }
 
 /**
- * Computed once, at import time — the same instant `plan.ts`/`run-tasks.ts`
- * themselves are loaded — never per call: the engine's own source changes
- * only when this codebase is redeployed, not per game or per turn. Falls
- * back to just the header on a read failure (a missing or moved engine
- * folder) rather than throwing, since losing this one line of guidance
- * should never be what takes a chat turn down.
+ * Computed once per dimension, at import time — the same instant
+ * `plan.ts`/`run-tasks.ts` themselves are loaded — never per call: the
+ * engine's own source changes only when this codebase is redeployed, not
+ * per game or per turn. Falls back to just the header on a read failure (a
+ * missing or moved engine folder) rather than throwing, since losing this
+ * one line of guidance should never be what takes a chat turn down.
  */
-export const engineApiIndex: string = (() => {
-  try {
-    return buildEngineApiIndex(ENGINE_DIR)
-  } catch (error) {
-    console.warn("Failed to build the engine API index", error)
-    return HEADER
-  }
-})()
+const ENGINE_API_INDEXES = Object.fromEntries(
+  (Object.keys(DIMENSION_PROFILES) as GameDimension[]).map((dimension) => {
+    const { engineFiles, apiIndexOmit } = DIMENSION_PROFILES[dimension]
+    try {
+      return [dimension, buildEngineApiIndex(ENGINE_DIR, engineFiles, apiIndexOmit)]
+    } catch (error) {
+      console.warn(`Failed to build the ${dimension} engine API index`, error)
+      return [dimension, HEADER]
+    }
+  })
+) as Record<GameDimension, string>
+
+/** The engine API index for a game of this dimension: only the engine files its sandbox has. */
+export function engineApiIndexFor(dimension: GameDimension): string {
+  return ENGINE_API_INDEXES[dimension]
+}

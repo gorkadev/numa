@@ -14,6 +14,13 @@
 export const GAME_DIR = "/home/daytona/game"
 
 /**
+ * Port the game's static server listens on inside the sandbox. Nothing else in
+ * the sandbox is expected to bind it, which is what makes "something answers on
+ * this port" a sufficient health check.
+ */
+export const GAME_PORT = 3000
+
+/**
  * The characters a path inside the game directory may use.
  *
  * Deliberately narrower than what the filesystem accepts. Every path here is

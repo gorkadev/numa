@@ -1,8 +1,7 @@
-import type { RoleId } from "@/lib/games/harness/roles"
-
 import { engine2dSkill } from "./engine-2d"
 import { engineAudioSkill } from "./engine-audio"
 import { engineCoreSkill } from "./engine-core"
+import { engineCore2dSkill } from "./engine-core-2d"
 import { engineFeedbackSkill } from "./engine-feedback"
 import { engineMovementSkill } from "./engine-movement"
 import { engineReferenceSkill } from "./engine-reference"
@@ -32,6 +31,7 @@ export type SkillName =
   | "engine-systems"
   | "engine-reference"
   | "engine-2d"
+  | "engine-core-2d"
 
 /**
  * A registry entry (agent-skills: Registry Entry Shape). `description` and
@@ -56,8 +56,10 @@ export const SKILLS: Record<SkillName, Skill> = {
   "engine-systems": engineSystemsSkill,
   "engine-reference": engineReferenceSkill,
   "engine-2d": engine2dSkill,
+  "engine-core-2d": engineCore2dSkill,
 }
 
+/** Every registered skill, across both dimensions. Only stored data is checked against it; agents get their profile's list. */
 export const ALL_SKILL_NAMES: SkillName[] = Object.keys(
   SKILLS,
 ) as SkillName[]
@@ -66,81 +68,20 @@ export function isSkillName(value: string): value is SkillName {
   return Object.hasOwn(SKILLS, value)
 }
 
-/**
- * Deterministic per-role skill defaults (agent-skills: Deterministic Role
- * Defaults — "MUST NOT depend on model choice at runtime"). This is a fixed
- * list per role, not a runtime computation:
- *
- * - `explorer` and `verifier` get none: the explorer only reads and
- *   summarises (its tools are `read_file`/`list_files`, design.md's role
- *   catalogue), and the verifier has no tools at all — neither writes
- *   engine code, so neither needs the engine reference pushed.
- * - `planner` gets `engine-core` only, matching design.md's role catalogue
- *   instructions column ("roles/planner, runtime, engine-core, skill
- *   index"): enough to plan tasks against what the engine already offers,
- *   without the full per-module reference a planner never writes code
- *   against directly.
- * - `gameplay`, `visuals` and `audio` each get `engine-core` plus the
- *   modules their focus actually calls, per design.md's worker row
- *   ("defaults ∪ task skills"):
- *   - `gameplay` (movement, physics, scoring): `engine-utils` (math/input),
- *     `engine-movement` (camera rigs/physics), `engine-systems`
- *     (state/phase machine, `createGame`).
- *   - `visuals` (look and feel, including the camera per
- *     `instructions/roles/worker.ts`'s focus text): `engine-scene`
- *     (lighting/models), `engine-movement` (camera rigs — shared with
- *     gameplay's motor/physics module), `engine-feedback` (tweening/HUD),
- *     `engine-systems` (fx/particles, shared with gameplay's state module),
- *     `engine-reference` (the style guidance section).
- *   - `audio`: `engine-audio` only, beyond core.
- *
- * This mapping is this unit's own reasonable default, not dictated
- * verbatim anywhere in design.md/tasks.md beyond the planner's explicit
- * `engine-core` mention — flagged in apply-progress as a deviation-style
- * note for the maintainer to adjust if a different split is wanted before
- * unit 7b wires this map into worker instructions.
+/*
+ * Which of these skills a game's agents receive — pushed per role, pushed to
+ * the orchestrator, listed, requestable or loadable — is decided by the
+ * game's dimension profile (`lib/games/dimension.ts`), not here: a 3D game
+ * never sees a 2D skill and a 2D game never sees a 3D-only one.
  */
-export const ROLE_DEFAULT_SKILLS: Record<RoleId, SkillName[]> = {
-  explorer: [],
-  planner: ["engine-core"],
-  gameplay: ["engine-core", "engine-utils", "engine-movement", "engine-systems"],
-  visuals: [
-    "engine-core",
-    "engine-scene",
-    "engine-movement",
-    "engine-feedback",
-    "engine-systems",
-    "engine-reference",
-  ],
-  audio: ["engine-core", "engine-audio"],
-  verifier: [],
-}
-
-/**
- * The orchestrator is not a `RoleId` (it never goes through
- * `run-subagent.ts`, `harness/roles.ts`'s own header comment), so its
- * default lives separately. This is the phased-flow default only: unit 8
- * (task 8.5) cuts it to `engine-core` alone, now that routing lives in
- * `instructions/workflow.ts`'s own prompt instead — the orchestrator relies
- * on `load_skill` and the skill index (`instructions/index.ts`) for the
- * other 7 skills, the same way the planner does (`harness/tools/plan.ts`).
- *
- * `instructions/index.ts` only reads this constant when `HARNESS_PHASES` is
- * on (unit 8 correction, after the parent review of the first version of
- * this unit found the flag-off prompt still pointed at an inactive
- * `load_skill` tool with no way to reach the other 7 skills). With the flag
- * off, the orchestrator's prompt pushes `ALL_SKILL_NAMES` instead — the
- * exact prompt from before this unit existed, unaffected by this constant.
- */
-export const ORCHESTRATOR_DEFAULT_SKILLS: SkillName[] = ["engine-core"]
 
 /**
  * Joins a list of skills' `body` text in the order given, with the same
  * single blank-line separator `instructions/engine.ts`'s own sections used
  * (unit 7a's lossless-move verification confirmed this reconstructs the
  * original document byte-for-byte for the full 8-skill list). Shared by the
- * orchestrator's instructions (`instructions/index.ts`, either
- * `ORCHESTRATOR_DEFAULT_SKILLS` or `ALL_SKILL_NAMES` depending on
+ * orchestrator's instructions (`instructions/index.ts`, either the
+ * profile's orchestrator defaults or all of its skills depending on
  * `HARNESS_PHASES`) and a dispatched worker's (`harness/tools/run-tasks.ts`,
  * `mergeSkills` below), so both build a role's pushed skill text the exact
  * same way.
@@ -181,10 +122,14 @@ export function mergeSkills(
  * 8: pushed skills cut to `engine-core` alone) and the planner's
  * (`harness/tools/plan.ts`, unit 8: same single pushed skill) — both need
  * the same "what else is there" list, differing only in which names to
- * exclude.
+ * exclude. `available` is the game's dimension profile's skills, so the
+ * index never names a skill that dimension cannot load.
  */
-export function skillIndex(pushed: readonly SkillName[]): string {
-  const remaining = ALL_SKILL_NAMES.filter((name) => !pushed.includes(name))
+export function skillIndex(
+  pushed: readonly SkillName[],
+  available: readonly SkillName[]
+): string {
+  const remaining = available.filter((name) => !pushed.includes(name))
 
   if (remaining.length === 0) return ""
 

@@ -1,6 +1,8 @@
 import { readdir, readFile } from "node:fs/promises"
 import path from "node:path"
 
+import { DIMENSION_PROFILES, type GameDimension } from "@/lib/games/dimension"
+
 /**
  * One file destined for a fresh sandbox, addressed by its path *inside* the
  * runtime folder rather than on this machine — `index.html`,
@@ -130,7 +132,36 @@ export function mergeRuntimeSeeds(...seeds: RuntimeSeed[]): RuntimeSeed {
   }
 }
 
-/** Reads the common runtime folder into memory. */
-export function readRuntimeSeed(): Promise<RuntimeSeed> {
-  return readSeedDirectory(RUNTIME_DIR)
+/**
+ * Reads the runtime folder into memory as one dimension's sandbox sees it:
+ * `vendor/` whole, the profile's starter files at the root, and only the
+ * profile's engine files under `engine/`, each under its sandbox name.
+ */
+export async function readRuntimeSeed(dimension: GameDimension): Promise<RuntimeSeed> {
+  const { engineFiles, starterFiles } = DIMENSION_PROFILES[dimension]
+  const sandboxNameBySource = new Map(
+    Object.entries(engineFiles).map(([sandboxName, source]) => [source, sandboxName])
+  )
+  const { folders, files } = await readSeedDirectory(RUNTIME_DIR)
+
+  const selected = files.flatMap((file) => {
+    if (file.relativePath.startsWith("engine/")) {
+      const sandboxName = sandboxNameBySource.get(file.relativePath.slice("engine/".length))
+      return sandboxName ? [{ ...file, relativePath: `engine/${sandboxName}` }] : []
+    }
+    if (!file.relativePath.includes("/")) {
+      return (starterFiles as readonly string[]).includes(file.relativePath) ? [file] : []
+    }
+    return [file]
+  })
+
+  const missing = Object.values(engineFiles).filter((source) => !files.some((file) => file.relativePath === `engine/${source}`))
+  if (missing.length > 0) {
+    throw new Error(`Runtime engine files missing for ${dimension}: ${missing.join(", ")}`)
+  }
+
+  return {
+    folders,
+    files: selected.sort((left, right) => left.relativePath.localeCompare(right.relativePath)),
+  }
 }

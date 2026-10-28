@@ -19,7 +19,7 @@ import {
 } from "@/lib/ai/model-registry"
 import { turnUsageTokens } from "@/lib/ai/pricing"
 import { turnState } from "@/lib/games/harness/turn-state"
-import { ROLE_DEFAULT_SKILLS, type SkillName } from "@/lib/games/skills/registry"
+import type { SkillName } from "@/lib/games/skills/registry"
 import { describeToolCall } from "@/lib/games/tool-parts"
 
 import type { EnvelopeStatus, SubagentEnvelope } from "./envelope"
@@ -138,9 +138,9 @@ export type RunSubagentInput = {
   /**
    * The skills pushed into this run's own instructions, stamped onto the
    * record. `run-tasks.ts` passes its own `mergeSkills(defaults, task.skills)`
-   * result; other callers rely on the default, `ROLE_DEFAULT_SKILLS[role.id]`
-   * — accurate for `explore.ts`/`plan.ts`/`verify.ts`, since none of those
-   * three roles ever takes a per-task skill extra.
+   * result and `plan.ts` its dimension's planner defaults; the explorer and
+   * verifier are pushed no skills in either dimension, so the default is
+   * none.
    */
   skills?: SkillName[]
   /**
@@ -342,7 +342,7 @@ export async function* runSubagent(
 ): AsyncGenerator<SubagentProgress, RunSubagentResult, void> {
   const { role, instructions, tools, prompt, abortSignal, stopWhen, prepareStep } = input
   const agentId = input.agentId ?? randomUUID()
-  const skills = input.skills ?? ROLE_DEFAULT_SKILLS[role.id]
+  const skills = input.skills ?? []
   const promptText = promptToText(prompt)
 
   const { hooks, takeServed } = buildRunHooks()

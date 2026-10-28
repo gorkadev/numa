@@ -1,6 +1,8 @@
 import { z } from "zod"
 
-import { rejectDuplicateTaskIds, taskSpecSchema, type TaskSpec } from "./task-spec"
+import type { SkillName } from "@/lib/games/skills/registry"
+
+import { rejectDuplicateTaskIds, taskSpecSchema, taskSpecSchemaFor, type TaskSpec } from "./task-spec"
 
 /**
  * design.md's role catalogue: `submit_plan` accepts at most 6 tasks — a
@@ -28,11 +30,13 @@ export const MAX_PLAN_TASKS = 6
  * design.md's own wording for this paragraph. Both paths reach the planner
  * as a correctable problem inside its own loop either way.
  */
-export const planTasksSchema = z
-  .array(taskSpecSchema)
-  .min(1)
-  .max(MAX_PLAN_TASKS)
-  .superRefine(rejectDuplicateTaskIds)
+export function planTasksSchemaFor(skills: readonly SkillName[]) {
+  return z
+    .array(taskSpecSchemaFor(skills))
+    .min(1)
+    .max(MAX_PLAN_TASKS)
+    .superRefine(rejectDuplicateTaskIds)
+}
 
 /**
  * The directories no task may ever declare owning (design.md decision 7/11,
@@ -226,7 +230,7 @@ export function findUnresolvedOwnershipOverlap(
 }
 
 /**
- * The cross-task business-logic checks `planTasksSchema` cannot express
+ * The cross-task business-logic checks `planTasksSchemaFor` cannot express
  * (see that constant's own comment): acyclic `dependsOn` (unknown ids and
  * true cycles both checked), no owns entry under a protected prefix, and
  * disjoint ownership outside dependency chains. Returns the first violation
@@ -234,7 +238,7 @@ export function findUnresolvedOwnershipOverlap(
  * (`harness/tools/plan.ts`) returns as `{ error }`, or `undefined` for a
  * plan that passes every check.
  *
- * Assumes `tasks` has already passed `planTasksSchema` (task count, known
+ * Assumes `tasks` has already passed `planTasksSchemaFor` (task count, known
  * roles/skills, unique ids) — this function only adds the checks a static
  * schema cannot make. Pure and side-effect-free: no sandbox, database or AI
  * SDK import anywhere in this module, so it can be exercised standalone

@@ -1,9 +1,9 @@
 import type { Skill } from "./registry"
 
 /**
- * 2D on the same engine: the orthographic setup, `sprites.js` and
- * `tilemap.js`. Kept out of every role's defaults so 3D games carry none of
- * it; a 2D template's context and its tasks ask for it by name.
+ * 2D on the same engine: the orthographic setup, `sprites.js`,
+ * `tilemap.js`, and how the shared modules apply in 2D. Pushed by role to
+ * 2D games only (`lib/games/dimension.ts`); a 3D game never sees it.
  */
 export const engine2dSkill: Skill = {
   name: "engine-2d",
@@ -87,6 +87,36 @@ buildings and props, 8 effects, 9 world-space UI.
   corners come out right. Write the map as a mask and let this pick pieces.
 - Tile maps carry no collision. Keep the mask (or a walkable grid) and
   test \`worldToCell\` against it to block movement.
+
+### Movement and collisions — input.js, physics.js
+
+\`input.moveVector()\` maps straight onto the screen plane: \`x\` is right and
+\`y\` is up, so \`position.x += v.x * speed * dt\` and
+\`position.y += v.y * speed * dt\` (no \`-y\` → z flip as in 3D).
+
+\`physics.js\` works in 2D on the x/y plane with z kept at 0:
+- Side view (platformer): \`createPhysics(engine, { gravity: -24 })\` pulls
+  bodies down −y. \`addBody(sprite.object, { size: [w, h, 1] })\` — give z
+  a thickness of 1; bodies are positioned by their feet, so anchor the
+  sprite at \`[0.5, 0]\`.
+- Top down: \`createPhysics(engine, { gravity: 0 })\` and drive
+  \`body.velocity.x/y\` from input.
+- \`addStatic\` measures a mesh's bounds, and a tile layer is one mesh for
+  the whole map: never pass a layer. Block movement with the land mask and
+  \`worldToCell\`, or add invisible boxes (\`size\` with z 1) for solids.
+- \`overlaps(a, b, radius)\`, \`collect\` and \`clampToBounds\` work as is
+  (z stays 0; give \`clampToBounds\` z bounds of 0). Do not use
+  \`overlapsFlat\`: it ignores y, which is half of a 2D screen.
+
+### What does not apply
+
+\`anim.js\` ships unchanged, but \`walkCycle\` (swings the limbs of a 3D
+character rig) and \`createMixer\` (plays glTF/three.js keyframe clips) have
+nothing to act on in 2D — animate with sprite sheets instead. \`flash\`
+does nothing either (sprites are unlit, with no emissive): for a hit flash
+tween \`sprite.mesh.material.color\` instead. \`tween\`, \`spring\`,
+\`createShake\`, \`float\` and \`popIn\`/\`popOut\` work on \`sprite.object\`.
+There are no models, lights or camera rigs.
 
 ### Readiness
 

@@ -1,9 +1,10 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 
-import { taskSpecSchema } from "@/lib/games/harness/task-spec"
+import { DIMENSION_PROFILES } from "@/lib/games/dimension"
+import { taskSpecSchemaFor } from "@/lib/games/harness/task-spec"
 
-import { isSkillName, ROLE_DEFAULT_SKILLS, ORCHESTRATOR_DEFAULT_SKILLS, SKILLS, skillIndex } from "./registry"
+import { isSkillName, SKILLS } from "./registry"
 
 test("engine-2d is a registered skill that teaches the 2D modules", () => {
   assert.equal(isSkillName("engine-2d"), true)
@@ -14,14 +15,15 @@ test("engine-2d is a registered skill that teaches the 2D modules", () => {
   assert.ok(body.length <= 6000, "fits load_skill's cap without truncation")
 })
 
-test("engine-2d is never pushed by default, so 3D games pay nothing for it", () => {
-  for (const defaults of [...Object.values(ROLE_DEFAULT_SKILLS), ORCHESTRATOR_DEFAULT_SKILLS]) {
-    assert.equal(defaults.includes("engine-2d"), false)
+test("engine-2d is never offered to a 3D game", () => {
+  const profile = DIMENSION_PROFILES["3d"]
+  for (const defaults of [...Object.values(profile.roleDefaultSkills), profile.orchestratorDefaultSkills]) {
+    assert.equal((defaults as readonly string[]).includes("engine-2d"), false)
   }
-  assert.ok(skillIndex(ORCHESTRATOR_DEFAULT_SKILLS).includes("`engine-2d`"), "but load_skill can find it")
+  assert.equal((profile.skills as readonly string[]).includes("engine-2d"), false)
 })
 
-test("a task can ask for engine-2d as an extra skill", () => {
+test("a 2D task can ask for engine-2d as an extra skill", () => {
   const task = {
     id: "map",
     role: "visuals",
@@ -30,6 +32,6 @@ test("a task can ask for engine-2d as an extra skill", () => {
     owns: ["src/map.js"],
     skills: ["engine-2d"],
   }
-  const parsed = taskSpecSchema.safeParse(task)
+  const parsed = taskSpecSchemaFor(DIMENSION_PROFILES["2d"].skills).safeParse(task)
   assert.equal(parsed.success, true, parsed.success ? "" : parsed.error.message)
 })

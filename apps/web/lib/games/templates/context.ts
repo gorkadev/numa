@@ -5,8 +5,10 @@ import { games } from "@workspace/db/schema"
 import { eq } from "drizzle-orm"
 
 import { readPlanAssetReceipt } from "../harness/plan-store"
+import type { GameDimension } from "../dimension"
 import { hasSuccessfulGameFileWrites, type AssetReceipt } from "../harness/plan-validation"
 
+import { getTemplate, isTemplateId } from "./catalog"
 import { renderTemplateContext, selectedTemplateReadinessPolicy, templateAssetCatalog } from "./inventory"
 import { readTemplateContract } from "./seed"
 
@@ -56,6 +58,8 @@ export function compareInitialTemplateModelPaths(
 }
 
 export type GameTemplateBuildContext = {
+  /** The persisted template's catalog dimension: picks the engine, instructions and skills. */
+  dimension: GameDimension
   templateContext: string
   isFreshGameBuild: boolean
   assetCatalog: {
@@ -63,6 +67,24 @@ export type GameTemplateBuildContext = {
     sharedAssetIds: string[]
     requiresAssetReceipt: boolean
   }
+}
+
+/** A persisted template id's catalog dimension; an id the catalog no longer knows fails closed. */
+function templateDimension(templateId: string): GameDimension {
+  if (!isTemplateId(templateId)) throw new Error(`Unknown game template: ${templateId}`)
+  return getTemplate(templateId).dimension
+}
+
+/** The game's dimension, from its persisted template — what its tools are built for. */
+export async function readGameDimension(gameId: string): Promise<GameDimension> {
+  const [game] = await db
+    .select({ templateId: games.templateId })
+    .from(games)
+    .where(eq(games.id, gameId))
+    .limit(1)
+
+  if (!game) throw new Error(`Game ${gameId} does not exist`)
+  return templateDimension(game.templateId)
 }
 
 /**
@@ -82,10 +104,12 @@ export async function readGameTemplateBuildContext(gameId: string): Promise<Game
 
   if (!game) throw new Error(`Game ${gameId} does not exist`)
 
+  const dimension = templateDimension(game.templateId)
   const contract = await readTemplateContract(game.templateId, game.templateVersion)
   const isFreshGameBuild = !hasSuccessfulGameFileWrites(game.messages)
   if (!contract) {
     return {
+      dimension,
       templateContext: "## Starter template\nNo starter template is selected. Do not expect template assets or a template contract.",
       isFreshGameBuild,
       assetCatalog: { modelIds: [], sharedAssetIds: [], requiresAssetReceipt: false },
@@ -93,6 +117,7 @@ export async function readGameTemplateBuildContext(gameId: string): Promise<Game
   }
 
   return {
+    dimension,
     templateContext: renderTemplateContext(contract),
     isFreshGameBuild,
     assetCatalog: templateAssetCatalog(contract.manifest, isFreshGameBuild),

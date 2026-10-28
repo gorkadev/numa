@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-import { ALL_SKILL_NAMES } from "@/lib/games/skills/registry"
+import { ALL_SKILL_NAMES, type SkillName } from "@/lib/games/skills/registry"
 
 /**
  * One task's declared shape (design.md's Interfaces section): submitted by
@@ -31,46 +31,56 @@ const GOAL_MAX_CHARS = 4000
 const ACCEPTANCE_TARGET_CHARS = 200
 const ACCEPTANCE_MAX_CHARS = 600
 
-export const taskSpecSchema = z.object({
-  id: z
-    .string()
-    .min(1)
-    .describe('A short id for this task, stable within the turn, e.g. "t1".'),
-  role: z.enum(["gameplay", "visuals", "audio"]),
-  title: z.string().min(1).describe("A few words naming the task."),
-  goal: z
-    .string()
-    .min(1)
-    .max(GOAL_MAX_CHARS)
-    .describe(
-      `The task's goal, procedure, constraints and done-when condition, in plain language. This is the worker's whole brief — write it as if the worker has read nothing else about the game. Aim for about ${GOAL_TARGET_CHARS} characters: name what to build, where and against which engine APIs, not every value — the worker reads the game's own files and skills itself.`
-    ),
-  owns: z
-    .array(z.string().min(1))
-    .min(1)
-    .describe(
-      'File paths this task may write. A directory ending in "/" owns everything under it; anything else must match exactly.'
-    ),
-  dependsOn: z
-    .array(z.string())
-    .default([])
-    .describe(
-      "Ids of other tasks that must finish before this one starts — from this same batch, or from an earlier run_tasks call in this same turn. A dependency this call cannot resolve (an unknown id, a self-dependency, or a dependency cycle) blocks the task instead of running it."
-    ),
-  skills: z
-    .array(z.enum(ALL_SKILL_NAMES))
-    .default([])
-    .describe(
-      `Extra skills to push into this worker's instructions on top of its role's defaults, when this task needs one its role does not already carry. One or more of: ${ALL_SKILL_NAMES.join(", ")}.`
-    ),
-  acceptance: z
-    .array(z.string().min(1).max(ACCEPTANCE_MAX_CHARS))
-    .max(6)
-    .optional()
-    .describe(
-      `Bounded, observable acceptance criteria for this task, at most 6, each about ${ACCEPTANCE_TARGET_CHARS} characters. Historical stored tasks may omit this field; selected-template first-build plans must provide at least one criterion per task.`
-    ),
-})
+/**
+ * The task schema for one dimension: `skills` accepts, and its description
+ * lists, only the skills that dimension's profile (`lib/games/dimension.ts`)
+ * offers, so a 3D task can never request a 2D skill and vice versa.
+ */
+export function taskSpecSchemaFor(skills: readonly SkillName[]) {
+  return z.object({
+    id: z
+      .string()
+      .min(1)
+      .describe('A short id for this task, stable within the turn, e.g. "t1".'),
+    role: z.enum(["gameplay", "visuals", "audio"]),
+    title: z.string().min(1).describe("A few words naming the task."),
+    goal: z
+      .string()
+      .min(1)
+      .max(GOAL_MAX_CHARS)
+      .describe(
+        `The task's goal, procedure, constraints and done-when condition, in plain language. This is the worker's whole brief — write it as if the worker has read nothing else about the game. Aim for about ${GOAL_TARGET_CHARS} characters: name what to build, where and against which engine APIs, not every value — the worker reads the game's own files and skills itself.`
+      ),
+    owns: z
+      .array(z.string().min(1))
+      .min(1)
+      .describe(
+        'File paths this task may write. A directory ending in "/" owns everything under it; anything else must match exactly.'
+      ),
+    dependsOn: z
+      .array(z.string())
+      .default([])
+      .describe(
+        "Ids of other tasks that must finish before this one starts — from this same batch, or from an earlier run_tasks call in this same turn. A dependency this call cannot resolve (an unknown id, a self-dependency, or a dependency cycle) blocks the task instead of running it."
+      ),
+    skills: z
+      .array(z.enum([...skills] as [SkillName, ...SkillName[]]))
+      .default([])
+      .describe(
+        `Extra skills to push into this worker's instructions on top of its role's defaults, when this task needs one its role does not already carry. One or more of: ${skills.join(", ")}.`
+      ),
+    acceptance: z
+      .array(z.string().min(1).max(ACCEPTANCE_MAX_CHARS))
+      .max(6)
+      .optional()
+      .describe(
+        `Bounded, observable acceptance criteria for this task, at most 6, each about ${ACCEPTANCE_TARGET_CHARS} characters. Historical stored tasks may omit this field; selected-template first-build plans must provide at least one criterion per task.`
+      ),
+  })
+}
+
+/** Any registered skill: for reading tasks already stored, never for what a model is offered. */
+export const taskSpecSchema = taskSpecSchemaFor(ALL_SKILL_NAMES)
 
 export type TaskSpec = z.infer<typeof taskSpecSchema>
 
