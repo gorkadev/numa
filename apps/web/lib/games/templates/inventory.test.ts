@@ -30,3 +30,19 @@ for (const [template, expectedCount] of [["cube-world", 107], ["fantasy-cards", 
     assert.equal(rendered.split("\n").filter((line) => line.startsWith("- ")).length, expectedCount)
   })
 }
+
+test("a model with bounds shows them before its animations", () => {
+  const rendered = renderTemplateModelInventory([
+    {
+      id: "chest",
+      path: "assets/kit/Chest.gltf",
+      category: "mechanism",
+      bounds: { min: [-1.07, 0.01, -0.95], max: [1.07, 1.82, 0.93] },
+      animations: [{ name: "Chest_Open", category: "interact" }],
+    },
+  ])
+  assert.equal(
+    rendered,
+    "#### mechanism (1)\n- chest: `assets/kit/Chest.gltf`; bounds: min [-1.07, 0.01, -0.95] max [1.07, 1.82, 0.93]; animations: `Chest_Open` (interact)"
+  )
+})
