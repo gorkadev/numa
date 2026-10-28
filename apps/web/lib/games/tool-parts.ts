@@ -396,7 +396,12 @@ export function groupParts(parts: UIMessage["parts"]): PartBlock[] {
 
       blocks.push({
         kind: "reasoning",
-        key: part.id ?? `reasoning-${index}`,
+        /**
+         * Position, not `part.id`: some providers number reasoning parts per
+         * step, so every step's first part is "0" and a row that joins several
+         * steps would repeat the key. Parts only append, so the position holds.
+         */
+        key: `reasoning-${index}`,
         parts: [part],
       })
       return

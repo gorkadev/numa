@@ -25,7 +25,7 @@ export type GameTemplate = {
 }
 
 /** The closed set accepted from untrusted form data. */
-export const templateIdSchema = z.enum(["none", "fantasy-cards", "cube-world", "toon-shooter", "platformer", "tiny-swords"])
+export const templateIdSchema = z.enum(["none", "fantasy-cards", "cube-world", "toon-shooter", "platformer", "tiny-swords", "legacy-fantasy"])
 
 export type TemplateId = z.infer<typeof templateIdSchema>
 
@@ -35,42 +35,49 @@ export const TEMPLATES: readonly GameTemplate[] = [
     version: 1,
     dimension: "3d",
     label: "No template",
-    tagline: "Start from the standard game runtime.",
+    tagline: "A blank canvas on the standard game engine.",
   },
   {
     id: "fantasy-cards",
     version: 1,
     dimension: "3d",
     label: "Fantasy Cards",
-    tagline: "Start with a fantasy card game foundation.",
+    tagline: "3D fantasy cards of spells, creatures and treasures.",
   },
   {
     id: "cube-world",
     version: 1,
     dimension: "3d",
     label: "Cube World",
-    tagline: "Start with a small 3D adventure kit.",
+    tagline: "A blocky 3D world with heroes, animals and monsters.",
   },
   {
     id: "toon-shooter",
     version: 1,
     dimension: "3d",
     label: "Toon Shooter",
-    tagline: "Start with a complete cartoon 3D shooter kit.",
+    tagline: "Cartoon 3D soldiers, weapons and battlefields.",
   },
   {
     id: "platformer",
     version: 1,
     dimension: "3d",
     label: "Platformer",
-    tagline: "Start with a colorful side-scrolling platformer kit.",
+    tagline: "Bright 3D platforms, coins and enemies to jump on.",
   },
   {
     id: "tiny-swords",
     version: 1,
     dimension: "2d",
     label: "Tiny Swords",
-    tagline: "Start with a 2D pixel-art kingdom kit.",
+    tagline: "A 2D pixel-art kingdom seen from above.",
+  },
+  {
+    id: "legacy-fantasy",
+    version: 1,
+    dimension: "2d",
+    label: "Legacy Fantasy",
+    tagline: "A 2D pixel-art forest adventure seen from the side.",
   },
 ]
 

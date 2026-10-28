@@ -322,30 +322,50 @@
     "openModelPicker": "Choose model tier",
     "templateLocked": "The template is set when the game is created",
     "openTemplatePicker": "Choose game template",
+    "viewMoreTemplates": "View more",
+    "templateDialogDescription": "Pick the starter kit for your new game.",
+    "templateSearchPlaceholder": "Search templates",
+    "templateSearchEmpty": "No template matches your search.",
+    "templateViewLabel": "Layout",
+    "templateViewList": "One per row",
+    "templateViewGrid": "Grid",
+    "templateDialogCancel": "Cancel",
+    "templateDialogSelect": "Select",
     "templates": {
       "none": {
         "label": "No template",
-        "tagline": "Start from the standard game runtime."
+        "tagline": "A blank canvas on the standard game engine.",
+        "description": "No starter art: the game is built from scratch on the standard engine, with shapes, colors and effects made in code. Best when you have a very specific idea or want a minimalist style."
       },
       "fantasy-cards": {
         "label": "Fantasy Cards",
-        "tagline": "Start with a fantasy card game foundation."
+        "tagline": "3D fantasy cards of spells, creatures and treasures.",
+        "description": "30 illustrated 3D cards (wizards, dragons, elements, traps and treasures) plus blank card parts, all sharing one texture. Made for card battlers, deck builders and tabletop duels; the board, rules and effects are built around them."
       },
       "cube-world": {
         "label": "Cube World",
-        "tagline": "Start with a small 3D adventure kit."
+        "tagline": "A blocky 3D world with heroes, animals and monsters.",
+        "description": "107 voxel-style 3D models: an animated hero, characters, animals and enemies, plus terrain blocks, trees, tools, chests and buildings. Suits exploration, survival, farming and small adventures."
       },
       "toon-shooter": {
         "label": "Toon Shooter",
-        "tagline": "Start with a complete cartoon 3D shooter kit."
+        "tagline": "Cartoon 3D soldiers, weapons and battlefields.",
+        "description": "74 cartoon 3D models: 3 animated soldiers, 16 weapons from knives to rocket launchers, and 55 battlefield pieces such as barriers, crates, explosive barrels, a tank and brick walls. Made for arena shooters, wave survival and top-down action."
       },
       "platformer": {
         "label": "Platformer",
-        "tagline": "Start with a colorful side-scrolling platformer kit."
+        "tagline": "Bright 3D platforms, coins and enemies to jump on.",
+        "description": "109 colorful 3D models: an animated hero, enemies, floating platforms, spikes, saws, cannons, levers, coins, gems, hearts, keys and a goal flag. Great for side-scrolling or 3D platformers with jumps, collectibles and lives."
       },
       "tiny-swords": {
         "label": "Tiny Swords",
-        "tagline": "Start with a 2D pixel-art kingdom kit."
+        "tagline": "A 2D pixel-art kingdom seen from above.",
+        "description": "Animated warriors, archers, lancers, monks and workers in five faction colors, with castles, houses, towers, sheep, trees, gold and island terrain with cliffs and foam. Fits strategy, tower defense, top-down action and builders."
+      },
+      "legacy-fantasy": {
+        "label": "Legacy Fantasy",
+        "tagline": "A 2D pixel-art forest adventure seen from the side.",
+        "description": "A sword-wielding hero who runs, jumps, attacks and dies, boars, bees and snails to fight, and a forest of tiles, trees, rocks, chests, potions and parallax backgrounds. Made for platformers, metroidvania rooms and side-scrolling action."
       }
     },
     "startDictation": "Start dictation",

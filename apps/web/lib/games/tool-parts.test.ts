@@ -103,3 +103,16 @@ test("reasoning between tool calls starts a new block instead of joining them", 
     ["tools", ["write-1"], "write-1"],
   ])
 })
+
+test("reasoning runs get distinct keys even when the provider reuses a part id", () => {
+  // Some providers number reasoning parts per step, so every step's first part is id "0".
+  const parts = [
+    { type: "reasoning", id: "0", text: "First step.", state: "done" },
+    { type: "text", text: "Done with step one.", state: "done" },
+    { type: "reasoning", id: "0", text: "Second step.", state: "done" },
+  ] as UIMessage["parts"]
+
+  const keys = groupParts(parts).map((block) => block.key)
+
+  assert.equal(new Set(keys).size, keys.length, keys.join(", "))
+})

@@ -1,0 +1,2267 @@
+{
+ "template": {
+  "id": "legacy-fantasy",
+  "version": 1
+ },
+ "assetRoot": "assets/legacy-fantasy",
+ "models": [],
+ "sprites": [
+  {
+   "id": "backgrounds-forest-dark",
+   "path": "assets/legacy-fantasy/backgrounds/forest-dark.png",
+   "category": "decoration",
+   "frameWidth": 352,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "backgrounds-forest-light",
+   "path": "assets/legacy-fantasy/backgrounds/forest-light.png",
+   "category": "decoration",
+   "frameWidth": 352,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "backgrounds-forest-strip-dark",
+   "path": "assets/legacy-fantasy/backgrounds/forest-strip-dark.png",
+   "category": "decoration",
+   "frameWidth": 96,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "backgrounds-forest-strip-light",
+   "path": "assets/legacy-fantasy/backgrounds/forest-strip-light.png",
+   "category": "decoration",
+   "frameWidth": 96,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "backgrounds-sky",
+   "path": "assets/legacy-fantasy/backgrounds/sky.png",
+   "category": "decoration",
+   "frameWidth": 480,
+   "frameHeight": 272,
+   "frames": 1
+  },
+  {
+   "id": "buildings-bench",
+   "path": "assets/legacy-fantasy/buildings/bench.png",
+   "category": "building",
+   "frameWidth": 30,
+   "frameHeight": 12,
+   "frames": 1
+  },
+  {
+   "id": "buildings-bucket",
+   "path": "assets/legacy-fantasy/buildings/bucket.png",
+   "category": "building",
+   "frameWidth": 16,
+   "frameHeight": 16,
+   "frames": 1
+  },
+  {
+   "id": "buildings-chair",
+   "path": "assets/legacy-fantasy/buildings/chair.png",
+   "category": "building",
+   "frameWidth": 16,
+   "frameHeight": 24,
+   "frames": 1
+  },
+  {
+   "id": "buildings-door",
+   "path": "assets/legacy-fantasy/buildings/door.png",
+   "category": "building",
+   "frameWidth": 38,
+   "frameHeight": 54,
+   "frames": 1
+  },
+  {
+   "id": "buildings-fence",
+   "path": "assets/legacy-fantasy/buildings/fence.png",
+   "category": "building",
+   "frameWidth": 42,
+   "frameHeight": 24,
+   "frames": 1
+  },
+  {
+   "id": "buildings-fence-post-1",
+   "path": "assets/legacy-fantasy/buildings/fence-post-1.png",
+   "category": "building",
+   "frameWidth": 6,
+   "frameHeight": 24,
+   "frames": 1
+  },
+  {
+   "id": "buildings-fence-post-2",
+   "path": "assets/legacy-fantasy/buildings/fence-post-2.png",
+   "category": "building",
+   "frameWidth": 10,
+   "frameHeight": 24,
+   "frames": 1
+  },
+  {
+   "id": "buildings-gate",
+   "path": "assets/legacy-fantasy/buildings/gate.png",
+   "category": "building",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "buildings-log-pile",
+   "path": "assets/legacy-fantasy/buildings/log-pile.png",
+   "category": "building",
+   "frameWidth": 46,
+   "frameHeight": 16,
+   "frames": 1
+  },
+  {
+   "id": "buildings-mine-entrance",
+   "path": "assets/legacy-fantasy/buildings/mine-entrance.png",
+   "category": "building",
+   "frameWidth": 128,
+   "frameHeight": 160,
+   "frames": 1
+  },
+  {
+   "id": "buildings-window-frame",
+   "path": "assets/legacy-fantasy/buildings/window-frame.png",
+   "category": "building",
+   "frameWidth": 80,
+   "frameHeight": 67,
+   "frames": 1
+  },
+  {
+   "id": "buildings-window-lattice",
+   "path": "assets/legacy-fantasy/buildings/window-lattice.png",
+   "category": "building",
+   "frameWidth": 48,
+   "frameHeight": 48,
+   "frames": 1
+  },
+  {
+   "id": "buildings-window-small",
+   "path": "assets/legacy-fantasy/buildings/window-small.png",
+   "category": "building",
+   "frameWidth": 32,
+   "frameHeight": 48,
+   "frames": 1
+  },
+  {
+   "id": "buildings-wooden-shelf",
+   "path": "assets/legacy-fantasy/buildings/wooden-shelf.png",
+   "category": "building",
+   "frameWidth": 64,
+   "frameHeight": 79,
+   "frames": 1
+  },
+  {
+   "id": "character-attack",
+   "path": "assets/legacy-fantasy/character/attack.png",
+   "category": "unit",
+   "frameWidth": 112,
+   "frameHeight": 80,
+   "frames": 8,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "character-dead",
+   "path": "assets/legacy-fantasy/character/dead.png",
+   "category": "unit",
+   "frameWidth": 112,
+   "frameHeight": 80,
+   "frames": 8,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "character-idle",
+   "path": "assets/legacy-fantasy/character/idle.png",
+   "category": "unit",
+   "frameWidth": 112,
+   "frameHeight": 80,
+   "frames": 4,
+   "fps": 10
+  },
+  {
+   "id": "character-jump",
+   "path": "assets/legacy-fantasy/character/jump.png",
+   "category": "unit",
+   "frameWidth": 112,
+   "frameHeight": 80,
+   "frames": 15,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "character-jump-air",
+   "path": "assets/legacy-fantasy/character/jump-air.png",
+   "category": "unit",
+   "frameWidth": 112,
+   "frameHeight": 80,
+   "frames": 8,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "character-jump-end",
+   "path": "assets/legacy-fantasy/character/jump-end.png",
+   "category": "unit",
+   "frameWidth": 112,
+   "frameHeight": 80,
+   "frames": 3,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "character-jump-start",
+   "path": "assets/legacy-fantasy/character/jump-start.png",
+   "category": "unit",
+   "frameWidth": 112,
+   "frameHeight": 80,
+   "frames": 4,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "character-run",
+   "path": "assets/legacy-fantasy/character/run.png",
+   "category": "unit",
+   "frameWidth": 112,
+   "frameHeight": 80,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "interior-cage",
+   "path": "assets/legacy-fantasy/interior/cage.png",
+   "category": "building",
+   "frameWidth": 48,
+   "frameHeight": 48,
+   "frames": 1
+  },
+  {
+   "id": "interior-chest-iron-closed",
+   "path": "assets/legacy-fantasy/interior/chest-iron-closed.png",
+   "category": "building",
+   "frameWidth": 30,
+   "frameHeight": 29,
+   "frames": 1
+  },
+  {
+   "id": "interior-chest-iron-open",
+   "path": "assets/legacy-fantasy/interior/chest-iron-open.png",
+   "category": "building",
+   "frameWidth": 30,
+   "frameHeight": 27,
+   "frames": 1
+  },
+  {
+   "id": "interior-crate",
+   "path": "assets/legacy-fantasy/interior/crate.png",
+   "category": "building",
+   "frameWidth": 32,
+   "frameHeight": 32,
+   "frames": 1
+  },
+  {
+   "id": "interior-crate-large",
+   "path": "assets/legacy-fantasy/interior/crate-large.png",
+   "category": "building",
+   "frameWidth": 48,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "interior-crate-wide",
+   "path": "assets/legacy-fantasy/interior/crate-wide.png",
+   "category": "building",
+   "frameWidth": 48,
+   "frameHeight": 32,
+   "frames": 1
+  },
+  {
+   "id": "interior-door-boarded",
+   "path": "assets/legacy-fantasy/interior/door-boarded.png",
+   "category": "building",
+   "frameWidth": 42,
+   "frameHeight": 60,
+   "frames": 1
+  },
+  {
+   "id": "interior-door-tall",
+   "path": "assets/legacy-fantasy/interior/door-tall.png",
+   "category": "building",
+   "frameWidth": 42,
+   "frameHeight": 60,
+   "frames": 1
+  },
+  {
+   "id": "items-chest-closed",
+   "path": "assets/legacy-fantasy/items/chest-closed.png",
+   "category": "resource",
+   "frameWidth": 30,
+   "frameHeight": 27,
+   "frames": 1
+  },
+  {
+   "id": "items-chest-open",
+   "path": "assets/legacy-fantasy/items/chest-open.png",
+   "category": "resource",
+   "frameWidth": 30,
+   "frameHeight": 28,
+   "frames": 1
+  },
+  {
+   "id": "items-coin",
+   "path": "assets/legacy-fantasy/items/coin.png",
+   "category": "resource",
+   "frameWidth": 6,
+   "frameHeight": 9,
+   "frames": 1
+  },
+  {
+   "id": "items-gem-blue",
+   "path": "assets/legacy-fantasy/items/gem-blue.png",
+   "category": "resource",
+   "frameWidth": 10,
+   "frameHeight": 10,
+   "frames": 1
+  },
+  {
+   "id": "items-honey-chest",
+   "path": "assets/legacy-fantasy/items/honey-chest.png",
+   "category": "resource",
+   "frameWidth": 22,
+   "frameHeight": 21,
+   "frames": 1
+  },
+  {
+   "id": "items-honey-chest-open",
+   "path": "assets/legacy-fantasy/items/honey-chest-open.png",
+   "category": "resource",
+   "frameWidth": 22,
+   "frameHeight": 22,
+   "frames": 1
+  },
+  {
+   "id": "items-honey-chunk",
+   "path": "assets/legacy-fantasy/items/honey-chunk.png",
+   "category": "resource",
+   "frameWidth": 14,
+   "frameHeight": 16,
+   "frames": 1
+  },
+  {
+   "id": "items-honey-staff",
+   "path": "assets/legacy-fantasy/items/honey-staff.png",
+   "category": "resource",
+   "frameWidth": 16,
+   "frameHeight": 48,
+   "frames": 1
+  },
+  {
+   "id": "items-honey-torch",
+   "path": "assets/legacy-fantasy/items/honey-torch.png",
+   "category": "resource",
+   "frameWidth": 14,
+   "frameHeight": 24,
+   "frames": 1
+  },
+  {
+   "id": "items-key",
+   "path": "assets/legacy-fantasy/items/key.png",
+   "category": "resource",
+   "frameWidth": 12,
+   "frameHeight": 7,
+   "frames": 1
+  },
+  {
+   "id": "items-potion-large-1",
+   "path": "assets/legacy-fantasy/items/potion-large-1.png",
+   "category": "resource",
+   "frameWidth": 12,
+   "frameHeight": 15,
+   "frames": 1
+  },
+  {
+   "id": "items-potion-large-2",
+   "path": "assets/legacy-fantasy/items/potion-large-2.png",
+   "category": "resource",
+   "frameWidth": 12,
+   "frameHeight": 15,
+   "frames": 1
+  },
+  {
+   "id": "items-potion-large-3",
+   "path": "assets/legacy-fantasy/items/potion-large-3.png",
+   "category": "resource",
+   "frameWidth": 12,
+   "frameHeight": 15,
+   "frames": 1
+  },
+  {
+   "id": "items-potion-large-4",
+   "path": "assets/legacy-fantasy/items/potion-large-4.png",
+   "category": "resource",
+   "frameWidth": 12,
+   "frameHeight": 15,
+   "frames": 1
+  },
+  {
+   "id": "items-potion-large-5",
+   "path": "assets/legacy-fantasy/items/potion-large-5.png",
+   "category": "resource",
+   "frameWidth": 12,
+   "frameHeight": 10,
+   "frames": 1
+  },
+  {
+   "id": "items-potion-medium-1",
+   "path": "assets/legacy-fantasy/items/potion-medium-1.png",
+   "category": "resource",
+   "frameWidth": 10,
+   "frameHeight": 11,
+   "frames": 1
+  },
+  {
+   "id": "items-potion-medium-2",
+   "path": "assets/legacy-fantasy/items/potion-medium-2.png",
+   "category": "resource",
+   "frameWidth": 10,
+   "frameHeight": 11,
+   "frames": 1
+  },
+  {
+   "id": "items-potion-medium-3",
+   "path": "assets/legacy-fantasy/items/potion-medium-3.png",
+   "category": "resource",
+   "frameWidth": 10,
+   "frameHeight": 11,
+   "frames": 1
+  },
+  {
+   "id": "items-potion-medium-4",
+   "path": "assets/legacy-fantasy/items/potion-medium-4.png",
+   "category": "resource",
+   "frameWidth": 10,
+   "frameHeight": 11,
+   "frames": 1
+  },
+  {
+   "id": "items-potion-medium-5",
+   "path": "assets/legacy-fantasy/items/potion-medium-5.png",
+   "category": "resource",
+   "frameWidth": 10,
+   "frameHeight": 8,
+   "frames": 1
+  },
+  {
+   "id": "items-potion-small-1",
+   "path": "assets/legacy-fantasy/items/potion-small-1.png",
+   "category": "resource",
+   "frameWidth": 7,
+   "frameHeight": 11,
+   "frames": 1
+  },
+  {
+   "id": "items-potion-small-2",
+   "path": "assets/legacy-fantasy/items/potion-small-2.png",
+   "category": "resource",
+   "frameWidth": 7,
+   "frameHeight": 11,
+   "frames": 1
+  },
+  {
+   "id": "items-potion-small-3",
+   "path": "assets/legacy-fantasy/items/potion-small-3.png",
+   "category": "resource",
+   "frameWidth": 7,
+   "frameHeight": 11,
+   "frames": 1
+  },
+  {
+   "id": "items-potion-small-4",
+   "path": "assets/legacy-fantasy/items/potion-small-4.png",
+   "category": "resource",
+   "frameWidth": 7,
+   "frameHeight": 11,
+   "frames": 1
+  },
+  {
+   "id": "items-potion-small-5",
+   "path": "assets/legacy-fantasy/items/potion-small-5.png",
+   "category": "resource",
+   "frameWidth": 7,
+   "frameHeight": 6,
+   "frames": 1
+  },
+  {
+   "id": "mobs-bee-attack",
+   "path": "assets/legacy-fantasy/mobs/bee/attack.png",
+   "category": "unit",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 4,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "mobs-bee-fly",
+   "path": "assets/legacy-fantasy/mobs/bee/fly.png",
+   "category": "unit",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 4,
+   "fps": 10
+  },
+  {
+   "id": "mobs-bee-hit",
+   "path": "assets/legacy-fantasy/mobs/bee/hit.png",
+   "category": "unit",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 4,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "mobs-boar-black-hit",
+   "path": "assets/legacy-fantasy/mobs/boar-black/hit.png",
+   "category": "unit",
+   "frameWidth": 48,
+   "frameHeight": 32,
+   "frames": 4,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "mobs-boar-black-idle",
+   "path": "assets/legacy-fantasy/mobs/boar-black/idle.png",
+   "category": "unit",
+   "frameWidth": 48,
+   "frameHeight": 32,
+   "frames": 4,
+   "fps": 10
+  },
+  {
+   "id": "mobs-boar-black-run",
+   "path": "assets/legacy-fantasy/mobs/boar-black/run.png",
+   "category": "unit",
+   "frameWidth": 48,
+   "frameHeight": 32,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "mobs-boar-black-walk",
+   "path": "assets/legacy-fantasy/mobs/boar-black/walk.png",
+   "category": "unit",
+   "frameWidth": 48,
+   "frameHeight": 32,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "mobs-boar-hit",
+   "path": "assets/legacy-fantasy/mobs/boar/hit.png",
+   "category": "unit",
+   "frameWidth": 48,
+   "frameHeight": 32,
+   "frames": 4,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "mobs-boar-idle",
+   "path": "assets/legacy-fantasy/mobs/boar/idle.png",
+   "category": "unit",
+   "frameWidth": 48,
+   "frameHeight": 32,
+   "frames": 4,
+   "fps": 10
+  },
+  {
+   "id": "mobs-boar-run",
+   "path": "assets/legacy-fantasy/mobs/boar/run.png",
+   "category": "unit",
+   "frameWidth": 48,
+   "frameHeight": 32,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "mobs-boar-walk",
+   "path": "assets/legacy-fantasy/mobs/boar/walk.png",
+   "category": "unit",
+   "frameWidth": 48,
+   "frameHeight": 32,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "mobs-boar-white-hit",
+   "path": "assets/legacy-fantasy/mobs/boar-white/hit.png",
+   "category": "unit",
+   "frameWidth": 48,
+   "frameHeight": 32,
+   "frames": 4,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "mobs-boar-white-idle",
+   "path": "assets/legacy-fantasy/mobs/boar-white/idle.png",
+   "category": "unit",
+   "frameWidth": 48,
+   "frameHeight": 32,
+   "frames": 4,
+   "fps": 10
+  },
+  {
+   "id": "mobs-boar-white-run",
+   "path": "assets/legacy-fantasy/mobs/boar-white/run.png",
+   "category": "unit",
+   "frameWidth": 48,
+   "frameHeight": 32,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "mobs-boar-white-walk",
+   "path": "assets/legacy-fantasy/mobs/boar-white/walk.png",
+   "category": "unit",
+   "frameWidth": 48,
+   "frameHeight": 32,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "mobs-snail-dead",
+   "path": "assets/legacy-fantasy/mobs/snail/dead.png",
+   "category": "unit",
+   "frameWidth": 48,
+   "frameHeight": 32,
+   "frames": 8,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "mobs-snail-hide",
+   "path": "assets/legacy-fantasy/mobs/snail/hide.png",
+   "category": "unit",
+   "frameWidth": 48,
+   "frameHeight": 32,
+   "frames": 8,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "mobs-snail-walk",
+   "path": "assets/legacy-fantasy/mobs/snail/walk.png",
+   "category": "unit",
+   "frameWidth": 48,
+   "frameHeight": 32,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "props-bowl-green",
+   "path": "assets/legacy-fantasy/props/bowl-green.png",
+   "category": "decoration",
+   "frameWidth": 12,
+   "frameHeight": 10,
+   "frames": 1
+  },
+  {
+   "id": "props-bowl-red",
+   "path": "assets/legacy-fantasy/props/bowl-red.png",
+   "category": "decoration",
+   "frameWidth": 12,
+   "frameHeight": 10,
+   "frames": 1
+  },
+  {
+   "id": "props-bush-1",
+   "path": "assets/legacy-fantasy/props/bush-1.png",
+   "category": "decoration",
+   "frameWidth": 124,
+   "frameHeight": 43,
+   "frames": 1
+  },
+  {
+   "id": "props-bush-2",
+   "path": "assets/legacy-fantasy/props/bush-2.png",
+   "category": "decoration",
+   "frameWidth": 124,
+   "frameHeight": 43,
+   "frames": 1
+  },
+  {
+   "id": "props-bush-3",
+   "path": "assets/legacy-fantasy/props/bush-3.png",
+   "category": "decoration",
+   "frameWidth": 124,
+   "frameHeight": 43,
+   "frames": 1
+  },
+  {
+   "id": "props-bush-4",
+   "path": "assets/legacy-fantasy/props/bush-4.png",
+   "category": "decoration",
+   "frameWidth": 124,
+   "frameHeight": 43,
+   "frames": 1
+  },
+  {
+   "id": "props-bush-5",
+   "path": "assets/legacy-fantasy/props/bush-5.png",
+   "category": "decoration",
+   "frameWidth": 124,
+   "frameHeight": 43,
+   "frames": 1
+  },
+  {
+   "id": "props-bush-round",
+   "path": "assets/legacy-fantasy/props/bush-round.png",
+   "category": "decoration",
+   "frameWidth": 48,
+   "frameHeight": 48,
+   "frames": 1
+  },
+  {
+   "id": "props-canopy-1",
+   "path": "assets/legacy-fantasy/props/canopy-1.png",
+   "category": "decoration",
+   "frameWidth": 124,
+   "frameHeight": 85,
+   "frames": 1
+  },
+  {
+   "id": "props-canopy-2",
+   "path": "assets/legacy-fantasy/props/canopy-2.png",
+   "category": "decoration",
+   "frameWidth": 124,
+   "frameHeight": 86,
+   "frames": 1
+  },
+  {
+   "id": "props-canopy-3",
+   "path": "assets/legacy-fantasy/props/canopy-3.png",
+   "category": "decoration",
+   "frameWidth": 124,
+   "frameHeight": 86,
+   "frames": 1
+  },
+  {
+   "id": "props-canopy-4",
+   "path": "assets/legacy-fantasy/props/canopy-4.png",
+   "category": "decoration",
+   "frameWidth": 124,
+   "frameHeight": 86,
+   "frames": 1
+  },
+  {
+   "id": "props-cattail-1",
+   "path": "assets/legacy-fantasy/props/cattail-1.png",
+   "category": "decoration",
+   "frameWidth": 15,
+   "frameHeight": 27,
+   "frames": 1
+  },
+  {
+   "id": "props-cattail-2",
+   "path": "assets/legacy-fantasy/props/cattail-2.png",
+   "category": "decoration",
+   "frameWidth": 15,
+   "frameHeight": 26,
+   "frames": 1
+  },
+  {
+   "id": "props-fern",
+   "path": "assets/legacy-fantasy/props/fern.png",
+   "category": "decoration",
+   "frameWidth": 32,
+   "frameHeight": 25,
+   "frames": 1
+  },
+  {
+   "id": "props-flower-blue",
+   "path": "assets/legacy-fantasy/props/flower-blue.png",
+   "category": "decoration",
+   "frameWidth": 11,
+   "frameHeight": 16,
+   "frames": 1
+  },
+  {
+   "id": "props-hive",
+   "path": "assets/legacy-fantasy/props/hive.png",
+   "category": "decoration",
+   "frameWidth": 32,
+   "frameHeight": 39,
+   "frames": 1
+  },
+  {
+   "id": "props-lavender",
+   "path": "assets/legacy-fantasy/props/lavender.png",
+   "category": "decoration",
+   "frameWidth": 13,
+   "frameHeight": 32,
+   "frames": 1
+  },
+  {
+   "id": "props-mossy-rock-1",
+   "path": "assets/legacy-fantasy/props/mossy-rock-1.png",
+   "category": "decoration",
+   "frameWidth": 55,
+   "frameHeight": 78,
+   "frames": 1
+  },
+  {
+   "id": "props-mossy-rock-10",
+   "path": "assets/legacy-fantasy/props/mossy-rock-10.png",
+   "category": "decoration",
+   "frameWidth": 30,
+   "frameHeight": 31,
+   "frames": 1
+  },
+  {
+   "id": "props-mossy-rock-11",
+   "path": "assets/legacy-fantasy/props/mossy-rock-11.png",
+   "category": "decoration",
+   "frameWidth": 48,
+   "frameHeight": 43,
+   "frames": 1
+  },
+  {
+   "id": "props-mossy-rock-12",
+   "path": "assets/legacy-fantasy/props/mossy-rock-12.png",
+   "category": "decoration",
+   "frameWidth": 63,
+   "frameHeight": 48,
+   "frames": 1
+  },
+  {
+   "id": "props-mossy-rock-13",
+   "path": "assets/legacy-fantasy/props/mossy-rock-13.png",
+   "category": "decoration",
+   "frameWidth": 44,
+   "frameHeight": 46,
+   "frames": 1
+  },
+  {
+   "id": "props-mossy-rock-14",
+   "path": "assets/legacy-fantasy/props/mossy-rock-14.png",
+   "category": "decoration",
+   "frameWidth": 16,
+   "frameHeight": 23,
+   "frames": 1
+  },
+  {
+   "id": "props-mossy-rock-15",
+   "path": "assets/legacy-fantasy/props/mossy-rock-15.png",
+   "category": "decoration",
+   "frameWidth": 22,
+   "frameHeight": 32,
+   "frames": 1
+  },
+  {
+   "id": "props-mossy-rock-16",
+   "path": "assets/legacy-fantasy/props/mossy-rock-16.png",
+   "category": "decoration",
+   "frameWidth": 59,
+   "frameHeight": 28,
+   "frames": 1
+  },
+  {
+   "id": "props-mossy-rock-2",
+   "path": "assets/legacy-fantasy/props/mossy-rock-2.png",
+   "category": "decoration",
+   "frameWidth": 28,
+   "frameHeight": 29,
+   "frames": 1
+  },
+  {
+   "id": "props-mossy-rock-3",
+   "path": "assets/legacy-fantasy/props/mossy-rock-3.png",
+   "category": "decoration",
+   "frameWidth": 28,
+   "frameHeight": 31,
+   "frames": 1
+  },
+  {
+   "id": "props-mossy-rock-4",
+   "path": "assets/legacy-fantasy/props/mossy-rock-4.png",
+   "category": "decoration",
+   "frameWidth": 30,
+   "frameHeight": 29,
+   "frames": 1
+  },
+  {
+   "id": "props-mossy-rock-5",
+   "path": "assets/legacy-fantasy/props/mossy-rock-5.png",
+   "category": "decoration",
+   "frameWidth": 16,
+   "frameHeight": 23,
+   "frames": 1
+  },
+  {
+   "id": "props-mossy-rock-6",
+   "path": "assets/legacy-fantasy/props/mossy-rock-6.png",
+   "category": "decoration",
+   "frameWidth": 13,
+   "frameHeight": 15,
+   "frames": 1
+  },
+  {
+   "id": "props-mossy-rock-7",
+   "path": "assets/legacy-fantasy/props/mossy-rock-7.png",
+   "category": "decoration",
+   "frameWidth": 9,
+   "frameHeight": 8,
+   "frames": 1
+  },
+  {
+   "id": "props-mossy-rock-8",
+   "path": "assets/legacy-fantasy/props/mossy-rock-8.png",
+   "category": "decoration",
+   "frameWidth": 15,
+   "frameHeight": 15,
+   "frames": 1
+  },
+  {
+   "id": "props-mossy-rock-9",
+   "path": "assets/legacy-fantasy/props/mossy-rock-9.png",
+   "category": "decoration",
+   "frameWidth": 12,
+   "frameHeight": 11,
+   "frames": 1
+  },
+  {
+   "id": "props-mound-1",
+   "path": "assets/legacy-fantasy/props/mound-1.png",
+   "category": "decoration",
+   "frameWidth": 80,
+   "frameHeight": 32,
+   "frames": 1
+  },
+  {
+   "id": "props-mound-2",
+   "path": "assets/legacy-fantasy/props/mound-2.png",
+   "category": "decoration",
+   "frameWidth": 80,
+   "frameHeight": 32,
+   "frames": 1
+  },
+  {
+   "id": "props-mound-3",
+   "path": "assets/legacy-fantasy/props/mound-3.png",
+   "category": "decoration",
+   "frameWidth": 80,
+   "frameHeight": 32,
+   "frames": 1
+  },
+  {
+   "id": "props-mushroom-1",
+   "path": "assets/legacy-fantasy/props/mushroom-1.png",
+   "category": "decoration",
+   "frameWidth": 11,
+   "frameHeight": 14,
+   "frames": 1
+  },
+  {
+   "id": "props-mushroom-2",
+   "path": "assets/legacy-fantasy/props/mushroom-2.png",
+   "category": "decoration",
+   "frameWidth": 30,
+   "frameHeight": 25,
+   "frames": 1
+  },
+  {
+   "id": "props-mushroom-3",
+   "path": "assets/legacy-fantasy/props/mushroom-3.png",
+   "category": "decoration",
+   "frameWidth": 28,
+   "frameHeight": 32,
+   "frames": 1
+  },
+  {
+   "id": "props-mushroom-4",
+   "path": "assets/legacy-fantasy/props/mushroom-4.png",
+   "category": "decoration",
+   "frameWidth": 14,
+   "frameHeight": 21,
+   "frames": 1
+  },
+  {
+   "id": "props-mushroom-5",
+   "path": "assets/legacy-fantasy/props/mushroom-5.png",
+   "category": "decoration",
+   "frameWidth": 14,
+   "frameHeight": 15,
+   "frames": 1
+  },
+  {
+   "id": "props-mushroom-6",
+   "path": "assets/legacy-fantasy/props/mushroom-6.png",
+   "category": "decoration",
+   "frameWidth": 8,
+   "frameHeight": 10,
+   "frames": 1
+  },
+  {
+   "id": "props-mushroom-7",
+   "path": "assets/legacy-fantasy/props/mushroom-7.png",
+   "category": "decoration",
+   "frameWidth": 11,
+   "frameHeight": 14,
+   "frames": 1
+  },
+  {
+   "id": "props-mushroom-8",
+   "path": "assets/legacy-fantasy/props/mushroom-8.png",
+   "category": "decoration",
+   "frameWidth": 11,
+   "frameHeight": 20,
+   "frames": 1
+  },
+  {
+   "id": "props-pot-green",
+   "path": "assets/legacy-fantasy/props/pot-green.png",
+   "category": "decoration",
+   "frameWidth": 16,
+   "frameHeight": 12,
+   "frames": 1
+  },
+  {
+   "id": "props-pot-red",
+   "path": "assets/legacy-fantasy/props/pot-red.png",
+   "category": "decoration",
+   "frameWidth": 16,
+   "frameHeight": 12,
+   "frames": 1
+  },
+  {
+   "id": "props-rock-1",
+   "path": "assets/legacy-fantasy/props/rock-1.png",
+   "category": "decoration",
+   "frameWidth": 55,
+   "frameHeight": 78,
+   "frames": 1
+  },
+  {
+   "id": "props-rock-10",
+   "path": "assets/legacy-fantasy/props/rock-10.png",
+   "category": "decoration",
+   "frameWidth": 30,
+   "frameHeight": 30,
+   "frames": 1
+  },
+  {
+   "id": "props-rock-11",
+   "path": "assets/legacy-fantasy/props/rock-11.png",
+   "category": "decoration",
+   "frameWidth": 48,
+   "frameHeight": 42,
+   "frames": 1
+  },
+  {
+   "id": "props-rock-12",
+   "path": "assets/legacy-fantasy/props/rock-12.png",
+   "category": "decoration",
+   "frameWidth": 63,
+   "frameHeight": 48,
+   "frames": 1
+  },
+  {
+   "id": "props-rock-13",
+   "path": "assets/legacy-fantasy/props/rock-13.png",
+   "category": "decoration",
+   "frameWidth": 44,
+   "frameHeight": 46,
+   "frames": 1
+  },
+  {
+   "id": "props-rock-14",
+   "path": "assets/legacy-fantasy/props/rock-14.png",
+   "category": "decoration",
+   "frameWidth": 16,
+   "frameHeight": 22,
+   "frames": 1
+  },
+  {
+   "id": "props-rock-15",
+   "path": "assets/legacy-fantasy/props/rock-15.png",
+   "category": "decoration",
+   "frameWidth": 22,
+   "frameHeight": 32,
+   "frames": 1
+  },
+  {
+   "id": "props-rock-16",
+   "path": "assets/legacy-fantasy/props/rock-16.png",
+   "category": "decoration",
+   "frameWidth": 59,
+   "frameHeight": 28,
+   "frames": 1
+  },
+  {
+   "id": "props-rock-2",
+   "path": "assets/legacy-fantasy/props/rock-2.png",
+   "category": "decoration",
+   "frameWidth": 28,
+   "frameHeight": 29,
+   "frames": 1
+  },
+  {
+   "id": "props-rock-3",
+   "path": "assets/legacy-fantasy/props/rock-3.png",
+   "category": "decoration",
+   "frameWidth": 28,
+   "frameHeight": 31,
+   "frames": 1
+  },
+  {
+   "id": "props-rock-4",
+   "path": "assets/legacy-fantasy/props/rock-4.png",
+   "category": "decoration",
+   "frameWidth": 30,
+   "frameHeight": 29,
+   "frames": 1
+  },
+  {
+   "id": "props-rock-5",
+   "path": "assets/legacy-fantasy/props/rock-5.png",
+   "category": "decoration",
+   "frameWidth": 16,
+   "frameHeight": 22,
+   "frames": 1
+  },
+  {
+   "id": "props-rock-6",
+   "path": "assets/legacy-fantasy/props/rock-6.png",
+   "category": "decoration",
+   "frameWidth": 13,
+   "frameHeight": 15,
+   "frames": 1
+  },
+  {
+   "id": "props-rock-7",
+   "path": "assets/legacy-fantasy/props/rock-7.png",
+   "category": "decoration",
+   "frameWidth": 9,
+   "frameHeight": 7,
+   "frames": 1
+  },
+  {
+   "id": "props-rock-8",
+   "path": "assets/legacy-fantasy/props/rock-8.png",
+   "category": "decoration",
+   "frameWidth": 15,
+   "frameHeight": 14,
+   "frames": 1
+  },
+  {
+   "id": "props-rock-9",
+   "path": "assets/legacy-fantasy/props/rock-9.png",
+   "category": "decoration",
+   "frameWidth": 12,
+   "frameHeight": 10,
+   "frames": 1
+  },
+  {
+   "id": "props-sprout",
+   "path": "assets/legacy-fantasy/props/sprout.png",
+   "category": "decoration",
+   "frameWidth": 14,
+   "frameHeight": 11,
+   "frames": 1
+  },
+  {
+   "id": "props-stake-1",
+   "path": "assets/legacy-fantasy/props/stake-1.png",
+   "category": "decoration",
+   "frameWidth": 5,
+   "frameHeight": 22,
+   "frames": 1
+  },
+  {
+   "id": "props-stake-2",
+   "path": "assets/legacy-fantasy/props/stake-2.png",
+   "category": "decoration",
+   "frameWidth": 5,
+   "frameHeight": 16,
+   "frames": 1
+  },
+  {
+   "id": "props-stake-3",
+   "path": "assets/legacy-fantasy/props/stake-3.png",
+   "category": "decoration",
+   "frameWidth": 4,
+   "frameHeight": 15,
+   "frames": 1
+  },
+  {
+   "id": "props-standing-stone-1",
+   "path": "assets/legacy-fantasy/props/standing-stone-1.png",
+   "category": "decoration",
+   "frameWidth": 50,
+   "frameHeight": 90,
+   "frames": 1
+  },
+  {
+   "id": "props-standing-stone-10",
+   "path": "assets/legacy-fantasy/props/standing-stone-10.png",
+   "category": "decoration",
+   "frameWidth": 52,
+   "frameHeight": 43,
+   "frames": 1
+  },
+  {
+   "id": "props-standing-stone-2",
+   "path": "assets/legacy-fantasy/props/standing-stone-2.png",
+   "category": "decoration",
+   "frameWidth": 37,
+   "frameHeight": 79,
+   "frames": 1
+  },
+  {
+   "id": "props-standing-stone-3",
+   "path": "assets/legacy-fantasy/props/standing-stone-3.png",
+   "category": "decoration",
+   "frameWidth": 26,
+   "frameHeight": 31,
+   "frames": 1
+  },
+  {
+   "id": "props-standing-stone-4",
+   "path": "assets/legacy-fantasy/props/standing-stone-4.png",
+   "category": "decoration",
+   "frameWidth": 43,
+   "frameHeight": 42,
+   "frames": 1
+  },
+  {
+   "id": "props-standing-stone-5",
+   "path": "assets/legacy-fantasy/props/standing-stone-5.png",
+   "category": "decoration",
+   "frameWidth": 20,
+   "frameHeight": 24,
+   "frames": 1
+  },
+  {
+   "id": "props-standing-stone-6",
+   "path": "assets/legacy-fantasy/props/standing-stone-6.png",
+   "category": "decoration",
+   "frameWidth": 42,
+   "frameHeight": 18,
+   "frames": 1
+  },
+  {
+   "id": "props-standing-stone-7",
+   "path": "assets/legacy-fantasy/props/standing-stone-7.png",
+   "category": "decoration",
+   "frameWidth": 36,
+   "frameHeight": 63,
+   "frames": 1
+  },
+  {
+   "id": "props-standing-stone-8",
+   "path": "assets/legacy-fantasy/props/standing-stone-8.png",
+   "category": "decoration",
+   "frameWidth": 25,
+   "frameHeight": 14,
+   "frames": 1
+  },
+  {
+   "id": "props-standing-stone-9",
+   "path": "assets/legacy-fantasy/props/standing-stone-9.png",
+   "category": "decoration",
+   "frameWidth": 42,
+   "frameHeight": 18,
+   "frames": 1
+  },
+  {
+   "id": "props-vase-green",
+   "path": "assets/legacy-fantasy/props/vase-green.png",
+   "category": "decoration",
+   "frameWidth": 16,
+   "frameHeight": 33,
+   "frames": 1
+  },
+  {
+   "id": "props-vase-red",
+   "path": "assets/legacy-fantasy/props/vase-red.png",
+   "category": "decoration",
+   "frameWidth": 16,
+   "frameHeight": 32,
+   "frames": 1
+  },
+  {
+   "id": "props-vine-flower",
+   "path": "assets/legacy-fantasy/props/vine-flower.png",
+   "category": "decoration",
+   "frameWidth": 11,
+   "frameHeight": 32,
+   "frames": 1
+  },
+  {
+   "id": "props-water-lily",
+   "path": "assets/legacy-fantasy/props/water-lily.png",
+   "category": "decoration",
+   "frameWidth": 28,
+   "frameHeight": 42,
+   "frames": 1
+  },
+  {
+   "id": "props-water-plant",
+   "path": "assets/legacy-fantasy/props/water-plant.png",
+   "category": "decoration",
+   "frameWidth": 28,
+   "frameHeight": 37,
+   "frames": 1
+  },
+  {
+   "id": "terrain-branch",
+   "path": "assets/legacy-fantasy/terrain/branch.png",
+   "category": "terrain",
+   "frameWidth": 75,
+   "frameHeight": 16,
+   "frames": 1
+  },
+  {
+   "id": "terrain-bridge-plank",
+   "path": "assets/legacy-fantasy/terrain/bridge-plank.png",
+   "category": "terrain",
+   "frameWidth": 46,
+   "frameHeight": 12,
+   "frames": 1
+  },
+  {
+   "id": "terrain-rope-bridge",
+   "path": "assets/legacy-fantasy/terrain/rope-bridge.png",
+   "category": "terrain",
+   "frameWidth": 80,
+   "frameHeight": 44,
+   "frames": 1
+  },
+  {
+   "id": "terrain-stone-ledge",
+   "path": "assets/legacy-fantasy/terrain/stone-ledge.png",
+   "category": "terrain",
+   "frameWidth": 45,
+   "frameHeight": 17,
+   "frames": 1
+  },
+  {
+   "id": "terrain-water",
+   "path": "assets/legacy-fantasy/terrain/water.png",
+   "category": "terrain",
+   "frameWidth": 64,
+   "frameHeight": 36,
+   "frames": 1
+  },
+  {
+   "id": "terrain-waterfall",
+   "path": "assets/legacy-fantasy/terrain/waterfall.png",
+   "category": "terrain",
+   "frameWidth": 48,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "trees-dark-silhouette-1",
+   "path": "assets/legacy-fantasy/trees/dark/silhouette-1.png",
+   "category": "decoration",
+   "frameWidth": 107,
+   "frameHeight": 368,
+   "frames": 1
+  },
+  {
+   "id": "trees-dark-silhouette-2",
+   "path": "assets/legacy-fantasy/trees/dark/silhouette-2.png",
+   "category": "decoration",
+   "frameWidth": 108,
+   "frameHeight": 313,
+   "frames": 1
+  },
+  {
+   "id": "trees-dark-silhouette-3",
+   "path": "assets/legacy-fantasy/trees/dark/silhouette-3.png",
+   "category": "decoration",
+   "frameWidth": 88,
+   "frameHeight": 208,
+   "frames": 1
+  },
+  {
+   "id": "trees-dark-silhouette-4",
+   "path": "assets/legacy-fantasy/trees/dark/silhouette-4.png",
+   "category": "decoration",
+   "frameWidth": 88,
+   "frameHeight": 144,
+   "frames": 1
+  },
+  {
+   "id": "trees-dark-silhouette-5",
+   "path": "assets/legacy-fantasy/trees/dark/silhouette-5.png",
+   "category": "decoration",
+   "frameWidth": 70,
+   "frameHeight": 108,
+   "frames": 1
+  },
+  {
+   "id": "trees-dark-tree-1",
+   "path": "assets/legacy-fantasy/trees/dark/tree-1.png",
+   "category": "decoration",
+   "frameWidth": 107,
+   "frameHeight": 368,
+   "frames": 1
+  },
+  {
+   "id": "trees-dark-tree-2",
+   "path": "assets/legacy-fantasy/trees/dark/tree-2.png",
+   "category": "decoration",
+   "frameWidth": 108,
+   "frameHeight": 313,
+   "frames": 1
+  },
+  {
+   "id": "trees-dark-tree-3",
+   "path": "assets/legacy-fantasy/trees/dark/tree-3.png",
+   "category": "decoration",
+   "frameWidth": 88,
+   "frameHeight": 208,
+   "frames": 1
+  },
+  {
+   "id": "trees-dark-tree-4",
+   "path": "assets/legacy-fantasy/trees/dark/tree-4.png",
+   "category": "decoration",
+   "frameWidth": 88,
+   "frameHeight": 144,
+   "frames": 1
+  },
+  {
+   "id": "trees-dark-tree-5",
+   "path": "assets/legacy-fantasy/trees/dark/tree-5.png",
+   "category": "decoration",
+   "frameWidth": 70,
+   "frameHeight": 108,
+   "frames": 1
+  },
+  {
+   "id": "trees-golden-silhouette-1",
+   "path": "assets/legacy-fantasy/trees/golden/silhouette-1.png",
+   "category": "decoration",
+   "frameWidth": 107,
+   "frameHeight": 368,
+   "frames": 1
+  },
+  {
+   "id": "trees-golden-silhouette-2",
+   "path": "assets/legacy-fantasy/trees/golden/silhouette-2.png",
+   "category": "decoration",
+   "frameWidth": 108,
+   "frameHeight": 313,
+   "frames": 1
+  },
+  {
+   "id": "trees-golden-silhouette-3",
+   "path": "assets/legacy-fantasy/trees/golden/silhouette-3.png",
+   "category": "decoration",
+   "frameWidth": 88,
+   "frameHeight": 208,
+   "frames": 1
+  },
+  {
+   "id": "trees-golden-silhouette-4",
+   "path": "assets/legacy-fantasy/trees/golden/silhouette-4.png",
+   "category": "decoration",
+   "frameWidth": 88,
+   "frameHeight": 144,
+   "frames": 1
+  },
+  {
+   "id": "trees-golden-silhouette-5",
+   "path": "assets/legacy-fantasy/trees/golden/silhouette-5.png",
+   "category": "decoration",
+   "frameWidth": 70,
+   "frameHeight": 108,
+   "frames": 1
+  },
+  {
+   "id": "trees-golden-tree-1",
+   "path": "assets/legacy-fantasy/trees/golden/tree-1.png",
+   "category": "decoration",
+   "frameWidth": 107,
+   "frameHeight": 368,
+   "frames": 1
+  },
+  {
+   "id": "trees-golden-tree-2",
+   "path": "assets/legacy-fantasy/trees/golden/tree-2.png",
+   "category": "decoration",
+   "frameWidth": 108,
+   "frameHeight": 313,
+   "frames": 1
+  },
+  {
+   "id": "trees-golden-tree-3",
+   "path": "assets/legacy-fantasy/trees/golden/tree-3.png",
+   "category": "decoration",
+   "frameWidth": 88,
+   "frameHeight": 208,
+   "frames": 1
+  },
+  {
+   "id": "trees-golden-tree-4",
+   "path": "assets/legacy-fantasy/trees/golden/tree-4.png",
+   "category": "decoration",
+   "frameWidth": 88,
+   "frameHeight": 144,
+   "frames": 1
+  },
+  {
+   "id": "trees-golden-tree-5",
+   "path": "assets/legacy-fantasy/trees/golden/tree-5.png",
+   "category": "decoration",
+   "frameWidth": 70,
+   "frameHeight": 108,
+   "frames": 1
+  },
+  {
+   "id": "trees-green-silhouette-1",
+   "path": "assets/legacy-fantasy/trees/green/silhouette-1.png",
+   "category": "decoration",
+   "frameWidth": 107,
+   "frameHeight": 368,
+   "frames": 1
+  },
+  {
+   "id": "trees-green-silhouette-2",
+   "path": "assets/legacy-fantasy/trees/green/silhouette-2.png",
+   "category": "decoration",
+   "frameWidth": 108,
+   "frameHeight": 313,
+   "frames": 1
+  },
+  {
+   "id": "trees-green-silhouette-3",
+   "path": "assets/legacy-fantasy/trees/green/silhouette-3.png",
+   "category": "decoration",
+   "frameWidth": 88,
+   "frameHeight": 208,
+   "frames": 1
+  },
+  {
+   "id": "trees-green-silhouette-4",
+   "path": "assets/legacy-fantasy/trees/green/silhouette-4.png",
+   "category": "decoration",
+   "frameWidth": 88,
+   "frameHeight": 144,
+   "frames": 1
+  },
+  {
+   "id": "trees-green-silhouette-5",
+   "path": "assets/legacy-fantasy/trees/green/silhouette-5.png",
+   "category": "decoration",
+   "frameWidth": 70,
+   "frameHeight": 108,
+   "frames": 1
+  },
+  {
+   "id": "trees-green-tree-1",
+   "path": "assets/legacy-fantasy/trees/green/tree-1.png",
+   "category": "decoration",
+   "frameWidth": 107,
+   "frameHeight": 368,
+   "frames": 1
+  },
+  {
+   "id": "trees-green-tree-2",
+   "path": "assets/legacy-fantasy/trees/green/tree-2.png",
+   "category": "decoration",
+   "frameWidth": 108,
+   "frameHeight": 313,
+   "frames": 1
+  },
+  {
+   "id": "trees-green-tree-3",
+   "path": "assets/legacy-fantasy/trees/green/tree-3.png",
+   "category": "decoration",
+   "frameWidth": 88,
+   "frameHeight": 208,
+   "frames": 1
+  },
+  {
+   "id": "trees-green-tree-4",
+   "path": "assets/legacy-fantasy/trees/green/tree-4.png",
+   "category": "decoration",
+   "frameWidth": 88,
+   "frameHeight": 144,
+   "frames": 1
+  },
+  {
+   "id": "trees-green-tree-5",
+   "path": "assets/legacy-fantasy/trees/green/tree-5.png",
+   "category": "decoration",
+   "frameWidth": 70,
+   "frameHeight": 108,
+   "frames": 1
+  },
+  {
+   "id": "trees-red-silhouette-1",
+   "path": "assets/legacy-fantasy/trees/red/silhouette-1.png",
+   "category": "decoration",
+   "frameWidth": 107,
+   "frameHeight": 368,
+   "frames": 1
+  },
+  {
+   "id": "trees-red-silhouette-2",
+   "path": "assets/legacy-fantasy/trees/red/silhouette-2.png",
+   "category": "decoration",
+   "frameWidth": 108,
+   "frameHeight": 313,
+   "frames": 1
+  },
+  {
+   "id": "trees-red-silhouette-3",
+   "path": "assets/legacy-fantasy/trees/red/silhouette-3.png",
+   "category": "decoration",
+   "frameWidth": 88,
+   "frameHeight": 208,
+   "frames": 1
+  },
+  {
+   "id": "trees-red-silhouette-4",
+   "path": "assets/legacy-fantasy/trees/red/silhouette-4.png",
+   "category": "decoration",
+   "frameWidth": 88,
+   "frameHeight": 144,
+   "frames": 1
+  },
+  {
+   "id": "trees-red-silhouette-5",
+   "path": "assets/legacy-fantasy/trees/red/silhouette-5.png",
+   "category": "decoration",
+   "frameWidth": 70,
+   "frameHeight": 108,
+   "frames": 1
+  },
+  {
+   "id": "trees-red-tree-1",
+   "path": "assets/legacy-fantasy/trees/red/tree-1.png",
+   "category": "decoration",
+   "frameWidth": 107,
+   "frameHeight": 368,
+   "frames": 1
+  },
+  {
+   "id": "trees-red-tree-2",
+   "path": "assets/legacy-fantasy/trees/red/tree-2.png",
+   "category": "decoration",
+   "frameWidth": 108,
+   "frameHeight": 313,
+   "frames": 1
+  },
+  {
+   "id": "trees-red-tree-3",
+   "path": "assets/legacy-fantasy/trees/red/tree-3.png",
+   "category": "decoration",
+   "frameWidth": 88,
+   "frameHeight": 208,
+   "frames": 1
+  },
+  {
+   "id": "trees-red-tree-4",
+   "path": "assets/legacy-fantasy/trees/red/tree-4.png",
+   "category": "decoration",
+   "frameWidth": 88,
+   "frameHeight": 144,
+   "frames": 1
+  },
+  {
+   "id": "trees-red-tree-5",
+   "path": "assets/legacy-fantasy/trees/red/tree-5.png",
+   "category": "decoration",
+   "frameWidth": 70,
+   "frameHeight": 108,
+   "frames": 1
+  },
+  {
+   "id": "trees-yellow-silhouette-1",
+   "path": "assets/legacy-fantasy/trees/yellow/silhouette-1.png",
+   "category": "decoration",
+   "frameWidth": 107,
+   "frameHeight": 368,
+   "frames": 1
+  },
+  {
+   "id": "trees-yellow-silhouette-2",
+   "path": "assets/legacy-fantasy/trees/yellow/silhouette-2.png",
+   "category": "decoration",
+   "frameWidth": 108,
+   "frameHeight": 313,
+   "frames": 1
+  },
+  {
+   "id": "trees-yellow-silhouette-3",
+   "path": "assets/legacy-fantasy/trees/yellow/silhouette-3.png",
+   "category": "decoration",
+   "frameWidth": 88,
+   "frameHeight": 208,
+   "frames": 1
+  },
+  {
+   "id": "trees-yellow-silhouette-4",
+   "path": "assets/legacy-fantasy/trees/yellow/silhouette-4.png",
+   "category": "decoration",
+   "frameWidth": 88,
+   "frameHeight": 144,
+   "frames": 1
+  },
+  {
+   "id": "trees-yellow-silhouette-5",
+   "path": "assets/legacy-fantasy/trees/yellow/silhouette-5.png",
+   "category": "decoration",
+   "frameWidth": 70,
+   "frameHeight": 108,
+   "frames": 1
+  },
+  {
+   "id": "trees-yellow-tree-1",
+   "path": "assets/legacy-fantasy/trees/yellow/tree-1.png",
+   "category": "decoration",
+   "frameWidth": 107,
+   "frameHeight": 368,
+   "frames": 1
+  },
+  {
+   "id": "trees-yellow-tree-2",
+   "path": "assets/legacy-fantasy/trees/yellow/tree-2.png",
+   "category": "decoration",
+   "frameWidth": 108,
+   "frameHeight": 313,
+   "frames": 1
+  },
+  {
+   "id": "trees-yellow-tree-3",
+   "path": "assets/legacy-fantasy/trees/yellow/tree-3.png",
+   "category": "decoration",
+   "frameWidth": 88,
+   "frameHeight": 208,
+   "frames": 1
+  },
+  {
+   "id": "trees-yellow-tree-4",
+   "path": "assets/legacy-fantasy/trees/yellow/tree-4.png",
+   "category": "decoration",
+   "frameWidth": 88,
+   "frameHeight": 144,
+   "frames": 1
+  },
+  {
+   "id": "trees-yellow-tree-5",
+   "path": "assets/legacy-fantasy/trees/yellow/tree-5.png",
+   "category": "decoration",
+   "frameWidth": 70,
+   "frameHeight": 108,
+   "frames": 1
+  },
+  {
+   "id": "ui-bar-fill-blue",
+   "path": "assets/legacy-fantasy/ui/bar-fill-blue.png",
+   "category": "ui",
+   "frameWidth": 56,
+   "frameHeight": 4,
+   "frames": 1
+  },
+  {
+   "id": "ui-bar-fill-blue-thin",
+   "path": "assets/legacy-fantasy/ui/bar-fill-blue-thin.png",
+   "category": "ui",
+   "frameWidth": 56,
+   "frameHeight": 2,
+   "frames": 1
+  },
+  {
+   "id": "ui-bar-fill-green",
+   "path": "assets/legacy-fantasy/ui/bar-fill-green.png",
+   "category": "ui",
+   "frameWidth": 56,
+   "frameHeight": 4,
+   "frames": 1
+  },
+  {
+   "id": "ui-bar-fill-green-thin",
+   "path": "assets/legacy-fantasy/ui/bar-fill-green-thin.png",
+   "category": "ui",
+   "frameWidth": 56,
+   "frameHeight": 2,
+   "frames": 1
+  },
+  {
+   "id": "ui-bar-fill-red",
+   "path": "assets/legacy-fantasy/ui/bar-fill-red.png",
+   "category": "ui",
+   "frameWidth": 56,
+   "frameHeight": 4,
+   "frames": 1
+  },
+  {
+   "id": "ui-bar-fill-red-thin",
+   "path": "assets/legacy-fantasy/ui/bar-fill-red-thin.png",
+   "category": "ui",
+   "frameWidth": 56,
+   "frameHeight": 2,
+   "frames": 1
+  },
+  {
+   "id": "ui-bar-fill-yellow",
+   "path": "assets/legacy-fantasy/ui/bar-fill-yellow.png",
+   "category": "ui",
+   "frameWidth": 56,
+   "frameHeight": 4,
+   "frames": 1
+  },
+  {
+   "id": "ui-bar-fill-yellow-thin",
+   "path": "assets/legacy-fantasy/ui/bar-fill-yellow-thin.png",
+   "category": "ui",
+   "frameWidth": 56,
+   "frameHeight": 2,
+   "frames": 1
+  },
+  {
+   "id": "ui-bar-frame",
+   "path": "assets/legacy-fantasy/ui/bar-frame.png",
+   "category": "ui",
+   "frameWidth": 58,
+   "frameHeight": 6,
+   "frames": 1
+  },
+  {
+   "id": "ui-bar-frame-thin",
+   "path": "assets/legacy-fantasy/ui/bar-frame-thin.png",
+   "category": "ui",
+   "frameWidth": 58,
+   "frameHeight": 4,
+   "frames": 1
+  },
+  {
+   "id": "ui-button-blue",
+   "path": "assets/legacy-fantasy/ui/button-blue.png",
+   "category": "ui",
+   "frameWidth": 58,
+   "frameHeight": 26,
+   "frames": 1
+  },
+  {
+   "id": "ui-button-gray",
+   "path": "assets/legacy-fantasy/ui/button-gray.png",
+   "category": "ui",
+   "frameWidth": 58,
+   "frameHeight": 26,
+   "frames": 1
+  },
+  {
+   "id": "ui-button-green",
+   "path": "assets/legacy-fantasy/ui/button-green.png",
+   "category": "ui",
+   "frameWidth": 58,
+   "frameHeight": 26,
+   "frames": 1
+  },
+  {
+   "id": "ui-button-red",
+   "path": "assets/legacy-fantasy/ui/button-red.png",
+   "category": "ui",
+   "frameWidth": 58,
+   "frameHeight": 26,
+   "frames": 1
+  },
+  {
+   "id": "ui-button-yellow",
+   "path": "assets/legacy-fantasy/ui/button-yellow.png",
+   "category": "ui",
+   "frameWidth": 58,
+   "frameHeight": 26,
+   "frames": 1
+  },
+  {
+   "id": "ui-icon-arrow-down",
+   "path": "assets/legacy-fantasy/ui/icon-arrow-down.png",
+   "category": "ui",
+   "frameWidth": 7,
+   "frameHeight": 4,
+   "frames": 1
+  },
+  {
+   "id": "ui-icon-arrow-left",
+   "path": "assets/legacy-fantasy/ui/icon-arrow-left.png",
+   "category": "ui",
+   "frameWidth": 4,
+   "frameHeight": 7,
+   "frames": 1
+  },
+  {
+   "id": "ui-icon-arrow-right",
+   "path": "assets/legacy-fantasy/ui/icon-arrow-right.png",
+   "category": "ui",
+   "frameWidth": 4,
+   "frameHeight": 7,
+   "frames": 1
+  },
+  {
+   "id": "ui-icon-arrow-up",
+   "path": "assets/legacy-fantasy/ui/icon-arrow-up.png",
+   "category": "ui",
+   "frameWidth": 7,
+   "frameHeight": 4,
+   "frames": 1
+  },
+  {
+   "id": "ui-icon-chest",
+   "path": "assets/legacy-fantasy/ui/icon-chest.png",
+   "category": "ui",
+   "frameWidth": 12,
+   "frameHeight": 11,
+   "frames": 1
+  },
+  {
+   "id": "ui-icon-clock",
+   "path": "assets/legacy-fantasy/ui/icon-clock.png",
+   "category": "ui",
+   "frameWidth": 9,
+   "frameHeight": 9,
+   "frames": 1
+  },
+  {
+   "id": "ui-icon-close",
+   "path": "assets/legacy-fantasy/ui/icon-close.png",
+   "category": "ui",
+   "frameWidth": 7,
+   "frameHeight": 7,
+   "frames": 1
+  },
+  {
+   "id": "ui-icon-exclamation",
+   "path": "assets/legacy-fantasy/ui/icon-exclamation.png",
+   "category": "ui",
+   "frameWidth": 2,
+   "frameHeight": 8,
+   "frames": 1
+  },
+  {
+   "id": "ui-icon-home",
+   "path": "assets/legacy-fantasy/ui/icon-home.png",
+   "category": "ui",
+   "frameWidth": 10,
+   "frameHeight": 9,
+   "frames": 1
+  },
+  {
+   "id": "ui-icon-pause",
+   "path": "assets/legacy-fantasy/ui/icon-pause.png",
+   "category": "ui",
+   "frameWidth": 6,
+   "frameHeight": 7,
+   "frames": 1
+  },
+  {
+   "id": "ui-icon-player",
+   "path": "assets/legacy-fantasy/ui/icon-player.png",
+   "category": "ui",
+   "frameWidth": 10,
+   "frameHeight": 11,
+   "frames": 1
+  },
+  {
+   "id": "ui-icon-plus",
+   "path": "assets/legacy-fantasy/ui/icon-plus.png",
+   "category": "ui",
+   "frameWidth": 6,
+   "frameHeight": 6,
+   "frames": 1
+  },
+  {
+   "id": "ui-icon-question",
+   "path": "assets/legacy-fantasy/ui/icon-question.png",
+   "category": "ui",
+   "frameWidth": 5,
+   "frameHeight": 9,
+   "frames": 1
+  },
+  {
+   "id": "ui-icon-settings",
+   "path": "assets/legacy-fantasy/ui/icon-settings.png",
+   "category": "ui",
+   "frameWidth": 12,
+   "frameHeight": 12,
+   "frames": 1
+  },
+  {
+   "id": "ui-icon-skull",
+   "path": "assets/legacy-fantasy/ui/icon-skull.png",
+   "category": "ui",
+   "frameWidth": 8,
+   "frameHeight": 10,
+   "frames": 1
+  },
+  {
+   "id": "ui-icon-trophy",
+   "path": "assets/legacy-fantasy/ui/icon-trophy.png",
+   "category": "ui",
+   "frameWidth": 12,
+   "frameHeight": 11,
+   "frames": 1
+  },
+  {
+   "id": "ui-minimap-frame",
+   "path": "assets/legacy-fantasy/ui/minimap-frame.png",
+   "category": "ui",
+   "frameWidth": 52,
+   "frameHeight": 52,
+   "frames": 1
+  },
+  {
+   "id": "ui-panel-paper",
+   "path": "assets/legacy-fantasy/ui/panel-paper.png",
+   "category": "ui",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "ui-panel-wood",
+   "path": "assets/legacy-fantasy/ui/panel-wood.png",
+   "category": "ui",
+   "frameWidth": 48,
+   "frameHeight": 48,
+   "frames": 1
+  },
+  {
+   "id": "ui-slot-circle-blue",
+   "path": "assets/legacy-fantasy/ui/slot-circle-blue.png",
+   "category": "ui",
+   "frameWidth": 14,
+   "frameHeight": 14,
+   "frames": 1
+  },
+  {
+   "id": "ui-slot-circle-dark",
+   "path": "assets/legacy-fantasy/ui/slot-circle-dark.png",
+   "category": "ui",
+   "frameWidth": 14,
+   "frameHeight": 14,
+   "frames": 1
+  },
+  {
+   "id": "ui-slot-circle-empty",
+   "path": "assets/legacy-fantasy/ui/slot-circle-empty.png",
+   "category": "ui",
+   "frameWidth": 16,
+   "frameHeight": 16,
+   "frames": 1
+  },
+  {
+   "id": "ui-slot-circle-green",
+   "path": "assets/legacy-fantasy/ui/slot-circle-green.png",
+   "category": "ui",
+   "frameWidth": 14,
+   "frameHeight": 14,
+   "frames": 1
+  },
+  {
+   "id": "ui-slot-circle-red",
+   "path": "assets/legacy-fantasy/ui/slot-circle-red.png",
+   "category": "ui",
+   "frameWidth": 14,
+   "frameHeight": 14,
+   "frames": 1
+  },
+  {
+   "id": "ui-slot-circle-tan",
+   "path": "assets/legacy-fantasy/ui/slot-circle-tan.png",
+   "category": "ui",
+   "frameWidth": 14,
+   "frameHeight": 14,
+   "frames": 1
+  },
+  {
+   "id": "ui-slot-circle-yellow",
+   "path": "assets/legacy-fantasy/ui/slot-circle-yellow.png",
+   "category": "ui",
+   "frameWidth": 14,
+   "frameHeight": 14,
+   "frames": 1
+  },
+  {
+   "id": "ui-slot-diamond-blue",
+   "path": "assets/legacy-fantasy/ui/slot-diamond-blue.png",
+   "category": "ui",
+   "frameWidth": 14,
+   "frameHeight": 14,
+   "frames": 1
+  },
+  {
+   "id": "ui-slot-diamond-dark",
+   "path": "assets/legacy-fantasy/ui/slot-diamond-dark.png",
+   "category": "ui",
+   "frameWidth": 14,
+   "frameHeight": 14,
+   "frames": 1
+  },
+  {
+   "id": "ui-slot-diamond-empty",
+   "path": "assets/legacy-fantasy/ui/slot-diamond-empty.png",
+   "category": "ui",
+   "frameWidth": 16,
+   "frameHeight": 16,
+   "frames": 1
+  },
+  {
+   "id": "ui-slot-diamond-green",
+   "path": "assets/legacy-fantasy/ui/slot-diamond-green.png",
+   "category": "ui",
+   "frameWidth": 14,
+   "frameHeight": 14,
+   "frames": 1
+  },
+  {
+   "id": "ui-slot-diamond-red",
+   "path": "assets/legacy-fantasy/ui/slot-diamond-red.png",
+   "category": "ui",
+   "frameWidth": 14,
+   "frameHeight": 14,
+   "frames": 1
+  },
+  {
+   "id": "ui-slot-diamond-tan",
+   "path": "assets/legacy-fantasy/ui/slot-diamond-tan.png",
+   "category": "ui",
+   "frameWidth": 14,
+   "frameHeight": 14,
+   "frames": 1
+  },
+  {
+   "id": "ui-slot-diamond-yellow",
+   "path": "assets/legacy-fantasy/ui/slot-diamond-yellow.png",
+   "category": "ui",
+   "frameWidth": 14,
+   "frameHeight": 14,
+   "frames": 1
+  },
+  {
+   "id": "ui-slot-square-blue",
+   "path": "assets/legacy-fantasy/ui/slot-square-blue.png",
+   "category": "ui",
+   "frameWidth": 14,
+   "frameHeight": 14,
+   "frames": 1
+  },
+  {
+   "id": "ui-slot-square-dark",
+   "path": "assets/legacy-fantasy/ui/slot-square-dark.png",
+   "category": "ui",
+   "frameWidth": 14,
+   "frameHeight": 14,
+   "frames": 1
+  },
+  {
+   "id": "ui-slot-square-empty",
+   "path": "assets/legacy-fantasy/ui/slot-square-empty.png",
+   "category": "ui",
+   "frameWidth": 16,
+   "frameHeight": 16,
+   "frames": 1
+  },
+  {
+   "id": "ui-slot-square-green",
+   "path": "assets/legacy-fantasy/ui/slot-square-green.png",
+   "category": "ui",
+   "frameWidth": 14,
+   "frameHeight": 14,
+   "frames": 1
+  },
+  {
+   "id": "ui-slot-square-red",
+   "path": "assets/legacy-fantasy/ui/slot-square-red.png",
+   "category": "ui",
+   "frameWidth": 14,
+   "frameHeight": 14,
+   "frames": 1
+  },
+  {
+   "id": "ui-slot-square-tan",
+   "path": "assets/legacy-fantasy/ui/slot-square-tan.png",
+   "category": "ui",
+   "frameWidth": 14,
+   "frameHeight": 14,
+   "frames": 1
+  },
+  {
+   "id": "ui-slot-square-yellow",
+   "path": "assets/legacy-fantasy/ui/slot-square-yellow.png",
+   "category": "ui",
+   "frameWidth": 14,
+   "frameHeight": 14,
+   "frames": 1
+  }
+ ],
+ "tilesets": [
+  {
+   "id": "terrain-tiles",
+   "path": "assets/legacy-fantasy/terrain/tiles.png",
+   "tileSize": 16,
+   "columns": 25,
+   "rows": 25,
+   "tiles": {
+    "grass.tuft-left": 0,
+    "grass.tuft": 1,
+    "grass.tuft-right": 4,
+    "grass.top-left": 25,
+    "grass.top": 26,
+    "grass.top-right": 29,
+    "grass.upper-left": 50,
+    "grass.upper": 51,
+    "grass.upper-right": 54,
+    "grass.left": 75,
+    "grass.center": 76,
+    "grass.right": 79,
+    "grass.bottom-left": 100,
+    "grass.bottom": 101,
+    "grass.bottom-right": 104,
+    "dirt.cap-left": 125,
+    "dirt.cap": 126,
+    "dirt.cap-right": 129,
+    "dirt.top-left": 150,
+    "dirt.top": 151,
+    "dirt.top-right": 154,
+    "dirt.left": 175,
+    "dirt.center": 176,
+    "dirt.right": 179,
+    "dirt.bottom-left": 225,
+    "dirt.bottom": 226,
+    "dirt.bottom-right": 229
+   }
+  }
+ ],
+ "licenseEvidence": {
+  "path": "assets/legacy-fantasy/LICENSE.txt",
+  "license": "Anokolisa Legacy-Fantasy terms; use inside Numa games confirmed by the project owner (2026-10-28)",
+  "sourcePack": "Legacy-Fantasy - High Forest 2.3 by Anokolisa"
+ },
+ "provenance": {
+  "three": {}
+ },
+ "vendor": {
+  "threeRevision": "r185",
+  "commonRuntimeDependencies": []
+ }
+}

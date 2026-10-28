@@ -234,7 +234,7 @@ export function ChatThread({
        */}
       <MessageScrollerProvider autoScroll>
         <MessageScroller className="flex-1">
-          <MessageScrollerViewport>
+          <MessageScrollerViewport className="scroll-fade-y! [--scroll-fade-mask:initial]!">
             <MessageScrollerContent className="mx-auto w-full max-w-3xl px-4 py-8 gap-4">
               {runs.map((run, index) => (
                 <MessageScrollerItem
