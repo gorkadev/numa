@@ -1,5 +1,6 @@
 "use client"
 
+import type { FileUIPart } from "ai"
 import { useActionState, useEffect, useState, startTransition } from "react"
 import { useTranslations } from "next-intl"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
@@ -127,10 +128,11 @@ export function NewGameComposer({
    * Nothing is stored: a tier choice is what the next turn is sent with, not a
    * property of the game, so the games table has no business holding it.
    */
-  function handleSubmit(prompt: string) {
+  function handleSubmit(prompt: string, files: FileUIPart[]) {
     newGameDraft.clear()
     const formData = new FormData()
     formData.set("prompt", prompt)
+    if (files.length > 0) formData.set("files", JSON.stringify(files))
     formData.set("tier", tierId)
     formData.set("template", templateId)
 
@@ -153,6 +155,7 @@ export function NewGameComposer({
         pending={pending}
         error={state?.error ?? null}
         improverMode="new"
+        attachable
       />
       <div className="flex flex-wrap justify-center gap-2">
         {suggestions.map((suggestion) => (

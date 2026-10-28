@@ -9,6 +9,7 @@ import { generateText } from "ai"
 import { and, eq } from "drizzle-orm"
 
 import { DEFAULT_TIER_ID, isTierId } from "@/lib/ai/model-catalog"
+import { parseAttachmentParts } from "@/lib/games/attachments"
 import { resolveUtilityModel } from "@/lib/ai/model-registry"
 import { deleteGameSandboxes } from "@/lib/daytona/utils"
 import {
@@ -102,6 +103,13 @@ export async function createGame(
     isTemplateId(templateId) ? templateId : DEFAULT_TEMPLATE_ID
   )
 
+  /**
+   * References to files already uploaded under this user. They are only
+   * passed on: the thread sends them with the prompt, and the agent resolves
+   * them against the game's owner, so a forged one reaches nothing.
+   */
+  const files = parseAttachmentParts(formData.get("files"))
+
   const title = await generateTitle(prompt)
 
   /**
@@ -174,8 +182,9 @@ export async function createGame(
    *
    * `redirect` throws a control-flow exception, so nothing below it runs.
    */
+  const filesQuery = files.length > 0 ? `&files=${encodeURIComponent(JSON.stringify(files))}` : ""
   redirect(
-    `/games/${game.id}?prompt=${encodeURIComponent(prompt)}&tier=${tierId}`
+    `/games/${game.id}?prompt=${encodeURIComponent(prompt)}&tier=${tierId}${filesQuery}`
   )
 }
 

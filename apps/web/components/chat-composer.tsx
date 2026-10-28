@@ -3,6 +3,7 @@
 import {
   useEffect,
   useId,
+  useRef,
   useState,
   type FormEvent,
   type ReactNode,
@@ -14,16 +15,29 @@ import {
   Cancel01Icon,
   File01Icon,
   MagicWand01Icon,
+  Pdf01Icon,
+  PlusSignIcon,
   StopIcon,
   Undo02Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
+import type { FileUIPart } from "ai"
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
 } from "@workspace/ui/components/input-group"
 import { LiveWaveform } from "@workspace/ui/components/live-waveform"
+import {
+  Attachment,
+  AttachmentAction,
+  AttachmentActions,
+  AttachmentContent,
+  AttachmentDescription,
+  AttachmentGroup,
+  AttachmentMedia,
+  AttachmentTitle,
+} from "@workspace/ui/components/attachment"
 import { Kbd } from "@workspace/ui/components/kbd"
 import {
   Tooltip,
@@ -31,6 +45,7 @@ import {
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip"
 import { EditorContent } from "@tiptap/react"
+import { useComposerAttachments } from "@/components/chat/use-composer-attachments"
 import { useComposerEditor } from "@/components/chat/use-composer-editor"
 import { useComposerShortcuts } from "@/components/chat/use-composer-shortcuts"
 import { useFileMentions, type MentionFilesLoader } from "@/components/chat/use-file-mentions"
@@ -41,6 +56,7 @@ import { Spinner } from "@/components/localized-spinner"
 import { ModelPicker } from "@/components/model-picker"
 import { LockedTemplate, TemplatePicker } from "@/components/template-picker"
 import type { TierId } from "@/lib/ai/model-catalog"
+import { ATTACHMENT_ACCEPT, ATTACHMENT_MAX_BYTES, ATTACHMENT_MAX_COUNT } from "@/lib/games/attachments"
 import { canImprove, improverTooltip } from "@/lib/games/improver/allowance"
 import type { ImproverMode } from "@/lib/games/improver/instructions"
 import type { TemplateId } from "@/lib/games/templates/catalog"
@@ -48,7 +64,8 @@ import type { TemplateId } from "@/lib/games/templates/catalog"
 type ChatComposerProps = {
   value: string
   onValueChange: (value: string) => void
-  onSubmit: (value: string) => void
+  /** The trimmed text, and the files attached to it when `attachable`. */
+  onSubmit: (value: string, files: FileUIPart[]) => void
   /** Cancels an answer in flight; without it, pending shows a spinner. */
   onStop?: () => void
   pending?: boolean
@@ -96,6 +113,12 @@ type ChatComposerProps = {
   loadMentionFiles?: MentionFilesLoader
   /** Opens a mentioned file in the side panel when its chip is clicked. */
   onOpenFile?: (path: string) => void
+  /**
+   * Turns on attachments: a + button opens the system file picker, and the
+   * files picked are uploaded and sent with the message, as context for the
+   * model only.
+   */
+  attachable?: boolean
 }
 
 /** Shared controlled composer for the home screen and active chat thread. */
@@ -117,6 +140,7 @@ export function ChatComposer({
   improverMode,
   loadMentionFiles,
   onOpenFile,
+  attachable = false,
 }: ChatComposerProps) {
   const t = useTranslations("GameComposer")
   const format = useFormatter()
@@ -166,6 +190,9 @@ export function ChatComposer({
     phase, supported, pending: pending || improver.improving, modelOpen, pickerAvailable,
     templatePickerAvailable, start, stop, discard, setModelOpen, setTemplateOpen,
   })
+
+  const files = useComposerAttachments()
+  const fileInput = useRef<HTMLInputElement>(null)
 
   const mentionListId = useId()
   const textareaDisabled = pending || active || improver.improving
@@ -218,9 +245,11 @@ export function ChatComposer({
     })
   }
 
+  /** A file still on its way would be left out of the message, so sending waits for it. */
   function submit() {
-    if (pending || active || improver.improving || hasSession() || !trimmed) return
-    onSubmit(trimmed)
+    if (pending || active || improver.improving || hasSession() || !trimmed || files.uploading) return
+    onSubmit(trimmed, files.parts)
+    files.clear()
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -233,6 +262,59 @@ export function ChatComposer({
       <div className="flex w-full flex-col">
         {tasksSlot}
         <InputGroup>
+          {attachable ? (
+            <input
+              ref={fileInput}
+              type="file"
+              multiple
+              accept={ATTACHMENT_ACCEPT}
+              className="sr-only"
+              tabIndex={-1}
+              aria-hidden="true"
+              onChange={(event) => {
+                if (event.target.files) files.add(event.target.files)
+                event.target.value = ""
+              }}
+            />
+          ) : null}
+          {files.attachments.length > 0 ? (
+            <InputGroupAddon align="block-start" className="pb-0">
+              <AttachmentGroup className="w-full">
+                {files.attachments.map((item) => (
+                  <Attachment key={item.id} size="sm" state={item.state === "uploading" ? "uploading" : item.state}>
+                    <AttachmentMedia variant={item.preview ? "image" : "icon"}>
+                      {item.preview ? (
+                        // eslint-disable-next-line @next/next/no-img-element -- a local object URL
+                        <img src={item.preview} alt="" />
+                      ) : item.state === "uploading" ? (
+                        <Spinner />
+                      ) : (
+                        <HugeiconsIcon icon={item.mediaType === "application/pdf" ? Pdf01Icon : File01Icon} />
+                      )}
+                    </AttachmentMedia>
+                    <AttachmentContent>
+                      <AttachmentTitle>{item.name}</AttachmentTitle>
+                      {item.problem ? (
+                        <AttachmentDescription>
+                          {t(`attachmentProblem.${item.problem}`, {
+                            size: Math.round(ATTACHMENT_MAX_BYTES / 1024 / 1024),
+                          })}
+                        </AttachmentDescription>
+                      ) : null}
+                    </AttachmentContent>
+                    <AttachmentActions>
+                      <AttachmentAction
+                        aria-label={t("removeAttachment", { name: item.name })}
+                        onClick={() => files.remove(item.id)}
+                      >
+                        <HugeiconsIcon icon={Cancel01Icon} />
+                      </AttachmentAction>
+                    </AttachmentActions>
+                  </Attachment>
+                ))}
+              </AttachmentGroup>
+            </InputGroupAddon>
+          ) : null}
           {/**
            * The editor only exists after hydration, so the wrapper holds the
            * text area's resting height meanwhile and the composer does not
@@ -311,6 +393,27 @@ export function ChatComposer({
             </div>
           ) : null}
           <InputGroupAddon align="block-end" className="justify-start">
+            {attachable && !active ? (
+              <Tooltip>
+                <TooltipTrigger render={
+                  <InputGroupButton
+                    type="button"
+                    onClick={() => fileInput.current?.click()}
+                    aria-label={t("attachFiles")}
+                    disabled={pending || files.full}
+                    focusableWhenDisabled
+                    size="icon-sm"
+                    variant="ghost"
+                    className="shrink-0 data-disabled:opacity-50"
+                  >
+                    <HugeiconsIcon icon={PlusSignIcon} />
+                  </InputGroupButton>
+                } />
+                <TooltipContent>
+                  {files.full ? t("attachmentsFull", { count: ATTACHMENT_MAX_COUNT }) : t("attachFiles")}
+                </TooltipContent>
+              </Tooltip>
+            ) : null}
             {!active && tierId && onTierChange ? (
               <ModelPicker
                 value={tierId}
@@ -442,7 +545,7 @@ export function ChatComposer({
               type={stoppable ? "button" : "submit"}
               onClick={stoppable ? onStop : undefined}
               aria-label={stoppable ? t("stopGenerating") : t("sendMessage")}
-              disabled={active || (stoppable ? false : pending || improver.improving || !trimmed)}
+              disabled={active || (stoppable ? false : pending || improver.improving || !trimmed || files.uploading)}
               className="shrink-0 rounded-full"
               variant={stoppable ? "destructive" : "default"}
               size="icon-sm"

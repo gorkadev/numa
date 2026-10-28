@@ -14,6 +14,7 @@ Object.assign(globalThis, { React })
 function render(props: {
   templateId?: TemplateId
   onTemplateChange?: (templateId: TemplateId) => void
+  attachable?: boolean
 }) {
   return renderToStaticMarkup(
     <NextIntlClientProvider locale="en" timeZone="UTC" messages={en}>
@@ -49,4 +50,18 @@ test("before the editor mounts, its place holds the old text area's resting heig
 
   assert.match(html, /data-slot="composer-editor" class="[^"]*\bmin-h-16\b/)
   assert.doesNotMatch(html, /<textarea/)
+})
+
+test("an attachable composer offers a + button over a hidden file input of the types we take", () => {
+  const html = render({ attachable: true })
+
+  assert.match(html, /aria-label="Attach files"/)
+  assert.match(html, /<input[^>]*type="file"[^>]*multiple[^>]*accept="[^"]*image\/png[^"]*application\/pdf/)
+})
+
+test("a composer without attachments shows no attach button and no file input", () => {
+  const html = render({})
+
+  assert.doesNotMatch(html, /Attach files/)
+  assert.doesNotMatch(html, /type="file"/)
 })

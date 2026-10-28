@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation"
 
+import { parseAttachmentParts } from "@/lib/games/attachments"
 import { GameChat } from "@/components/game-chat"
 import { strongContextWindows } from "@/lib/ai/model-registry"
 import { isTierId } from "@/lib/ai/model-catalog"
@@ -26,8 +27,10 @@ export default async function GamePage({
    * what sends a message. Repeated keys arrive as an array; only a single value
    * is a prompt.
    */
-  const { prompt, tier } = await searchParams
+  const { prompt, tier, files } = await searchParams
   const initialPrompt = typeof prompt === "string" ? prompt : undefined
+  /** The files attached to that prompt, as references; only ours survive. */
+  const initialFiles = initialPrompt && typeof files === "string" ? parseAttachmentParts(files) : []
 
   /**
    * The tier that screen was showing, travelling with it. Anything else in
@@ -95,6 +98,7 @@ export default async function GamePage({
         initialMessages={game.messages}
         initialSessions={initialSessions}
         initialPrompt={initialPrompt}
+        initialFiles={initialFiles}
         initialTierId={initialTierId}
         contextWindows={strongContextWindows()}
         showSessionStats={settings.showSessionStats}

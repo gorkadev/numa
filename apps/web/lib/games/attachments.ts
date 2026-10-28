@@ -39,11 +39,13 @@ export const ATTACHMENT_ACCEPT = [
 /**
  * The file's type, or `null` when it is not one we take. Browsers leave the
  * type empty for extensions the OS has no association for (`.md` on most
- * systems), so the extension is the fallback, never an override.
+ * systems), and a typeless file arrives in a form upload as
+ * `application/octet-stream`, so for both the extension is the fallback —
+ * never an override of a type that was actually given.
  */
 export function attachmentMediaType(file: { type: string; name: string }): string | null {
   if (TYPES.has(file.type)) return file.type
-  if (file.type) return null
+  if (file.type && file.type !== "application/octet-stream") return null
   const extension = file.name.slice(file.name.lastIndexOf(".") + 1).toLowerCase()
   return TYPES_BY_EXTENSION[extension] ?? null
 }
@@ -103,4 +105,33 @@ export function attachmentIdFromUrl(url: string): string | null {
 export function attachmentSrc(url: string): string | null {
   const id = attachmentIdFromUrl(url)
   return id ? `/api/attachments/${id}` : null
+}
+
+export type AttachmentPart = { type: "file"; url: string; mediaType: string; filename?: string }
+
+/**
+ * Attachment references that arrived as JSON from the browser — the home
+ * screen hands them to the new game through the URL. Only references to our
+ * own attachments, of a type we take, survive, and no more than a message may
+ * carry; anything malformed is dropped rather than failing the game.
+ */
+export function parseAttachmentParts(value: unknown): AttachmentPart[] {
+  let parsed: unknown
+  try {
+    parsed = typeof value === "string" ? JSON.parse(value) : value
+  } catch {
+    return []
+  }
+  if (!Array.isArray(parsed)) return []
+
+  return parsed
+    .flatMap((item): AttachmentPart[] => {
+      if (typeof item !== "object" || item === null) return []
+      const { url, mediaType, filename } = item as Record<string, unknown>
+      if (typeof url !== "string" || attachmentIdFromUrl(url) === null) return []
+      if (typeof mediaType !== "string" || !TYPES.has(mediaType)) return []
+      if (filename !== undefined && typeof filename !== "string") return []
+      return [{ type: "file", url, mediaType, ...(filename ? { filename: filename.slice(0, 200) } : {}) }]
+    })
+    .slice(0, ATTACHMENT_MAX_COUNT)
 }

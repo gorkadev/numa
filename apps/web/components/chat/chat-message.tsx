@@ -6,6 +6,7 @@ import type { UIMessage } from "ai"
 import { Bubble, BubbleContent } from "@workspace/ui/components/bubble"
 import { Message, MessageContent } from "@workspace/ui/components/message"
 import { MentionText } from "@/components/chat/mention-text"
+import { MessageAttachments } from "@/components/chat/message-attachments"
 
 import { AskPlayer, AskPlayerAnswer } from "@/components/chat/ask-player"
 import { showsMessageActions } from "@/components/chat/actions-visibility"
@@ -78,6 +79,10 @@ function ChatMessageImpl({
     [messages]
   )
   const blocks = useMemo(() => groupParts(parts), [parts])
+  const files = useMemo(
+    () => (role === "user" ? parts.filter((part) => part.type === "file") : []),
+    [parts, role]
+  )
 
   const lastBlock = blocks.at(-1)
   const showThinking =
@@ -104,6 +109,7 @@ function ChatMessageImpl({
     <Message align={role === "user" ? "end" : "start"}>
       {role === "assistant" ? <AssistantAvatar /> : null}
       <MessageContent>
+        {files.length > 0 ? <MessageAttachments parts={files} /> : null}
         {blocks.map((block) => {
           if (block.kind === "tools") {
             return <ToolGroup key={block.key} parts={block.parts} />
