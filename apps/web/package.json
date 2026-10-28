@@ -42,6 +42,7 @@
     "@workspace/db": "workspace:*",
     "@workspace/ui": "workspace:*",
     "ai": "^7.0.139",
+    "aws4fetch": "1.0.20",
     "better-auth": "^1.7.5",
     "blobatar": "^2.7.0",
     "date-fns": "^4.4.0",
