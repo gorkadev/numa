@@ -14,10 +14,22 @@ import { requireSession } from "@/lib/session"
  * bearing: Postgres's own default for `desc` is `nulls first`, which would
  * put every unpinned game ahead of the pinned ones instead of behind them.
  */
-export async function listGames(): Promise<Game[]> {
+/**
+ * A game without its thread. The thread is the whole conversation, tool calls
+ * and the files they wrote included — megabytes per game — so anything that
+ * only needs a game's name or state must not pull it over the network.
+ */
+export type GameSummary = Omit<Game, "messages">
+
+export async function listGames(): Promise<GameSummary[]> {
   const { user } = await requireSession()
 
+  /**
+   * Runs on every render of the app shell, for every game the user has: the
+   * thread is left out, or each navigation would transfer every conversation.
+   */
   return db.query.games.findMany({
+    columns: { messages: false },
     where: (game, { eq }) => eq(game.userId, user.id),
     orderBy: (game, { desc, sql }) => [
       sql`${game.pinnedAt} desc nulls last`,
@@ -56,8 +68,14 @@ export async function getGame(id: string): Promise<Game | undefined> {
  * `verifyPreviewToken` has returned `true` for the same id. Anywhere else, use
  * `getGame`.
  */
-export async function getGameForPreview(id: string): Promise<Game | undefined> {
+export async function getGameForPreview(id: string): Promise<GameSummary | undefined> {
+  /**
+   * Called for every file the game requests — each module, each sprite — so
+   * the thread is left out: a game with hundreds of assets would otherwise read
+   * its whole conversation hundreds of times on a single load.
+   */
   return db.query.games.findFirst({
+    columns: { messages: false },
     where: (game, { eq }) => eq(game.id, id),
   })
 }
