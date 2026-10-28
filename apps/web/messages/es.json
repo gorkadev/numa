@@ -342,6 +342,10 @@
       "platformer": {
         "label": "Plataformas",
         "tagline": "Empieza con un kit colorido de plataformas de scroll lateral."
+      },
+      "tiny-swords": {
+        "label": "Tiny Swords",
+        "tagline": "Empieza con un kit de reino 2D en pixel art."
       }
     },
     "startDictation": "Iniciar dictado",

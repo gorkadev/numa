@@ -286,6 +286,14 @@ const TEMPLATE_SEED_DIRECTORIES: Readonly<Record<string, string | undefined>> =
       "platformer",
       "seed"
     ),
+    "tiny-swords@1": path.join(
+      process.cwd(),
+      "lib",
+      "games",
+      "templates",
+      "tiny-swords",
+      "seed"
+    ),
   }
 
 function templateKey(templateId: string, templateVersion: number): string {

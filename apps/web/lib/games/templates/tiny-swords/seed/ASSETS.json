@@ -1,0 +1,3775 @@
+{
+ "template": {
+  "id": "tiny-swords",
+  "version": 1
+ },
+ "assetRoot": "assets/tiny-swords",
+ "models": [],
+ "sprites": [
+  {
+   "id": "buildings-black-archery",
+   "path": "assets/tiny-swords/buildings/black/archery.png",
+   "category": "building",
+   "frameWidth": 192,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "buildings-black-barracks",
+   "path": "assets/tiny-swords/buildings/black/barracks.png",
+   "category": "building",
+   "frameWidth": 192,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "buildings-black-castle",
+   "path": "assets/tiny-swords/buildings/black/castle.png",
+   "category": "building",
+   "frameWidth": 320,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "buildings-black-house1",
+   "path": "assets/tiny-swords/buildings/black/house1.png",
+   "category": "building",
+   "frameWidth": 128,
+   "frameHeight": 192,
+   "frames": 1
+  },
+  {
+   "id": "buildings-black-house2",
+   "path": "assets/tiny-swords/buildings/black/house2.png",
+   "category": "building",
+   "frameWidth": 128,
+   "frameHeight": 192,
+   "frames": 1
+  },
+  {
+   "id": "buildings-black-house3",
+   "path": "assets/tiny-swords/buildings/black/house3.png",
+   "category": "building",
+   "frameWidth": 128,
+   "frameHeight": 192,
+   "frames": 1
+  },
+  {
+   "id": "buildings-black-monastery",
+   "path": "assets/tiny-swords/buildings/black/monastery.png",
+   "category": "building",
+   "frameWidth": 192,
+   "frameHeight": 320,
+   "frames": 1
+  },
+  {
+   "id": "buildings-black-tower",
+   "path": "assets/tiny-swords/buildings/black/tower.png",
+   "category": "building",
+   "frameWidth": 128,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "buildings-blue-archery",
+   "path": "assets/tiny-swords/buildings/blue/archery.png",
+   "category": "building",
+   "frameWidth": 192,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "buildings-blue-barracks",
+   "path": "assets/tiny-swords/buildings/blue/barracks.png",
+   "category": "building",
+   "frameWidth": 192,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "buildings-blue-castle",
+   "path": "assets/tiny-swords/buildings/blue/castle.png",
+   "category": "building",
+   "frameWidth": 320,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "buildings-blue-house1",
+   "path": "assets/tiny-swords/buildings/blue/house1.png",
+   "category": "building",
+   "frameWidth": 128,
+   "frameHeight": 192,
+   "frames": 1
+  },
+  {
+   "id": "buildings-blue-house2",
+   "path": "assets/tiny-swords/buildings/blue/house2.png",
+   "category": "building",
+   "frameWidth": 128,
+   "frameHeight": 192,
+   "frames": 1
+  },
+  {
+   "id": "buildings-blue-house3",
+   "path": "assets/tiny-swords/buildings/blue/house3.png",
+   "category": "building",
+   "frameWidth": 128,
+   "frameHeight": 192,
+   "frames": 1
+  },
+  {
+   "id": "buildings-blue-monastery",
+   "path": "assets/tiny-swords/buildings/blue/monastery.png",
+   "category": "building",
+   "frameWidth": 192,
+   "frameHeight": 320,
+   "frames": 1
+  },
+  {
+   "id": "buildings-blue-tower",
+   "path": "assets/tiny-swords/buildings/blue/tower.png",
+   "category": "building",
+   "frameWidth": 128,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "buildings-purple-archery",
+   "path": "assets/tiny-swords/buildings/purple/archery.png",
+   "category": "building",
+   "frameWidth": 192,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "buildings-purple-barracks",
+   "path": "assets/tiny-swords/buildings/purple/barracks.png",
+   "category": "building",
+   "frameWidth": 192,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "buildings-purple-castle",
+   "path": "assets/tiny-swords/buildings/purple/castle.png",
+   "category": "building",
+   "frameWidth": 320,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "buildings-purple-house1",
+   "path": "assets/tiny-swords/buildings/purple/house1.png",
+   "category": "building",
+   "frameWidth": 128,
+   "frameHeight": 192,
+   "frames": 1
+  },
+  {
+   "id": "buildings-purple-house2",
+   "path": "assets/tiny-swords/buildings/purple/house2.png",
+   "category": "building",
+   "frameWidth": 128,
+   "frameHeight": 192,
+   "frames": 1
+  },
+  {
+   "id": "buildings-purple-house3",
+   "path": "assets/tiny-swords/buildings/purple/house3.png",
+   "category": "building",
+   "frameWidth": 128,
+   "frameHeight": 192,
+   "frames": 1
+  },
+  {
+   "id": "buildings-purple-monastery",
+   "path": "assets/tiny-swords/buildings/purple/monastery.png",
+   "category": "building",
+   "frameWidth": 192,
+   "frameHeight": 320,
+   "frames": 1
+  },
+  {
+   "id": "buildings-purple-tower",
+   "path": "assets/tiny-swords/buildings/purple/tower.png",
+   "category": "building",
+   "frameWidth": 128,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "buildings-red-archery",
+   "path": "assets/tiny-swords/buildings/red/archery.png",
+   "category": "building",
+   "frameWidth": 192,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "buildings-red-barracks",
+   "path": "assets/tiny-swords/buildings/red/barracks.png",
+   "category": "building",
+   "frameWidth": 192,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "buildings-red-castle",
+   "path": "assets/tiny-swords/buildings/red/castle.png",
+   "category": "building",
+   "frameWidth": 320,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "buildings-red-house1",
+   "path": "assets/tiny-swords/buildings/red/house1.png",
+   "category": "building",
+   "frameWidth": 128,
+   "frameHeight": 192,
+   "frames": 1
+  },
+  {
+   "id": "buildings-red-house2",
+   "path": "assets/tiny-swords/buildings/red/house2.png",
+   "category": "building",
+   "frameWidth": 128,
+   "frameHeight": 192,
+   "frames": 1
+  },
+  {
+   "id": "buildings-red-house3",
+   "path": "assets/tiny-swords/buildings/red/house3.png",
+   "category": "building",
+   "frameWidth": 128,
+   "frameHeight": 192,
+   "frames": 1
+  },
+  {
+   "id": "buildings-red-monastery",
+   "path": "assets/tiny-swords/buildings/red/monastery.png",
+   "category": "building",
+   "frameWidth": 192,
+   "frameHeight": 320,
+   "frames": 1
+  },
+  {
+   "id": "buildings-red-tower",
+   "path": "assets/tiny-swords/buildings/red/tower.png",
+   "category": "building",
+   "frameWidth": 128,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "buildings-yellow-archery",
+   "path": "assets/tiny-swords/buildings/yellow/archery.png",
+   "category": "building",
+   "frameWidth": 192,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "buildings-yellow-barracks",
+   "path": "assets/tiny-swords/buildings/yellow/barracks.png",
+   "category": "building",
+   "frameWidth": 192,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "buildings-yellow-castle",
+   "path": "assets/tiny-swords/buildings/yellow/castle.png",
+   "category": "building",
+   "frameWidth": 320,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "buildings-yellow-house1",
+   "path": "assets/tiny-swords/buildings/yellow/house1.png",
+   "category": "building",
+   "frameWidth": 128,
+   "frameHeight": 192,
+   "frames": 1
+  },
+  {
+   "id": "buildings-yellow-house2",
+   "path": "assets/tiny-swords/buildings/yellow/house2.png",
+   "category": "building",
+   "frameWidth": 128,
+   "frameHeight": 192,
+   "frames": 1
+  },
+  {
+   "id": "buildings-yellow-house3",
+   "path": "assets/tiny-swords/buildings/yellow/house3.png",
+   "category": "building",
+   "frameWidth": 128,
+   "frameHeight": 192,
+   "frames": 1
+  },
+  {
+   "id": "buildings-yellow-monastery",
+   "path": "assets/tiny-swords/buildings/yellow/monastery.png",
+   "category": "building",
+   "frameWidth": 192,
+   "frameHeight": 320,
+   "frames": 1
+  },
+  {
+   "id": "buildings-yellow-tower",
+   "path": "assets/tiny-swords/buildings/yellow/tower.png",
+   "category": "building",
+   "frameWidth": 128,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "decorations-bush-1",
+   "path": "assets/tiny-swords/decorations/bush-1.png",
+   "category": "decoration",
+   "frameWidth": 128,
+   "frameHeight": 128,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "decorations-bush-2",
+   "path": "assets/tiny-swords/decorations/bush-2.png",
+   "category": "decoration",
+   "frameWidth": 128,
+   "frameHeight": 128,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "decorations-bush-3",
+   "path": "assets/tiny-swords/decorations/bush-3.png",
+   "category": "decoration",
+   "frameWidth": 128,
+   "frameHeight": 128,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "decorations-bush-4",
+   "path": "assets/tiny-swords/decorations/bush-4.png",
+   "category": "decoration",
+   "frameWidth": 128,
+   "frameHeight": 128,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "decorations-cloud-1",
+   "path": "assets/tiny-swords/decorations/cloud-1.png",
+   "category": "decoration",
+   "frameWidth": 576,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "decorations-cloud-2",
+   "path": "assets/tiny-swords/decorations/cloud-2.png",
+   "category": "decoration",
+   "frameWidth": 576,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "decorations-cloud-3",
+   "path": "assets/tiny-swords/decorations/cloud-3.png",
+   "category": "decoration",
+   "frameWidth": 576,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "decorations-cloud-4",
+   "path": "assets/tiny-swords/decorations/cloud-4.png",
+   "category": "decoration",
+   "frameWidth": 576,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "decorations-cloud-5",
+   "path": "assets/tiny-swords/decorations/cloud-5.png",
+   "category": "decoration",
+   "frameWidth": 576,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "decorations-cloud-6",
+   "path": "assets/tiny-swords/decorations/cloud-6.png",
+   "category": "decoration",
+   "frameWidth": 576,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "decorations-cloud-7",
+   "path": "assets/tiny-swords/decorations/cloud-7.png",
+   "category": "decoration",
+   "frameWidth": 576,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "decorations-cloud-8",
+   "path": "assets/tiny-swords/decorations/cloud-8.png",
+   "category": "decoration",
+   "frameWidth": 576,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "decorations-rock-1",
+   "path": "assets/tiny-swords/decorations/rock-1.png",
+   "category": "decoration",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "decorations-rock-2",
+   "path": "assets/tiny-swords/decorations/rock-2.png",
+   "category": "decoration",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "decorations-rock-3",
+   "path": "assets/tiny-swords/decorations/rock-3.png",
+   "category": "decoration",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "decorations-rock-4",
+   "path": "assets/tiny-swords/decorations/rock-4.png",
+   "category": "decoration",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "decorations-rubber-duck",
+   "path": "assets/tiny-swords/decorations/rubber-duck.png",
+   "category": "decoration",
+   "frameWidth": 32,
+   "frameHeight": 32,
+   "frames": 3,
+   "fps": 10
+  },
+  {
+   "id": "decorations-water-rock-1",
+   "path": "assets/tiny-swords/decorations/water-rock-1.png",
+   "category": "decoration",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 16,
+   "fps": 10
+  },
+  {
+   "id": "decorations-water-rock-2",
+   "path": "assets/tiny-swords/decorations/water-rock-2.png",
+   "category": "decoration",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 16,
+   "fps": 10
+  },
+  {
+   "id": "decorations-water-rock-3",
+   "path": "assets/tiny-swords/decorations/water-rock-3.png",
+   "category": "decoration",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 16,
+   "fps": 10
+  },
+  {
+   "id": "decorations-water-rock-4",
+   "path": "assets/tiny-swords/decorations/water-rock-4.png",
+   "category": "decoration",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 16,
+   "fps": 10
+  },
+  {
+   "id": "effects-dust-01",
+   "path": "assets/tiny-swords/effects/dust-01.png",
+   "category": "effect",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 8,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "effects-dust-02",
+   "path": "assets/tiny-swords/effects/dust-02.png",
+   "category": "effect",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 10,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "effects-explosion-01",
+   "path": "assets/tiny-swords/effects/explosion-01.png",
+   "category": "effect",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "effects-explosion-02",
+   "path": "assets/tiny-swords/effects/explosion-02.png",
+   "category": "effect",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 10,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "effects-fire-01",
+   "path": "assets/tiny-swords/effects/fire-01.png",
+   "category": "effect",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "effects-fire-02",
+   "path": "assets/tiny-swords/effects/fire-02.png",
+   "category": "effect",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 10,
+   "fps": 10
+  },
+  {
+   "id": "effects-fire-03",
+   "path": "assets/tiny-swords/effects/fire-03.png",
+   "category": "effect",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 12,
+   "fps": 10
+  },
+  {
+   "id": "effects-water-splash",
+   "path": "assets/tiny-swords/effects/water-splash.png",
+   "category": "effect",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 9,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "resources-gold-highlight",
+   "path": "assets/tiny-swords/resources/gold-highlight.png",
+   "category": "resource",
+   "frameWidth": 128,
+   "frameHeight": 128,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "resources-gold-stone-1-highlight",
+   "path": "assets/tiny-swords/resources/gold-stone-1-highlight.png",
+   "category": "resource",
+   "frameWidth": 128,
+   "frameHeight": 128,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "resources-gold-stone-1",
+   "path": "assets/tiny-swords/resources/gold-stone-1.png",
+   "category": "resource",
+   "frameWidth": 128,
+   "frameHeight": 128,
+   "frames": 1
+  },
+  {
+   "id": "resources-gold-stone-2-highlight",
+   "path": "assets/tiny-swords/resources/gold-stone-2-highlight.png",
+   "category": "resource",
+   "frameWidth": 128,
+   "frameHeight": 128,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "resources-gold-stone-2",
+   "path": "assets/tiny-swords/resources/gold-stone-2.png",
+   "category": "resource",
+   "frameWidth": 128,
+   "frameHeight": 128,
+   "frames": 1
+  },
+  {
+   "id": "resources-gold-stone-3-highlight",
+   "path": "assets/tiny-swords/resources/gold-stone-3-highlight.png",
+   "category": "resource",
+   "frameWidth": 128,
+   "frameHeight": 128,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "resources-gold-stone-3",
+   "path": "assets/tiny-swords/resources/gold-stone-3.png",
+   "category": "resource",
+   "frameWidth": 128,
+   "frameHeight": 128,
+   "frames": 1
+  },
+  {
+   "id": "resources-gold-stone-4-highlight",
+   "path": "assets/tiny-swords/resources/gold-stone-4-highlight.png",
+   "category": "resource",
+   "frameWidth": 128,
+   "frameHeight": 128,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "resources-gold-stone-4",
+   "path": "assets/tiny-swords/resources/gold-stone-4.png",
+   "category": "resource",
+   "frameWidth": 128,
+   "frameHeight": 128,
+   "frames": 1
+  },
+  {
+   "id": "resources-gold-stone-5-highlight",
+   "path": "assets/tiny-swords/resources/gold-stone-5-highlight.png",
+   "category": "resource",
+   "frameWidth": 128,
+   "frameHeight": 128,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "resources-gold-stone-5",
+   "path": "assets/tiny-swords/resources/gold-stone-5.png",
+   "category": "resource",
+   "frameWidth": 128,
+   "frameHeight": 128,
+   "frames": 1
+  },
+  {
+   "id": "resources-gold-stone-6-highlight",
+   "path": "assets/tiny-swords/resources/gold-stone-6-highlight.png",
+   "category": "resource",
+   "frameWidth": 128,
+   "frameHeight": 128,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "resources-gold-stone-6",
+   "path": "assets/tiny-swords/resources/gold-stone-6.png",
+   "category": "resource",
+   "frameWidth": 128,
+   "frameHeight": 128,
+   "frames": 1
+  },
+  {
+   "id": "resources-gold",
+   "path": "assets/tiny-swords/resources/gold.png",
+   "category": "resource",
+   "frameWidth": 128,
+   "frameHeight": 128,
+   "frames": 1
+  },
+  {
+   "id": "resources-meat",
+   "path": "assets/tiny-swords/resources/meat.png",
+   "category": "resource",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "resources-sheep-grass",
+   "path": "assets/tiny-swords/resources/sheep-grass.png",
+   "category": "resource",
+   "frameWidth": 128,
+   "frameHeight": 128,
+   "frames": 12,
+   "fps": 10
+  },
+  {
+   "id": "resources-sheep-idle",
+   "path": "assets/tiny-swords/resources/sheep-idle.png",
+   "category": "resource",
+   "frameWidth": 128,
+   "frameHeight": 128,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "resources-sheep-move",
+   "path": "assets/tiny-swords/resources/sheep-move.png",
+   "category": "resource",
+   "frameWidth": 128,
+   "frameHeight": 128,
+   "frames": 4,
+   "fps": 10
+  },
+  {
+   "id": "resources-stump-1",
+   "path": "assets/tiny-swords/resources/stump-1.png",
+   "category": "resource",
+   "frameWidth": 192,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "resources-stump-2",
+   "path": "assets/tiny-swords/resources/stump-2.png",
+   "category": "resource",
+   "frameWidth": 192,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "resources-stump-3",
+   "path": "assets/tiny-swords/resources/stump-3.png",
+   "category": "resource",
+   "frameWidth": 192,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "resources-stump-4",
+   "path": "assets/tiny-swords/resources/stump-4.png",
+   "category": "resource",
+   "frameWidth": 192,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "resources-tool-1",
+   "path": "assets/tiny-swords/resources/tool-1.png",
+   "category": "resource",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "resources-tool-2",
+   "path": "assets/tiny-swords/resources/tool-2.png",
+   "category": "resource",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "resources-tool-3",
+   "path": "assets/tiny-swords/resources/tool-3.png",
+   "category": "resource",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "resources-tool-4",
+   "path": "assets/tiny-swords/resources/tool-4.png",
+   "category": "resource",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "resources-tree-1",
+   "path": "assets/tiny-swords/resources/tree-1.png",
+   "category": "resource",
+   "frameWidth": 192,
+   "frameHeight": 256,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "resources-tree-2",
+   "path": "assets/tiny-swords/resources/tree-2.png",
+   "category": "resource",
+   "frameWidth": 192,
+   "frameHeight": 256,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "resources-tree-3",
+   "path": "assets/tiny-swords/resources/tree-3.png",
+   "category": "resource",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "resources-tree-4",
+   "path": "assets/tiny-swords/resources/tree-4.png",
+   "category": "resource",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "resources-wood",
+   "path": "assets/tiny-swords/resources/wood.png",
+   "category": "resource",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "terrain-shadow",
+   "path": "assets/tiny-swords/terrain/shadow.png",
+   "category": "terrain",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 1
+  },
+  {
+   "id": "terrain-water-foam",
+   "path": "assets/tiny-swords/terrain/water-foam.png",
+   "category": "terrain",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 16,
+   "fps": 10
+  },
+  {
+   "id": "terrain-water",
+   "path": "assets/tiny-swords/terrain/water.png",
+   "category": "terrain",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "ui-avatar-01",
+   "path": "assets/tiny-swords/ui/avatar-01.png",
+   "category": "ui",
+   "frameWidth": 256,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "ui-avatar-02",
+   "path": "assets/tiny-swords/ui/avatar-02.png",
+   "category": "ui",
+   "frameWidth": 256,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "ui-avatar-03",
+   "path": "assets/tiny-swords/ui/avatar-03.png",
+   "category": "ui",
+   "frameWidth": 256,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "ui-avatar-04",
+   "path": "assets/tiny-swords/ui/avatar-04.png",
+   "category": "ui",
+   "frameWidth": 256,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "ui-avatar-05",
+   "path": "assets/tiny-swords/ui/avatar-05.png",
+   "category": "ui",
+   "frameWidth": 256,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "ui-avatar-06",
+   "path": "assets/tiny-swords/ui/avatar-06.png",
+   "category": "ui",
+   "frameWidth": 256,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "ui-avatar-07",
+   "path": "assets/tiny-swords/ui/avatar-07.png",
+   "category": "ui",
+   "frameWidth": 256,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "ui-avatar-08",
+   "path": "assets/tiny-swords/ui/avatar-08.png",
+   "category": "ui",
+   "frameWidth": 256,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "ui-avatar-09",
+   "path": "assets/tiny-swords/ui/avatar-09.png",
+   "category": "ui",
+   "frameWidth": 256,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "ui-avatar-10",
+   "path": "assets/tiny-swords/ui/avatar-10.png",
+   "category": "ui",
+   "frameWidth": 256,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "ui-avatar-11",
+   "path": "assets/tiny-swords/ui/avatar-11.png",
+   "category": "ui",
+   "frameWidth": 256,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "ui-avatar-12",
+   "path": "assets/tiny-swords/ui/avatar-12.png",
+   "category": "ui",
+   "frameWidth": 256,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "ui-avatar-13",
+   "path": "assets/tiny-swords/ui/avatar-13.png",
+   "category": "ui",
+   "frameWidth": 256,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "ui-avatar-14",
+   "path": "assets/tiny-swords/ui/avatar-14.png",
+   "category": "ui",
+   "frameWidth": 256,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "ui-avatar-15",
+   "path": "assets/tiny-swords/ui/avatar-15.png",
+   "category": "ui",
+   "frameWidth": 256,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "ui-avatar-16",
+   "path": "assets/tiny-swords/ui/avatar-16.png",
+   "category": "ui",
+   "frameWidth": 256,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "ui-avatar-17",
+   "path": "assets/tiny-swords/ui/avatar-17.png",
+   "category": "ui",
+   "frameWidth": 256,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "ui-avatar-18",
+   "path": "assets/tiny-swords/ui/avatar-18.png",
+   "category": "ui",
+   "frameWidth": 256,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "ui-avatar-19",
+   "path": "assets/tiny-swords/ui/avatar-19.png",
+   "category": "ui",
+   "frameWidth": 256,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "ui-avatar-20",
+   "path": "assets/tiny-swords/ui/avatar-20.png",
+   "category": "ui",
+   "frameWidth": 256,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "ui-avatar-21",
+   "path": "assets/tiny-swords/ui/avatar-21.png",
+   "category": "ui",
+   "frameWidth": 256,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "ui-avatar-22",
+   "path": "assets/tiny-swords/ui/avatar-22.png",
+   "category": "ui",
+   "frameWidth": 256,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "ui-avatar-23",
+   "path": "assets/tiny-swords/ui/avatar-23.png",
+   "category": "ui",
+   "frameWidth": 256,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "ui-avatar-24",
+   "path": "assets/tiny-swords/ui/avatar-24.png",
+   "category": "ui",
+   "frameWidth": 256,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "ui-avatar-25",
+   "path": "assets/tiny-swords/ui/avatar-25.png",
+   "category": "ui",
+   "frameWidth": 256,
+   "frameHeight": 256,
+   "frames": 1
+  },
+  {
+   "id": "ui-banner-slots",
+   "path": "assets/tiny-swords/ui/banner-slots.png",
+   "category": "ui",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 1
+  },
+  {
+   "id": "ui-banner",
+   "path": "assets/tiny-swords/ui/banner.png",
+   "category": "ui",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 1
+  },
+  {
+   "id": "ui-big-bar-base",
+   "path": "assets/tiny-swords/ui/big-bar-base.png",
+   "category": "ui",
+   "frameWidth": 192,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "ui-big-bar-fill",
+   "path": "assets/tiny-swords/ui/big-bar-fill.png",
+   "category": "ui",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "ui-big-blue-button-pressed",
+   "path": "assets/tiny-swords/ui/big-blue-button-pressed.png",
+   "category": "ui",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 1
+  },
+  {
+   "id": "ui-big-blue-button-regular",
+   "path": "assets/tiny-swords/ui/big-blue-button-regular.png",
+   "category": "ui",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 1
+  },
+  {
+   "id": "ui-big-red-button-pressed",
+   "path": "assets/tiny-swords/ui/big-red-button-pressed.png",
+   "category": "ui",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 1
+  },
+  {
+   "id": "ui-big-red-button-regular",
+   "path": "assets/tiny-swords/ui/big-red-button-regular.png",
+   "category": "ui",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 1
+  },
+  {
+   "id": "ui-big-ribbons",
+   "path": "assets/tiny-swords/ui/big-ribbons.png",
+   "category": "ui",
+   "frameWidth": 320,
+   "frameHeight": 128,
+   "frames": 5
+  },
+  {
+   "id": "ui-cursor-1",
+   "path": "assets/tiny-swords/ui/cursor-1.png",
+   "category": "ui",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "ui-cursor-2",
+   "path": "assets/tiny-swords/ui/cursor-2.png",
+   "category": "ui",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "ui-cursor-3",
+   "path": "assets/tiny-swords/ui/cursor-3.png",
+   "category": "ui",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "ui-cursor-4",
+   "path": "assets/tiny-swords/ui/cursor-4.png",
+   "category": "ui",
+   "frameWidth": 128,
+   "frameHeight": 128,
+   "frames": 1
+  },
+  {
+   "id": "ui-icon-01",
+   "path": "assets/tiny-swords/ui/icon-01.png",
+   "category": "ui",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "ui-icon-02",
+   "path": "assets/tiny-swords/ui/icon-02.png",
+   "category": "ui",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "ui-icon-03",
+   "path": "assets/tiny-swords/ui/icon-03.png",
+   "category": "ui",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "ui-icon-04",
+   "path": "assets/tiny-swords/ui/icon-04.png",
+   "category": "ui",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "ui-icon-05",
+   "path": "assets/tiny-swords/ui/icon-05.png",
+   "category": "ui",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "ui-icon-06",
+   "path": "assets/tiny-swords/ui/icon-06.png",
+   "category": "ui",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "ui-icon-07",
+   "path": "assets/tiny-swords/ui/icon-07.png",
+   "category": "ui",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "ui-icon-08",
+   "path": "assets/tiny-swords/ui/icon-08.png",
+   "category": "ui",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "ui-icon-09",
+   "path": "assets/tiny-swords/ui/icon-09.png",
+   "category": "ui",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "ui-icon-10",
+   "path": "assets/tiny-swords/ui/icon-10.png",
+   "category": "ui",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "ui-icon-11",
+   "path": "assets/tiny-swords/ui/icon-11.png",
+   "category": "ui",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "ui-icon-12",
+   "path": "assets/tiny-swords/ui/icon-12.png",
+   "category": "ui",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "ui-regular-paper",
+   "path": "assets/tiny-swords/ui/regular-paper.png",
+   "category": "ui",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 1
+  },
+  {
+   "id": "ui-small-bar-base",
+   "path": "assets/tiny-swords/ui/small-bar-base.png",
+   "category": "ui",
+   "frameWidth": 192,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "ui-small-bar-fill",
+   "path": "assets/tiny-swords/ui/small-bar-fill.png",
+   "category": "ui",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "ui-small-blue-round-button-pressed",
+   "path": "assets/tiny-swords/ui/small-blue-round-button-pressed.png",
+   "category": "ui",
+   "frameWidth": 128,
+   "frameHeight": 128,
+   "frames": 1
+  },
+  {
+   "id": "ui-small-blue-round-button-regular",
+   "path": "assets/tiny-swords/ui/small-blue-round-button-regular.png",
+   "category": "ui",
+   "frameWidth": 128,
+   "frameHeight": 128,
+   "frames": 1
+  },
+  {
+   "id": "ui-small-blue-square-button-pressed",
+   "path": "assets/tiny-swords/ui/small-blue-square-button-pressed.png",
+   "category": "ui",
+   "frameWidth": 128,
+   "frameHeight": 128,
+   "frames": 1
+  },
+  {
+   "id": "ui-small-blue-square-button-regular",
+   "path": "assets/tiny-swords/ui/small-blue-square-button-regular.png",
+   "category": "ui",
+   "frameWidth": 128,
+   "frameHeight": 128,
+   "frames": 1
+  },
+  {
+   "id": "ui-small-red-round-button-pressed",
+   "path": "assets/tiny-swords/ui/small-red-round-button-pressed.png",
+   "category": "ui",
+   "frameWidth": 128,
+   "frameHeight": 128,
+   "frames": 1
+  },
+  {
+   "id": "ui-small-red-round-button-regular",
+   "path": "assets/tiny-swords/ui/small-red-round-button-regular.png",
+   "category": "ui",
+   "frameWidth": 128,
+   "frameHeight": 128,
+   "frames": 1
+  },
+  {
+   "id": "ui-small-red-square-button-pressed",
+   "path": "assets/tiny-swords/ui/small-red-square-button-pressed.png",
+   "category": "ui",
+   "frameWidth": 128,
+   "frameHeight": 128,
+   "frames": 1
+  },
+  {
+   "id": "ui-small-red-square-button-regular",
+   "path": "assets/tiny-swords/ui/small-red-square-button-regular.png",
+   "category": "ui",
+   "frameWidth": 128,
+   "frameHeight": 128,
+   "frames": 1
+  },
+  {
+   "id": "ui-small-ribbons",
+   "path": "assets/tiny-swords/ui/small-ribbons.png",
+   "category": "ui",
+   "frameWidth": 192,
+   "frameHeight": 64,
+   "frames": 10
+  },
+  {
+   "id": "ui-special-paper",
+   "path": "assets/tiny-swords/ui/special-paper.png",
+   "category": "ui",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 1
+  },
+  {
+   "id": "ui-swords",
+   "path": "assets/tiny-swords/ui/swords.png",
+   "category": "ui",
+   "frameWidth": 320,
+   "frameHeight": 128,
+   "frames": 5
+  },
+  {
+   "id": "ui-tiny-round-blue-button",
+   "path": "assets/tiny-swords/ui/tiny-round-blue-button.png",
+   "category": "ui",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "ui-tiny-round-red-button",
+   "path": "assets/tiny-swords/ui/tiny-round-red-button.png",
+   "category": "ui",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "ui-tiny-square-blue-button",
+   "path": "assets/tiny-swords/ui/tiny-square-blue-button.png",
+   "category": "ui",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "ui-tiny-square-red-button",
+   "path": "assets/tiny-swords/ui/tiny-square-red-button.png",
+   "category": "ui",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "ui-wood-table-slots",
+   "path": "assets/tiny-swords/ui/wood-table-slots.png",
+   "category": "ui",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 1
+  },
+  {
+   "id": "ui-wood-table",
+   "path": "assets/tiny-swords/ui/wood-table.png",
+   "category": "ui",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 1
+  },
+  {
+   "id": "units-black-archer-arrow",
+   "path": "assets/tiny-swords/units/black/archer/arrow.png",
+   "category": "unit",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "units-black-archer-idle",
+   "path": "assets/tiny-swords/units/black/archer/idle.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-black-archer-run",
+   "path": "assets/tiny-swords/units/black/archer/run.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 4,
+   "fps": 10
+  },
+  {
+   "id": "units-black-archer-shoot",
+   "path": "assets/tiny-swords/units/black/archer/shoot.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-black-lancer-down-attack",
+   "path": "assets/tiny-swords/units/black/lancer/down-attack.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 3,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-black-lancer-down-defence",
+   "path": "assets/tiny-swords/units/black/lancer/down-defence.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-black-lancer-down-right-attack",
+   "path": "assets/tiny-swords/units/black/lancer/down-right-attack.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 3,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-black-lancer-down-right-defence",
+   "path": "assets/tiny-swords/units/black/lancer/down-right-defence.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-black-lancer-idle",
+   "path": "assets/tiny-swords/units/black/lancer/idle.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 12,
+   "fps": 10
+  },
+  {
+   "id": "units-black-lancer-right-attack",
+   "path": "assets/tiny-swords/units/black/lancer/right-attack.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 3,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-black-lancer-right-defence",
+   "path": "assets/tiny-swords/units/black/lancer/right-defence.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-black-lancer-run",
+   "path": "assets/tiny-swords/units/black/lancer/run.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-black-lancer-up-attack",
+   "path": "assets/tiny-swords/units/black/lancer/up-attack.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 3,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-black-lancer-up-defence",
+   "path": "assets/tiny-swords/units/black/lancer/up-defence.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-black-lancer-up-right-attack",
+   "path": "assets/tiny-swords/units/black/lancer/up-right-attack.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 3,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-black-lancer-up-right-defence",
+   "path": "assets/tiny-swords/units/black/lancer/up-right-defence.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-black-monk-heal-effect",
+   "path": "assets/tiny-swords/units/black/monk/heal-effect.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 11,
+   "fps": 10
+  },
+  {
+   "id": "units-black-monk-heal",
+   "path": "assets/tiny-swords/units/black/monk/heal.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 11,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-black-monk-idle",
+   "path": "assets/tiny-swords/units/black/monk/idle.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-black-monk-run",
+   "path": "assets/tiny-swords/units/black/monk/run.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 4,
+   "fps": 10
+  },
+  {
+   "id": "units-black-pawn-idle-axe",
+   "path": "assets/tiny-swords/units/black/pawn/idle-axe.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-black-pawn-idle-gold",
+   "path": "assets/tiny-swords/units/black/pawn/idle-gold.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-black-pawn-idle-hammer",
+   "path": "assets/tiny-swords/units/black/pawn/idle-hammer.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-black-pawn-idle-knife",
+   "path": "assets/tiny-swords/units/black/pawn/idle-knife.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-black-pawn-idle-meat",
+   "path": "assets/tiny-swords/units/black/pawn/idle-meat.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-black-pawn-idle-pickaxe",
+   "path": "assets/tiny-swords/units/black/pawn/idle-pickaxe.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-black-pawn-idle-wood",
+   "path": "assets/tiny-swords/units/black/pawn/idle-wood.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-black-pawn-idle",
+   "path": "assets/tiny-swords/units/black/pawn/idle.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-black-pawn-interact-axe",
+   "path": "assets/tiny-swords/units/black/pawn/interact-axe.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-black-pawn-interact-hammer",
+   "path": "assets/tiny-swords/units/black/pawn/interact-hammer.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 3,
+   "fps": 10
+  },
+  {
+   "id": "units-black-pawn-interact-knife",
+   "path": "assets/tiny-swords/units/black/pawn/interact-knife.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 4,
+   "fps": 10
+  },
+  {
+   "id": "units-black-pawn-interact-pickaxe",
+   "path": "assets/tiny-swords/units/black/pawn/interact-pickaxe.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-black-pawn-run-axe",
+   "path": "assets/tiny-swords/units/black/pawn/run-axe.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-black-pawn-run-gold",
+   "path": "assets/tiny-swords/units/black/pawn/run-gold.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-black-pawn-run-hammer",
+   "path": "assets/tiny-swords/units/black/pawn/run-hammer.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-black-pawn-run-knife",
+   "path": "assets/tiny-swords/units/black/pawn/run-knife.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-black-pawn-run-meat",
+   "path": "assets/tiny-swords/units/black/pawn/run-meat.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-black-pawn-run-pickaxe",
+   "path": "assets/tiny-swords/units/black/pawn/run-pickaxe.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-black-pawn-run-wood",
+   "path": "assets/tiny-swords/units/black/pawn/run-wood.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-black-pawn-run",
+   "path": "assets/tiny-swords/units/black/pawn/run.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-black-warrior-attack1",
+   "path": "assets/tiny-swords/units/black/warrior/attack1.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 4,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-black-warrior-attack2",
+   "path": "assets/tiny-swords/units/black/warrior/attack2.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 4,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-black-warrior-guard",
+   "path": "assets/tiny-swords/units/black/warrior/guard.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-black-warrior-idle",
+   "path": "assets/tiny-swords/units/black/warrior/idle.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-black-warrior-run",
+   "path": "assets/tiny-swords/units/black/warrior/run.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-archer-arrow",
+   "path": "assets/tiny-swords/units/blue/archer/arrow.png",
+   "category": "unit",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "units-blue-archer-idle",
+   "path": "assets/tiny-swords/units/blue/archer/idle.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-archer-run",
+   "path": "assets/tiny-swords/units/blue/archer/run.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 4,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-archer-shoot",
+   "path": "assets/tiny-swords/units/blue/archer/shoot.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-blue-lancer-down-attack",
+   "path": "assets/tiny-swords/units/blue/lancer/down-attack.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 3,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-blue-lancer-down-defence",
+   "path": "assets/tiny-swords/units/blue/lancer/down-defence.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-lancer-down-right-attack",
+   "path": "assets/tiny-swords/units/blue/lancer/down-right-attack.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 3,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-blue-lancer-down-right-defence",
+   "path": "assets/tiny-swords/units/blue/lancer/down-right-defence.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-lancer-idle",
+   "path": "assets/tiny-swords/units/blue/lancer/idle.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 12,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-lancer-right-attack",
+   "path": "assets/tiny-swords/units/blue/lancer/right-attack.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 3,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-blue-lancer-right-defence",
+   "path": "assets/tiny-swords/units/blue/lancer/right-defence.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-lancer-run",
+   "path": "assets/tiny-swords/units/blue/lancer/run.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-lancer-up-attack",
+   "path": "assets/tiny-swords/units/blue/lancer/up-attack.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 3,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-blue-lancer-up-defence",
+   "path": "assets/tiny-swords/units/blue/lancer/up-defence.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-lancer-up-right-attack",
+   "path": "assets/tiny-swords/units/blue/lancer/up-right-attack.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 3,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-blue-lancer-up-right-defence",
+   "path": "assets/tiny-swords/units/blue/lancer/up-right-defence.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-monk-heal-effect",
+   "path": "assets/tiny-swords/units/blue/monk/heal-effect.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 11,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-monk-heal",
+   "path": "assets/tiny-swords/units/blue/monk/heal.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 11,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-blue-monk-idle",
+   "path": "assets/tiny-swords/units/blue/monk/idle.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-monk-run",
+   "path": "assets/tiny-swords/units/blue/monk/run.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 4,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-pawn-idle-axe",
+   "path": "assets/tiny-swords/units/blue/pawn/idle-axe.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-pawn-idle-gold",
+   "path": "assets/tiny-swords/units/blue/pawn/idle-gold.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-pawn-idle-hammer",
+   "path": "assets/tiny-swords/units/blue/pawn/idle-hammer.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-pawn-idle-knife",
+   "path": "assets/tiny-swords/units/blue/pawn/idle-knife.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-pawn-idle-meat",
+   "path": "assets/tiny-swords/units/blue/pawn/idle-meat.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-pawn-idle-pickaxe",
+   "path": "assets/tiny-swords/units/blue/pawn/idle-pickaxe.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-pawn-idle-wood",
+   "path": "assets/tiny-swords/units/blue/pawn/idle-wood.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-pawn-idle",
+   "path": "assets/tiny-swords/units/blue/pawn/idle.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-pawn-interact-axe",
+   "path": "assets/tiny-swords/units/blue/pawn/interact-axe.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-pawn-interact-hammer",
+   "path": "assets/tiny-swords/units/blue/pawn/interact-hammer.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 3,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-pawn-interact-knife",
+   "path": "assets/tiny-swords/units/blue/pawn/interact-knife.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 4,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-pawn-interact-pickaxe",
+   "path": "assets/tiny-swords/units/blue/pawn/interact-pickaxe.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-pawn-run-axe",
+   "path": "assets/tiny-swords/units/blue/pawn/run-axe.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-pawn-run-gold",
+   "path": "assets/tiny-swords/units/blue/pawn/run-gold.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-pawn-run-hammer",
+   "path": "assets/tiny-swords/units/blue/pawn/run-hammer.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-pawn-run-knife",
+   "path": "assets/tiny-swords/units/blue/pawn/run-knife.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-pawn-run-meat",
+   "path": "assets/tiny-swords/units/blue/pawn/run-meat.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-pawn-run-pickaxe",
+   "path": "assets/tiny-swords/units/blue/pawn/run-pickaxe.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-pawn-run-wood",
+   "path": "assets/tiny-swords/units/blue/pawn/run-wood.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-pawn-run",
+   "path": "assets/tiny-swords/units/blue/pawn/run.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-warrior-attack1",
+   "path": "assets/tiny-swords/units/blue/warrior/attack1.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 4,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-blue-warrior-attack2",
+   "path": "assets/tiny-swords/units/blue/warrior/attack2.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 4,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-blue-warrior-guard",
+   "path": "assets/tiny-swords/units/blue/warrior/guard.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-warrior-idle",
+   "path": "assets/tiny-swords/units/blue/warrior/idle.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-blue-warrior-run",
+   "path": "assets/tiny-swords/units/blue/warrior/run.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-archer-arrow",
+   "path": "assets/tiny-swords/units/purple/archer/arrow.png",
+   "category": "unit",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "units-purple-archer-idle",
+   "path": "assets/tiny-swords/units/purple/archer/idle.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-archer-run",
+   "path": "assets/tiny-swords/units/purple/archer/run.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 4,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-archer-shoot",
+   "path": "assets/tiny-swords/units/purple/archer/shoot.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-purple-lancer-down-attack",
+   "path": "assets/tiny-swords/units/purple/lancer/down-attack.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 3,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-purple-lancer-down-defence",
+   "path": "assets/tiny-swords/units/purple/lancer/down-defence.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-lancer-down-right-attack",
+   "path": "assets/tiny-swords/units/purple/lancer/down-right-attack.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 3,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-purple-lancer-down-right-defence",
+   "path": "assets/tiny-swords/units/purple/lancer/down-right-defence.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-lancer-idle",
+   "path": "assets/tiny-swords/units/purple/lancer/idle.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 12,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-lancer-right-attack",
+   "path": "assets/tiny-swords/units/purple/lancer/right-attack.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 3,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-purple-lancer-right-defence",
+   "path": "assets/tiny-swords/units/purple/lancer/right-defence.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-lancer-run",
+   "path": "assets/tiny-swords/units/purple/lancer/run.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-lancer-up-attack",
+   "path": "assets/tiny-swords/units/purple/lancer/up-attack.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 3,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-purple-lancer-up-defence",
+   "path": "assets/tiny-swords/units/purple/lancer/up-defence.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-lancer-up-right-attack",
+   "path": "assets/tiny-swords/units/purple/lancer/up-right-attack.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 3,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-purple-lancer-up-right-defence",
+   "path": "assets/tiny-swords/units/purple/lancer/up-right-defence.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-monk-heal-effect",
+   "path": "assets/tiny-swords/units/purple/monk/heal-effect.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 11,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-monk-heal",
+   "path": "assets/tiny-swords/units/purple/monk/heal.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 11,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-purple-monk-idle",
+   "path": "assets/tiny-swords/units/purple/monk/idle.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-monk-run",
+   "path": "assets/tiny-swords/units/purple/monk/run.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 4,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-pawn-idle-axe",
+   "path": "assets/tiny-swords/units/purple/pawn/idle-axe.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-pawn-idle-gold",
+   "path": "assets/tiny-swords/units/purple/pawn/idle-gold.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-pawn-idle-hammer",
+   "path": "assets/tiny-swords/units/purple/pawn/idle-hammer.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-pawn-idle-knife",
+   "path": "assets/tiny-swords/units/purple/pawn/idle-knife.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-pawn-idle-meat",
+   "path": "assets/tiny-swords/units/purple/pawn/idle-meat.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-pawn-idle-pickaxe",
+   "path": "assets/tiny-swords/units/purple/pawn/idle-pickaxe.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-pawn-idle-wood",
+   "path": "assets/tiny-swords/units/purple/pawn/idle-wood.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-pawn-idle",
+   "path": "assets/tiny-swords/units/purple/pawn/idle.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-pawn-interact-axe",
+   "path": "assets/tiny-swords/units/purple/pawn/interact-axe.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-pawn-interact-hammer",
+   "path": "assets/tiny-swords/units/purple/pawn/interact-hammer.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 3,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-pawn-interact-knife",
+   "path": "assets/tiny-swords/units/purple/pawn/interact-knife.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 4,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-pawn-interact-pickaxe",
+   "path": "assets/tiny-swords/units/purple/pawn/interact-pickaxe.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-pawn-run-axe",
+   "path": "assets/tiny-swords/units/purple/pawn/run-axe.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-pawn-run-gold",
+   "path": "assets/tiny-swords/units/purple/pawn/run-gold.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-pawn-run-hammer",
+   "path": "assets/tiny-swords/units/purple/pawn/run-hammer.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-pawn-run-knife",
+   "path": "assets/tiny-swords/units/purple/pawn/run-knife.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-pawn-run-meat",
+   "path": "assets/tiny-swords/units/purple/pawn/run-meat.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-pawn-run-pickaxe",
+   "path": "assets/tiny-swords/units/purple/pawn/run-pickaxe.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-pawn-run-wood",
+   "path": "assets/tiny-swords/units/purple/pawn/run-wood.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-pawn-run",
+   "path": "assets/tiny-swords/units/purple/pawn/run.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-warrior-attack1",
+   "path": "assets/tiny-swords/units/purple/warrior/attack1.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 4,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-purple-warrior-attack2",
+   "path": "assets/tiny-swords/units/purple/warrior/attack2.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 4,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-purple-warrior-guard",
+   "path": "assets/tiny-swords/units/purple/warrior/guard.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-warrior-idle",
+   "path": "assets/tiny-swords/units/purple/warrior/idle.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-purple-warrior-run",
+   "path": "assets/tiny-swords/units/purple/warrior/run.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-red-archer-arrow",
+   "path": "assets/tiny-swords/units/red/archer/arrow.png",
+   "category": "unit",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "units-red-archer-idle",
+   "path": "assets/tiny-swords/units/red/archer/idle.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-red-archer-run",
+   "path": "assets/tiny-swords/units/red/archer/run.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 4,
+   "fps": 10
+  },
+  {
+   "id": "units-red-archer-shoot",
+   "path": "assets/tiny-swords/units/red/archer/shoot.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-red-lancer-down-attack",
+   "path": "assets/tiny-swords/units/red/lancer/down-attack.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 3,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-red-lancer-down-defence",
+   "path": "assets/tiny-swords/units/red/lancer/down-defence.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-red-lancer-down-right-attack",
+   "path": "assets/tiny-swords/units/red/lancer/down-right-attack.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 3,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-red-lancer-down-right-defence",
+   "path": "assets/tiny-swords/units/red/lancer/down-right-defence.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-red-lancer-idle",
+   "path": "assets/tiny-swords/units/red/lancer/idle.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 12,
+   "fps": 10
+  },
+  {
+   "id": "units-red-lancer-right-attack",
+   "path": "assets/tiny-swords/units/red/lancer/right-attack.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 3,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-red-lancer-right-defence",
+   "path": "assets/tiny-swords/units/red/lancer/right-defence.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-red-lancer-run",
+   "path": "assets/tiny-swords/units/red/lancer/run.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-red-lancer-up-attack",
+   "path": "assets/tiny-swords/units/red/lancer/up-attack.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 3,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-red-lancer-up-defence",
+   "path": "assets/tiny-swords/units/red/lancer/up-defence.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-red-lancer-up-right-attack",
+   "path": "assets/tiny-swords/units/red/lancer/up-right-attack.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 3,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-red-lancer-up-right-defence",
+   "path": "assets/tiny-swords/units/red/lancer/up-right-defence.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-red-monk-heal-effect",
+   "path": "assets/tiny-swords/units/red/monk/heal-effect.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 11,
+   "fps": 10
+  },
+  {
+   "id": "units-red-monk-heal",
+   "path": "assets/tiny-swords/units/red/monk/heal.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 11,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-red-monk-idle",
+   "path": "assets/tiny-swords/units/red/monk/idle.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-red-monk-run",
+   "path": "assets/tiny-swords/units/red/monk/run.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 4,
+   "fps": 10
+  },
+  {
+   "id": "units-red-pawn-idle-axe",
+   "path": "assets/tiny-swords/units/red/pawn/idle-axe.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-red-pawn-idle-gold",
+   "path": "assets/tiny-swords/units/red/pawn/idle-gold.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-red-pawn-idle-hammer",
+   "path": "assets/tiny-swords/units/red/pawn/idle-hammer.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-red-pawn-idle-knife",
+   "path": "assets/tiny-swords/units/red/pawn/idle-knife.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-red-pawn-idle-meat",
+   "path": "assets/tiny-swords/units/red/pawn/idle-meat.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-red-pawn-idle-pickaxe",
+   "path": "assets/tiny-swords/units/red/pawn/idle-pickaxe.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-red-pawn-idle-wood",
+   "path": "assets/tiny-swords/units/red/pawn/idle-wood.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-red-pawn-idle",
+   "path": "assets/tiny-swords/units/red/pawn/idle.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-red-pawn-interact-axe",
+   "path": "assets/tiny-swords/units/red/pawn/interact-axe.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-red-pawn-interact-hammer",
+   "path": "assets/tiny-swords/units/red/pawn/interact-hammer.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 3,
+   "fps": 10
+  },
+  {
+   "id": "units-red-pawn-interact-knife",
+   "path": "assets/tiny-swords/units/red/pawn/interact-knife.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 4,
+   "fps": 10
+  },
+  {
+   "id": "units-red-pawn-interact-pickaxe",
+   "path": "assets/tiny-swords/units/red/pawn/interact-pickaxe.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-red-pawn-run-axe",
+   "path": "assets/tiny-swords/units/red/pawn/run-axe.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-red-pawn-run-gold",
+   "path": "assets/tiny-swords/units/red/pawn/run-gold.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-red-pawn-run-hammer",
+   "path": "assets/tiny-swords/units/red/pawn/run-hammer.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-red-pawn-run-knife",
+   "path": "assets/tiny-swords/units/red/pawn/run-knife.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-red-pawn-run-meat",
+   "path": "assets/tiny-swords/units/red/pawn/run-meat.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-red-pawn-run-pickaxe",
+   "path": "assets/tiny-swords/units/red/pawn/run-pickaxe.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-red-pawn-run-wood",
+   "path": "assets/tiny-swords/units/red/pawn/run-wood.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-red-pawn-run",
+   "path": "assets/tiny-swords/units/red/pawn/run.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-red-warrior-attack1",
+   "path": "assets/tiny-swords/units/red/warrior/attack1.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 4,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-red-warrior-attack2",
+   "path": "assets/tiny-swords/units/red/warrior/attack2.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 4,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-red-warrior-guard",
+   "path": "assets/tiny-swords/units/red/warrior/guard.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-red-warrior-idle",
+   "path": "assets/tiny-swords/units/red/warrior/idle.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-red-warrior-run",
+   "path": "assets/tiny-swords/units/red/warrior/run.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-archer-arrow",
+   "path": "assets/tiny-swords/units/yellow/archer/arrow.png",
+   "category": "unit",
+   "frameWidth": 64,
+   "frameHeight": 64,
+   "frames": 1
+  },
+  {
+   "id": "units-yellow-archer-idle",
+   "path": "assets/tiny-swords/units/yellow/archer/idle.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-archer-run",
+   "path": "assets/tiny-swords/units/yellow/archer/run.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 4,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-archer-shoot",
+   "path": "assets/tiny-swords/units/yellow/archer/shoot.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-yellow-lancer-down-attack",
+   "path": "assets/tiny-swords/units/yellow/lancer/down-attack.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 3,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-yellow-lancer-down-defence",
+   "path": "assets/tiny-swords/units/yellow/lancer/down-defence.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-lancer-down-right-attack",
+   "path": "assets/tiny-swords/units/yellow/lancer/down-right-attack.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 3,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-yellow-lancer-down-right-defence",
+   "path": "assets/tiny-swords/units/yellow/lancer/down-right-defence.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-lancer-idle",
+   "path": "assets/tiny-swords/units/yellow/lancer/idle.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 12,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-lancer-right-attack",
+   "path": "assets/tiny-swords/units/yellow/lancer/right-attack.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 3,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-yellow-lancer-right-defence",
+   "path": "assets/tiny-swords/units/yellow/lancer/right-defence.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-lancer-run",
+   "path": "assets/tiny-swords/units/yellow/lancer/run.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-lancer-up-attack",
+   "path": "assets/tiny-swords/units/yellow/lancer/up-attack.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 3,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-yellow-lancer-up-defence",
+   "path": "assets/tiny-swords/units/yellow/lancer/up-defence.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-lancer-up-right-attack",
+   "path": "assets/tiny-swords/units/yellow/lancer/up-right-attack.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 3,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-yellow-lancer-up-right-defence",
+   "path": "assets/tiny-swords/units/yellow/lancer/up-right-defence.png",
+   "category": "unit",
+   "frameWidth": 320,
+   "frameHeight": 320,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-monk-heal-effect",
+   "path": "assets/tiny-swords/units/yellow/monk/heal-effect.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 11,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-monk-heal",
+   "path": "assets/tiny-swords/units/yellow/monk/heal.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 11,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-yellow-monk-idle",
+   "path": "assets/tiny-swords/units/yellow/monk/idle.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-monk-run",
+   "path": "assets/tiny-swords/units/yellow/monk/run.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 4,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-pawn-idle-axe",
+   "path": "assets/tiny-swords/units/yellow/pawn/idle-axe.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-pawn-idle-gold",
+   "path": "assets/tiny-swords/units/yellow/pawn/idle-gold.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-pawn-idle-hammer",
+   "path": "assets/tiny-swords/units/yellow/pawn/idle-hammer.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-pawn-idle-knife",
+   "path": "assets/tiny-swords/units/yellow/pawn/idle-knife.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-pawn-idle-meat",
+   "path": "assets/tiny-swords/units/yellow/pawn/idle-meat.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-pawn-idle-pickaxe",
+   "path": "assets/tiny-swords/units/yellow/pawn/idle-pickaxe.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-pawn-idle-wood",
+   "path": "assets/tiny-swords/units/yellow/pawn/idle-wood.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-pawn-idle",
+   "path": "assets/tiny-swords/units/yellow/pawn/idle.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-pawn-interact-axe",
+   "path": "assets/tiny-swords/units/yellow/pawn/interact-axe.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-pawn-interact-hammer",
+   "path": "assets/tiny-swords/units/yellow/pawn/interact-hammer.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 3,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-pawn-interact-knife",
+   "path": "assets/tiny-swords/units/yellow/pawn/interact-knife.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 4,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-pawn-interact-pickaxe",
+   "path": "assets/tiny-swords/units/yellow/pawn/interact-pickaxe.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-pawn-run-axe",
+   "path": "assets/tiny-swords/units/yellow/pawn/run-axe.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-pawn-run-gold",
+   "path": "assets/tiny-swords/units/yellow/pawn/run-gold.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-pawn-run-hammer",
+   "path": "assets/tiny-swords/units/yellow/pawn/run-hammer.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-pawn-run-knife",
+   "path": "assets/tiny-swords/units/yellow/pawn/run-knife.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-pawn-run-meat",
+   "path": "assets/tiny-swords/units/yellow/pawn/run-meat.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-pawn-run-pickaxe",
+   "path": "assets/tiny-swords/units/yellow/pawn/run-pickaxe.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-pawn-run-wood",
+   "path": "assets/tiny-swords/units/yellow/pawn/run-wood.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-pawn-run",
+   "path": "assets/tiny-swords/units/yellow/pawn/run.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-warrior-attack1",
+   "path": "assets/tiny-swords/units/yellow/warrior/attack1.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 4,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-yellow-warrior-attack2",
+   "path": "assets/tiny-swords/units/yellow/warrior/attack2.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 4,
+   "fps": 10,
+   "loop": false
+  },
+  {
+   "id": "units-yellow-warrior-guard",
+   "path": "assets/tiny-swords/units/yellow/warrior/guard.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-warrior-idle",
+   "path": "assets/tiny-swords/units/yellow/warrior/idle.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 8,
+   "fps": 10
+  },
+  {
+   "id": "units-yellow-warrior-run",
+   "path": "assets/tiny-swords/units/yellow/warrior/run.png",
+   "category": "unit",
+   "frameWidth": 192,
+   "frameHeight": 192,
+   "frames": 6,
+   "fps": 10
+  }
+ ],
+ "tilesets": [
+  {
+   "id": "terrain-color1",
+   "path": "assets/tiny-swords/terrain/tilemap-color1.png",
+   "tileSize": 64,
+   "columns": 9,
+   "rows": 6,
+   "tiles": {
+    "flat.top-left": 0,
+    "flat.top": 1,
+    "flat.top-right": 2,
+    "flat.column-top": 3,
+    "flat.left": 9,
+    "flat.center": 10,
+    "flat.right": 11,
+    "flat.column-middle": 12,
+    "flat.bottom-left": 18,
+    "flat.bottom": 19,
+    "flat.bottom-right": 20,
+    "flat.column-bottom": 21,
+    "flat.row-left": 27,
+    "flat.row-middle": 28,
+    "flat.row-right": 29,
+    "flat.single": 30,
+    "elevated.top-left": 5,
+    "elevated.top": 6,
+    "elevated.top-right": 7,
+    "elevated.column-top": 8,
+    "elevated.left": 14,
+    "elevated.center": 15,
+    "elevated.right": 16,
+    "elevated.column-middle": 17,
+    "elevated.bottom-left": 23,
+    "elevated.bottom": 24,
+    "elevated.bottom-right": 25,
+    "elevated.column-bottom": 26,
+    "elevated.row-left": 32,
+    "elevated.row-middle": 33,
+    "elevated.row-right": 34,
+    "elevated.single": 35,
+    "cliff.left": 41,
+    "cliff.middle": 42,
+    "cliff.right": 43,
+    "cliff.single": 44,
+    "cliff-water.left": 50,
+    "cliff-water.middle": 51,
+    "cliff-water.right": 52,
+    "cliff-water.single": 53,
+    "stairs-left.top": 36,
+    "stairs-left.bottom": 45,
+    "stairs-right.top": 39,
+    "stairs-right.bottom": 48
+   }
+  },
+  {
+   "id": "terrain-color2",
+   "path": "assets/tiny-swords/terrain/tilemap-color2.png",
+   "tileSize": 64,
+   "columns": 9,
+   "rows": 6,
+   "tiles": {
+    "flat.top-left": 0,
+    "flat.top": 1,
+    "flat.top-right": 2,
+    "flat.column-top": 3,
+    "flat.left": 9,
+    "flat.center": 10,
+    "flat.right": 11,
+    "flat.column-middle": 12,
+    "flat.bottom-left": 18,
+    "flat.bottom": 19,
+    "flat.bottom-right": 20,
+    "flat.column-bottom": 21,
+    "flat.row-left": 27,
+    "flat.row-middle": 28,
+    "flat.row-right": 29,
+    "flat.single": 30,
+    "elevated.top-left": 5,
+    "elevated.top": 6,
+    "elevated.top-right": 7,
+    "elevated.column-top": 8,
+    "elevated.left": 14,
+    "elevated.center": 15,
+    "elevated.right": 16,
+    "elevated.column-middle": 17,
+    "elevated.bottom-left": 23,
+    "elevated.bottom": 24,
+    "elevated.bottom-right": 25,
+    "elevated.column-bottom": 26,
+    "elevated.row-left": 32,
+    "elevated.row-middle": 33,
+    "elevated.row-right": 34,
+    "elevated.single": 35,
+    "cliff.left": 41,
+    "cliff.middle": 42,
+    "cliff.right": 43,
+    "cliff.single": 44,
+    "cliff-water.left": 50,
+    "cliff-water.middle": 51,
+    "cliff-water.right": 52,
+    "cliff-water.single": 53,
+    "stairs-left.top": 36,
+    "stairs-left.bottom": 45,
+    "stairs-right.top": 39,
+    "stairs-right.bottom": 48
+   }
+  },
+  {
+   "id": "terrain-color3",
+   "path": "assets/tiny-swords/terrain/tilemap-color3.png",
+   "tileSize": 64,
+   "columns": 9,
+   "rows": 6,
+   "tiles": {
+    "flat.top-left": 0,
+    "flat.top": 1,
+    "flat.top-right": 2,
+    "flat.column-top": 3,
+    "flat.left": 9,
+    "flat.center": 10,
+    "flat.right": 11,
+    "flat.column-middle": 12,
+    "flat.bottom-left": 18,
+    "flat.bottom": 19,
+    "flat.bottom-right": 20,
+    "flat.column-bottom": 21,
+    "flat.row-left": 27,
+    "flat.row-middle": 28,
+    "flat.row-right": 29,
+    "flat.single": 30,
+    "elevated.top-left": 5,
+    "elevated.top": 6,
+    "elevated.top-right": 7,
+    "elevated.column-top": 8,
+    "elevated.left": 14,
+    "elevated.center": 15,
+    "elevated.right": 16,
+    "elevated.column-middle": 17,
+    "elevated.bottom-left": 23,
+    "elevated.bottom": 24,
+    "elevated.bottom-right": 25,
+    "elevated.column-bottom": 26,
+    "elevated.row-left": 32,
+    "elevated.row-middle": 33,
+    "elevated.row-right": 34,
+    "elevated.single": 35,
+    "cliff.left": 41,
+    "cliff.middle": 42,
+    "cliff.right": 43,
+    "cliff.single": 44,
+    "cliff-water.left": 50,
+    "cliff-water.middle": 51,
+    "cliff-water.right": 52,
+    "cliff-water.single": 53,
+    "stairs-left.top": 36,
+    "stairs-left.bottom": 45,
+    "stairs-right.top": 39,
+    "stairs-right.bottom": 48
+   }
+  },
+  {
+   "id": "terrain-color4",
+   "path": "assets/tiny-swords/terrain/tilemap-color4.png",
+   "tileSize": 64,
+   "columns": 9,
+   "rows": 6,
+   "tiles": {
+    "flat.top-left": 0,
+    "flat.top": 1,
+    "flat.top-right": 2,
+    "flat.column-top": 3,
+    "flat.left": 9,
+    "flat.center": 10,
+    "flat.right": 11,
+    "flat.column-middle": 12,
+    "flat.bottom-left": 18,
+    "flat.bottom": 19,
+    "flat.bottom-right": 20,
+    "flat.column-bottom": 21,
+    "flat.row-left": 27,
+    "flat.row-middle": 28,
+    "flat.row-right": 29,
+    "flat.single": 30,
+    "elevated.top-left": 5,
+    "elevated.top": 6,
+    "elevated.top-right": 7,
+    "elevated.column-top": 8,
+    "elevated.left": 14,
+    "elevated.center": 15,
+    "elevated.right": 16,
+    "elevated.column-middle": 17,
+    "elevated.bottom-left": 23,
+    "elevated.bottom": 24,
+    "elevated.bottom-right": 25,
+    "elevated.column-bottom": 26,
+    "elevated.row-left": 32,
+    "elevated.row-middle": 33,
+    "elevated.row-right": 34,
+    "elevated.single": 35,
+    "cliff.left": 41,
+    "cliff.middle": 42,
+    "cliff.right": 43,
+    "cliff.single": 44,
+    "cliff-water.left": 50,
+    "cliff-water.middle": 51,
+    "cliff-water.right": 52,
+    "cliff-water.single": 53,
+    "stairs-left.top": 36,
+    "stairs-left.bottom": 45,
+    "stairs-right.top": 39,
+    "stairs-right.bottom": 48
+   }
+  },
+  {
+   "id": "terrain-color5",
+   "path": "assets/tiny-swords/terrain/tilemap-color5.png",
+   "tileSize": 64,
+   "columns": 9,
+   "rows": 6,
+   "tiles": {
+    "flat.top-left": 0,
+    "flat.top": 1,
+    "flat.top-right": 2,
+    "flat.column-top": 3,
+    "flat.left": 9,
+    "flat.center": 10,
+    "flat.right": 11,
+    "flat.column-middle": 12,
+    "flat.bottom-left": 18,
+    "flat.bottom": 19,
+    "flat.bottom-right": 20,
+    "flat.column-bottom": 21,
+    "flat.row-left": 27,
+    "flat.row-middle": 28,
+    "flat.row-right": 29,
+    "flat.single": 30,
+    "elevated.top-left": 5,
+    "elevated.top": 6,
+    "elevated.top-right": 7,
+    "elevated.column-top": 8,
+    "elevated.left": 14,
+    "elevated.center": 15,
+    "elevated.right": 16,
+    "elevated.column-middle": 17,
+    "elevated.bottom-left": 23,
+    "elevated.bottom": 24,
+    "elevated.bottom-right": 25,
+    "elevated.column-bottom": 26,
+    "elevated.row-left": 32,
+    "elevated.row-middle": 33,
+    "elevated.row-right": 34,
+    "elevated.single": 35,
+    "cliff.left": 41,
+    "cliff.middle": 42,
+    "cliff.right": 43,
+    "cliff.single": 44,
+    "cliff-water.left": 50,
+    "cliff-water.middle": 51,
+    "cliff-water.right": 52,
+    "cliff-water.single": 53,
+    "stairs-left.top": 36,
+    "stairs-left.bottom": 45,
+    "stairs-right.top": 39,
+    "stairs-right.bottom": 48
+   }
+  }
+ ],
+ "licenseEvidence": {
+  "path": "assets/tiny-swords/LICENSE.txt",
+  "license": "Pixel Frog Tiny Swords terms (commercial use and modification allowed, no asset redistribution)",
+  "sourcePack": "Tiny Swords (Free Pack) by Pixel Frog"
+ },
+ "provenance": {
+  "three": {}
+ },
+ "vendor": {
+  "threeRevision": "r185",
+  "commonRuntimeDependencies": []
+ }
+}
