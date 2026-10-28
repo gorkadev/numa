@@ -21,6 +21,8 @@ export * from "./touch.js"
 export * from "./sound.js"
 export * from "./fx.js"
 export * from "./state.js"
+export * from "./sprites.js"
+export * from "./tilemap.js"
 
 import { createEngine } from "./engine.js"
 import { createInput, createPicker } from "./input.js"
