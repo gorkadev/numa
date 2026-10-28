@@ -37,9 +37,9 @@ import { turnState, type TurnVerifyOutcome } from "@/lib/games/harness/turn-stat
 import { extendTerminalInstructions } from "@/lib/games/harness/terminal-instructions"
 import { priorStepsCalledTool, routeHarnessTools } from "@/lib/games/harness/routing"
 import { createThrottle } from "@/lib/games/harness/throttle"
-import { gameInstructions } from "@/lib/games/instructions"
+import { gameInstructionsFor } from "@/lib/games/instructions"
 import { orchestratorContextInstructions } from "@/lib/games/instructions/orchestrator-context"
-import { readGameTemplateBuildContext } from "@/lib/games/templates/context"
+import { readGameDimension, readGameTemplateBuildContext } from "@/lib/games/templates/context"
 import { activityTag } from "@/lib/games/activity"
 import { gameProgressChunk, withoutGameProgress } from "@/lib/games/build-progress"
 import { gameRevisionChunk } from "@/lib/games/revision"
@@ -570,21 +570,29 @@ export const gameChat = chat.agent({
    * SDK re-converts stored history against on every later turn. A tool known
    * only to `streamText` would work on the turn that called it and then lose
    * its result formatting the moment the thread was replayed.
+   *
+   * `run_tasks` and `load_skill` are built for the game's dimension (its
+   * persisted template's), so a task can only request, and a model can only
+   * load, that dimension's skills.
    */
-  tools: ({ chatId }) => ({
+  tools: async ({ chatId }) => {
+    const dimension = await readGameDimension(chatId)
+
+    return {
     ...createGameTools(chatId, { readBudgetGuard: orchestratorReadBudgetGuard }),
     explore: createExploreTool(chatId),
     plan: createPlanTool(chatId, {
       onStart: () => chat.response.write(gameProgressChunk("planning")),
     }),
-    run_tasks: createRunTasksTool(chatId, {
+    run_tasks: createRunTasksTool(chatId, dimension, {
       onStart: () => chat.response.write(gameProgressChunk("building")),
     }),
     verify: createVerifyTool(chatId, {
       onStart: () => chat.response.write(gameProgressChunk("verifying")),
     }),
-    load_skill: createLoadSkillTool(),
-  }),
+    load_skill: createLoadSkillTool(dimension),
+    }
+  },
 
   /**
    * Refuses a turn the user has no credits for.
@@ -995,11 +1003,13 @@ export const gameChat = chat.agent({
      * used to be handed: the engine's API, the game's template, and on a
      * fresh template build the asset ids its first dispatch must declare.
      */
-    const { templateContext, assetCatalog } = await readGameTemplateBuildContext(chatId)
+    const { dimension, templateContext, assetCatalog } = await readGameTemplateBuildContext(chatId)
+    const gameInstructions = gameInstructionsFor(dimension)
     const instructions = HARNESS_PHASES
       ? [
           ...gameInstructions,
           ...orchestratorContextInstructions({
+            dimension,
             templateContext,
             requiresAssetReceipt: assetCatalog.requiresAssetReceipt === true,
             modelIds: assetCatalog.modelIds,

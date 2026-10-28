@@ -6,8 +6,8 @@
  *
  * The mirror lives in `.template-assets/<template>/` (gitignored, never
  * bundled) with the same seed-relative paths the sandbox gets (`assets/…`).
- * `push` validates the glTF dependency closure and the manifest's animation
- * names against the real bytes before uploading, because nothing else ever
+ * `push` validates the glTF dependency closure, the manifest's animation
+ * names, and 2D sprite and tile grids against the real bytes before uploading, because nothing else ever
  * reads those bytes again until a game is created.
  */
 import { execFileSync } from "node:child_process"
@@ -25,6 +25,7 @@ import {
   type AssetLock,
 } from "../lib/games/templates/asset-lock"
 import { parseTemplateManifest, TEMPLATE_MANIFEST_PATH, undeclaredAssetPaths } from "../lib/games/templates/seed"
+import { spriteSheetProblems } from "../lib/games/templates/sprite-sheets"
 
 const BUCKET = "numa-template-assets"
 const WRANGLER = "wrangler@4.153.0"
@@ -87,6 +88,7 @@ async function validateMirror(files: Map<string, Buffer>): Promise<void> {
   for (const asset of manifest.sharedAssets ?? []) {
     if (!files.has(asset.path)) problems.push(`missing shared asset ${asset.path}`)
   }
+  problems.push(...spriteSheetProblems(manifest, files))
 
   for (const undeclared of undeclaredAssetPaths(manifest, files.keys())) {
     problems.push(`${undeclared} is not declared in ${TEMPLATE_MANIFEST_PATH}`)

@@ -1,7 +1,8 @@
 import { tool, type Tool } from "ai"
 import { z } from "zod"
 
-import { ALL_SKILL_NAMES, isSkillName, SKILLS } from "@/lib/games/skills/registry"
+import { DIMENSION_PROFILES, type GameDimension } from "@/lib/games/dimension"
+import { SKILLS, type SkillName } from "@/lib/games/skills/registry"
 
 /**
  * `load_skill`'s own content cap (design.md decision 14, `agent-skills`
@@ -43,19 +44,26 @@ function cappedBody(body: string): { content: string; truncated: boolean } {
  * requirement) — the skill text already lives in memory as a TS module
  * (`lib/games/skills/registry.ts`), so there is nothing to read from disk
  * or execute to answer this call.
+ *
+ * Only the game's dimension profile's skills are named or loadable: a 3D
+ * game cannot load a 2D skill, nor a 2D game a 3D-only one, and asking for
+ * one is answered exactly like an unknown name.
  */
-export function createLoadSkillTool(): Tool {
+export function createLoadSkillTool(dimension: GameDimension): Tool {
+  const skills: readonly SkillName[] = DIMENSION_PROFILES[dimension].skills
+  const isAvailable = (name: string): name is SkillName => (skills as readonly string[]).includes(name)
+
   return tool({
     description: [
       "Load a skill's full engine-reference text by name, for a skill not already included in your instructions.",
       "Use this only as a fallback: your instructions already carry your role's default skills, plus any extras the dispatching agent added for this task. Call this when you hit a real gap those do not cover — not to re-read a skill you already have.",
-      `Valid skill names: ${ALL_SKILL_NAMES.join(", ")}.`,
+      `Valid skill names: ${skills.join(", ")}.`,
     ].join(" "),
     inputSchema: z.object({
       name: z
         .string()
         .min(1)
-        .describe(`The skill to load. One of: ${ALL_SKILL_NAMES.join(", ")}.`),
+        .describe(`The skill to load. One of: ${skills.join(", ")}.`),
     }),
     /**
      * A plain async function, not a generator: unlike a dispatch tool
@@ -65,9 +73,9 @@ export function createLoadSkillTool(): Tool {
      * needs, with no truncation-safe rendering of its own to add on top.
      */
     execute: async ({ name }) => {
-      if (!isSkillName(name)) {
+      if (!isAvailable(name)) {
         return {
-          error: `Unknown skill "${name}". Valid skill names: ${ALL_SKILL_NAMES.join(", ")}.`,
+          error: `Unknown skill "${name}". Valid skill names: ${skills.join(", ")}.`,
         }
       }
 

@@ -342,6 +342,10 @@
       "platformer": {
         "label": "Platformer",
         "tagline": "Start with a colorful side-scrolling platformer kit."
+      },
+      "tiny-swords": {
+        "label": "Tiny Swords",
+        "tagline": "Start with a 2D pixel-art kingdom kit."
       }
     },
     "startDictation": "Start dictation",

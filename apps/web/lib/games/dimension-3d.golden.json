@@ -1,0 +1,65 @@
+{
+  "runtimeSeed": "cf0e7cf53196c307d136e4a07ff3da1a6a41f4fd223e274daafd68baf8c097af",
+  "templateSeeds": {
+    "none": "cf0e7cf53196c307d136e4a07ff3da1a6a41f4fd223e274daafd68baf8c097af",
+    "fantasy-cards": "f57af62d894e96b051975345c028adb03b8600fb60a63124abc9403b49946f0b",
+    "cube-world": "8c373c412e5a5f640506a6c596741d51886e669ee87c33819ca101ff8d9ddde8",
+    "toon-shooter": "cd9596847f41dd6d110f4cd1560ee83fda2d9845054e7ac155a8ea0c0c317c61",
+    "platformer": "9cc0b99e908c3062223008910a03a493ae1cd246bdb109b63e1a358ba5fbd36a"
+  },
+  "engineApiIndex": "a9141b2ee3fdb2f7913f2695479804a9958ba2051000cacf7d89c520bc3db2e6",
+  "runtimeInstructions": "1ffe4cef30a9ea4ad4985e761800a41356174306476ed780f6a081c42e361c66",
+  "gameInstructions": {
+    "phasesOn": "a8b3a3ba527906ef028eeeac1034d634600102784ea1c72d1e5ac86fd55dc543",
+    "phasesOff": "9868a4ac286ac13d32c6103fd20035009fb11c3d715fd800930c2166d0fbd942"
+  },
+  "skillNames": [
+    "engine-core",
+    "engine-utils",
+    "engine-movement",
+    "engine-scene",
+    "engine-feedback",
+    "engine-audio",
+    "engine-systems",
+    "engine-reference"
+  ],
+  "roleDefaultSkills": {
+    "explorer": [],
+    "planner": [
+      "engine-core"
+    ],
+    "gameplay": [
+      "engine-core",
+      "engine-utils",
+      "engine-movement",
+      "engine-systems"
+    ],
+    "visuals": [
+      "engine-core",
+      "engine-scene",
+      "engine-movement",
+      "engine-feedback",
+      "engine-systems",
+      "engine-reference"
+    ],
+    "audio": [
+      "engine-core",
+      "engine-audio"
+    ],
+    "verifier": []
+  },
+  "roleSkillBodies": {
+    "explorer": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "planner": "e10ca6efd1de1a4328718a6982a0aae6dafc2e0b176a94d95dc8f0d691ba8ed5",
+    "gameplay": "1b1facbff279433de1bd7c2d3e69d40dcf82888ce4340838c2cf74e2b116a1ad",
+    "visuals": "363ceb5c396df81e429439e0546d9ca8be2d930d2ee09275aa2b1d29b1456587",
+    "audio": "c6fc20a766b63749127ab4668d224b989f2347a6ada1f2f6f8ee5d805db88eb7",
+    "verifier": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "orchestratorDefaultSkills": [
+    "engine-core"
+  ],
+  "skillIndex": "203c985d6211802b48e909bf056a2541c1c04ab2d40bdc2b6bef75b68860026e",
+  "taskSkillsDescription": "a777c4215fc0a03af9e11631a4d7ae60d8ee14076a1ec480aa7ad5ad3aa6ba7f",
+  "loadSkillDescription": "a1a83733ba15b3f309167fa6ebf5b03613c7c3fc38e3b70464749b5e2f8da592"
+}

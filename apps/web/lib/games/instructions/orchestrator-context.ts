@@ -1,6 +1,8 @@
 import type { SystemModelMessage } from "ai"
 
-import { engineApiIndex } from "./engine-index"
+import type { GameDimension } from "@/lib/games/dimension"
+
+import { engineApiIndexFor } from "./engine-index"
 
 /**
  * What the orchestrator needs to write tasks itself, now that no planner sits
@@ -11,10 +13,12 @@ import { engineApiIndex } from "./engine-index"
  * the game, not to the agent.
  */
 export function orchestratorContextInstructions({
+  dimension,
   templateContext,
   requiresAssetReceipt,
   modelIds,
 }: {
+  dimension: GameDimension
   templateContext: string
   requiresAssetReceipt: boolean
   modelIds: readonly string[]
@@ -24,7 +28,7 @@ export function orchestratorContextInstructions({
     : ""
 
   return [
-    { role: "system", content: engineApiIndex },
+    { role: "system", content: engineApiIndexFor(dimension) },
     { role: "system", content: `${templateContext}${receipt}` },
   ]
 }
