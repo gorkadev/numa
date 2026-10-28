@@ -63,7 +63,9 @@ export async function getAttachment(key: string): Promise<Response | null> {
  * kept copy is never stale.
  */
 const recent = new Map<string, Uint8Array>()
-const RECENT_LIMIT = 32
+/** By bytes, not count: 32 files of 8 MB each would be 256 MB of worker memory. */
+const RECENT_LIMIT_BYTES = 64 * 1024 * 1024
+let recentBytes = 0
 
 /** The object's bytes, or `null` when there is none under `key`. */
 export async function readAttachmentBytes(key: string): Promise<Uint8Array | null> {
@@ -75,7 +77,12 @@ export async function readAttachmentBytes(key: string): Promise<Uint8Array | nul
 
   const bytes = new Uint8Array(await object.arrayBuffer())
   recent.set(key, bytes)
-  if (recent.size > RECENT_LIMIT) recent.delete(recent.keys().next().value!)
+  recentBytes += bytes.byteLength
+  for (const [oldest, kept] of recent) {
+    if (recentBytes <= RECENT_LIMIT_BYTES) break
+    recent.delete(oldest)
+    recentBytes -= kept.byteLength
+  }
 
   return bytes
 }

@@ -1026,14 +1026,12 @@ export const gameChat = chat.agent({
      * gone rather than failing the whole turn.
      */
     const ownerId = await getGameUserId(chatId)
-    const modelMessages = ownerId
-      ? await resolveAttachments(messages, ownerId, (key) =>
-          readAttachmentBytes(key).catch((error: unknown) => {
-            logger.warn("Attachment unreadable", { chatId, key, error: String(error) })
-            return null
-          })
-        )
-      : messages
+    const modelMessages = await resolveAttachments(messages, ownerId ?? null, (key) =>
+      readAttachmentBytes(key).catch((error: unknown) => {
+        logger.warn("Attachment unreadable", { chatId, key, error: String(error) })
+        return null
+      })
+    )
 
     return streamText({
       /**
