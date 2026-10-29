@@ -70,6 +70,7 @@
     "@workspace/typescript-config": "workspace:*",
     "eslint": "^9",
     "trigger.dev": "^4.5.16",
+    "tsx": "4.23.13",
     "typescript": "^5"
   }
 }
