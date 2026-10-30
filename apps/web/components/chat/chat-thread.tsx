@@ -42,7 +42,7 @@ import { UsageFooter } from "@/components/chat/usage-footer"
 import { thinkingLabelKey } from "@/lib/games/build-progress"
 import type { SubagentRunRecord } from "@/lib/games/harness/records"
 import { deriveTaskStrip, shouldShowTaskStrip } from "@/lib/games/plan-tasks"
-import type { FileTreeNode } from "@/lib/games/files"
+import { loadFileTree } from "@/lib/games/file-tree-cache"
 import { mentionFiles } from "@/lib/games/mentions"
 import { collectThreadSubagentRuns } from "@/lib/games/tool-parts"
 
@@ -61,6 +61,7 @@ export function ChatThread({
   onSubagentPanelOpenChange,
   onSubagentRunsChange,
   onOpenFile,
+  filesVersion,
 }: {
   gameId: string
   templateId: TemplateId
@@ -115,18 +116,19 @@ export function ChatThread({
   onSubagentRunsChange: (runs: SubagentRunRecord[]) => void
   /** Opens a file mentioned in a sent message in the side panel's Files tab. */
   onOpenFile?: (path: string) => void
+  /** Which listing of the game's files is current; the `@` picker reuses the one the Files tab fetched for it. */
+  filesVersion: number
 }) {
   const t = useTranslations("ChatActivity")
 
   /** The same listing the Files tab reads, flattened for the composer's `@` picker. */
   const loadMentionFiles = useCallback(
     async (signal: AbortSignal) => {
-      const response = await fetch(`/api/games/${gameId}/files`, { signal })
-      if (!response.ok) throw new Error(String(response.status))
-      const { tree } = (await response.json()) as { tree: FileTreeNode[] }
+      const tree = await loadFileTree(gameId, filesVersion)
+      signal.throwIfAborted()
       return mentionFiles(tree)
     },
-    [gameId]
+    [gameId, filesVersion]
   )
   const {
     messages,
