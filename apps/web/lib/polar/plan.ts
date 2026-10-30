@@ -1,3 +1,5 @@
+import { cache } from "react"
+
 import { getSession } from "@/lib/session"
 
 import { polar } from "./client"
@@ -105,6 +107,17 @@ export async function readCustomerState(
     return null
   }
 }
+
+/**
+ * `readCustomerState`, memoized for the length of one request.
+ *
+ * For render paths only — the pricing page asks for the same document from the
+ * credit summary and from the plan-change preview, and Polar has nothing new to
+ * say between the two. Mutating callers (checkout, plan-change and cancellation
+ * actions) must keep using `readCustomerState`: a read that follows a write in
+ * the same request has to see the write.
+ */
+export const readCustomerStateOnce = cache(readCustomerState)
 
 /**
  * Whether this user holds an active subscription to a given product.
@@ -284,9 +297,7 @@ export async function getBillingSummary(): Promise<BillingSummary> {
 
     if (!session) return summarizeBillingState(null)
 
-    return summarizeBillingState(
-      await polar.customers.getStateExternal({ externalId: session.user.id })
-    )
+    return summarizeBillingState(await readCustomerStateOnce(session.user.id))
   } catch {
     return summarizeBillingState(null)
   }
