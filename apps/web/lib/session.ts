@@ -1,5 +1,6 @@
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
+import { cache } from "react"
 
 import { auth, type Session } from "@/lib/auth"
 
@@ -15,10 +16,16 @@ import { auth, type Session } from "@/lib/auth"
  * `auth.api.getSession` needs the incoming request's headers to read the
  * session cookie, which is why this — like every function in this file — can
  * only run on the server.
+ *
+ * Memoized per request with React's `cache()`: a single render asks for the
+ * session from the layout, the billing helpers and the game queries, and each
+ * ask would otherwise be its own lookup. The memo dies with the request, so a
+ * later request always re-reads the cookie.
  */
-export async function getSession(): Promise<Session> {
-  return auth.api.getSession({ headers: await headers() })
-}
+export const getSession = cache(
+  async (): Promise<Session> =>
+    auth.api.getSession({ headers: await headers() })
+)
 
 /**
  * The current session, or a redirect to `/sign-in` if there is none.

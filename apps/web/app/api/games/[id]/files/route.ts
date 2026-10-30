@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { startGameServer } from "@/lib/daytona/utils"
 import { buildFileTree } from "@/lib/games/files"
 import { listGameFiles } from "@/lib/games/files-server"
-import { getGame } from "@/lib/games/queries"
+import { getGameSandboxId } from "@/lib/games/queries"
 
 const privateHeaders = { "cache-control": "no-store, private" }
 
@@ -22,14 +22,14 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params
-  const game = await getGame(id)
+  const sandboxId = await getGameSandboxId(id)
 
-  if (!game?.sandboxId) {
+  if (!sandboxId) {
     return new Response(null, { status: 404, headers: privateHeaders })
   }
 
   try {
-    const { sandbox } = await startGameServer(game.sandboxId)
+    const { sandbox } = await startGameServer(sandboxId)
     const files = await listGameFiles(sandbox.fs)
     return NextResponse.json({ tree: buildFileTree(files) }, { headers: privateHeaders })
   } catch {

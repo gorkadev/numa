@@ -54,6 +54,26 @@ export async function getGame(id: string): Promise<Game | undefined> {
 }
 
 /**
+ * The sandbox id of a game the caller owns, or `undefined` when the game does
+ * not exist, belongs to someone else, or has no sandbox yet.
+ *
+ * Same tenant predicate as `getGame`, for the routes that only need to reach
+ * the sandbox: the thread is left out because `getGame` would read the whole
+ * conversation just to hand back one column.
+ */
+export async function getGameSandboxId(id: string): Promise<string | undefined> {
+  const { user } = await requireSession()
+
+  const game = await db.query.games.findFirst({
+    columns: { sandboxId: true },
+    where: (game, { and, eq }) =>
+      and(eq(game.id, id), eq(game.userId, user.id)),
+  })
+
+  return game?.sandboxId ?? undefined
+}
+
+/**
  * Reads a single game by id alone, with no session and no `user_id` predicate.
  *
  * This deliberately steps outside the tenant boundary every other read in this

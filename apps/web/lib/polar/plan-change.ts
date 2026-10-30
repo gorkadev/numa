@@ -1,7 +1,7 @@
 import { getSession } from "@/lib/session"
 
 import { polar } from "./client"
-import { activePaidSubscription, readCustomerState } from "./plan"
+import { activePaidSubscription, readCustomerStateOnce } from "./plan"
 import { POLAR_PRODUCT_MAX_ID, POLAR_PRODUCT_PRO_ID } from "./products"
 
 /**
@@ -397,7 +397,7 @@ export async function getPlanChangePreview(): Promise<PlanChangePreview | null> 
 
     if (!session) return null
 
-    const state = await readCustomerState(session.user.id)
+    const state = await readCustomerStateOnce(session.user.id)
 
     if (!state) return null
 
