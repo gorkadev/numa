@@ -27,7 +27,7 @@ import {
   UserIcon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import type { GameSummary } from "@/lib/games/queries"
+import type { GameListItem } from "@/lib/games/queries"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { Kbd } from "@workspace/ui/components/kbd"
 import { toast } from "@workspace/ui/components/toast"
@@ -102,7 +102,7 @@ export function CommandPalette({
   open,
   onOpenChange,
 }: {
-  games: GameSummary[]
+  games: GameListItem[]
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
@@ -715,7 +715,7 @@ function GameItem({
   game,
   onSelect,
 }: {
-  game: GameSummary
+  game: GameListItem
   onSelect: (href: string) => void
 }) {
   const t = useTranslations("GameMenu")

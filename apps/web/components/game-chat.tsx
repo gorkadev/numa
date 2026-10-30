@@ -329,6 +329,7 @@ export function GameChat({
           onSubagentPanelOpenChange={onSubagentPanelOpenChange}
           onSubagentRunsChange={setSubagentRuns}
           onOpenFile={openFile}
+          filesVersion={filesVersion}
         />
       </div>
 

@@ -24,6 +24,7 @@ import {
   isPrefetchableText,
   type FileTreeNode,
 } from "@/lib/games/files"
+import { loadFileTree } from "@/lib/games/file-tree-cache"
 import { createHoverPrefetcher } from "@/lib/games/hover-prefetch"
 
 type TreeState =
@@ -46,21 +47,21 @@ function useFileTree(gameId: string, version: number) {
   const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
-    const controller = new AbortController()
+    let cancelled = false
 
-    fetch(`/api/games/${gameId}/files`, { signal: controller.signal })
-      .then(async (response) => {
-        if (!response.ok) throw new Error(String(response.status))
-        const { tree } = (await response.json()) as { tree: FileTreeNode[] }
-        setState({ status: "ready", tree })
+    loadFileTree(gameId, version)
+      .then((tree) => {
+        if (!cancelled) setState({ status: "ready", tree })
       })
       .catch(() => {
-        if (!controller.signal.aborted) {
+        if (!cancelled) {
           setState((current) => (current.status === "ready" ? current : { status: "failed" }))
         }
       })
 
-    return () => controller.abort()
+    return () => {
+      cancelled = true
+    }
   }, [gameId, version, attempt])
 
   function retry() {

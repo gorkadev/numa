@@ -12,7 +12,7 @@ import {
   SearchIcon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import type { GameSummary } from "@/lib/games/queries"
+import type { GameListItem } from "@/lib/games/queries"
 import { Button } from "@workspace/ui/components/button"
 import { Empty, EmptyDescription } from "@workspace/ui/components/empty"
 import { Kbd } from "@workspace/ui/components/kbd"
@@ -77,7 +77,7 @@ export function AppSidebar({
   upgradeHref,
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
-  games: GameSummary[]
+  games: GameListItem[]
   billing: BillingSummary
   /**
    * The checkout URL for the Pro product, built by the layout.

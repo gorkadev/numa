@@ -1,9 +1,10 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 import { onTurnCredits } from "@/lib/polar/credits-channel"
 import type { BillingSummary } from "@/lib/polar/plan"
+import { shouldRefreshOnFocus } from "@/lib/polar/refresh-policy"
 
 /**
  * How long to wait after a turn before asking Polar what the balance really
@@ -107,19 +108,40 @@ export function useLiveBilling(seed: BillingSummary): BillingSummary {
    * number on screen is the last thing known to be true, and a dash would
    * claim less than that.
    */
-  const refresh = useCallback(async (signal?: AbortSignal) => {
-    try {
-      const response = await fetch("/api/billing/summary", {
-        cache: "no-store",
-        signal,
-      })
+  /**
+   * The request in flight, if any, and when the last one finished.
+   *
+   * Callers that arrive while a refresh is running join it rather than start a
+   * second one: `focus` and `visibilitychange` land together, and either can
+   * coincide with the poll or the post-turn reconcile.
+   */
+  const inFlight = useRef<Promise<void> | null>(null)
+  const lastRefreshAt = useRef(0)
 
-      if (!response.ok) return
+  const refresh = useCallback((signal?: AbortSignal) => {
+    if (inFlight.current) return inFlight.current
 
-      setBilling((await response.json()) as BillingSummary)
-    } catch {
-      /* Keep whatever is on screen. */
-    }
+    const request = (async () => {
+      try {
+        const response = await fetch("/api/billing/summary", {
+          cache: "no-store",
+          signal,
+        })
+
+        if (!response.ok) return
+
+        setBilling((await response.json()) as BillingSummary)
+      } catch {
+        /* Keep whatever is on screen. */
+      } finally {
+        lastRefreshAt.current = Date.now()
+        inFlight.current = null
+      }
+    })()
+
+    inFlight.current = request
+
+    return request
   }, [])
 
   useEffect(() => {
@@ -151,7 +173,13 @@ export function useLiveBilling(seed: BillingSummary): BillingSummary {
      * from another one — and only the second is filtered, because a hidden
      * document firing `visibilitychange` is a tab being LEFT.
      */
-    const onFocus = () => void refresh(controller.signal)
+    lastRefreshAt.current = Date.now()
+
+    const onFocus = () => {
+      if (shouldRefreshOnFocus(Date.now(), lastRefreshAt.current)) {
+        void refresh(controller.signal)
+      }
+    }
     const onVisible = () => {
       if (document.visibilityState === "visible") onFocus()
     }
