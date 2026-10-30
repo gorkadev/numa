@@ -10,7 +10,7 @@ const privateHeaders = { "cache-control": "no-store, private" }
 /**
  * The game directory as a tree, for the chat's Files tab.
  *
- * `getGame` scopes the lookup to the caller, so another user's game reads as
+ * `getGameSandboxId` scopes the lookup to the caller, so another user's game reads as
  * missing. A game with no sandbox is reported as missing too rather than
  * provisioned: browsing files must never create compute. An archived sandbox
  * is resumed through `startGameServer`, the same path the preview takes, so
