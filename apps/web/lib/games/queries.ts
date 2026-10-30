@@ -21,7 +21,21 @@ import { requireSession } from "@/lib/session"
  */
 export type GameSummary = Omit<Game, "messages">
 
-export async function listGames(): Promise<GameSummary[]> {
+/**
+ * What the sidebar and the command palette render of a game.
+ *
+ * These rows are props of client components, so everything in them is
+ * serialized into the page sent to the browser. The chat access token, the
+ * stream cursor and the sandbox id have no business there, and every game
+ * would carry its own on every navigation. `lastTurnFinishedAt` and
+ * `lastReadAt` stay because the unread dot is derived from them.
+ */
+export type GameListItem = Pick<
+  Game,
+  "id" | "title" | "pinnedAt" | "lastTurnFinishedAt" | "lastReadAt"
+>
+
+export async function listGames(): Promise<GameListItem[]> {
   const { user } = await requireSession()
 
   /**
@@ -29,7 +43,13 @@ export async function listGames(): Promise<GameSummary[]> {
    * thread is left out, or each navigation would transfer every conversation.
    */
   return db.query.games.findMany({
-    columns: { messages: false },
+    columns: {
+      id: true,
+      title: true,
+      pinnedAt: true,
+      lastTurnFinishedAt: true,
+      lastReadAt: true,
+    },
     where: (game, { eq }) => eq(game.userId, user.id),
     orderBy: (game, { desc, sql }) => [
       sql`${game.pinnedAt} desc nulls last`,

@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import type { GameSummary } from "@/lib/games/queries"
+import type { GameListItem } from "@/lib/games/queries"
 import { useTranslations } from "next-intl"
 import { MarqueeText } from "@workspace/ui/components/marquee-text"
 import { Spinner } from "@workspace/ui/components/spinner"
@@ -37,7 +37,7 @@ export function GameRow({
    */
   closeOnSelect = false,
 }: {
-  game: GameSummary
+  game: GameListItem
   closeOnSelect?: boolean
 }) {
   const pathname = usePathname()
