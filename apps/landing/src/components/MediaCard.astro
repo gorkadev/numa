@@ -1,0 +1,29 @@
+---
+import { Card } from "@workspace/ui/components/card"
+
+interface Props {
+  /** Aspect ratio class for the media frame. */
+  aspect: string
+}
+
+const { aspect } = Astro.props
+---
+
+<!--
+  The shared Card with its media inset: padded frame, rounded corners. On hover
+  the card lifts and the media drifts inside its frame, so anything in the
+  `media` slot gets the same motion, images and HTML alike.
+-->
+<Card
+  size="sm"
+  className="h-full gap-0 bg-surface p-2 transition-transform duration-500 ease-out-quint motion-safe:hover:-translate-y-1"
+>
+  <div class:list={["overflow-hidden rounded-[calc(min(var(--radius-4xl),24px)-8px)] bg-card", aspect]}>
+    <div
+      class="relative size-full transition-transform duration-700 ease-out-quint motion-safe:group-hover/card:scale-105 motion-safe:group-hover/card:-rotate-1"
+    >
+      <slot name="media" />
+    </div>
+  </div>
+  <slot />
+</Card>

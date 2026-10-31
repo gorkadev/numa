@@ -1,8 +1,9 @@
 ---
 import { Badge } from "@workspace/ui/components/badge"
-import { Card, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
+import { CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
 
 import { t, type Locale } from "../i18n"
+import MediaCard from "./MediaCard.astro"
 import SectionHeader from "./SectionHeader.astro"
 
 interface Props {
@@ -26,24 +27,25 @@ const copy = t(locale)
       {
         copy.templates.items.map((item, index) => (
           <li data-reveal style={`--reveal-delay: ${(index % 3) * 80}ms`}>
-            <Card className="h-full">
+            <MediaCard aspect="aspect-video">
               <img
+                slot="media"
                 src={`/templates/${item.id}.webp`}
                 alt={item.tagline}
                 width="640"
                 height="360"
                 loading="lazy"
                 decoding="async"
-                class="aspect-video w-full object-cover"
+                class="size-full object-cover"
               />
-              <CardHeader>
+              <CardHeader className="pt-4 pb-3">
                 <CardTitle className="flex items-center gap-2">
                   <h3>{item.name}</h3>
                   <Badge variant="secondary">{item.kind}</Badge>
                 </CardTitle>
                 <CardDescription>{item.tagline}</CardDescription>
               </CardHeader>
-            </Card>
+            </MediaCard>
           </li>
         ))
       }
