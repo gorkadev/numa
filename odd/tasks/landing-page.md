@@ -29,6 +29,7 @@ Branch: `feat/landing-page` · Delivery: `ask-on-risk` · Checks: `pnpm --filter
 | T11 | S3 (nav) | inline | done (build OK, checked in Chrome over sky, scrolled and past hero, mobile menu opens, no console errors) | 36c740c |
 | T12 | S2 | inline | done (build OK, checked in Chrome) | fe534ed |
 | T13 | S2 | inline | done (typecheck 0 errors, build OK, checked in Chrome dark: visible from the tagline down, hero sky covers it, no console errors) | 606eb7d |
+| T14 | S5 (FAQ) | inline | done (typecheck 0 errors, build OK, checked in Chrome dark: cards, topic filter, ES copy) | pending |
 | T5 | S7 | inline | partial: 404, og, meta, skip link done; legal links missing; light theme not checked in browser | b2c4f53 |
 
 Route evidence: one sequential build, no independent parallel units, so no writer trigger fires.
@@ -62,3 +63,5 @@ Route evidence: one sequential build, no independent parallel units, so no write
 - **L25 (2026-10-31), user:** "modificalo, es demasiado azul, creo q seria mejor q el fondo ensi fuera negro/oscuro, y el toque azul unicamente en el efecto ese del cursor". T13 reopened and done: shapes #262626 (neutral), hover #1447e6 (`--primary`); checked in Chrome dark.
 - **L26 (2026-10-31), user:** "se ve demasiado el fondo, ns exactamente como funciona, pero o mas oscuro, o mas opaco, o mas opacity... en plan mas sutil, q se note menos. necesito q sea negro, pero con este fondo animado le da un toque guay pero tiene q ser muy sutil". Shapes darkened to #161616 (blue hover unchanged, so no wrapper opacity that would also dim it); checked in Chrome dark.
 - **L27 (2026-10-31), user:** "mas sutil, lo siento jaja". Shapes to #0d0d0d.
+- **L28 (2026-10-31), user:** "casi lo tenemos, un poco mas sutil, un poco mas oscuro, y echale un vistazo al tema de los accordion de las preguntas q se ve mal, quizas hacemos añadimos este bloque de efferd" + install prompt for `@efferd/faqs-4`. Shapes to #0a0a0a.
+- **L29:** T14: faqs-4 adapted into `src/components/faq-section.tsx` (replaces `FaqAccordion.tsx`; shadcn wrote it to `apps/landing/components/`, moved; shared accordion/button skipped, `packages/` unchanged). Topic filter (all, start, features, billing) with hugeicons; each FAQ item gets a `category` and `faq.categories` labels in en/es. Items are separate rounded `bg-muted/50` cards (the shared Accordion's outer border and dividers overridden locally). Answers stay `keepMounted`; FAQPage JSON-LD unchanged. Header centered above. Pre-existing header hydration warning (aria-current) seen in console, not from this change.

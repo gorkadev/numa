@@ -159,36 +159,50 @@ export const en = {
   faq: {
     eyebrow: "FAQ",
     title: "Questions, answered",
+    categories: [
+      { id: "all", label: "All topics" },
+      { id: "start", label: "Getting started" },
+      { id: "features", label: "Features" },
+      { id: "billing", label: "Credits and billing" },
+    ],
     items: [
       {
+        category: "start",
         q: "Do I need to know how to code?",
         a: "No. You describe the game and the agent writes the code. Every file stays visible in the app if you ever want to read it.",
       },
       {
+        category: "features",
         q: "What kind of games can I make?",
         a: "2D and 3D games that run in the browser: platformers, shooters, card battlers, top down adventures, driving games and more. Start from a template or from a blank canvas.",
       },
       {
+        category: "billing",
         q: "What is a credit?",
         a: "One credit is one US cent of what a turn costs to generate. A long conversation about a complicated game costs more than a short one about a simple game, so credits are spent by the turn rather than by the game.",
       },
       {
+        category: "start",
         q: "Can I start for free?",
         a: "Yes. The Free plan comes with 100 credits every month, unlimited games and revisions, and you can play and share everything you build.",
       },
       {
+        category: "features",
         q: "Which AI models does it use?",
         a: "You choose between three tiers. Fast is the cheapest for small tweaks, Balanced is the right pick for most games, and Pro is slower and stronger for mechanics that need real reasoning.",
       },
       {
+        category: "features",
         q: "Can I use my own images and files?",
         a: "Yes. Attach images or files to your message and the agent uses them as references for the game.",
       },
       {
+        category: "billing",
         q: "What happens when I run out of credits?",
         a: "New turns stop until your balance recovers. Nothing is deleted and nothing is locked. Free plans refill on the first of the month, and Pro or Max plans can buy extra credits without waiting.",
       },
       {
+        category: "billing",
         q: "Can I cancel whenever I want?",
         a: "Yes. A cancelled Pro or Max plan runs to the end of the period you already paid for, then drops to Free. Extra credits you bought are kept.",
       },

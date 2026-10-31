@@ -160,36 +160,50 @@ export const es: Dictionary = {
   faq: {
     eyebrow: "Preguntas",
     title: "Preguntas frecuentes",
+    categories: [
+      { id: "all", label: "Todos los temas" },
+      { id: "start", label: "Primeros pasos" },
+      { id: "features", label: "Funciones" },
+      { id: "billing", label: "Créditos y pagos" },
+    ],
     items: [
       {
+        category: "start",
         q: "¿Necesito saber programar?",
         a: "No. Tú describes el juego y el agente escribe el código. Todos los archivos quedan visibles en la app por si alguna vez quieres leerlos.",
       },
       {
+        category: "features",
         q: "¿Qué tipo de juegos puedo crear?",
         a: "Juegos 2D y 3D que corren en el navegador: plataformas, shooters, juegos de cartas, aventuras con vista cenital, conducción y más. Empieza desde una plantilla o desde un lienzo en blanco.",
       },
       {
+        category: "billing",
         q: "¿Qué es un crédito?",
         a: "Un crédito equivale a un céntimo de dólar del coste de generar un turno. Una conversación larga sobre un juego complejo cuesta más que una breve sobre uno sencillo, por eso los créditos se gastan por turno y no por juego.",
       },
       {
+        category: "start",
         q: "¿Puedo empezar gratis?",
         a: "Sí. El plan Gratis incluye 100 créditos al mes, juegos y revisiones ilimitados, y puedes jugar y compartir todo lo que crees.",
       },
       {
+        category: "features",
         q: "¿Qué modelos de IA usa?",
         a: "Eliges entre tres niveles. Rápido es el más barato para ajustes pequeños, Equilibrado es la opción adecuada para la mayoría de juegos y Pro es más lento y potente para mecánicas que necesitan razonar de verdad.",
       },
       {
+        category: "features",
         q: "¿Puedo usar mis propias imágenes y archivos?",
         a: "Sí. Adjunta imágenes o archivos a tu mensaje y el agente los usa como referencia para el juego.",
       },
       {
+        category: "billing",
         q: "¿Qué pasa si me quedo sin créditos?",
         a: "Los turnos nuevos se detienen hasta que tu saldo se recupere. No se elimina ni se bloquea nada. El plan Gratis se recarga el primer día de cada mes, y los planes Pro o Max pueden comprar créditos extra sin esperar.",
       },
       {
+        category: "billing",
         q: "¿Puedo cancelar cuando quiera?",
         a: "Sí. Si cancelas Pro o Max, el plan sigue activo hasta el final del periodo que ya pagaste y después pasa a Gratis. Los créditos extra que hayas comprado se conservan.",
       },

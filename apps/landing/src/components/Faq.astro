@@ -1,6 +1,6 @@
 ---
 import { t, type Locale } from "../i18n"
-import { FaqAccordion } from "./FaqAccordion"
+import { FaqSection } from "./faq-section"
 import SectionHeader from "./SectionHeader.astro"
 
 interface Props {
@@ -23,11 +23,11 @@ const schema = {
 ---
 
 <section id="faq" class="scroll-mt-24 px-4 py-20 md:py-24" aria-labelledby="faq-title">
-  <div class="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[1fr_1.6fr]">
-    <SectionHeader id="faq-title" eyebrow={copy.faq.eyebrow} title={copy.faq.title} align="start" />
+  <div class="mx-auto flex max-w-5xl flex-col gap-12">
+    <SectionHeader id="faq-title" eyebrow={copy.faq.eyebrow} title={copy.faq.title} />
 
     <div data-reveal>
-      <FaqAccordion client:visible items={copy.faq.items} />
+      <FaqSection client:visible categories={copy.faq.categories} items={copy.faq.items} />
     </div>
   </div>
   <script type="application/ld+json" set:html={JSON.stringify(schema)} />
