@@ -1,4 +1,7 @@
 ---
+import { Badge } from "@workspace/ui/components/badge"
+import { Card, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card"
+
 import { t, type Locale } from "../i18n"
 import SectionHeader from "./SectionHeader.astro"
 
@@ -19,11 +22,11 @@ const copy = t(locale)
       subtitle={copy.templates.subtitle}
     />
 
-    <ul class="mt-16 grid gap-x-4 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+    <ul class="mt-16 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {
         copy.templates.items.map((item, index) => (
-          <li class="group" data-reveal style={`--reveal-delay: ${(index % 3) * 80}ms`}>
-            <div class="overflow-hidden rounded-card bg-surface">
+          <li data-reveal style={`--reveal-delay: ${(index % 3) * 80}ms`}>
+            <Card className="h-full">
               <img
                 src={`/templates/${item.id}.webp`}
                 alt={item.tagline}
@@ -31,14 +34,16 @@ const copy = t(locale)
                 height="360"
                 loading="lazy"
                 decoding="async"
-                class="aspect-video w-full object-cover transition-transform duration-500 ease-out-quint group-hover:scale-[1.03]"
+                class="aspect-video w-full object-cover"
               />
-            </div>
-            <div class="mt-4 flex items-center gap-2">
-              <h3 class="title-2">{item.name}</h3>
-              <span class="rounded-2xl bg-muted px-2 py-0.5 text-muted-foreground caption-3">{item.kind}</span>
-            </div>
-            <p class="mt-1 text-muted-foreground body-6">{item.tagline}</p>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <h3>{item.name}</h3>
+                  <Badge variant="secondary">{item.kind}</Badge>
+                </CardTitle>
+                <CardDescription>{item.tagline}</CardDescription>
+              </CardHeader>
+            </Card>
           </li>
         ))
       }

@@ -42,6 +42,8 @@ export const es: Dictionary = {
   how: {
     eyebrow: "Cómo funciona",
     title: "De una frase a un juego que puedes jugar",
+    subtitle:
+      "Cuéntale al agente qué quieres, míralo construir y sigue cambiándolo hasta que sea divertido.",
     steps: [
       {
         title: "Descríbelo",
@@ -83,6 +85,8 @@ export const es: Dictionary = {
   benefits: {
     eyebrow: "Por qué numa",
     title: "Todo lo que un juego necesita, sin montar nada",
+    subtitle:
+      "El agente se encarga del código, los assets y las comprobaciones, para que tú pienses en el juego.",
     chat: {
       ask: "Haz que las ovejas corran más en",
       file: "@game.js",
@@ -160,6 +164,8 @@ export const es: Dictionary = {
   faq: {
     eyebrow: "Preguntas",
     title: "Preguntas frecuentes",
+    subtitle:
+      "Lo que suele preguntarse antes de crear el primer juego.",
     categories: [
       { id: "all", label: "Todos los temas" },
       { id: "start", label: "Primeros pasos" },

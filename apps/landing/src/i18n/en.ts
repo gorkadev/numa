@@ -41,6 +41,8 @@ export const en = {
   how: {
     eyebrow: "How it works",
     title: "From one sentence to a game you can play",
+    subtitle:
+      "Tell the agent what you want, watch it build, and keep changing it until it is fun.",
     steps: [
       {
         title: "Describe it",
@@ -82,6 +84,8 @@ export const en = {
   benefits: {
     eyebrow: "Why numa",
     title: "Everything a game needs, without the setup",
+    subtitle:
+      "The agent handles the code, the assets and the checks, so you can think about the game.",
     chat: {
       ask: "Make the sheep faster in",
       file: "@game.js",
@@ -159,6 +163,8 @@ export const en = {
   faq: {
     eyebrow: "FAQ",
     title: "Questions, answered",
+    subtitle:
+      "What people usually ask before making their first game.",
     categories: [
       { id: "all", label: "All topics" },
       { id: "start", label: "Getting started" },

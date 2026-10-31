@@ -23,8 +23,8 @@ const schema = {
 ---
 
 <section id="faq" class="scroll-mt-24 px-4 py-20 md:py-24" aria-labelledby="faq-title">
-  <div class="mx-auto flex max-w-5xl flex-col gap-12">
-    <SectionHeader id="faq-title" eyebrow={copy.faq.eyebrow} title={copy.faq.title} />
+  <div class="mx-auto flex max-w-5xl flex-col gap-16">
+    <SectionHeader id="faq-title" eyebrow={copy.faq.eyebrow} title={copy.faq.title} subtitle={copy.faq.subtitle} />
 
     <div data-reveal>
       <FaqSection client:visible categories={copy.faq.categories} items={copy.faq.items} />
