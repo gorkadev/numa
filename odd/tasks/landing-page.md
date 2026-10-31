@@ -23,7 +23,7 @@ Branch: `feat/landing-page` · Delivery: `ask-on-risk` · Checks: `pnpm --filter
 | T4 | S5 (templates, pricing, FAQ, final CTA, footer) | inline | done | 90a64af |
 | T6 | S3, S4 | inline | done (checked in Chrome at 1440: rest, mid dive, exit) | 805a02b |
 | T7 | S2 | inline | done (build OK, checked in Chrome) | 913ec32 |
-| T8 | S5 (pricing) | inline | done (build OK, checked in Chrome) | pending |
+| T8 | S5 (pricing) | inline | done (build OK, checked in Chrome) | 036c389 |
 | T5 | S7 | inline | partial: 404, og, meta, skip link done; legal links missing; light theme not checked in browser | b2c4f53 |
 
 Route evidence: one sequential build, no independent parallel units, so no writer trigger fires.
