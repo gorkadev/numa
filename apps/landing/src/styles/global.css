@@ -7,6 +7,7 @@
   The shared primitives this site renders. Tailwind only generates classes it
   finds in scanned files, and the workspace package lives outside this app.
 */
+@source "../../../../packages/ui/src/components/badge.tsx";
 @source "../../../../packages/ui/src/components/button.tsx";
 @source "../../../../packages/ui/src/components/accordion.tsx";
 @source "../../../../packages/ui/src/components/card.tsx";

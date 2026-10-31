@@ -4,7 +4,7 @@ import { Button } from "@workspace/ui/components/button";
 import { Portal, PortalBackdrop } from "@/components/portal";
 import type { HeaderCopy } from "@/components/header";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Cancel01Icon, Menu01Icon } from "@hugeicons/core-free-icons";
+import { ArrowRight01Icon, Cancel01Icon, Menu01Icon } from "@hugeicons/core-free-icons";
 
 export function MobileNav({ copy }: { copy: HeaderCopy }) {
 	const [open, setOpen] = React.useState(false);
@@ -65,16 +65,9 @@ export function MobileNav({ copy }: { copy: HeaderCopy }) {
 								className="w-full"
 								nativeButton={false}
 								render={<a href={copy.signInUrl} />}
-								variant="outline"
-							>
-								{copy.signIn}
-							</Button>
-							<Button
-								className="w-full"
-								nativeButton={false}
-								render={<a href={copy.signInUrl} />}
 							>
 								{copy.start}
+								<HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} data-icon="inline-end" />
 							</Button>
 						</div>
 					</div>

@@ -1,6 +1,8 @@
 ---
 import { ArrowRight01Icon, PlayIcon } from "@hugeicons/core-free-icons"
 
+import { Badge } from "@workspace/ui/components/badge"
+
 import { signInUrl, t, type Locale } from "../i18n"
 import Icon from "./Icon.astro"
 import { LinkButton } from "./LinkButton"
@@ -36,9 +38,7 @@ const copy = t(locale)
 
     <div class="scene-light relative mx-auto flex h-full max-w-7xl flex-col px-6 pt-28 pb-10 sm:px-10 lg:justify-center lg:pt-0" data-hero-copy>
       <div class="max-w-xl">
-        <p class="inline-flex rounded-full bg-white/40 px-3 py-1 text-neutral-800 caption-4 backdrop-blur-md">
-          {copy.hero.badge}
-        </p>
+        <Badge variant="secondary">{copy.hero.badge}</Badge>
         <h1 id="hero-title" class="hero-title mt-6 heading-3 sm:heading-2 lg:heading-1">
           <span class="block">{copy.hero.title[0]}</span>
           <span class="block">{copy.hero.title[1]}</span>

@@ -2,6 +2,8 @@
 import { cn } from "@workspace/ui/lib/utils";
 import { Logo } from "@/components/logo";
 import { useScroll } from "@/hooks/use-scroll";
+import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { Button } from "@workspace/ui/components/button";
 import { MobileNav } from "@/components/mobile-nav";
 
@@ -18,7 +20,6 @@ export type HeaderCopy = {
 	homeHref: string;
 	homeLabel: string;
 	links: NavLink[];
-	signIn: string;
 	start: string;
 	signInUrl: string;
 	openMenu: string;
@@ -74,16 +75,9 @@ export function Header({ copy }: { copy: HeaderCopy }) {
 						nativeButton={false}
 						render={<a href={copy.signInUrl} />}
 						size="sm"
-						variant="outline"
-					>
-						{copy.signIn}
-					</Button>
-					<Button
-						nativeButton={false}
-						render={<a href={copy.signInUrl} />}
-						size="sm"
 					>
 						{copy.start}
+						<HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} data-icon="inline-end" />
 					</Button>
 				</div>
 				<MobileNav copy={copy} />
