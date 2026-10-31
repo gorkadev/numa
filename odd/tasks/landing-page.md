@@ -21,7 +21,7 @@ Branch: `feat/landing-page` · Delivery: `ask-on-risk` · Checks: `pnpm --filter
 | T2 | S3, S4 | inline | done (checked in Chrome at 1440 and 606 wide) | 545215f |
 | T3 | S5 (tagline, how it works, benefits) | inline | done | 90a64af |
 | T4 | S5 (templates, pricing, FAQ, final CTA, footer) | inline | done | 90a64af |
-| T6 | S3, S4 | inline | done (checked in Chrome at 1440: rest, mid dive, exit) | pending |
+| T6 | S3, S4 | inline | done (checked in Chrome at 1440: rest, mid dive, exit) | 805a02b |
 | T5 | S7 | inline | partial: 404, og, meta, skip link done; legal links missing; light theme not checked in browser | b2c4f53 |
 
 Route evidence: one sequential build, no independent parallel units, so no writer trigger fires.
