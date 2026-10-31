@@ -2,6 +2,12 @@
 @import "@fontsource-variable/inter";
 
 /*
+  The shared primitives this site renders. Tailwind only generates classes it
+  finds in scanned files, and the workspace package lives outside this app.
+*/
+@source "../../../../packages/ui/src/components/button.tsx";
+
+/*
   numa's design values, mirrored from `packages/ui/src/styles/globals.css` so
   the site and the app read as one family: the same neutrals, the same indigo
   accent, the same radius scale and the same typeface. Only the values are
@@ -17,6 +23,10 @@
   --card: oklch(1 0 0);
   --primary: oklch(0.488 0.243 264.376);
   --primary-foreground: oklch(0.97 0.014 254.604);
+  --secondary: oklch(0.967 0.001 286.375);
+  --secondary-foreground: oklch(0.21 0.006 285.885);
+  --destructive: oklch(0.577 0.245 27.325);
+  --input: oklch(0.922 0 0);
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
   --border: oklch(0.922 0 0);
@@ -37,8 +47,12 @@
     --foreground: oklch(0.985 0 0);
     --surface: #181818;
     --card: #1f1f1f;
-    --primary: oklch(0.585 0.233 277.117);
+    --primary: oklch(0.424 0.199 265.638);
     --primary-foreground: oklch(0.97 0.014 254.604);
+    --secondary: oklch(0.274 0.006 286.033);
+    --secondary-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --input: oklch(1 0 0 / 15%);
     --muted: #272727;
     --muted-foreground: oklch(0.708 0 0);
     --border: oklch(1 0 0 / 10%);
@@ -46,6 +60,27 @@
     --heading-from: #ffffff;
     --heading-to: #9b9b9b;
   }
+}
+
+/*
+  The daylight scenes (the hero, the closing call to action, the 404) are
+  always bright skies, so whatever sits on them uses the light values whatever
+  the system theme is.
+*/
+.scene-light,
+[data-nav][data-over-hero] {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --primary: oklch(0.488 0.243 264.376);
+  --primary-foreground: oklch(0.97 0.014 254.604);
+  --secondary: oklch(0.967 0.001 286.375);
+  --secondary-foreground: oklch(0.21 0.006 285.885);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  color-scheme: light;
 }
 
 @theme inline {
@@ -56,6 +91,10 @@
   --color-card: var(--card);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-destructive: var(--destructive);
+  --color-input: var(--input);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);

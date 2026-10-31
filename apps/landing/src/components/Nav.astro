@@ -3,6 +3,7 @@ import { Cancel01Icon, Menu01Icon } from "@hugeicons/core-free-icons"
 
 import { homePath, signInUrl, t, type Locale } from "../i18n"
 import Icon from "./Icon.astro"
+import { LinkButton } from "./LinkButton"
 
 interface Props {
   locale: Locale
@@ -64,12 +65,7 @@ const links = [
 
     <div class="flex items-center justify-end gap-4">
       <a href={signInUrl} class="nav-link hidden button-sm sm:inline-flex">{copy.nav.signIn}</a>
-      <a
-        href={signInUrl}
-        class="nav-cta inline-flex rounded-full px-4 py-2 button-sm transition-[transform,background-color] duration-300 ease-out-quint active:scale-[0.98]"
-      >
-        {copy.nav.start}
-      </a>
+      <LinkButton href={signInUrl} size="lg">{copy.nav.start}</LinkButton>
     </div>
   </nav>
 </header>
@@ -112,8 +108,6 @@ const links = [
   .site-nav {
     --nav-fg: var(--foreground);
     --nav-muted: var(--muted-foreground);
-    --nav-cta-bg: var(--foreground);
-    --nav-cta-fg: var(--background);
     background-color: color-mix(in oklch, var(--background) 75%, transparent);
     backdrop-filter: blur(20px);
     box-shadow: 0 1px 0 var(--border);
@@ -123,8 +117,6 @@ const links = [
   .site-nav[data-over-hero] {
     --nav-fg: #050816;
     --nav-muted: rgb(5 8 22 / 0.72);
-    --nav-cta-bg: #050816;
-    --nav-cta-fg: #ffffff;
     background-color: transparent;
     backdrop-filter: none;
     box-shadow: none;
@@ -133,8 +125,6 @@ const links = [
   /* While the mobile menu is open the bar sits on the page's own surface. */
   .site-nav:has([aria-expanded="true"]) {
     --nav-fg: var(--foreground);
-    --nav-cta-bg: var(--foreground);
-    --nav-cta-fg: var(--background);
   }
 
   .nav-fg {
@@ -150,13 +140,6 @@ const links = [
     color: var(--nav-fg);
   }
 
-  .nav-cta {
-    background-color: var(--nav-cta-bg);
-    color: var(--nav-cta-fg);
-  }
-  .nav-cta:hover {
-    background-color: color-mix(in oklch, var(--nav-cta-bg) 85%, transparent);
-  }
 
   [data-menu-toggle][aria-expanded="true"] :global(.menu-icon) {
     opacity: 0;

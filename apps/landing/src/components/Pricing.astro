@@ -3,6 +3,7 @@ import { Tick02Icon } from "@hugeicons/core-free-icons"
 
 import { signInUrl, t, type Locale } from "../i18n"
 import Icon from "./Icon.astro"
+import { LinkButton } from "./LinkButton"
 import SectionHeader from "./SectionHeader.astro"
 
 interface Props {
@@ -69,17 +70,18 @@ const copy = t(locale)
                   </li>
                 ))}
               </ul>
-              <a
-                href={signInUrl}
-                class:list={[
-                  "mt-auto inline-flex justify-center rounded-lg px-3 py-2 button-md transition-[transform,background-color] duration-300 ease-out-quint active:scale-[0.98]",
-                  featured
-                    ? "bg-white text-neutral-950 hover:bg-neutral-200"
-                    : "bg-foreground text-background hover:bg-foreground/85",
-                ]}
-              >
-                {plan.cta}
-              </a>
+              {featured ? (
+                <LinkButton href={signInUrl} size="lg" className="mt-auto">
+                  {plan.cta}
+                </LinkButton>
+              ) : (
+                <a
+                  href={signInUrl}
+                  class="mt-auto inline-flex h-9 items-center justify-center rounded-2xl bg-foreground px-4 text-sm font-medium text-background transition-[transform,background-color] duration-300 ease-out-quint hover:bg-foreground/85 active:translate-y-px"
+                >
+                  {plan.cta}
+                </a>
+              )}
             </li>
           )
         })

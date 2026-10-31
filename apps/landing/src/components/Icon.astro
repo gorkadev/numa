@@ -12,9 +12,11 @@ interface Props {
   class?: string
   size?: number
   label?: string
+  /** Where the icon sits in a `Button`, which pads that side less. */
+  "data-icon"?: "inline-start" | "inline-end"
 }
 
-const { icon, class: className, size = 24, label } = Astro.props
+const { icon, class: className, size = 24, label, "data-icon": dataIcon } = Astro.props
 
 const kebab = (name: string) => name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)
 
@@ -36,6 +38,7 @@ const children = icon
   viewBox="0 0 24 24"
   fill="none"
   class={className}
+  data-icon={dataIcon}
   role={label ? "img" : undefined}
   aria-label={label}
   aria-hidden={label ? undefined : "true"}
