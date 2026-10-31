@@ -51,5 +51,8 @@ const copy = t(locale)
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+    /* The clip stops at the box, so it needs room for the descenders. */
+    padding-bottom: 0.15em;
+    margin-bottom: -0.15em;
   }
 </style>

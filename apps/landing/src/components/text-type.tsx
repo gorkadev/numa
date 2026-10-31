@@ -36,6 +36,8 @@ interface TextTypeProps {
   variableSpeed?: { min: number; max: number };
   onSentenceComplete?: (sentence: string, index: number) => void;
   startOnVisible?: boolean;
+  /** Mounts with the first sentence already written, so it can replace static text unseen. */
+  startFull?: boolean;
   reverseMode?: boolean;
 }
 
@@ -150,11 +152,15 @@ const TextType = ({
   variableSpeed,
   onSentenceComplete,
   startOnVisible = false,
+  startFull = false,
   reverseMode = false,
   ...props
 }: TextTypeProps & React.HTMLAttributes<HTMLElement>) => {
   const [textIndex, setTextIndex] = useState(0);
-  const [count, setCount] = useState(0);
+  const [count, setCount] = useState(() =>
+    startFull ? graphemes(Array.isArray(text) ? (text[0] ?? '') : String(text ?? '')).length : 0
+  );
+  const charsAnimate = useRef(!startFull);
   const [selected, setSelected] = useState(0);
   const [typo, setTypo] = useState<Typo | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -181,6 +187,10 @@ const TextType = ({
   const maxSpeed = variableSpeed?.max ?? typingSpeed;
   const pace = (minSpeed + maxSpeed) / 2;
   const glideTime = Math.min(0.18, Math.max(0.06, pace * 0.0016));
+
+  useEffect(() => {
+    if (isDeleting) charsAnimate.current = true;
+  }, [isDeleting]);
 
   useEffect(() => {
     onSentenceCompleteRef.current = onSentenceComplete;
@@ -366,7 +376,7 @@ const TextType = ({
   const animateChar = useCallback(
     (node: HTMLSpanElement | null) => {
       const effect = typeEffect === 'none' ? undefined : EFFECTS[typeEffect];
-      if (!node || !effect || reduceMotion || typeof node.animate !== 'function') return;
+      if (!node || !effect || !charsAnimate.current || reduceMotion || typeof node.animate !== 'function') return;
       node.animate(effect.keyframes, effect.options);
     },
     [typeEffect, reduceMotion]

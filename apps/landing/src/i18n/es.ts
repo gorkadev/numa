@@ -25,7 +25,7 @@ export const es: Dictionary = {
   hero: {
     badge: "Seis plantillas para juegos 2D y 3D",
     title: ["Describe tu juego.", "numa lo construye."],
-    typed: { prefix: "Describe tu ", words: ["juego.", "puzle.", "mundo."] },
+    typed: { prefix: "Describe tu ", words: ["juego", "puzle", "mundo"] },
     subtitle:
       "Carreras, shooters, puzles o mundos enteros. Cuéntaselo a un agente de IA y te lo devuelve jugable en el navegador.",
     proof: "Gratis para empezar: 100 créditos al mes.",

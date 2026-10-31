@@ -65,8 +65,17 @@ function initHero() {
     }
   }
 
-  if ("requestIdleCallback" in window) window.requestIdleCallback(load, { timeout: 1200 })
-  else setTimeout(load, 200)
+  /*
+    Building the scene blocks the main thread for up to a second, which would
+    stall the hero's entrance, so it waits for that to finish.
+  */
+  const entrance = Promise.all(
+    [...hero.querySelectorAll(".hero-in")].flatMap((element) => element.getAnimations().map((a) => a.finished))
+  )
+  void entrance.catch(() => {}).then(() => {
+    if ("requestIdleCallback" in window) window.requestIdleCallback(load, { timeout: 1200 })
+    else setTimeout(load, 200)
+  })
 }
 
 /* ---------------------------------------------------------------- nav ---- */

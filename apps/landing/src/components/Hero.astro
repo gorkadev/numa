@@ -26,7 +26,7 @@ const copy = t(locale)
   available.
 -->
 <section class="relative h-[160svh]" aria-labelledby="hero-title" data-hero>
-  <div class="sticky top-0 h-svh min-h-[36rem] overflow-hidden">
+  <div class="sticky top-0 h-svh min-h-[36rem] overflow-hidden rounded-b-[2rem] md:rounded-b-[3rem]">
     <div class="hero-sky absolute inset-0" aria-hidden="true"></div>
     <div
       class="absolute inset-0 translate-y-8 scale-95 opacity-0 transition-[opacity,scale,translate] duration-1400 ease-out-quint data-ready:translate-y-0 data-ready:scale-100 data-ready:opacity-100 motion-reduce:translate-y-0 motion-reduce:scale-100"
@@ -35,16 +35,13 @@ const copy = t(locale)
       data-island
     >
     </div>
-    <div class="hero-fade pointer-events-none absolute inset-x-0 bottom-0 h-6" aria-hidden="true"></div>
 
     <div class="scene-light relative mx-auto flex h-full max-w-7xl flex-col px-6 pt-28 pb-10 sm:px-10 lg:justify-center lg:pt-0" data-hero-copy>
       <div class="max-w-xl">
-        <div class="hero-in">
-          <Badge variant="outline" className="border-border bg-background/95 shadow backdrop-blur-sm supports-backdrop-filter:bg-background/50">
-            <Icon icon={SparklesIcon} size={12} data-icon="inline-start" />
-            {copy.hero.badge}
-          </Badge>
-        </div>
+        <Badge variant="outline" className="hero-in border-border bg-background/95 shadow backdrop-blur-sm supports-backdrop-filter:bg-background/50">
+          <Icon icon={SparklesIcon} size={12} data-icon="inline-start" />
+          {copy.hero.badge}
+        </Badge>
         <!--
           The label keeps the real title for assistive tech while a word rotates.
           Phones wrap the longest words, so the title reserves its three lines.
@@ -52,7 +49,7 @@ const copy = t(locale)
         <h1
           id="hero-title"
           aria-label={copy.hero.title.join(" ")}
-          class="hero-in hero-title mt-6 min-h-[3lh] heading-3 sm:min-h-0 sm:heading-2 lg:heading-1"
+          class="hero-in hero-in-blur hero-title mt-6 min-h-[3lh] heading-3 sm:min-h-0 sm:heading-2 lg:heading-1"
           style="--hero-delay: 100ms"
         >
           <TextType
@@ -61,19 +58,19 @@ const copy = t(locale)
             className="block sm:whitespace-pre!"
             prefix={copy.hero.typed.prefix}
             text={copy.hero.typed.words}
+            startFull
             typingSpeed={75}
             deletingSpeed={45}
-            pauseDuration={2600}
-            initialDelay={900}
+            pauseDuration={3200}
             typeEffect="fade"
             cursorStyle="bar"
             cursorColor="#34456b"
           >
-            <span slot="fallback" class="block">{copy.hero.title[0]}</span>
+            <span slot="fallback" class="block">{copy.hero.typed.prefix}{copy.hero.typed.words[0]}</span>
           </TextType>
           <span class="block">{copy.hero.title[1]}</span>
         </h1>
-        <p class="hero-in mt-6 max-w-md text-neutral-800 body-3 sm:title-2 sm:font-normal" style="--hero-delay: 200ms">
+        <p class="hero-in hero-in-blur mt-6 max-w-md text-neutral-800 body-3 sm:title-2 sm:font-normal" style="--hero-delay: 200ms">
           {copy.hero.subtitle}
         </p>
         <div class="hero-in mt-8 flex flex-wrap items-center gap-2" style="--hero-delay: 300ms">
@@ -103,11 +100,47 @@ const copy = t(locale)
 </section>
 
 <style>
-  /* The hero has no scroll to reveal on, so it stages itself on load. */
+  /* Matches the shader dome in island-scene.ts, so the swap is invisible. */
+  .hero-sky {
+    background:
+      radial-gradient(120% 70% at 50% 110%, #ffdcb8 0%, transparent 60%),
+      linear-gradient(to bottom, #4f9bff 0%, #a9d0ff 55%, #cfe2ff 100%);
+  }
+
+  /* The skill's heading gradient (B5), kept dark so it reads on a bright sky. */
+  .hero-title {
+    background-image: linear-gradient(to right, #050816, #34456b);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    /* The clip stops at the box, so it needs room for the descenders. */
+    padding-bottom: 0.15em;
+    margin-bottom: -0.15em;
+  }
+</style>
+
+<!--
+  The hero has no scroll to reveal on, so it stages itself on load. Global
+  because the badge is a React element. Each element animates itself: a faded
+  parent would cut a child's backdrop blur until the animation ended, and only
+  elements without a glass surface take the blur.
+-->
+<style is:global>
   .hero-in {
     animation: hero-in 900ms var(--ease-out-quint) var(--hero-delay, 0ms) both;
+    will-change: transform, opacity;
+  }
+  .hero-in-blur {
+    animation-name: hero-in-blur;
+    will-change: transform, opacity, filter;
   }
   @keyframes hero-in {
+    from {
+      opacity: 0;
+      transform: translateY(1.5rem);
+    }
+  }
+  @keyframes hero-in-blur {
     from {
       opacity: 0;
       transform: translateY(1.5rem);
@@ -117,26 +150,7 @@ const copy = t(locale)
   @media (prefers-reduced-motion: reduce) {
     .hero-in {
       animation: none;
+      will-change: auto;
     }
-  }
-
-  /* Matches the shader dome in island-scene.ts, so the swap is invisible. */
-  .hero-sky {
-    background:
-      radial-gradient(120% 70% at 50% 110%, #ffdcb8 0%, transparent 60%),
-      linear-gradient(to bottom, #4f9bff 0%, #a9d0ff 55%, #cfe2ff 100%);
-  }
-
-  /* Hands the sky over to the page below without a hard edge. */
-  .hero-fade {
-    background: linear-gradient(to bottom, transparent, var(--background));
-  }
-
-  /* The skill's heading gradient (B5), kept dark so it reads on a bright sky. */
-  .hero-title {
-    background-image: linear-gradient(to right, #050816, #34456b);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
   }
 </style>
