@@ -1,0 +1,39 @@
+---
+import type { Locale } from "../i18n"
+import Base from "../layouts/Base.astro"
+import Benefits from "./Benefits.astro"
+import Faq from "./Faq.astro"
+import FinalCta from "./FinalCta.astro"
+import Footer from "./Footer.astro"
+import Hero from "./Hero.astro"
+import HowItWorks from "./HowItWorks.astro"
+import Nav from "./Nav.astro"
+import Pricing from "./Pricing.astro"
+import Tagline from "./Tagline.astro"
+import Templates from "./Templates.astro"
+
+interface Props {
+  locale: Locale
+}
+
+const { locale } = Astro.props
+---
+
+<Base locale={locale}>
+  <Nav locale={locale} />
+  <main id="main">
+    <Hero locale={locale} />
+    <Tagline locale={locale} />
+    <HowItWorks locale={locale} />
+    <Templates locale={locale} />
+    <Benefits locale={locale} />
+    <Pricing locale={locale} />
+    <Faq locale={locale} />
+    <FinalCta locale={locale} />
+  </main>
+  <Footer locale={locale} />
+</Base>
+
+<script>
+  import "../scripts/page"
+</script>

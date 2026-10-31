@@ -1,0 +1,76 @@
+---
+import { t, type Locale } from "../i18n"
+import Composer from "./Composer.astro"
+
+interface Props {
+  locale: Locale
+}
+
+const { locale } = Astro.props
+const copy = t(locale)
+---
+
+<!--
+  The hero is a tall track with a pinned stage. While the visitor scrolls
+  through the extra height, the stage stays put and the camera dives towards
+  the island; the copy eases away as it does. The CSS sky behind the canvas is
+  the complete picture when WebGL, the network or motion are unavailable.
+-->
+<section class="hero-track relative h-[165svh]" aria-labelledby="hero-title" data-hero>
+  <div class="sticky top-0 h-svh min-h-[40rem] overflow-hidden">
+    <div class="hero-sky absolute inset-0" aria-hidden="true"></div>
+    <div
+      class="absolute inset-0 opacity-0 transition-opacity duration-1000 ease-out-quint data-ready:opacity-100"
+      role="img"
+      aria-label={copy.hero.sceneLabel}
+      data-island
+    >
+    </div>
+    <div class="hero-fade pointer-events-none absolute inset-x-0 bottom-0 h-40" aria-hidden="true"></div>
+
+    <div
+      class="relative mx-auto flex h-full max-w-5xl flex-col items-center px-4 pt-32 text-center sm:pt-36"
+      data-hero-copy
+    >
+      <p
+        class="mb-6 inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/60 px-3 py-1 text-neutral-800 caption-4 backdrop-blur-md"
+      >
+        <span class="size-1.5 rounded-full bg-primary" aria-hidden="true"></span>
+        {copy.hero.badge}
+      </p>
+      <h1 id="hero-title" class="hero-title max-w-[680px] heading-3 sm:heading-2 lg:heading-1">
+        <span class="block">{copy.hero.title[0]}</span>
+        <span class="block">{copy.hero.title[1]}</span>
+      </h1>
+      <p class="mt-6 max-w-[680px] text-neutral-700 body-3 sm:title-2 sm:font-normal">
+        {copy.hero.subtitle}
+      </p>
+      <div class="mt-8 w-full max-w-xl">
+        <Composer locale={locale} id="hero" />
+      </div>
+      <p class="mt-6 text-neutral-700 caption-1">{copy.hero.proof}</p>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* Matches the shader dome in island-scene.ts, so the swap is invisible. */
+  .hero-sky {
+    background:
+      radial-gradient(120% 70% at 50% 110%, #ffdcb8 0%, transparent 60%),
+      linear-gradient(to bottom, #4f9bff 0%, #a9d0ff 55%, #cfe2ff 100%);
+  }
+
+  /* Hands the sky over to the page below without a hard edge. */
+  .hero-fade {
+    background: linear-gradient(to bottom, transparent, var(--background));
+  }
+
+  /* The skill's heading gradient (B5), tuned to stay dark on a bright sky. */
+  .hero-title {
+    background-image: linear-gradient(to right, #050816, #2c3a5c);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+</style>
