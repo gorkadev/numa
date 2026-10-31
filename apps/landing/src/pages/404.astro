@@ -1,0 +1,37 @@
+---
+import Base from "../layouts/Base.astro"
+import { LinkButton } from "../components/LinkButton"
+import { homePath, t } from "../i18n"
+
+/*
+  A branded 404 (skill B10). Static hosts serve one 404 page for every path,
+  so it is in English with a way back to both homes.
+*/
+const copy = t("en")
+const es = t("es")
+---
+
+<Base locale="en" title={`${copy.notFound.title} · numa`} noindex>
+  <main id="main" class="hero-sky scene-light grid min-h-dvh place-items-center px-4 text-center">
+    <div class="flex max-w-[680px] flex-col items-center">
+      <img src="/logo.svg" alt="" width="40" height="48" class="mb-8 size-12" />
+      <p class="text-neutral-700 caption-1">404</p>
+      <h1 class="mt-4 text-neutral-950 heading-3 md:heading-2">{copy.notFound.title}</h1>
+      <p class="mt-4 text-neutral-700 body-3">{copy.notFound.body}</p>
+      <div class="mt-8 flex flex-wrap justify-center gap-2">
+        <LinkButton href={homePath("en")} size="lg">{copy.notFound.back}</LinkButton>
+        <LinkButton href={homePath("es")} variant="secondary" size="lg" lang="es">
+          {es.notFound.back}
+        </LinkButton>
+      </div>
+    </div>
+  </main>
+</Base>
+
+<style>
+  .hero-sky {
+    background:
+      radial-gradient(120% 70% at 50% 110%, #ffdcb8 0%, transparent 60%),
+      linear-gradient(to bottom, #4f9bff 0%, #a9d0ff 55%, #cfe2ff 100%);
+  }
+</style>

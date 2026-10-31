@@ -1,0 +1,35 @@
+---
+import { t, type Locale } from "../i18n"
+import { FaqSection } from "./faq-section"
+import SectionHeader from "./SectionHeader.astro"
+
+interface Props {
+  locale: Locale
+}
+
+const { locale } = Astro.props
+const copy = t(locale)
+
+/* FAQ structured data, so answer engines can quote the answers (skill A7). */
+const schema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: copy.faq.items.map((item) => ({
+    "@type": "Question",
+    name: item.q,
+    acceptedAnswer: { "@type": "Answer", text: item.a },
+  })),
+}
+---
+
+<section id="faq" class="scroll-mt-24 px-4 py-20 md:py-24" aria-labelledby="faq-title">
+  <div class="mx-auto flex max-w-5xl flex-col gap-16">
+    <SectionHeader id="faq-title" eyebrow={copy.faq.eyebrow} title={copy.faq.title} subtitle={copy.faq.subtitle} />
+
+    <div data-reveal>
+      <FaqSection client:visible categories={copy.faq.categories} items={copy.faq.items} />
+    </div>
+  </div>
+  <script type="application/ld+json" set:html={JSON.stringify(schema)} />
+</section>
+

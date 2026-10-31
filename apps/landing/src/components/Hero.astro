@@ -1,0 +1,156 @@
+---
+import { ArrowRight01Icon, PlayIcon, SparklesIcon } from "@hugeicons/core-free-icons"
+
+import { Badge } from "@workspace/ui/components/badge"
+
+import { signInUrl, t, type Locale } from "../i18n"
+import Icon from "./Icon.astro"
+import { LinkButton } from "./LinkButton"
+import TextType from "./text-type"
+
+interface Props {
+  locale: Locale
+}
+
+const { locale } = Astro.props
+const copy = t(locale)
+---
+
+<!--
+  A minimal hero: the island owns the stage and nothing sits on top of it.
+  The copy is a short column on the left, the facts sit along the bottom, and
+  the island floats in the open sky on the right (lower down on narrow
+  screens). The section is a tall track with a pinned stage: scrolling through
+  the extra height dives the camera towards the island as the copy eases away.
+  The CSS sky is the whole picture when WebGL, the network or motion are not
+  available.
+-->
+<section class="relative h-[240svh]" aria-labelledby="hero-title" data-hero>
+  <div class="sticky top-0 h-svh min-h-[36rem] overflow-hidden rounded-b-[2rem] md:rounded-b-[3rem]">
+    <div class="hero-sky absolute inset-0" aria-hidden="true"></div>
+    <div
+      class="absolute inset-0 translate-y-8 scale-95 opacity-0 transition-[opacity,scale,translate] duration-800 ease-out-quint data-ready:translate-y-0 data-ready:scale-100 data-ready:opacity-100 motion-reduce:translate-y-0 motion-reduce:scale-100"
+      role="img"
+      aria-label={copy.hero.sceneLabel}
+      data-island
+    >
+    </div>
+
+    <div class="scene-light relative mx-auto flex h-full max-w-7xl flex-col px-6 pt-28 pb-10 sm:px-10 lg:justify-center lg:pt-0" data-hero-copy>
+      <div class="max-w-xl">
+        <Badge variant="outline" className="hero-in border-border bg-background/95 shadow backdrop-blur-sm supports-backdrop-filter:bg-background/50">
+          <Icon icon={SparklesIcon} size={12} data-icon="inline-start" />
+          {copy.hero.badge}
+        </Badge>
+        <!--
+          The label keeps the real title for assistive tech while a word rotates.
+          Phones wrap the longest words, so the title reserves its three lines.
+        -->
+        <h1
+          id="hero-title"
+          aria-label={copy.hero.title.join(" ")}
+          class="hero-in hero-in-blur hero-title mt-6 min-h-[3lh] heading-3 sm:min-h-0 sm:heading-2 lg:heading-1"
+          style="--hero-delay: 100ms"
+        >
+          <TextType
+            client:only="react"
+            as="span"
+            className="block sm:whitespace-pre!"
+            prefix={copy.hero.typed.prefix}
+            text={copy.hero.typed.words}
+            startFull
+            typingSpeed={75}
+            deletingSpeed={45}
+            pauseDuration={3200}
+            typeEffect="fade"
+            cursorStyle="bar"
+            cursorColor="#34456b"
+          >
+            <span slot="fallback" class="block">{copy.hero.typed.prefix}{copy.hero.typed.words[0]}</span>
+          </TextType>
+          <span class="block">{copy.hero.title[1]}</span>
+        </h1>
+        <p class="hero-in hero-in-blur mt-6 max-w-md text-neutral-800 body-3 sm:title-2 sm:font-normal" style="--hero-delay: 200ms">
+          {copy.hero.subtitle}
+        </p>
+        <div class="hero-in mt-8 flex flex-wrap items-center gap-2" style="--hero-delay: 300ms">
+          <LinkButton href={signInUrl} size="lg">
+            {copy.hero.primary}
+            <Icon icon={ArrowRight01Icon} size={16} data-icon="inline-end" />
+          </LinkButton>
+          <LinkButton href="#how-it-works" variant="secondary" size="lg">
+            {copy.hero.secondary}
+            <Icon icon={PlayIcon} size={16} data-icon="inline-end" />
+          </LinkButton>
+        </div>
+      </div>
+
+      <dl style="--hero-delay: 450ms" class="hero-in mt-auto hidden w-fit gap-8 rounded-2xl border px-6 py-4 sm:flex lg:absolute lg:bottom-10 lg:left-10 border-border bg-background/95 shadow backdrop-blur-sm supports-backdrop-filter:bg-background/50">
+        {
+          copy.hero.stats.map((stat, index) => (
+            <div class:list={["flex flex-col-reverse gap-1", index > 0 && "border-l border-neutral-950/15 pl-8"]}>
+              <dt class="text-neutral-700 caption-2">{stat.label}</dt>
+              <dd class="text-neutral-950 heading-5">{stat.value}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* Matches the shader dome in island-scene.ts, so the swap is invisible. */
+  .hero-sky {
+    background:
+      radial-gradient(120% 70% at 50% 110%, #ffdcb8 0%, transparent 60%),
+      linear-gradient(to bottom, #4f9bff 0%, #a9d0ff 55%, #cfe2ff 100%);
+  }
+
+  /* The skill's heading gradient (B5), kept dark so it reads on a bright sky. */
+  .hero-title {
+    background-image: linear-gradient(to right, #050816, #34456b);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    /* The clip stops at the box, so it needs room for the descenders. */
+    padding-bottom: 0.15em;
+    margin-bottom: -0.15em;
+  }
+</style>
+
+<!--
+  The hero has no scroll to reveal on, so it stages itself on load. Global
+  because the badge is a React element. Each element animates itself: a faded
+  parent would cut a child's backdrop blur until the animation ended, and only
+  elements without a glass surface take the blur.
+-->
+<style is:global>
+  .hero-in {
+    animation: hero-in 900ms var(--ease-out-quint) var(--hero-delay, 0ms) both;
+    will-change: transform, opacity;
+  }
+  .hero-in-blur {
+    animation-name: hero-in-blur;
+    will-change: transform, opacity, filter;
+  }
+  @keyframes hero-in {
+    from {
+      opacity: 0;
+      transform: translateY(1.5rem);
+    }
+  }
+  @keyframes hero-in-blur {
+    from {
+      opacity: 0;
+      transform: translateY(1.5rem);
+      filter: blur(8px);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero-in {
+      animation: none;
+      will-change: auto;
+    }
+  }
+</style>

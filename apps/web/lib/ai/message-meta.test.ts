@@ -23,6 +23,9 @@ const assistant = (metadata?: unknown): UIMessage => ({
   metadata,
 })
 
+/** A reply already stamped, so two calls cannot read the clock differently. */
+const stamped = () => assistant({ sentAt: 1 })
+
 test("tokens still accumulate across the turns of one message", () => {
   const once = withTurnMeta([assistant()], cost(100, 10))
   const twice = withTurnMeta(once, cost(50, 5))
@@ -86,11 +89,12 @@ test("metadata written before context existed still parses", () => {
 })
 
 test("the live receipt carries exactly what the persisted reply will", () => {
-  const chunk = turnMetaChunk(assistant(), cost(100, 10), {
+  const reply = stamped()
+  const chunk = turnMetaChunk(reply, cost(100, 10), {
     tokens: 16_700,
     window: 1_048_576,
   })
-  const persisted = withTurnMeta([assistant()], cost(100, 10), {
+  const persisted = withTurnMeta([reply], cost(100, 10), {
     tokens: 16_700,
     window: 1_048_576,
   })
@@ -137,13 +141,14 @@ test("a turn with no speed reading keeps the one already stamped", () => {
 
 test("the live receipt carries the same speed the persisted reply will", () => {
   const speed = { tokens: 100, ms: 1_000 }
-  const chunk = turnMetaChunk(assistant(), cost(1, 1), undefined, speed)
-  const [stamped] = withTurnMeta([assistant()], cost(1, 1), undefined, speed)
+  const reply = stamped()
+  const chunk = turnMetaChunk(reply, cost(1, 1), undefined, speed)
+  const [persisted] = withTurnMeta([reply], cost(1, 1), undefined, speed)
 
   assert.equal(chunk?.type, "message-metadata")
   assert.deepEqual(
     (chunk as { messageMetadata?: unknown }).messageMetadata,
-    { ...(stamped?.metadata as object), live: null }
+    { ...(persisted?.metadata as object), live: null }
   )
 })
 
@@ -162,9 +167,10 @@ test("a turn with no step count keeps the one already stamped", () => {
 })
 
 test("the live receipt carries the same step count the persisted reply will", () => {
-  const chunk = turnMetaChunk(assistant(), cost(1, 1), undefined, undefined, 4)
-  const [stamped] = withTurnMeta(
-    [assistant()],
+  const reply = stamped()
+  const chunk = turnMetaChunk(reply, cost(1, 1), undefined, undefined, 4)
+  const [persisted] = withTurnMeta(
+    [reply],
     cost(1, 1),
     undefined,
     undefined,
@@ -173,9 +179,9 @@ test("the live receipt carries the same step count the persisted reply will", ()
 
   assert.deepEqual(
     (chunk as { messageMetadata?: unknown }).messageMetadata,
-    { ...(stamped?.metadata as object), live: null }
+    { ...(persisted?.metadata as object), live: null }
   )
-  assert.equal(readMessageMeta(stamped!).steps, 4)
+  assert.equal(readMessageMeta(persisted!).steps, 4)
 })
 
 test("timing accumulates across the turns of one message and survives legacy", () => {

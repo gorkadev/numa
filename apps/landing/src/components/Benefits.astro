@@ -1,0 +1,25 @@
+---
+import { t, type Locale } from "../i18n"
+import { FeatureSection } from "./feature-section"
+import SectionHeader from "./SectionHeader.astro"
+
+interface Props {
+  locale: Locale
+}
+
+const { locale } = Astro.props
+const copy = t(locale)
+---
+
+<!-- The layout is the @efferd/features-6 bento, rendered at build time. -->
+<section class="px-4 py-20 md:py-24" aria-labelledby="benefits-title">
+  <SectionHeader
+    id="benefits-title"
+    eyebrow={copy.benefits.eyebrow}
+    title={copy.benefits.title}
+    subtitle={copy.benefits.subtitle}
+  />
+  <div class="mt-16" data-reveal>
+    <FeatureSection items={copy.benefits.items} chat={copy.benefits.chat} islandAlt={copy.hero.sceneLabel} />
+  </div>
+</section>

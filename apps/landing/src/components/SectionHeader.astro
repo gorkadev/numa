@@ -1,0 +1,19 @@
+---
+import { Badge } from "@workspace/ui/components/badge"
+
+interface Props {
+  eyebrow: string
+  title: string
+  subtitle: string
+  id: string
+}
+
+const { eyebrow, title, subtitle, id } = Astro.props
+---
+
+<!-- The one section heading: outlined label, bold title, quiet subtitle. -->
+<div class="mx-auto flex max-w-2xl flex-col items-center gap-2 text-center" data-reveal>
+  <Badge variant="outline" className="h-auto px-4 py-1 text-sm font-normal">{eyebrow}</Badge>
+  <h2 id={id} class="font-heading text-2xl font-bold tracking-tight md:text-3xl lg:text-4xl">{title}</h2>
+  <p class="text-sm text-muted-foreground md:text-base">{subtitle}</p>
+</div>

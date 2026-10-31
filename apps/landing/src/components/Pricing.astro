@@ -1,0 +1,28 @@
+---
+import { signInUrl, t, type Locale } from "../i18n"
+import { PricingSection } from "./pricing-section"
+import SectionHeader from "./SectionHeader.astro"
+
+interface Props {
+  locale: Locale
+}
+
+const { locale } = Astro.props
+const copy = t(locale)
+---
+
+<!--
+  Prices and allowances come from the app's plans (`lib/polar/products.ts`).
+  The layout is the @efferd/pricing-3 block, rendered at build time.
+-->
+<section id="pricing" class="scroll-mt-24 px-4 py-20 md:py-24" aria-labelledby="pricing-title">
+  <SectionHeader
+    id="pricing-title"
+    eyebrow={copy.pricing.eyebrow}
+    title={copy.pricing.title}
+    subtitle={copy.pricing.subtitle}
+  />
+  <div class="mt-16" data-reveal>
+    <PricingSection copy={copy.pricing} signInUrl={signInUrl} />
+  </div>
+</section>
