@@ -24,6 +24,7 @@ export const en = {
   hero: {
     badge: "Six templates for 2D and 3D games",
     title: ["Describe your game.", "numa builds it."],
+    typed: { prefix: "Describe your ", words: ["game.", "racer.", "puzzle.", "world."] },
     subtitle:
       "Racers, shooters, puzzles or whole worlds. Tell an AI agent what you want to play and get it back playable in your browser.",
     proof: "Free to start: 100 credits every month.",
