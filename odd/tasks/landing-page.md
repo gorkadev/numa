@@ -29,7 +29,7 @@ Branch: `feat/landing-page` · Delivery: `ask-on-risk` · Checks: `pnpm --filter
 | T11 | S3 (nav) | inline | done (build OK, checked in Chrome over sky, scrolled and past hero, mobile menu opens, no console errors) | 36c740c |
 | T12 | S2 | inline | done (build OK, checked in Chrome) | fe534ed |
 | T13 | S2 | inline | done (typecheck 0 errors, build OK, checked in Chrome dark: visible from the tagline down, hero sky covers it, no console errors) | 606eb7d |
-| T14 | S5 (FAQ) | inline | done (typecheck 0 errors, build OK, checked in Chrome dark: cards, topic filter, ES copy) | pending |
+| T14 | S5 (FAQ) | inline | done (typecheck 0 errors, build OK, checked in Chrome dark: cards, topic filter, ES copy) | 72fbe4b |
 | T5 | S7 | inline | partial: 404, og, meta, skip link done; legal links missing; light theme not checked in browser | b2c4f53 |
 
 Route evidence: one sequential build, no independent parallel units, so no writer trigger fires.
