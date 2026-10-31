@@ -9,72 +9,79 @@ const { locale } = Astro.props
 const copy = t(locale)
 const year = new Date().getFullYear()
 
-const product = [
-  { href: "#how-it-works", label: copy.nav.howItWorks },
-  { href: "#templates", label: copy.nav.templates },
-  { href: "#pricing", label: copy.nav.pricing },
-  { href: "#faq", label: copy.nav.faq },
-  { href: signInUrl, label: copy.nav.signIn },
+/*
+  Layout from the efferd footer-3 block: a rounded top edge with a soft glow,
+  the brand on the left and link columns on the right. The block's motion
+  entrance is replaced by the site's own `data-reveal`, staggered per column,
+  so the footer stays static HTML with no extra dependency.
+*/
+const sections = [
+  {
+    label: copy.footer.product,
+    links: [
+      { href: "#how-it-works", title: copy.nav.howItWorks },
+      { href: "#templates", title: copy.nav.templates },
+      { href: "#pricing", title: copy.nav.pricing },
+      { href: "#faq", title: copy.nav.faq },
+      { href: signInUrl, title: copy.nav.signIn },
+    ],
+  },
+  {
+    label: copy.footer.language,
+    links: [
+      { href: homePath("en"), title: "English", lang: "en" as const },
+      { href: homePath("es"), title: "Español", lang: "es" as const },
+    ],
+  },
 ]
 ---
 
-<footer class="border-t border-border px-4 py-16">
-  <div class="mx-auto grid max-w-6xl gap-12 sm:grid-cols-[1.5fr_1fr_1fr]">
-    <div class="flex flex-col gap-4">
-      <a href={homePath(locale)} class="flex items-center gap-2" aria-label={copy.nav.home}>
-        <img src="/logo.svg" alt="" width="20" height="24" class="size-6" />
-        <span class="title-2">numa</span>
+<footer
+  class="relative mx-auto flex w-full max-w-5xl flex-col items-center justify-center rounded-t-[2rem] border-t px-6 md:rounded-t-[3rem] md:px-8 dark:bg-[radial-gradient(35%_128px_at_50%_0%,--theme(--color-foreground/.1),transparent)]"
+>
+  <div
+    class="absolute top-0 right-1/2 left-1/2 h-px w-1/3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground/20 blur"
+    aria-hidden="true"
+  >
+  </div>
+
+  <div class="grid w-full gap-8 py-10 md:py-12 lg:grid-cols-3">
+    <div class="space-y-4" data-reveal>
+      <a href={homePath(locale)} class="flex h-6 items-center gap-2" aria-label={copy.nav.home}>
+        <img src="/logo.svg" alt="" width="20" height="24" class="h-full w-auto" />
+        <span class="text-lg leading-none font-medium">numa</span>
       </a>
-      <p class="text-muted-foreground body-6">{copy.footer.tagline}</p>
+      <p class="text-sm text-muted-foreground">{copy.footer.tagline}</p>
     </div>
 
-    <nav aria-label={copy.footer.product}>
-      <h2 class="title-4">{copy.footer.product}</h2>
-      <ul class="mt-4 flex flex-col gap-2">
-        {
-          product.map((link) => (
-            <li>
-              <a
-                href={link.href}
-                class="text-muted-foreground body-6 transition-colors duration-300 ease-out-quint hover:text-foreground"
-              >
-                {link.label}
-              </a>
-            </li>
-          ))
-        }
-      </ul>
-    </nav>
-
-    <nav aria-label={copy.footer.language}>
-      <h2 class="title-4">{copy.footer.language}</h2>
-      <ul class="mt-4 flex flex-col gap-2">
-        <li>
-          <a
-            href={homePath("en")}
-            hreflang="en"
-            lang="en"
-            aria-current={locale === "en" ? "page" : undefined}
-            class="text-muted-foreground body-6 transition-colors duration-300 ease-out-quint hover:text-foreground aria-[current=page]:text-foreground"
-          >
-            English
-          </a>
-        </li>
-        <li>
-          <a
-            href={homePath("es")}
-            hreflang="es"
-            lang="es"
-            aria-current={locale === "es" ? "page" : undefined}
-            class="text-muted-foreground body-6 transition-colors duration-300 ease-out-quint hover:text-foreground aria-[current=page]:text-foreground"
-          >
-            Español
-          </a>
-        </li>
-      </ul>
-    </nav>
+    <div class="grid grid-cols-2 gap-8 lg:col-span-2">
+      {
+        sections.map((section, index) => (
+          <nav aria-label={section.label} data-reveal style={`--reveal-delay: ${100 + index * 100}ms`}>
+            <h2 class="font-heading text-xs">{section.label}</h2>
+            <ul class="mt-4 space-y-2 text-sm text-muted-foreground">
+              {section.links.map((link) => (
+                <li>
+                  <a
+                    href={link.href}
+                    hreflang={"lang" in link ? link.lang : undefined}
+                    lang={"lang" in link ? link.lang : undefined}
+                    aria-current={"lang" in link && link.lang === locale ? "page" : undefined}
+                    class="inline-flex items-center transition-colors duration-250 hover:text-foreground aria-[current=page]:text-foreground"
+                  >
+                    {link.title}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        ))
+      }
+    </div>
   </div>
-  <p class="mx-auto mt-16 max-w-6xl text-muted-foreground caption-2">
-    © {year} numa. {copy.footer.rights}
-  </p>
+
+  <div class="h-px w-full bg-linear-to-r via-border" aria-hidden="true"></div>
+  <div class="flex w-full items-center justify-center py-4">
+    <p class="text-sm text-muted-foreground">© {year} numa. {copy.footer.rights}</p>
+  </div>
 </footer>
