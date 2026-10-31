@@ -32,7 +32,7 @@ Branch: `feat/landing-page` · Delivery: `ask-on-risk` · Checks: `pnpm --filter
 | T14 | S5 (FAQ) | inline | done (typecheck 0 errors, build OK, checked in Chrome dark: cards, topic filter, ES copy) | 72fbe4b |
 | T15 | S5 (footer) | inline | done (typecheck 0 errors, build OK, checked in Chrome dark) | 3e47009 |
 | T16 | S3 | inline | done (typecheck 0 errors, build OK, desktop checked in Chrome; mobile menu not opened) | 0637529 |
-| T17 | S5 (section headers, templates) | inline | done (typecheck 0 errors, build OK, checked in Chrome ES dark: templates, pricing, all h2 at 36px) | pending |
+| T17 | S5 (section headers, templates) | inline | done (typecheck 0 errors, build OK, checked in Chrome ES dark: templates, pricing, all h2 at 36px) | c86438f |
 | T5 | S7 | inline | partial: 404, og, meta, skip link done; legal links missing; light theme not checked in browser | b2c4f53 |
 
 Route evidence: one sequential build, no independent parallel units, so no writer trigger fires.
