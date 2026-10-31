@@ -36,7 +36,7 @@ Branch: `feat/landing-page` · Delivery: `ask-on-risk` · Checks: `pnpm --filter
 | T18 | S5 (how it works, templates) | inline | done (typecheck 0 errors, build OK, hover checked in Chrome ES dark in both sections) | b80b3fe |
 | T19 | S3, S4 | inline | done (typecheck 0 errors, build OK, Chrome: title height stable at 1440/768/375 in en/es, hero-in runs staggered, no console errors; reduced motion not exercised) | 248dfed |
 | T20 | S3, S4 | inline | done (typecheck 0 errors, build OK, measured on production build in Chrome: entrance no longer overlaps the island mount; corners, descenders, ES checked) | 76d9848 |
-| T21 | S3, S4 | inline | done (typecheck 0 errors, build OK, measured on production build in Chrome; pin and hold confirmed; island load only partly improved) | pending |
+| T21 | S3, S4 | inline | done (typecheck 0 errors, build OK, measured on production build in Chrome; pin and hold confirmed; island load only partly improved) | f9ea1bb |
 | T5 | S7 | inline | partial: 404, og, meta, skip link done; legal links missing; light theme not checked in browser | b2c4f53 |
 
 Route evidence: one sequential build, no independent parallel units, so no writer trigger fires.
