@@ -1,13 +1,13 @@
 ---
-import type { Locale } from "../i18n"
+import { homePath, signInUrl, t, type Locale } from "../i18n"
 import Base from "../layouts/Base.astro"
 import Benefits from "./Benefits.astro"
 import Faq from "./Faq.astro"
 import FinalCta from "./FinalCta.astro"
 import Footer from "./Footer.astro"
+import { Header } from "./header"
 import Hero from "./Hero.astro"
 import HowItWorks from "./HowItWorks.astro"
-import Nav from "./Nav.astro"
 import Pricing from "./Pricing.astro"
 import Tagline from "./Tagline.astro"
 import Templates from "./Templates.astro"
@@ -17,10 +17,33 @@ interface Props {
 }
 
 const { locale } = Astro.props
+const copy = t(locale)
+
+const header = {
+  homeHref: homePath(locale),
+  homeLabel: copy.nav.home,
+  links: [
+    { href: "#how-it-works", label: copy.nav.howItWorks },
+    { href: "#templates", label: copy.nav.templates },
+    { href: "#pricing", label: copy.nav.pricing },
+    { href: "#faq", label: copy.nav.faq },
+  ],
+  signIn: copy.nav.signIn,
+  start: copy.nav.start,
+  signInUrl,
+  openMenu: copy.nav.openMenu,
+  closeMenu: copy.nav.closeMenu,
+}
 ---
 
 <Base locale={locale}>
-  <Nav locale={locale} />
+  <!--
+    Over the hero's sky the header takes the light values whatever the system
+    theme is; the page script toggles `data-over-hero` as the sky scrolls away.
+  -->
+  <div data-nav data-over-hero>
+    <Header client:load copy={header} />
+  </div>
   <main id="main">
     <Hero locale={locale} />
     <Tagline locale={locale} />

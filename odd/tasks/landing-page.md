@@ -26,6 +26,7 @@ Branch: `feat/landing-page` · Delivery: `ask-on-risk` · Checks: `pnpm --filter
 | T8 | S5 (pricing) | inline | done (build OK, checked in Chrome) | 036c389 |
 | T9 | S5 (benefits) | inline | done (build OK, checked in Chrome, no console errors) | efa3e87 |
 | T10 | S5 (FAQ) | inline | done (build OK, opened in Chrome, no console errors) | 2931727 |
+| T11 | S3 (nav) | inline | done (build OK, checked in Chrome over sky, scrolled and past hero, mobile menu opens, no console errors) | pending |
 | T5 | S7 | inline | partial: 404, og, meta, skip link done; legal links missing; light theme not checked in browser | b2c4f53 |
 
 Route evidence: one sequential build, no independent parallel units, so no writer trigger fires.
@@ -49,3 +50,5 @@ Route evidence: one sequential build, no independent parallel units, so no write
 - **L15:** T9: features-6 installed into apps/landing. The CLI added `cobe` to `packages/ui/package.json`; reverted and added to `apps/landing` instead. Bento filled with numa's benefits plus a fifth, "Play it in the browser" / "Se juega en el navegador", for the globe card. Visuals that would claim untrue things swapped: growth chart with "4.5%" became a localized chat exchange with an @ mention, the efferd dashboard screenshot became `/island.webp`, timer and lock became Hugeicons code and coins. The globe renders as a static canvas and `src/scripts/globe.ts` starts cobe lazily (no React hydration), follows the theme, spins only on screen, no city markers.
 - **L16 (2026-10-31), user:** "preguntas frecuentes: usamos el componente accordion, q entiendo q no se estará usando"
 - **L17:** T10: FAQ moved from native `<details>` to `@workspace/ui` `Accordion` via `FaqAccordion.tsx`, hydrated with `client:visible` (first hydrated island: about 56 KB + 19 KB + 4 KB gzipped, loaded only when the FAQ nears the viewport). `keepMounted` keeps every answer in the static HTML. The landing now imports `tw-animate-css` and `shadcn/tailwind.css` like `packages/ui`, for the accordion keyframes and `data-open`/`data-closed` variants.
+- **L18 (2026-10-31), user:** "modificamos el header:" (@efferd/header-2).
+- **L19:** T11: header-2 installed into apps/landing (header, mobile-nav, portal, logo, hooks/use-scroll); shared `button.tsx` skipped as identical, `packages/` unchanged. Replaces `Nav.astro`. Adapted: `fixed` instead of `sticky` so it floats over the hero, numa logo, i18n links and labels passed as props, CTAs are links to the app, Escape closes the mobile menu, current section marked through `data-nav-link`. Hydrated with `client:load`, so React now loads with the page (about 56 KB gzipped runtime plus 3 KB for the header). `[data-nav]` restates `color: var(--foreground)` so ghost buttons pick up the light tokens over the sky.

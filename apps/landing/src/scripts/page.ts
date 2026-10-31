@@ -72,27 +72,6 @@ function initHero() {
 /* ---------------------------------------------------------------- nav ---- */
 
 function initNav() {
-  const toggle = document.querySelector<HTMLButtonElement>("[data-menu-toggle]")
-  const menu = document.querySelector<HTMLElement>("[data-mobile-menu]")
-  const label = toggle?.querySelector<HTMLElement>("[data-menu-label]")
-
-  function setOpen(open: boolean) {
-    if (!toggle || !menu) return
-    toggle.setAttribute("aria-expanded", String(open))
-    if (label) label.textContent = (open ? toggle.dataset.closeLabel : toggle.dataset.openLabel) ?? ""
-    menu.toggleAttribute("data-open", open)
-    menu.inert = !open
-    document.body.style.overflow = open ? "hidden" : ""
-  }
-
-  toggle?.addEventListener("click", () => setOpen(toggle.getAttribute("aria-expanded") !== "true"))
-  for (const link of menu?.querySelectorAll("[data-menu-link]") ?? []) {
-    link.addEventListener("click", () => setOpen(false))
-  }
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") setOpen(false)
-  })
-
   /* The link for the section in view is marked as current (skill B9). */
   const links = [...document.querySelectorAll<HTMLAnchorElement>("[data-nav-link]")]
   const sections = links

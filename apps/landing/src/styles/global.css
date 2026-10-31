@@ -86,6 +86,15 @@
   color-scheme: light;
 }
 
+/*
+  Text inherits a computed colour, not the token, so anything that resets the
+  tokens also has to restate the colour for its children to pick them up.
+*/
+.scene-light,
+[data-nav] {
+  color: var(--foreground);
+}
+
 @theme inline {
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-sans);
