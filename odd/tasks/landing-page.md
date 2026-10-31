@@ -33,3 +33,4 @@ Route evidence: one sequential build, no independent parallel units, so no write
 - **L4:** React dropped: the island is a plain TS module (three.js, lazy loaded after paint, paused off screen), the rest is HTML plus small scripts. Hero is always light (sky); below it the page follows the system theme.
 - **L5:** Template previews in `public/templates` are the asset packs' promo art (vendor logos visible). Fine in the app, questionable on the landing; flagged to the user. Step three and `og.png` use a capture of the island instead.
 - **L6:** Risk: item 5 (new dependencies: astro, three, fontsource; turbo build outputs). RDD off for this clone (clone_local). Independent verifier launched for deps/build.
+- **L7:** Independent verifier: no blockers. Frozen-lockfile install OK, landing typecheck/build OK, web typecheck clean, no changes under apps/web or packages, dist and .astro ignored. Parent spot check: apps/web+packages diff empty.
