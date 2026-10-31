@@ -237,6 +237,14 @@
   font-weight: 500;
 }
 
+/*
+  The radius rhea gives cards and dialogs in packages/ui (card.tsx,
+  dialog.tsx). Controls use rounded-2xl and floating panels rounded-3xl.
+*/
+@utility rounded-card {
+  border-radius: min(var(--radius-4xl), 24px);
+}
+
 /* The hero heading gradient (B5): text only, never a background. */
 @utility text-heading-gradient {
   background-image: linear-gradient(

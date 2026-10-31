@@ -84,7 +84,7 @@ function FeatureCard({
 	return (
 		<div
 			className={cn(
-				"group relative overflow-hidden rounded-2xl border bg-background px-8 pt-8 pb-6",
+				"group relative overflow-hidden rounded-card border bg-background px-8 pt-8 pb-6",
 				className
 			)}
 		>
@@ -150,7 +150,7 @@ function TalkingVisual({ item, chat }: { item: Item; chat: Chat }) {
 			<div className="flex min-h-32 flex-col justify-center gap-2" aria-hidden="true">
 				<div className="ml-auto max-w-[85%] rounded-2xl rounded-br-md bg-primary px-3 py-2 text-primary-foreground text-xs">
 					{chat.ask}{" "}
-					<span className="rounded-md bg-primary-foreground/20 px-1 font-medium">
+					<span className="rounded-lg bg-primary-foreground/20 px-1 font-medium">
 						{chat.file}
 					</span>
 				</div>
@@ -179,8 +179,8 @@ function AssetsVisual({ item, alt }: { item: Item; alt: string }) {
 				</div>
 			</div>
 			<div className="mask-b-from-90% mask-r-from-90% relative aspect-video sm:aspect-auto">
-				<div className="absolute -right-1 -bottom-1 aspect-video max-h-50 rounded-tl-md border bg-card p-1 sm:max-h-42 md:aspect-square md:max-h-50 lg:aspect-16/12">
-					<div className="aspect-video h-full overflow-hidden rounded-tl-sm border *:pointer-events-none *:size-full *:shrink-0 *:select-none">
+				<div className="absolute -right-1 -bottom-1 aspect-video max-h-50 rounded-tl-2xl border bg-card p-1 sm:max-h-42 md:aspect-square md:max-h-50 lg:aspect-16/12">
+					<div className="aspect-video h-full overflow-hidden rounded-tl-xl border *:pointer-events-none *:size-full *:shrink-0 *:select-none">
 						<img
 							alt={alt}
 							className="object-cover"

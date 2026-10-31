@@ -38,7 +38,7 @@ export function PricingSection({
 		>
 			<div className="mx-auto mb-4 max-w-md space-y-2">
 				<div className="flex justify-center">
-					<div className="rounded-md border px-4 py-1 text-sm">
+					<div className="rounded-2xl border px-4 py-1 text-sm">
 						{copy.eyebrow}
 					</div>
 				</div>

@@ -27,6 +27,7 @@ Branch: `feat/landing-page` · Delivery: `ask-on-risk` · Checks: `pnpm --filter
 | T9 | S5 (benefits) | inline | done (build OK, checked in Chrome, no console errors) | efa3e87 |
 | T10 | S5 (FAQ) | inline | done (build OK, opened in Chrome, no console errors) | 2931727 |
 | T11 | S3 (nav) | inline | done (build OK, checked in Chrome over sky, scrolled and past hero, mobile menu opens, no console errors) | 36c740c |
+| T12 | S2 | inline | done (build OK, checked in Chrome) | pending |
 | T5 | S7 | inline | partial: 404, og, meta, skip link done; legal links missing; light theme not checked in browser | b2c4f53 |
 
 Route evidence: one sequential build, no independent parallel units, so no writer trigger fires.
@@ -52,3 +53,5 @@ Route evidence: one sequential build, no independent parallel units, so no write
 - **L17:** T10: FAQ moved from native `<details>` to `@workspace/ui` `Accordion` via `FaqAccordion.tsx`, hydrated with `client:visible` (first hydrated island: about 56 KB + 19 KB + 4 KB gzipped, loaded only when the FAQ nears the viewport). `keepMounted` keeps every answer in the static HTML. The landing now imports `tw-animate-css` and `shadcn/tailwind.css` like `packages/ui`, for the accordion keyframes and `data-open`/`data-closed` variants.
 - **L18 (2026-10-31), user:** "modificamos el header:" (@efferd/header-2).
 - **L19:** T11: header-2 installed into apps/landing (header, mobile-nav, portal, logo, hooks/use-scroll); shared `button.tsx` skipped as identical, `packages/` unchanged. Replaces `Nav.astro`. Adapted: `fixed` instead of `sticky` so it floats over the hero, numa logo, i18n links and labels passed as props, CTAs are links to the app, Escape closes the mobile menu, current section marked through `data-nav-link`. Hydrated with `client:load`, so React now loads with the page (about 56 KB gzipped runtime plus 3 KB for the header). `[data-nav]` restates `color: var(--foreground)` so ghost buttons pick up the light tokens over the sky.
+- **L20 (2026-10-31), user:** "okey, genial, lo unico q revisa los bordes: son cuadrados en algunos sitios, como ahora en el header este. debemos de usar el estilo de rhea, q es bastante redondeado, ns si 2xl por defecto o asi. tienes package ui para mirar, verificalo y corrigelo"
+- **L21:** T12: verified in packages/ui: controls (button, input, badge, item, accordion, alert) use `rounded-2xl`, floating panels (popover, navigation menu) `rounded-3xl`, cards and dialogs `rounded-[min(var(--radius-4xl),24px)]`. Added a `rounded-card` utility for the latter. Header pill `rounded-3xl`, badges `rounded-2xl`, every card `rounded-card`, nested surfaces at outer minus gap (skill B3). Only the inline @mention chip keeps `rounded-lg`.

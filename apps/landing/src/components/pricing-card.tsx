@@ -5,7 +5,7 @@ function Card({ className, ...props }: React.ComponentProps<"div">) {
 	return (
 		<div
 			className={cn(
-				"relative w-full max-w-xs rounded-xl border bg-background p-1",
+				"relative w-full max-w-xs rounded-card border bg-background p-1",
 				className
 			)}
 			{...props}
@@ -24,7 +24,7 @@ function Header({
 	return (
 		<div
 			className={cn(
-				"relative mb-4 rounded-xl border p-4",
+				"relative mb-4 rounded-[calc(min(var(--radius-4xl),24px)-4px)] border p-4",
 				isPopular && "bg-card shadow-xs",
 				className
 			)}

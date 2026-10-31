@@ -23,7 +23,7 @@ const copy = t(locale)
       {
         copy.templates.items.map((item, index) => (
           <li class="group" data-reveal style={`--reveal-delay: ${(index % 3) * 80}ms`}>
-            <div class="overflow-hidden rounded-2xl bg-surface">
+            <div class="overflow-hidden rounded-card bg-surface">
               <img
                 src={`/templates/${item.id}.webp`}
                 alt={item.tagline}
@@ -36,7 +36,7 @@ const copy = t(locale)
             </div>
             <div class="mt-4 flex items-center gap-2">
               <h3 class="title-2">{item.name}</h3>
-              <span class="rounded-md bg-muted px-2 py-0.5 text-muted-foreground caption-3">{item.kind}</span>
+              <span class="rounded-2xl bg-muted px-2 py-0.5 text-muted-foreground caption-3">{item.kind}</span>
             </div>
             <p class="mt-1 text-muted-foreground body-6">{item.tagline}</p>
           </li>

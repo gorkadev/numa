@@ -31,7 +31,7 @@ export function Header({ copy }: { copy: HeaderCopy }) {
 	return (
 		<header
 			className={cn(
-				"fixed inset-x-0 top-0 z-50 mx-auto w-full max-w-4xl border-transparent border-b md:rounded-md md:border md:transition-all md:ease-out",
+				"fixed inset-x-0 top-0 z-50 mx-auto w-full max-w-4xl border-transparent border-b md:rounded-3xl md:border md:transition-all md:ease-out",
 				{
 					"border-border bg-background/95 backdrop-blur-sm supports-backdrop-filter:bg-background/50 md:top-2 md:max-w-3xl md:shadow":
 						scrolled,
@@ -49,7 +49,7 @@ export function Header({ copy }: { copy: HeaderCopy }) {
 			>
 				<a
 					aria-label={copy.homeLabel}
-					className="rounded-md p-2 hover:bg-muted dark:hover:bg-muted/50"
+					className="rounded-2xl p-2 hover:bg-muted dark:hover:bg-muted/50"
 					href={copy.homeHref}
 				>
 					<Logo className="h-5" />
