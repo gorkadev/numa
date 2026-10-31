@@ -8,6 +8,7 @@ import Footer from "./Footer.astro"
 import { Header } from "./header"
 import Hero from "./Hero.astro"
 import HowItWorks from "./HowItWorks.astro"
+import { PageBackground } from "./page-background"
 import Pricing from "./Pricing.astro"
 import Tagline from "./Tagline.astro"
 import Templates from "./Templates.astro"
@@ -44,6 +45,7 @@ const header = {
   <div data-nav data-over-hero>
     <Header client:load copy={header} />
   </div>
+  <PageBackground client:only="react" />
   <main id="main">
     <Hero locale={locale} />
     <Tagline locale={locale} />
