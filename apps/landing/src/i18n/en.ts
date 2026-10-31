@@ -27,38 +27,16 @@ export const en = {
     subtitle:
       "Racers, shooters, puzzles or whole worlds. Tell an AI agent what you want to play and get it back playable in your browser.",
     proof: "Free to start: 100 credits every month.",
+    primary: "Start free",
+    secondary: "How it works",
+    stats: [
+      { value: "6", label: "Ready made templates" },
+      { value: "2D and 3D", label: "Games in your browser" },
+      { value: "100", label: "Free credits every month" },
+    ],
     sceneLabel:
       "A floating island built from blocks, with trees, a flag and animals wandering the meadow.",
   },
-  composer: {
-    label: "Describe the game you want to play",
-    placeholder: "A pirate island where I dig for treasure before the tide comes in…",
-    submit: "Create my game",
-    empty: "Describe your game first.",
-    try: "Try one",
-  },
-  suggestions: [
-    {
-      label: "Voxel survival",
-      prompt:
-        "Build a first-person voxel survival game: mine and place blocks in a world I can walk around, gather what I need before nightfall, and stay alive.",
-    },
-    {
-      label: "Ink samurai duel",
-      prompt:
-        "Build a one-on-one samurai duel in a black-and-white ink-wash style, where fights are won by timing a parry and the counter-strike that follows it.",
-    },
-    {
-      label: "Jungle expedition drive",
-      prompt:
-        "Build a driving game through dense jungle: an off-road route with mud, river crossings and steep climbs where keeping the vehicle intact matters as much as speed.",
-    },
-    {
-      label: "Sunny kingdom platformer",
-      prompt:
-        "Build a bright 3D platformer set in a sunny storybook kingdom: run, jump and double-jump across floating islands to collect what is scattered across each one.",
-    },
-  ],
   tagline: ["If you can describe it,", "you can play it."],
   how: {
     eyebrow: "How it works",
@@ -78,6 +56,7 @@ export const en = {
       },
     ],
     demo: {
+      send: "Create",
       prompt: "A sheep herding game on a floating island",
       plan: "Planning the game",
       code: "Writing the code",
@@ -209,6 +188,8 @@ export const en = {
   finalCta: {
     title: ["Describe your game.", "numa builds it."],
     subtitle: "Your first 100 credits are on us, every month.",
+    primary: "Start free",
+    secondary: "See the pricing",
   },
   footer: {
     tagline: "Make video games by describing them.",

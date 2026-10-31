@@ -1,6 +1,8 @@
 ---
-import { t, type Locale } from "../i18n"
-import Composer from "./Composer.astro"
+import { ArrowRight01Icon } from "@hugeicons/core-free-icons"
+
+import { signInUrl, t, type Locale } from "../i18n"
+import Icon from "./Icon.astro"
 
 interface Props {
   locale: Locale
@@ -11,8 +13,8 @@ const copy = t(locale)
 ---
 
 <!--
-  The closing call to action repeats the hero's offer and its composer, on the
-  same sky the page opened with (skill A2: identical to the top).
+  The closing call to action repeats the hero's offer on the same sky the page
+  opened with (skill A2: identical to the top).
 -->
 <section class="px-4 pt-8 pb-20 md:pb-24" aria-labelledby="final-title">
   <div
@@ -23,9 +25,21 @@ const copy = t(locale)
       <span class="block">{copy.finalCta.title[0]}</span>
       <span class="block">{copy.finalCta.title[1]}</span>
     </h2>
-    <p class="mt-4 text-neutral-700 body-3 md:title-2 md:font-normal">{copy.finalCta.subtitle}</p>
-    <div class="mt-10 w-full max-w-xl">
-      <Composer locale={locale} id="final" suggestions={false} />
+    <p class="mt-4 text-neutral-800 body-3 md:title-2 md:font-normal">{copy.finalCta.subtitle}</p>
+    <div class="mt-8 flex flex-wrap justify-center gap-2">
+      <a
+        href={signInUrl}
+        class="inline-flex items-center gap-2 rounded-full bg-neutral-950 py-2 pr-3 pl-4 text-white button-md shadow-[0_12px_32px_-12px_rgb(5_8_22/0.6)] transition-[transform,background-color] duration-300 ease-out-quint hover:bg-neutral-800 active:scale-[0.98]"
+      >
+        {copy.finalCta.primary}
+        <Icon icon={ArrowRight01Icon} size={18} />
+      </a>
+      <a
+        href="#pricing"
+        class="inline-flex items-center rounded-full bg-white/40 px-4 py-2 text-neutral-950 button-md backdrop-blur-md transition-[transform,background-color] duration-300 ease-out-quint hover:bg-white/60 active:scale-[0.98]"
+      >
+        {copy.finalCta.secondary}
+      </a>
     </div>
   </div>
 </section>
@@ -38,7 +52,7 @@ const copy = t(locale)
   }
 
   .final-title {
-    background-image: linear-gradient(to right, #050816, #2c3a5c);
+    background-image: linear-gradient(to right, #050816, #34456b);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;

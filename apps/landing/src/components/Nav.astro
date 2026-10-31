@@ -20,81 +20,67 @@ const links = [
 ---
 
 <!--
-  A compact bar floating off the top edge, sized to its content, over a
-  translucent blurred surface (skill B7). The link for the section in view is
-  marked as current by the page script.
+  A minimal bar: links on the left, the mark in the middle, the call to action
+  on the right. Over the hero it is fully transparent and dark, so nothing
+  covers the island; past the hero it picks up a blurred surface in the page's
+  own theme. The page script toggles `data-over-hero` and marks the link for
+  the section in view as current.
 -->
-<header class="fixed inset-x-0 top-4 z-40 flex justify-center px-4" data-nav>
-  <nav
-    aria-label="Main"
-    class="flex w-full max-w-3xl items-center gap-2 rounded-2xl border border-black/5 bg-white/70 p-2 shadow-[0_8px_32px_-12px_rgb(15_23_42/0.25)] backdrop-blur-xl dark:border-white/10 dark:bg-neutral-900/70"
-  >
-    <a href={homePath(locale)} class="flex items-center gap-2 rounded-lg px-2 py-1" aria-label={copy.nav.home}>
-      <img src="/logo.svg" alt="" width="20" height="24" class="size-6" />
-      <span class="text-neutral-950 title-2 dark:text-white">numa</span>
-    </a>
-
-    <ul class="mx-auto hidden items-center gap-1 md:flex">
+<header class="site-nav fixed inset-x-0 top-0 z-40 transition-[background-color,box-shadow] duration-300 ease-out-quint" data-nav data-over-hero>
+  <nav aria-label="Main" class="mx-auto grid h-16 max-w-7xl grid-cols-[1fr_auto_1fr] items-center px-6 sm:px-10">
+    <ul class="hidden items-center gap-6 md:flex">
       {
         links.map((link) => (
           <li>
-            <a
-              href={link.href}
-              class="rounded-lg px-3 py-2 text-neutral-600 title-4 transition-colors duration-300 ease-out-quint hover:text-neutral-950 aria-[current=true]:bg-black/5 aria-[current=true]:text-neutral-950 dark:text-neutral-300 dark:hover:text-white dark:aria-[current=true]:bg-white/10 dark:aria-[current=true]:text-white"
-              data-nav-link
-            >
+            <a href={link.href} class="nav-link title-4" data-nav-link>
               {link.label}
             </a>
           </li>
         ))
       }
     </ul>
+    <button
+      type="button"
+      class="nav-fg relative -ml-2 grid size-9 place-items-center rounded-lg md:hidden"
+      aria-expanded="false"
+      aria-controls="mobile-menu"
+      data-menu-toggle
+      data-open-label={copy.nav.openMenu}
+      data-close-label={copy.nav.closeMenu}
+    >
+      <span class="sr-only" data-menu-label>{copy.nav.openMenu}</span>
+      <Icon icon={Menu01Icon} size={20} class="menu-icon absolute transition-[transform,opacity] duration-300 ease-out-quint" />
+      <Icon
+        icon={Cancel01Icon}
+        size={20}
+        class="close-icon absolute scale-50 rotate-[-90deg] opacity-0 transition-[transform,opacity] duration-300 ease-out-quint"
+      />
+    </button>
 
-    <div class="ml-auto flex items-center gap-1 md:ml-0">
+    <a href={homePath(locale)} class="nav-fg flex items-center gap-2" aria-label={copy.nav.home}>
+      <img src="/logo.svg" alt="" width="20" height="24" class="size-6" />
+      <span class="title-1">numa</span>
+    </a>
+
+    <div class="flex items-center justify-end gap-4">
+      <a href={signInUrl} class="nav-link hidden button-sm sm:inline-flex">{copy.nav.signIn}</a>
       <a
         href={signInUrl}
-        class="hidden rounded-lg px-3 py-2 text-neutral-700 button-sm transition-colors duration-300 ease-out-quint hover:text-neutral-950 sm:inline-flex dark:text-neutral-200 dark:hover:text-white"
-      >
-        {copy.nav.signIn}
-      </a>
-      <a
-        href={signInUrl}
-        class="inline-flex rounded-lg bg-neutral-950 px-3 py-2 text-white button-sm transition-[transform,background-color] duration-300 ease-out-quint hover:bg-neutral-800 active:scale-[0.98] dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-200"
+        class="nav-cta inline-flex rounded-full px-4 py-2 button-sm transition-[transform,background-color] duration-300 ease-out-quint active:scale-[0.98]"
       >
         {copy.nav.start}
       </a>
-      <button
-        type="button"
-        class="relative grid size-9 place-items-center rounded-lg text-neutral-800 md:hidden dark:text-neutral-100"
-        aria-expanded="false"
-        aria-controls="mobile-menu"
-        data-menu-toggle
-        data-open-label={copy.nav.openMenu}
-        data-close-label={copy.nav.closeMenu}
-      >
-        <span class="sr-only" data-menu-label>{copy.nav.openMenu}</span>
-        <Icon
-          icon={Menu01Icon}
-          size={20}
-          class="menu-icon absolute transition-[transform,opacity] duration-300 ease-out-quint"
-        />
-        <Icon
-          icon={Cancel01Icon}
-          size={20}
-          class="close-icon absolute scale-50 rotate-[-90deg] opacity-0 transition-[transform,opacity] duration-300 ease-out-quint"
-        />
-      </button>
     </div>
   </nav>
 </header>
 
 <!--
   The mobile menu is a full height panel, not a dropdown. Links arrive one
-  after another, 60ms apart, capped well under 400ms in total.
+  after another, 60ms apart, well under 400ms in total.
 -->
 <div
   id="mobile-menu"
-  class="fixed inset-0 z-30 flex flex-col bg-white/95 px-6 pt-24 opacity-0 backdrop-blur-2xl transition-opacity duration-300 ease-out-quint [&:not([data-open])]:pointer-events-none data-open:opacity-100 md:hidden dark:bg-black/95"
+  class="fixed inset-0 z-30 flex flex-col bg-background/95 px-6 pt-24 opacity-0 backdrop-blur-2xl transition-opacity duration-300 ease-out-quint [&:not([data-open])]:pointer-events-none data-open:opacity-100 md:hidden"
   data-mobile-menu
   inert
 >
@@ -105,7 +91,7 @@ const links = [
           class="translate-y-6 opacity-0 transition-[transform,opacity] duration-500 ease-out-quint [[data-open]_&]:translate-y-0 [[data-open]_&]:opacity-100"
           style={`transition-delay: ${index * 60}ms`}
         >
-          <a href={link.href} class="block rounded-lg py-3 text-neutral-950 heading-5 dark:text-white" data-menu-link>
+          <a href={link.href} class="block rounded-lg py-3 heading-5" data-menu-link>
             {link.label}
           </a>
         </li>
@@ -115,7 +101,7 @@ const links = [
       class="translate-y-6 opacity-0 transition-[transform,opacity] duration-500 ease-out-quint [[data-open]_&]:translate-y-0 [[data-open]_&]:opacity-100"
       style={`transition-delay: ${links.length * 60}ms`}
     >
-      <a href={signInUrl} class="block rounded-lg py-3 text-neutral-500 heading-5">
+      <a href={signInUrl} class="block rounded-lg py-3 text-muted-foreground heading-5">
         {copy.nav.signIn}
       </a>
     </li>
@@ -123,6 +109,55 @@ const links = [
 </div>
 
 <style>
+  .site-nav {
+    --nav-fg: var(--foreground);
+    --nav-muted: var(--muted-foreground);
+    --nav-cta-bg: var(--foreground);
+    --nav-cta-fg: var(--background);
+    background-color: color-mix(in oklch, var(--background) 75%, transparent);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 1px 0 var(--border);
+  }
+
+  /* Over the sky the bar disappears and its type turns dark. */
+  .site-nav[data-over-hero] {
+    --nav-fg: #050816;
+    --nav-muted: rgb(5 8 22 / 0.72);
+    --nav-cta-bg: #050816;
+    --nav-cta-fg: #ffffff;
+    background-color: transparent;
+    backdrop-filter: none;
+    box-shadow: none;
+  }
+
+  /* While the mobile menu is open the bar sits on the page's own surface. */
+  .site-nav:has([aria-expanded="true"]) {
+    --nav-fg: var(--foreground);
+    --nav-cta-bg: var(--foreground);
+    --nav-cta-fg: var(--background);
+  }
+
+  .nav-fg {
+    color: var(--nav-fg);
+  }
+
+  .nav-link {
+    color: var(--nav-muted);
+    transition: color 300ms var(--ease-out-quint);
+  }
+  .nav-link:hover,
+  .nav-link[aria-current="true"] {
+    color: var(--nav-fg);
+  }
+
+  .nav-cta {
+    background-color: var(--nav-cta-bg);
+    color: var(--nav-cta-fg);
+  }
+  .nav-cta:hover {
+    background-color: color-mix(in oklch, var(--nav-cta-bg) 85%, transparent);
+  }
+
   [data-menu-toggle][aria-expanded="true"] :global(.menu-icon) {
     opacity: 0;
     transform: scale(0.5) rotate(90deg);

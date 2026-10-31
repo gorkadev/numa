@@ -17,6 +17,7 @@ function initHero() {
   const hero = document.querySelector<HTMLElement>("[data-hero]")
   const stage = hero?.querySelector<HTMLElement>("[data-island]")
   const copy = hero?.querySelector<HTMLElement>("[data-hero-copy]")
+  const nav = document.querySelector<HTMLElement>("[data-nav]")
   if (!hero || !stage || !copy) return
 
   let scene: import("./island-scene").IslandScene | null = null
@@ -33,6 +34,8 @@ function initHero() {
     const travel = Math.max(1, rect.height - window.innerHeight)
     progress = Math.min(1, Math.max(0, -rect.top / travel))
     scene?.setProgress(progress)
+    /* The bar stays transparent for as long as the sky is behind it. */
+    nav?.toggleAttribute("data-over-hero", rect.bottom > 64)
     if (!reducedMotion) {
       const fade = Math.min(1, progress * 2.4)
       copy!.style.opacity = String(1 - fade)
@@ -64,51 +67,6 @@ function initHero() {
 
   if ("requestIdleCallback" in window) window.requestIdleCallback(load, { timeout: 1200 })
   else setTimeout(load, 200)
-}
-
-/* ----------------------------------------------------------- composer ---- */
-
-function initComposers() {
-  for (const form of document.querySelectorAll<HTMLFormElement>("[data-composer]")) {
-    const field = form.querySelector<HTMLTextAreaElement>("textarea")
-    const error = form.querySelector<HTMLElement>("[data-composer-error]")
-    if (!field) continue
-
-    /* The box grows with the prompt instead of scrolling inside itself. */
-    const grow = () => {
-      field.style.height = "auto"
-      field.style.height = `${field.scrollHeight}px`
-    }
-    field.addEventListener("input", () => {
-      grow()
-      if (error && field.value.trim()) error.hidden = true
-    })
-
-    /* Enter sends, Shift+Enter breaks the line, as in the app. */
-    field.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
-        event.preventDefault()
-        form.requestSubmit()
-      }
-    })
-
-    form.addEventListener("submit", (event) => {
-      if (field.value.trim()) return
-      event.preventDefault()
-      if (error) error.hidden = false
-      field.focus()
-    })
-
-    for (const chip of form.querySelectorAll<HTMLButtonElement>("[data-suggestion]")) {
-      chip.addEventListener("click", () => {
-        field.value = chip.dataset.suggestion ?? ""
-        grow()
-        if (error) error.hidden = true
-        field.focus()
-        field.setSelectionRange(field.value.length, field.value.length)
-      })
-    }
-  }
 }
 
 /* ---------------------------------------------------------------- nav ---- */
@@ -207,7 +165,6 @@ function initTagline() {
 }
 
 initHero()
-initComposers()
 initNav()
 initReveals()
 initTagline()

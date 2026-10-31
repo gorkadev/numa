@@ -28,38 +28,16 @@ export const es: Dictionary = {
     subtitle:
       "Carreras, shooters, puzles o mundos enteros. Cuéntaselo a un agente de IA y te lo devuelve jugable en el navegador.",
     proof: "Gratis para empezar: 100 créditos al mes.",
+    primary: "Empieza gratis",
+    secondary: "Cómo funciona",
+    stats: [
+      { value: "6", label: "Plantillas listas" },
+      { value: "2D y 3D", label: "Juegos en el navegador" },
+      { value: "100", label: "Créditos gratis al mes" },
+    ],
     sceneLabel:
       "Una isla flotante hecha de bloques, con árboles, una bandera y animales paseando por el prado.",
   },
-  composer: {
-    label: "Describe el juego que quieres jugar",
-    placeholder: "Una isla pirata donde busco tesoros antes de que suba la marea…",
-    submit: "Crear mi juego",
-    empty: "Primero describe tu juego.",
-    try: "Prueba con",
-  },
-  suggestions: [
-    {
-      label: "Supervivencia voxel",
-      prompt:
-        "Crea un juego de supervivencia voxel en primera persona: quiero extraer y colocar bloques en un mundo que pueda recorrer, reunir lo necesario antes del anochecer y sobrevivir.",
-    },
-    {
-      label: "Duelo de samuráis a tinta",
-      prompt:
-        "Crea un duelo de samuráis uno contra uno con estética de tinta en blanco y negro. Los combates se ganan al calcular bien el momento de parar un ataque y lanzar el contraataque.",
-    },
-    {
-      label: "Ruta todoterreno por la jungla",
-      prompt:
-        "Crea un juego de conducción por una jungla frondosa: quiero recorrer caminos todoterreno con barro, cruces de ríos y pendientes pronunciadas, donde mantener el vehículo intacto importe tanto como la velocidad.",
-    },
-    {
-      label: "Plataformas en un reino soleado",
-      prompt:
-        "Crea un plataformas 3D luminoso en un reino de cuento bañado por el sol: quiero correr, saltar y hacer doble salto entre islas flotantes para recoger los objetos repartidos por cada una.",
-    },
-  ],
   tagline: ["Si puedes describirlo,", "puedes jugarlo."],
   how: {
     eyebrow: "Cómo funciona",
@@ -79,6 +57,7 @@ export const es: Dictionary = {
       },
     ],
     demo: {
+      send: "Crear",
       prompt: "Un juego de pastorear ovejas en una isla flotante",
       plan: "Planificando el juego",
       code: "Escribiendo el código",
@@ -210,6 +189,8 @@ export const es: Dictionary = {
   finalCta: {
     title: ["Describe tu juego.", "numa lo construye."],
     subtitle: "Tus primeros 100 créditos van de nuestra parte, cada mes.",
+    primary: "Empieza gratis",
+    secondary: "Ver precios",
   },
   footer: {
     tagline: "Crea videojuegos describiéndolos.",

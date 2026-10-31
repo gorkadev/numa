@@ -1,6 +1,8 @@
 ---
-import { t, type Locale } from "../i18n"
-import Composer from "./Composer.astro"
+import { ArrowRight01Icon, PlayIcon } from "@hugeicons/core-free-icons"
+
+import { signInUrl, t, type Locale } from "../i18n"
+import Icon from "./Icon.astro"
 
 interface Props {
   locale: Locale
@@ -11,13 +13,16 @@ const copy = t(locale)
 ---
 
 <!--
-  The hero is a tall track with a pinned stage. While the visitor scrolls
-  through the extra height, the stage stays put and the camera dives towards
-  the island; the copy eases away as it does. The CSS sky behind the canvas is
-  the complete picture when WebGL, the network or motion are unavailable.
+  A minimal hero: the island owns the stage and nothing sits on top of it.
+  The copy is a short column on the left, the facts sit along the bottom, and
+  the island floats in the open sky on the right (lower down on narrow
+  screens). The section is a tall track with a pinned stage: scrolling through
+  the extra height dives the camera towards the island as the copy eases away.
+  The CSS sky is the whole picture when WebGL, the network or motion are not
+  available.
 -->
-<section class="hero-track relative h-[165svh]" aria-labelledby="hero-title" data-hero>
-  <div class="sticky top-0 h-svh min-h-[40rem] overflow-hidden">
+<section class="relative h-[160svh]" aria-labelledby="hero-title" data-hero>
+  <div class="sticky top-0 h-svh min-h-[36rem] overflow-hidden">
     <div class="hero-sky absolute inset-0" aria-hidden="true"></div>
     <div
       class="absolute inset-0 opacity-0 transition-opacity duration-1000 ease-out-quint data-ready:opacity-100"
@@ -26,29 +31,50 @@ const copy = t(locale)
       data-island
     >
     </div>
-    <div class="hero-fade pointer-events-none absolute inset-x-0 bottom-0 h-40" aria-hidden="true"></div>
+    <div class="hero-fade pointer-events-none absolute inset-x-0 bottom-0 h-6" aria-hidden="true"></div>
 
-    <div
-      class="relative mx-auto flex h-full max-w-5xl flex-col items-center px-4 pt-32 text-center sm:pt-36"
-      data-hero-copy
-    >
-      <p
-        class="mb-6 inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/60 px-3 py-1 text-neutral-800 caption-4 backdrop-blur-md"
-      >
-        <span class="size-1.5 rounded-full bg-primary" aria-hidden="true"></span>
-        {copy.hero.badge}
-      </p>
-      <h1 id="hero-title" class="hero-title max-w-[680px] heading-3 sm:heading-2 lg:heading-1">
-        <span class="block">{copy.hero.title[0]}</span>
-        <span class="block">{copy.hero.title[1]}</span>
-      </h1>
-      <p class="mt-6 max-w-[680px] text-neutral-700 body-3 sm:title-2 sm:font-normal">
-        {copy.hero.subtitle}
-      </p>
-      <div class="mt-8 w-full max-w-xl">
-        <Composer locale={locale} id="hero" />
+    <div class="relative mx-auto flex h-full max-w-7xl flex-col px-6 pt-28 pb-10 sm:px-10 lg:justify-center lg:pt-0" data-hero-copy>
+      <div class="max-w-xl">
+        <p class="inline-flex rounded-full bg-white/40 px-3 py-1 text-neutral-800 caption-4 backdrop-blur-md">
+          {copy.hero.badge}
+        </p>
+        <h1 id="hero-title" class="hero-title mt-6 heading-3 sm:heading-2 lg:heading-1">
+          <span class="block">{copy.hero.title[0]}</span>
+          <span class="block">{copy.hero.title[1]}</span>
+        </h1>
+        <p class="mt-6 max-w-md text-neutral-800 body-3 sm:title-2 sm:font-normal">
+          {copy.hero.subtitle}
+        </p>
+        <div class="mt-8 flex flex-wrap items-center gap-2">
+          <a
+            href={signInUrl}
+            class="inline-flex items-center gap-2 rounded-full bg-neutral-950 py-2 pr-3 pl-4 text-white button-md shadow-[0_12px_32px_-12px_rgb(5_8_22/0.6)] transition-[transform,background-color] duration-300 ease-out-quint hover:bg-neutral-800 active:scale-[0.98]"
+          >
+            {copy.hero.primary}
+            <Icon icon={ArrowRight01Icon} size={18} />
+          </a>
+          <a
+            href="#how-it-works"
+            class="inline-flex items-center gap-2 rounded-full bg-white/40 py-2 pr-2 pl-4 text-neutral-950 button-md backdrop-blur-md transition-[transform,background-color] duration-300 ease-out-quint hover:bg-white/60 active:scale-[0.98]"
+          >
+            {copy.hero.secondary}
+            <span class="grid size-6 place-items-center rounded-full bg-neutral-950 text-white">
+              <Icon icon={PlayIcon} size={12} />
+            </span>
+          </a>
+        </div>
       </div>
-      <p class="mt-6 text-neutral-700 caption-1">{copy.hero.proof}</p>
+
+      <dl class="mt-auto hidden gap-8 sm:flex lg:absolute lg:bottom-10 lg:left-10">
+        {
+          copy.hero.stats.map((stat, index) => (
+            <div class:list={["flex flex-col-reverse gap-1", index > 0 && "border-l border-neutral-950/15 pl-8"]}>
+              <dt class="text-neutral-700 caption-2">{stat.label}</dt>
+              <dd class="text-neutral-950 heading-5">{stat.value}</dd>
+            </div>
+          ))
+        }
+      </dl>
     </div>
   </div>
 </section>
@@ -66,9 +92,9 @@ const copy = t(locale)
     background: linear-gradient(to bottom, transparent, var(--background));
   }
 
-  /* The skill's heading gradient (B5), tuned to stay dark on a bright sky. */
+  /* The skill's heading gradient (B5), kept dark so it reads on a bright sky. */
   .hero-title {
-    background-image: linear-gradient(to right, #050816, #2c3a5c);
+    background-image: linear-gradient(to right, #050816, #34456b);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;

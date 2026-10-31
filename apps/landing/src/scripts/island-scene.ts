@@ -210,16 +210,18 @@ export async function mountIsland(
   }
   window.addEventListener("pointermove", onPointerMove, { passive: true })
 
-  let distance = 28
+  let distance = 30
   let width = 1
   let height = 1
   /*
-    At rest the island sits low in the frame, under the headline and the
-    composer. The shift is a view offset rather than a moved camera, so the
-    perspective stays the one the scene was composed for; it eases to zero as
-    the hero scrolls away and the island rises into the middle.
+    Where the island rests in the frame, as a fraction of the viewport: to the
+    right of the copy on wide screens, below it on narrow ones. It is a view
+    offset rather than a moved camera, so the perspective stays the one the
+    scene was composed for, and it eases to zero as the hero scrolls away and
+    the island comes to the middle.
   */
-  let shift = 0.36
+  let shiftX = 0.2
+  let shiftY = 0.04
   function resize() {
     width = Math.max(1, container.clientWidth)
     height = Math.max(1, container.clientHeight)
@@ -227,9 +229,10 @@ export async function mountIsland(
     camera.aspect = aspect
     camera.updateProjectionMatrix()
     renderer.setSize(width, height, false)
-    /* Narrow frames step back to keep the island whole. */
-    distance = aspect < 0.8 ? 50 : aspect < 1.25 ? 40 : 36
-    shift = aspect < 0.8 ? 0.36 : 0.36
+    const wide = aspect >= 1.1
+    distance = wide ? 31 : aspect < 0.8 ? 46 : 38
+    shiftX = wide ? 0.2 : 0
+    shiftY = wide ? 0.05 : 0.3
   }
   const resizeObserver = new ResizeObserver(resize)
   resizeObserver.observe(container)
@@ -264,11 +267,18 @@ export async function mountIsland(
     eased = damp(eased, progress, 0.12, dt)
     const swing = Math.sin(elapsed * 0.09) * 0.42 * motion
     yaw = damp(yaw, Math.PI / 4 + swing + pointer.x * 0.25 * motion + eased * 0.9, 0.4, dt)
-    pitch = damp(pitch, 0.5 - pointer.y * 0.08 * motion - eased * 0.22, 0.4, dt)
-    const reach = distance * (1 - eased * 0.48)
+    pitch = damp(pitch, 0.5 - pointer.y * 0.08 * motion - eased * 0.12, 0.4, dt)
+    const reach = distance * (1 - eased * 0.34)
 
     target.set(0, -1.1, 0)
-    camera.setViewOffset(width, height, 0, -height * shift * (1 - eased), width, height)
+    camera.setViewOffset(
+      width,
+      height,
+      -width * shiftX * (1 - eased),
+      -height * shiftY * (1 - eased),
+      width,
+      height
+    )
     camera.position.set(
       Math.sin(yaw) * Math.cos(pitch) * reach,
       Math.sin(pitch) * reach + target.y,
