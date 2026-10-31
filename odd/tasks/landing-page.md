@@ -27,7 +27,7 @@ Branch: `feat/landing-page` · Delivery: `ask-on-risk` · Checks: `pnpm --filter
 | T9 | S5 (benefits) | inline | done (build OK, checked in Chrome, no console errors) | efa3e87 |
 | T10 | S5 (FAQ) | inline | done (build OK, opened in Chrome, no console errors) | 2931727 |
 | T11 | S3 (nav) | inline | done (build OK, checked in Chrome over sky, scrolled and past hero, mobile menu opens, no console errors) | 36c740c |
-| T12 | S2 | inline | done (build OK, checked in Chrome) | pending |
+| T12 | S2 | inline | done (build OK, checked in Chrome) | fe534ed |
 | T5 | S7 | inline | partial: 404, og, meta, skip link done; legal links missing; light theme not checked in browser | b2c4f53 |
 
 Route evidence: one sequential build, no independent parallel units, so no writer trigger fires.
