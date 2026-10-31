@@ -9,10 +9,13 @@ const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matc
 /* --------------------------------------------------------------- hero ---- */
 
 /*
-  The island is fetched only after the page has painted: three.js and the
-  models are the heaviest thing on the site, and nothing above the fold waits
-  for them. A failure leaves the CSS sky, which is a complete hero on its own.
+  The island is the heaviest thing on the site and nothing above the fold waits
+  for it: it downloads alongside the page and is built once the copy has come
+  in. A failure leaves the CSS sky, which is a complete hero on its own.
 */
+const DIVE_END = 0.65
+const ENTRANCE_SETTLED_MS = 850
+
 function initHero() {
   const hero = document.querySelector<HTMLElement>("[data-hero]")
   const stage = hero?.querySelector<HTMLElement>("[data-island]")
@@ -32,7 +35,8 @@ function initHero() {
     queued = false
     const rect = hero!.getBoundingClientRect()
     const travel = Math.max(1, rect.height - window.innerHeight)
-    progress = Math.min(1, Math.max(0, -rect.top / travel))
+    /* The dive ends early, so the framed island holds before the page moves on. */
+    progress = Math.min(1, Math.max(0, -rect.top / travel) / DIVE_END)
     scene?.setProgress(progress)
     /* The bar stays transparent for as long as the sky is behind it. */
     nav?.toggleAttribute("data-over-hero", rect.bottom > 64)
@@ -50,10 +54,17 @@ function initHero() {
   window.addEventListener("scroll", onScroll, { passive: true })
   measure()
 
+  /*
+    Building the scene blocks the main thread for over a second, which would
+    stall the hero's entrance, so that part waits. The entrance eases out, and
+    by this point its last element has all but landed.
+  */
+  const entrance = new Promise((resolve) => setTimeout(resolve, reducedMotion ? 0 : ENTRANCE_SETTLED_MS))
+
   const load = async () => {
     try {
       const { mountIsland } = await import("./island-scene")
-      scene = await mountIsland(stage, { logoUrl: "/logo.svg", reducedMotion })
+      scene = await mountIsland(stage, { logoUrl: "/logo.svg", reducedMotion, after: entrance })
       scene.setProgress(progress)
       stage.dataset.ready = ""
 
@@ -65,17 +76,7 @@ function initHero() {
     }
   }
 
-  /*
-    Building the scene blocks the main thread for up to a second, which would
-    stall the hero's entrance, so it waits for that to finish.
-  */
-  const entrance = Promise.all(
-    [...hero.querySelectorAll(".hero-in")].flatMap((element) => element.getAnimations().map((a) => a.finished))
-  )
-  void entrance.catch(() => {}).then(() => {
-    if ("requestIdleCallback" in window) window.requestIdleCallback(load, { timeout: 1200 })
-    else setTimeout(load, 200)
-  })
+  void load()
 }
 
 /* ---------------------------------------------------------------- nav ---- */

@@ -104,6 +104,8 @@ interface Options {
   logoUrl: string
   /** Freeze every motion except the camera following scroll. */
   reducedMotion: boolean
+  /** Holds the main-thread heavy part of the build until this settles. */
+  after: Promise<unknown>
 }
 
 /** Frame-rate independent smoothing towards a target, as in the engine. */
@@ -127,10 +129,18 @@ function mulberry32(seed: number) {
   }
 }
 
+const COMPILE_WAIT_MS = 300
+
+/* Lets a frame through between the steps that hold the main thread. */
+const breathe = () => new Promise((resolve) => setTimeout(resolve))
+
 export async function mountIsland(
   container: HTMLElement,
-  { logoUrl, reducedMotion }: Options
+  { logoUrl, reducedMotion, after }: Options
 ): Promise<IslandScene> {
+  /* Downloading costs the page nothing, so it starts right away. */
+  const [models] = await Promise.all([loadModels(), after])
+
   const motion = reducedMotion ? 0 : 1
   const rng = mulberry32(7)
 
@@ -160,13 +170,14 @@ export async function mountIsland(
   scene.add(buildSky())
   addLights(scene)
 
+  await breathe()
   const pmrem = new PMREMGenerator(renderer)
   const environment = pmrem.fromScene(new RoomEnvironment(), 0.04)
   scene.environment = environment.texture
   scene.environmentIntensity = 0.35
   pmrem.dispose()
 
-  const models = await loadModels()
+  await breathe()
   const B = blockSize(models.grass.scene)
 
   /*
@@ -245,6 +256,7 @@ export async function mountIsland(
   let eased = 0
 
   const timer = new Timer()
+  let onFirstFrame = () => {}
   let frame = 0
   let active = true
 
@@ -287,6 +299,7 @@ export async function mountIsland(
     camera.lookAt(target)
 
     renderer.render(scene, camera)
+    onFirstFrame()
   }
 
   function start() {
@@ -306,7 +319,19 @@ export async function mountIsland(
   }
   document.addEventListener("visibilitychange", onVisibility)
 
-  start()
+  /*
+    Compiling shaders off the main thread keeps the first frame short. Chrome
+    can leave the status pending until something draws, so this never waits
+    for long: the first frame finishes whatever is left and ends the polling.
+  */
+  await Promise.race([
+    renderer.compileAsync(scene, camera),
+    new Promise((resolve) => setTimeout(resolve, COMPILE_WAIT_MS)),
+  ])
+  await new Promise<void>((resolve) => {
+    onFirstFrame = resolve
+    start()
+  })
 
   return {
     setProgress(value) {
