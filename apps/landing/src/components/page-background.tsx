@@ -7,8 +7,8 @@ const DARK_SCHEME = "(prefers-color-scheme: dark)"
 /**
  * A slow, dim field of shapes fixed behind the whole page in the dark theme.
  * The hero's opaque sky covers it, so it only shows from the tagline down.
- * Colors are hex because the shader reads hex: a navy close to black for the
- * shapes and the dark `--primary` (#193cb8) where the pointer stirs them.
+ * Colors are hex because the shader reads hex: a dark neutral gray for the
+ * shapes, and `--primary` (#1447e6) only where the pointer stirs them.
  * Without WebGPU it paints the plain background, which is the page as before.
  */
 export function PageBackground() {
@@ -27,8 +27,8 @@ export function PageBackground() {
   return (
     <div className="pointer-events-none fixed inset-0 -z-10" aria-hidden="true">
       <ShapeWaves
-        color="#08173f"
-        hoverColor="#193cb8"
+        color="#262626"
+        hoverColor="#1447e6"
         backgroundColor="#000000"
         cellSize={14}
         brightness={0.25}
