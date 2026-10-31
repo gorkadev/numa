@@ -13,6 +13,12 @@ import {
   AccordionTrigger,
 } from "@workspace/ui/components/accordion"
 import { Button } from "@workspace/ui/components/button"
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@workspace/ui/components/card"
 
 type Category = { id: string; label: string }
 type Item = { category: string; q: string; a: string }
@@ -25,7 +31,9 @@ const ICONS: Record<string, IconSvgElement> = {
 }
 
 /**
- * The FAQ list with topic filters, adapted from the efferd faqs-4 block.
+ * The FAQ list with topic filters, adapted from the efferd faqs-4 block. The
+ * list sits in a Card, as in the shadcn accordion card example, so the
+ * accordion drops its own border and keeps only the dividers.
  *
  * Hydrated (`client:visible` in `Faq.astro`) because filtering and opening a
  * question run in the browser. Answers stay mounted while closed, so the
@@ -59,18 +67,26 @@ export function FaqSection({
         ))}
       </div>
 
-      <Accordion className="gap-2 overflow-visible rounded-none border-0 md:col-span-2">
-        {visible.map((item) => (
-          <AccordionItem key={item.q} value={item.q} className="overflow-hidden rounded-2xl border-b-0 bg-muted/50">
-            <AccordionTrigger className="hover:no-underline">
-              {item.q}
-            </AccordionTrigger>
-            <AccordionContent keepMounted>
-              <p className="text-muted-foreground">{item.a}</p>
-            </AccordionContent>
-          </AccordionItem>
-        ))}
-      </Accordion>
+      <Card className="md:col-span-2">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            {ICONS[active] && <HugeiconsIcon icon={ICONS[active]!} strokeWidth={2} className="size-4" />}
+            {categories.find((category) => category.id === active)?.label}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="px-1">
+          <Accordion className="rounded-none border-0">
+            {visible.map((item) => (
+              <AccordionItem key={item.q} value={item.q}>
+                <AccordionTrigger className="hover:no-underline">{item.q}</AccordionTrigger>
+                <AccordionContent keepMounted>
+                  <p className="text-muted-foreground">{item.a}</p>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </CardContent>
+      </Card>
     </div>
   )
 }

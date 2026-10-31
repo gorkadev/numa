@@ -9,6 +9,7 @@
 */
 @source "../../../../packages/ui/src/components/button.tsx";
 @source "../../../../packages/ui/src/components/accordion.tsx";
+@source "../../../../packages/ui/src/components/card.tsx";
 
 /*
   numa's design values, mirrored from `packages/ui/src/styles/globals.css` so
