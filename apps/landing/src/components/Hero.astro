@@ -1,5 +1,5 @@
 ---
-import { ArrowRight01Icon, PlayIcon } from "@hugeicons/core-free-icons"
+import { ArrowRight01Icon, PlayIcon, SparklesIcon } from "@hugeicons/core-free-icons"
 
 import { Badge } from "@workspace/ui/components/badge"
 
@@ -38,7 +38,10 @@ const copy = t(locale)
 
     <div class="scene-light relative mx-auto flex h-full max-w-7xl flex-col px-6 pt-28 pb-10 sm:px-10 lg:justify-center lg:pt-0" data-hero-copy>
       <div class="max-w-xl">
-        <Badge variant="secondary">{copy.hero.badge}</Badge>
+        <Badge variant="outline" className="border-border bg-background/95 shadow backdrop-blur-sm supports-backdrop-filter:bg-background/50">
+          <Icon icon={SparklesIcon} size={12} data-icon="inline-start" />
+          {copy.hero.badge}
+        </Badge>
         <h1 id="hero-title" class="hero-title mt-6 heading-3 sm:heading-2 lg:heading-1">
           <span class="block">{copy.hero.title[0]}</span>
           <span class="block">{copy.hero.title[1]}</span>
@@ -58,7 +61,7 @@ const copy = t(locale)
         </div>
       </div>
 
-      <dl class="mt-auto hidden gap-8 sm:flex lg:absolute lg:bottom-10 lg:left-10">
+      <dl class="mt-auto hidden w-fit gap-8 rounded-2xl border px-6 py-4 sm:flex lg:absolute lg:bottom-10 lg:left-10 border-border bg-background/95 shadow backdrop-blur-sm supports-backdrop-filter:bg-background/50">
         {
           copy.hero.stats.map((stat, index) => (
             <div class:list={["flex flex-col-reverse gap-1", index > 0 && "border-l border-neutral-950/15 pl-8"]}>

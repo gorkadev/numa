@@ -265,8 +265,13 @@
     @apply border-border outline-ring/50;
   }
 
+  /*
+    No rubber-band overscroll: pulling past the top would show the page's
+    black background above the hero's sky.
+  */
   html {
     scroll-behavior: smooth;
+    overscroll-behavior-y: none;
   }
 
   body {

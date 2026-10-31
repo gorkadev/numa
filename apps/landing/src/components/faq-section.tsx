@@ -33,7 +33,8 @@ const ICONS: Record<string, IconSvgElement> = {
 /**
  * The FAQ list with topic filters, adapted from the efferd faqs-4 block. The
  * list sits in a Card, as in the shadcn accordion card example, so the
- * accordion drops its own border and keeps only the dividers.
+ * accordion drops its own border and dividers; each item is a rounded row
+ * that fills in while open.
  *
  * Hydrated (`client:visible` in `Faq.astro`) because filtering and opening a
  * question run in the browser. Answers stay mounted while closed, so the
@@ -75,9 +76,9 @@ export function FaqSection({
           </CardTitle>
         </CardHeader>
         <CardContent className="px-1">
-          <Accordion className="rounded-none border-0">
+          <Accordion className="gap-1 rounded-none border-0">
             {visible.map((item) => (
-              <AccordionItem key={item.q} value={item.q}>
+              <AccordionItem key={item.q} value={item.q} className="rounded-2xl not-last:border-b-0">
                 <AccordionTrigger className="hover:no-underline">{item.q}</AccordionTrigger>
                 <AccordionContent keepMounted>
                   <p className="text-muted-foreground">{item.a}</p>
