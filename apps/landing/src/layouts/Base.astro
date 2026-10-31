@@ -1,0 +1,63 @@
+---
+import "../styles/global.css"
+
+import { homePath, t, type Locale } from "../i18n"
+
+interface Props {
+  locale: Locale
+  title?: string
+  description?: string
+  noindex?: boolean
+}
+
+const { locale, title, description, noindex = false } = Astro.props
+const copy = t(locale)
+const pageTitle = title ?? copy.meta.title
+const pageDescription = description ?? copy.meta.description
+const canonical = new URL(Astro.url.pathname, Astro.site)
+const ogImage = new URL("/og.png", Astro.site)
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={pageDescription} />
+    {noindex && <meta name="robots" content="noindex" />}
+    <link rel="canonical" href={canonical} />
+    <link rel="alternate" hreflang="en" href={new URL(homePath("en"), Astro.site)} />
+    <link rel="alternate" hreflang="es" href={new URL(homePath("es"), Astro.site)} />
+    <link rel="alternate" hreflang="x-default" href={new URL(homePath("en"), Astro.site)} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="theme-color" content="#a9d0ff" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="numa" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={pageDescription} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:locale" content={locale === "es" ? "es_ES" : "en_US"} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={pageDescription} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <!--
+      Marks the document as scripted before first paint, so reveal styles only
+      hide content when the script that reveals it is certain to run.
+    -->
+    <script is:inline>document.documentElement.classList.add("js")</script>
+  </head>
+  <body class="min-h-dvh overflow-x-clip">
+    <a
+      href="#main"
+      class="sr-only z-50 rounded-lg bg-foreground px-3 py-2 text-background button-sm focus:not-sr-only focus:fixed focus:top-4 focus:left-4"
+    >
+      {copy.skip}
+    </a>
+    <slot />
+  </body>
+</html>

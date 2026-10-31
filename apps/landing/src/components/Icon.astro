@@ -1,0 +1,43 @@
+---
+/**
+ * A Hugeicons icon rendered as static SVG. The app draws icons through
+ * `@hugeicons/react`; the site has no React, so this reads the same icon data
+ * (`[tag, attributes]` pairs with React-style attribute names) and writes the
+ * markup at build time. Nothing about it runs in the browser.
+ */
+type IconNode = readonly (readonly [string, { readonly [key: string]: string | number }])[]
+
+interface Props {
+  icon: IconNode
+  class?: string
+  size?: number
+  label?: string
+}
+
+const { icon, class: className, size = 24, label } = Astro.props
+
+const kebab = (name: string) => name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)
+
+const children = icon
+  .map(([tag, attributes]) => {
+    const attrs = Object.entries(attributes)
+      .filter(([name]) => name !== "key")
+      .map(([name, value]) => `${kebab(name)}="${value}"`)
+      .join(" ")
+    return `<${tag} ${attrs} />`
+  })
+  .join("")
+---
+
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width={size}
+  height={size}
+  viewBox="0 0 24 24"
+  fill="none"
+  class={className}
+  role={label ? "img" : undefined}
+  aria-label={label}
+  aria-hidden={label ? undefined : "true"}
+  set:html={children}
+/>
