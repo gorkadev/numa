@@ -59,6 +59,9 @@ importers:
       astro:
         specifier: ^7.4.4
         version: 7.4.4(@types/node@20.19.41)(aws4fetch@1.0.20)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.1)
+      cobe:
+        specifier: ^2.0.1
+        version: 2.0.1
       react:
         specifier: 19.2.4
         version: 19.2.4
@@ -4596,6 +4599,9 @@ packages:
     resolution: {integrity: sha512-+i4L0zUGgRcEnhsxueVrP7iBGxBx5iD0WOTYg1MwFEu2ZyCmH5Ov2V1cul2Ht5UchRQQgftCf4be/RxspuW6QQ==}
     engines: {node: '>=20'}
     hasBin: true
+
+  cobe@2.0.1:
+    resolution: {integrity: sha512-aaa6vcIlaC8C1SF50LDH0Anybo/EAXnrxqe+bwvr4+YUtZydqjeBjTTD7ziCCkbRrRGSns3I3F6cZsf3W+L+ag==}
 
   code-block-writer@13.0.3:
     resolution: {integrity: sha512-Oofo0pq3IKnsFtuHqSF7TqBfr71aeyZDVJ0HpmqB7FBM2qEigL0iPONSCZSO9pE9dZTAxANe5XHG9Uy0YMv8cg==}
@@ -12503,6 +12509,8 @@ snapshots:
       - '@types/react-dom'
 
   cn@0.2.6: {}
+
+  cobe@2.0.1: {}
 
   code-block-writer@13.0.3: {}
 

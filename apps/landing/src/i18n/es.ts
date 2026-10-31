@@ -83,6 +83,11 @@ export const es: Dictionary = {
   benefits: {
     eyebrow: "Por qué numa",
     title: "Todo lo que un juego necesita, sin montar nada",
+    chat: {
+      ask: "Haz que las ovejas corran más en",
+      file: "@game.js",
+      reply: "Hecho. Las ovejas ya corren más rápido.",
+    },
     items: [
       {
         title: "Sin escribir código",
@@ -99,6 +104,10 @@ export const es: Dictionary = {
       {
         title: "Pagas lo que creas",
         body: "Un crédito equivale a un céntimo del coste real de generar un turno. Un turno que falla no cuesta nada.",
+      },
+      {
+        title: "Se juega en el navegador",
+        body: "Cada juego corre en una pestaña del navegador, en cualquier ordenador. No hay nada que instalar y puedes compartir lo que creas.",
       },
     ],
   },

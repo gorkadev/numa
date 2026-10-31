@@ -82,6 +82,11 @@ export const en = {
   benefits: {
     eyebrow: "Why numa",
     title: "Everything a game needs, without the setup",
+    chat: {
+      ask: "Make the sheep faster in",
+      file: "@game.js",
+      reply: "Done. The sheep run faster now.",
+    },
     items: [
       {
         title: "No code to write",
@@ -98,6 +103,10 @@ export const en = {
       {
         title: "Pay for what you build",
         body: "One credit is one cent of what a turn actually costs to generate. A turn that fails costs nothing.",
+      },
+      {
+        title: "Play it in the browser",
+        body: "Every game runs in a browser tab, on any computer. Nothing to install, and you can share what you build.",
       },
     ],
   },
