@@ -1,0 +1,46 @@
+---
+import { t, type Locale } from "../i18n"
+import Composer from "./Composer.astro"
+
+interface Props {
+  locale: Locale
+}
+
+const { locale } = Astro.props
+const copy = t(locale)
+---
+
+<!--
+  The closing call to action repeats the hero's offer and its composer, on the
+  same sky the page opened with (skill A2: identical to the top).
+-->
+<section class="px-4 pt-8 pb-20 md:pb-24" aria-labelledby="final-title">
+  <div
+    class="final-sky relative mx-auto flex max-w-6xl flex-col items-center overflow-hidden rounded-4xl px-6 py-20 text-center md:py-24"
+    data-reveal
+  >
+    <h2 id="final-title" class="final-title max-w-[680px] heading-4 md:heading-2">
+      <span class="block">{copy.finalCta.title[0]}</span>
+      <span class="block">{copy.finalCta.title[1]}</span>
+    </h2>
+    <p class="mt-4 text-neutral-700 body-3 md:title-2 md:font-normal">{copy.finalCta.subtitle}</p>
+    <div class="mt-10 w-full max-w-xl">
+      <Composer locale={locale} id="final" suggestions={false} />
+    </div>
+  </div>
+</section>
+
+<style>
+  .final-sky {
+    background:
+      radial-gradient(90% 60% at 50% 110%, #ffdcb8 0%, transparent 65%),
+      linear-gradient(to bottom, #4f9bff 0%, #a9d0ff 60%, #cfe2ff 100%);
+  }
+
+  .final-title {
+    background-image: linear-gradient(to right, #050816, #2c3a5c);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+</style>

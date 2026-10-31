@@ -1,0 +1,80 @@
+---
+import { homePath, signInUrl, t, type Locale } from "../i18n"
+
+interface Props {
+  locale: Locale
+}
+
+const { locale } = Astro.props
+const copy = t(locale)
+const year = new Date().getFullYear()
+
+const product = [
+  { href: "#how-it-works", label: copy.nav.howItWorks },
+  { href: "#templates", label: copy.nav.templates },
+  { href: "#pricing", label: copy.nav.pricing },
+  { href: "#faq", label: copy.nav.faq },
+  { href: signInUrl, label: copy.nav.signIn },
+]
+---
+
+<footer class="border-t border-border px-4 py-16">
+  <div class="mx-auto grid max-w-6xl gap-12 sm:grid-cols-[1.5fr_1fr_1fr]">
+    <div class="flex flex-col gap-4">
+      <a href={homePath(locale)} class="flex items-center gap-2" aria-label={copy.nav.home}>
+        <img src="/logo.svg" alt="" width="20" height="24" class="size-6" />
+        <span class="title-2">numa</span>
+      </a>
+      <p class="text-muted-foreground body-6">{copy.footer.tagline}</p>
+    </div>
+
+    <nav aria-label={copy.footer.product}>
+      <h2 class="title-4">{copy.footer.product}</h2>
+      <ul class="mt-4 flex flex-col gap-2">
+        {
+          product.map((link) => (
+            <li>
+              <a
+                href={link.href}
+                class="text-muted-foreground body-6 transition-colors duration-300 ease-out-quint hover:text-foreground"
+              >
+                {link.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <nav aria-label={copy.footer.language}>
+      <h2 class="title-4">{copy.footer.language}</h2>
+      <ul class="mt-4 flex flex-col gap-2">
+        <li>
+          <a
+            href={homePath("en")}
+            hreflang="en"
+            lang="en"
+            aria-current={locale === "en" ? "page" : undefined}
+            class="text-muted-foreground body-6 transition-colors duration-300 ease-out-quint hover:text-foreground aria-[current=page]:text-foreground"
+          >
+            English
+          </a>
+        </li>
+        <li>
+          <a
+            href={homePath("es")}
+            hreflang="es"
+            lang="es"
+            aria-current={locale === "es" ? "page" : undefined}
+            class="text-muted-foreground body-6 transition-colors duration-300 ease-out-quint hover:text-foreground aria-[current=page]:text-foreground"
+          >
+            Español
+          </a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+  <p class="mx-auto mt-16 max-w-6xl text-muted-foreground caption-2">
+    © {year} numa. {copy.footer.rights}
+  </p>
+</footer>

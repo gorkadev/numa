@@ -1,0 +1,45 @@
+---
+import { t, type Locale } from "../i18n"
+
+interface Props {
+  locale: Locale
+}
+
+const { locale } = Astro.props
+const copy = t(locale)
+---
+
+<!--
+  The tagline reveal (skill B11): its own large moment, separate from the hero.
+  Words start muted and light up one at a time, in reading order, as they cross
+  a line on the screen. Without the script every word is simply lit.
+-->
+<section class="px-4 py-24 md:py-24" aria-label={copy.tagline.join(" ")}>
+  <p class="mx-auto max-w-[680px] text-center heading-3 md:heading-1" aria-hidden="true">
+    {
+      copy.tagline.map((line) => (
+        <span class="block">
+          {line.split(" ").map((word) => (
+            <>
+              <span class="tagline-word" data-word>
+                {word}
+              </span>{" "}
+            </>
+          ))}
+        </span>
+      ))
+    }
+  </p>
+</section>
+
+<style>
+  .tagline-word {
+    color: color-mix(in oklch, var(--foreground) 28%, transparent);
+    transition: color 600ms var(--ease-out-quint);
+  }
+
+  :global(html:not(.js)) .tagline-word,
+  .tagline-word[data-lit] {
+    color: var(--foreground);
+  }
+</style>
