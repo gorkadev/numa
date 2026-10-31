@@ -11,7 +11,36 @@ This version has breaking changes — APIs, conventions, and file structure may 
 `.env*`, and `apps/web/design/`. A Git worktree only materializes tracked files, so
 a fresh worktree starts without them.
 
-A Herdr plugin restores them automatically on `worktree.created` and `worktree.opened`:
+**Agents: always create worktrees with this script**, in any terminal, never with a
+bare `git worktree add` or the runtime's own worktree tool. The one exception is
+inside Herdr, which uses `herdr worktree create` (see below). Create one when the user
+asks, or propose it and wait for their confirmation:
+
+```bash
+node scripts/worktree.mjs <branch> [--base <ref>]   # base defaults to master
+```
+
+It creates `../numa-worktrees/<branch>`, restores the ignored assets from the primary
+checkout, installs dependencies, and, inside Rex, opens a background tab named after
+the branch in the current session (one Rex session per project; Rex has no worktree
+support of its own). Wait for it to finish: it can take
+minutes, a non-zero exit means the worktree is not ready, and the last line of stdout
+is its path. Running it again for the same branch restores whatever is missing.
+Tests: `node --test scripts/`.
+
+**Rex naming, only when `REX_SESSION` is set: the session is the project, the tab is
+the task.** The session stays named `numa`; never rename it, even when Rex's startup
+notice says to. Name your own tab after the task instead, and rename it when the task
+changes:
+
+```bash
+rex window rename "$(rex block inspect "$REX_BLOCK" --json | jq -r '.block.window_id')" <task>
+```
+
+Use two to four lowercase words joined by hyphens.
+
+Inside Herdr, use `herdr worktree create` so Herdr manages the worktree; a plugin
+restores the assets on `worktree.created` and `worktree.opened`:
 
 ```bash
 herdr plugin list                      # numa.worktree-hydrate
