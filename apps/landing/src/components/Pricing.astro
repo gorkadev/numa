@@ -1,10 +1,6 @@
 ---
-import { Tick02Icon } from "@hugeicons/core-free-icons"
-
 import { signInUrl, t, type Locale } from "../i18n"
-import Icon from "./Icon.astro"
-import { LinkButton } from "./LinkButton"
-import SectionHeader from "./SectionHeader.astro"
+import { PricingSection } from "./pricing-section"
 
 interface Props {
   locale: Locale
@@ -16,77 +12,8 @@ const copy = t(locale)
 
 <!--
   Prices and allowances come from the app's plans (`lib/polar/products.ts`).
-  Every plan starts at sign-in: the app provisions Free on first visit and
-  upgrades happen from its own pricing page.
+  The layout is the @efferd/pricing-3 block, rendered at build time.
 -->
-<section id="pricing" class="scroll-mt-24 px-4 py-20 md:py-24" aria-labelledby="pricing-title">
-  <div class="mx-auto max-w-6xl">
-    <SectionHeader
-      id="pricing-title"
-      eyebrow={copy.pricing.eyebrow}
-      title={copy.pricing.title}
-      subtitle={copy.pricing.subtitle}
-    />
-
-    <ul class="mt-16 grid gap-4 lg:grid-cols-3">
-      {
-        copy.pricing.plans.map((plan, index) => {
-          const featured = plan.id === "pro"
-          return (
-            <li
-              class:list={[
-                "flex flex-col rounded-3xl p-8",
-                featured ? "bg-neutral-950 text-white dark:bg-card" : "bg-surface",
-              ]}
-              data-reveal
-              style={`--reveal-delay: ${index * 80}ms`}
-            >
-              <div class="flex items-center justify-between gap-3">
-                <h3 class="heading-6">{plan.name}</h3>
-                {featured && (
-                  <span class="rounded-full bg-primary px-3 py-1 text-primary-foreground caption-3">
-                    {copy.pricing.popular}
-                  </span>
-                )}
-              </div>
-              <p class:list={["mt-2 body-6", featured ? "text-neutral-400" : "text-muted-foreground"]}>
-                {plan.description}
-              </p>
-              <p class="mt-8 flex items-baseline gap-1">
-                <span class="heading-2">{plan.price}</span>
-                <span class:list={["body-3", featured ? "text-neutral-400" : "text-muted-foreground"]}>
-                  {copy.pricing.perMonth}
-                </span>
-              </p>
-              <ul class="mt-8 mb-10 flex flex-col gap-3">
-                {plan.features.map((feature) => (
-                  <li class="flex items-start gap-3 body-6">
-                    <Icon
-                      icon={Tick02Icon}
-                      size={20}
-                      class:list={["shrink-0", featured ? "text-white" : "text-primary"]}
-                    />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-              {featured ? (
-                <LinkButton href={signInUrl} size="lg" className="mt-auto">
-                  {plan.cta}
-                </LinkButton>
-              ) : (
-                <a
-                  href={signInUrl}
-                  class="mt-auto inline-flex h-9 items-center justify-center rounded-2xl bg-foreground px-4 text-sm font-medium text-background transition-[transform,background-color] duration-300 ease-out-quint hover:bg-foreground/85 active:translate-y-px"
-                >
-                  {plan.cta}
-                </a>
-              )}
-            </li>
-          )
-        })
-      }
-    </ul>
-  </div>
-</section>
-
+<div data-reveal>
+  <PricingSection copy={copy.pricing} signInUrl={signInUrl} />
+</div>
