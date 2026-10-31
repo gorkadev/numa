@@ -27,7 +27,7 @@ export function PageBackground() {
   return (
     <div className="pointer-events-none fixed inset-0 -z-10" aria-hidden="true">
       <ShapeWaves
-        color="#0d0d0d"
+        color="#0a0a0a"
         hoverColor="#1447e6"
         backgroundColor="#000000"
         cellSize={14}
