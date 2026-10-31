@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react"
 
-import ShapeWaves from "./shape-waves"
+import DotGrid from "./dot-grid"
 
 const DARK_SCHEME = "(prefers-color-scheme: dark)"
 
 /**
- * A slow, dim field of shapes fixed behind the whole page in the dark theme.
- * The hero's opaque sky covers it, so it only shows from the tagline down.
- * Colors are hex because the shader reads hex: a gray barely above black for the
- * shapes, and `--primary` (#1447e6) only where the pointer stirs them.
- * Without WebGPU it paints the plain background, which is the page as before.
+ * A dim grid of dots fixed behind the whole page in the dark theme, from
+ * React Bits' DotGrid (WebGL2). The hero's opaque sky covers it, so it only
+ * shows from the tagline down. The dots rest barely above black and light up
+ * in `--primary` (#1447e6) only where the pointer pushes them. Without WebGL2
+ * nothing is drawn, which is the plain page as before.
  */
 export function PageBackground() {
   const [dark, setDark] = useState(false)
@@ -26,15 +26,16 @@ export function PageBackground() {
 
   return (
     <div className="pointer-events-none fixed inset-0 -z-10" aria-hidden="true">
-      <ShapeWaves
-        color="#0a0a0a"
-        hoverColor="#1447e6"
-        backgroundColor="#000000"
-        cellSize={14}
-        brightness={0.25}
-        speed={0.5}
-        glow={0}
-        fade={0.5}
+      <DotGrid
+        baseColor="#141414"
+        activeColor="#1447e6"
+        dotSize={3}
+        gap={20}
+        proximity={120}
+        strength={0.6}
+        shockStrength={3}
+        glow={0.3}
+        swell={0.6}
         intro={false}
       />
     </div>
