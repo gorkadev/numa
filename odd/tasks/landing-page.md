@@ -25,6 +25,7 @@ Branch: `feat/landing-page` · Delivery: `ask-on-risk` · Checks: `pnpm --filter
 | T7 | S2 | inline | done (build OK, checked in Chrome) | 913ec32 |
 | T8 | S5 (pricing) | inline | done (build OK, checked in Chrome) | 036c389 |
 | T9 | S5 (benefits) | inline | done (build OK, checked in Chrome, no console errors) | efa3e87 |
+| T10 | S5 (FAQ) | inline | done (build OK, opened in Chrome, no console errors) | pending |
 | T5 | S7 | inline | partial: 404, og, meta, skip link done; legal links missing; light theme not checked in browser | b2c4f53 |
 
 Route evidence: one sequential build, no independent parallel units, so no writer trigger fires.
@@ -46,3 +47,5 @@ Route evidence: one sequential build, no independent parallel units, so no write
 - **L13:** T8: `apps/landing/components.json` (style base-rhea, aliases to `@workspace/ui`, `@efferd` registry) and `@/*` path alias. `npx shadcn add @efferd/pricing-3` created `pricing-section.tsx` and `pricing-card.tsx`; the shared `button.tsx` was skipped as identical and `packages/` stayed unchanged. Block data replaced by numa's plans from the i18n copy, struck through prices removed (no discounts), CTAs are `LinkButton` links, `font-extrabold` lowered to bold (skill B1). Base layer now sets `border-border outline-ring/50` like the app. `@hugeicons/react` added back.
 - **L14 (2026-10-31), user:** "Todo lo que un juego necesita, sin montar nada. aqui, en esta seccion de features digamos, vamos a sustituirla por este bloque" (@efferd/features-6).
 - **L15:** T9: features-6 installed into apps/landing. The CLI added `cobe` to `packages/ui/package.json`; reverted and added to `apps/landing` instead. Bento filled with numa's benefits plus a fifth, "Play it in the browser" / "Se juega en el navegador", for the globe card. Visuals that would claim untrue things swapped: growth chart with "4.5%" became a localized chat exchange with an @ mention, the efferd dashboard screenshot became `/island.webp`, timer and lock became Hugeicons code and coins. The globe renders as a static canvas and `src/scripts/globe.ts` starts cobe lazily (no React hydration), follows the theme, spins only on screen, no city markers.
+- **L16 (2026-10-31), user:** "preguntas frecuentes: usamos el componente accordion, q entiendo q no se estará usando"
+- **L17:** T10: FAQ moved from native `<details>` to `@workspace/ui` `Accordion` via `FaqAccordion.tsx`, hydrated with `client:visible` (first hydrated island: about 56 KB + 19 KB + 4 KB gzipped, loaded only when the FAQ nears the viewport). `keepMounted` keeps every answer in the static HTML. The landing now imports `tw-animate-css` and `shadcn/tailwind.css` like `packages/ui`, for the accordion keyframes and `data-open`/`data-closed` variants.

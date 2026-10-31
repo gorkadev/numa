@@ -87,6 +87,12 @@ importers:
       '@types/three':
         specifier: 0.185.4
         version: 0.185.4
+      shadcn:
+        specifier: ^4.21.0
+        version: 4.21.0(babel-plugin-macros@3.1.0)(typescript@5.9.3)
+      tw-animate-css:
+        specifier: ^1.4.0
+        version: 1.4.0
       typescript:
         specifier: ^5
         version: 5.9.3

@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 @import "@fontsource-variable/inter";
 
 /*
@@ -6,6 +8,7 @@
   finds in scanned files, and the workspace package lives outside this app.
 */
 @source "../../../../packages/ui/src/components/button.tsx";
+@source "../../../../packages/ui/src/components/accordion.tsx";
 
 /*
   numa's design values, mirrored from `packages/ui/src/styles/globals.css` so

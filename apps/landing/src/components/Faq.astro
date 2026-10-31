@@ -1,8 +1,6 @@
 ---
-import { PlusSignIcon } from "@hugeicons/core-free-icons"
-
 import { t, type Locale } from "../i18n"
-import Icon from "./Icon.astro"
+import { FaqAccordion } from "./FaqAccordion"
 import SectionHeader from "./SectionHeader.astro"
 
 interface Props {
@@ -28,29 +26,10 @@ const schema = {
   <div class="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[1fr_1.6fr]">
     <SectionHeader id="faq-title" eyebrow={copy.faq.eyebrow} title={copy.faq.title} align="start" />
 
-    <div class="flex flex-col gap-2" data-reveal>
-      {
-        copy.faq.items.map((item) => (
-          <details class="faq group rounded-2xl bg-surface">
-            <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-6 title-2">
-              {item.q}
-              <Icon
-                icon={PlusSignIcon}
-                size={20}
-                class="shrink-0 text-muted-foreground transition-transform duration-300 ease-out-quint group-open:rotate-45"
-              />
-            </summary>
-            <p class="px-6 pb-6 text-muted-foreground body-3">{item.a}</p>
-          </details>
-        ))
-      }
+    <div data-reveal>
+      <FaqAccordion client:visible items={copy.faq.items} />
     </div>
   </div>
   <script type="application/ld+json" set:html={JSON.stringify(schema)} />
 </section>
 
-<style>
-  .faq summary::-webkit-details-marker {
-    display: none;
-  }
-</style>
