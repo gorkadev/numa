@@ -19,7 +19,7 @@ If you can describe it, you can play it.
 
 <br />
 
-<img src="apps/landing/public/og.png" alt="A floating voxel island with trees, animals and a numa flag" width="100%" />
+<img src="docs/assets/landing-hero.webp" alt="The numa landing page hero: the headline types itself while a floating voxel island rises into view" width="100%" />
 
 </div>
 
