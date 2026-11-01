@@ -4,6 +4,8 @@ import type { AttachmentPart } from "@/lib/games/attachments"
 import { useCallback, useRef, useState } from "react"
 
 import type { UIMessage } from "ai"
+
+import type { EarlierThread } from "@/lib/games/thread-page"
 import { BotIcon, Folder01Icon, PanelRightIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useTranslations } from "next-intl"
@@ -35,6 +37,7 @@ export function GameChat({
   previewToken,
   lastTurnFinishedAt = 0,
   initialMessages,
+  initialEarlier,
   initialSessions,
   initialPrompt,
   initialFiles,
@@ -66,6 +69,7 @@ export function GameChat({
    */
   lastTurnFinishedAt?: number
   initialMessages: UIMessage[]
+  initialEarlier: EarlierThread
   initialSessions?: Record<
     string,
     { publicAccessToken: string; lastEventId?: string }
@@ -318,6 +322,7 @@ export function GameChat({
           gameId={gameId}
           templateId={templateId}
           initialMessages={initialMessages}
+          initialEarlier={initialEarlier}
           initialSessions={initialSessions}
           initialPrompt={initialPrompt}
           initialFiles={initialFiles}

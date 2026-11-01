@@ -1,6 +1,7 @@
 "use client"
 
 import type { AttachmentPart } from "@/lib/games/attachments"
+import type { EarlierThread } from "@/lib/games/thread-page"
 import { useCallback, useEffect, useMemo, useState } from "react"
 
 import type { UIMessage } from "ai"
@@ -12,6 +13,7 @@ import {
   AlertDescription,
   AlertTitle,
 } from "@workspace/ui/components/alert"
+import { Button } from "@workspace/ui/components/button"
 import { Message, MessageContent } from "@workspace/ui/components/message"
 import {
   MessageScroller,
@@ -21,6 +23,7 @@ import {
   MessageScrollerProvider,
   MessageScrollerViewport,
 } from "@workspace/ui/components/message-scroller"
+import { Spinner } from "@workspace/ui/components/spinner"
 
 import { ChatComposer } from "@/components/chat-composer"
 import { AssistantAvatar } from "@/components/chat/assistant-avatar"
@@ -50,6 +53,7 @@ export function ChatThread({
   gameId,
   templateId,
   initialMessages,
+  initialEarlier,
   initialSessions,
   initialPrompt,
   initialFiles,
@@ -66,6 +70,8 @@ export function ChatThread({
   gameId: string
   templateId: TemplateId
   initialMessages: UIMessage[]
+  /** What exists before `initialMessages`; see `EarlierThread`. */
+  initialEarlier: EarlierThread
   /**
    * The chat session persisted with the thread — the transport's token and its
    * position in the response stream. Handing it over on the first render is
@@ -132,6 +138,12 @@ export function ChatThread({
   )
   const {
     messages,
+    earlierStats,
+    hasEarlier,
+    loadingEarlier,
+    earlierFailed,
+    loadEarlier,
+    historyIds,
     error,
     buildProgress,
     failureKind,
@@ -148,6 +160,7 @@ export function ChatThread({
   } = useGameChat({
     gameId,
     initialMessages,
+    initialEarlier,
     initialSessions,
     initialPrompt,
     initialFiles,
@@ -157,19 +170,6 @@ export function ChatThread({
 
   const runs = useMemo(() => groupRuns(messages), [messages])
   const trailing = runs.at(-1)
-
-  /**
-   * The user messages the thread mounted with, which must never act as scroll
-   * anchors. The scroller jumps to the first anchor it has not handled yet
-   * whenever its children change without their count changing, and it only
-   * marks an anchor handled when that anchor arrives as a new item. History
-   * rendered on mount never arrives that way, so a turn still streaming when
-   * the player comes back to the thread walked the viewport up through every
-   * earlier message, one stream update at a time.
-   */
-  const [historyIds] = useState(
-    () => new Set(initialMessages.map((message) => message.id))
-  )
 
   const subagentRuns = useMemo(
     () => collectThreadSubagentRuns(messages),
@@ -189,10 +189,15 @@ export function ChatThread({
    * ends.
    */
   const taskStripTasks = useMemo(() => deriveTaskStrip(messages), [messages])
-  const sessionUsage = useMemo(() => sumSessionUsage(messages), [messages])
-  const sessionSpeed = useMemo(() => sumSessionSpeed(messages), [messages])
-  const sessionTiming = useMemo(() => sumSessionTiming(messages), [messages])
-  const sessionActivity = useMemo(() => sumSessionActivity(messages), [messages])
+  /** The totals describe the session, not the page: see `EarlierThread`. */
+  const sessionMessages = useMemo(
+    () => [...earlierStats, ...messages],
+    [earlierStats, messages]
+  )
+  const sessionUsage = useMemo(() => sumSessionUsage(sessionMessages), [sessionMessages])
+  const sessionSpeed = useMemo(() => sumSessionSpeed(sessionMessages), [sessionMessages])
+  const sessionTiming = useMemo(() => sumSessionTiming(sessionMessages), [sessionMessages])
+  const sessionActivity = useMemo(() => sumSessionActivity(sessionMessages), [sessionMessages])
   /**
    * The stream's live reading wins while a turn runs; the newest reply's
    * stamped reading covers a thread opened fresh after a reload. Before any
@@ -243,6 +248,24 @@ export function ChatThread({
         <MessageScroller className="flex-1">
           <MessageScrollerViewport className="scroll-fade-y! [--scroll-fade-mask:initial]!">
             <MessageScrollerContent className="mx-auto w-full max-w-3xl px-4 py-8 gap-4">
+              {hasEarlier ? (
+                <MessageScrollerItem className="flex flex-col items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={loadingEarlier}
+                    onClick={loadEarlier}
+                  >
+                    {loadingEarlier ? <Spinner data-icon="inline-start" /> : null}
+                    {t("loadEarlier")}
+                  </Button>
+                  {earlierFailed ? (
+                    <p role="alert" className="text-sm text-muted-foreground">
+                      {t("loadEarlierFailed")}
+                    </p>
+                  ) : null}
+                </MessageScrollerItem>
+              ) : null}
               {runs.map((run, index) => (
                 <MessageScrollerItem
                   key={run.id}

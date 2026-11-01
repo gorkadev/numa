@@ -228,6 +228,8 @@
     "placeholder": "Pide un cambio…",
     "untitledTurn": "Mensaje sin texto",
     "jumpToTurn": "Saltar a: {text}",
+    "loadEarlier": "Cargar mensajes anteriores",
+    "loadEarlierFailed": "No se han podido cargar los mensajes anteriores. Inténtalo de nuevo.",
     "scrollToEnd": "Ir al final",
     "turnErrorTitle": "No se pudo completar el turno",
     "genericTurnError": "Inténtalo de nuevo. Si el problema continúa, comprueba tu conexión o contacta con soporte.",

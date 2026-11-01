@@ -5,6 +5,7 @@ import {
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -326,14 +327,9 @@ export const games = pgTable(
     templateVersion: integer("template_version").notNull().default(1),
 
     /**
-     * The game's entire chat thread, stored in the AI SDK's `UIMessage` shape —
-     * the format `useChat` renders and posts — so a turn is a whole-document
-     * rewrite rather than an append to a messages table. One game owns exactly
-     * one thread, which is why this is a column and not a relation.
-     *
-     * `$type` is a compile-time assertion only: Postgres validates nothing
-     * beyond "this is JSON", so anything read back from an older shape must be
-     * treated as untrusted until validated.
+     * Superseded by `game_messages`, which every read and write now uses. The
+     * column stays until the backfilled threads have been checked in real use;
+     * nothing updates it, so it is frozen at the backfill.
      */
     messages: jsonb("messages").$type<UIMessage[]>().notNull().default([]),
 
@@ -424,6 +420,30 @@ export const games = pgTable(
 
 export type Game = typeof games.$inferSelect
 export type NewGame = typeof games.$inferInsert
+
+/**
+ * A game's chat thread, one row per message, so it can be read a page at a time.
+ *
+ * `position` is the message's index in the thread rather than anything derived
+ * from its id: a turn still saves the array the runtime hands it, position by
+ * position, and the position is what a page of history is requested by. The
+ * primary key's index serves both the page reads and the "last turns" lookup.
+ *
+ * `role` is a column of its own because pages start on a user message, and
+ * finding one must not transfer the message bodies.
+ */
+export const gameMessages = pgTable(
+  "game_messages",
+  {
+    gameId: uuid("game_id")
+      .notNull()
+      .references(() => games.id, { onDelete: "cascade" }),
+    position: integer("position").notNull(),
+    role: text("role").$type<UIMessage["role"]>().notNull(),
+    message: jsonb("message").$type<UIMessage>().notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.gameId, table.position] })]
+)
 
 /**
  * One row per completed chat turn: what it spent, and what that is estimated to

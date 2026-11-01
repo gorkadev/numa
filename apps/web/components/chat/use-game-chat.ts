@@ -25,6 +25,12 @@ import { readContextUsage, type ContextUsage } from "@/lib/games/context-usage"
 import { detachedSend } from "@/lib/games/detached-send"
 import { readGameRevision } from "@/lib/games/revision"
 import type { AskPlayerOutput } from "@/lib/games/tools"
+import { loadEarlierMessages } from "@/lib/games/thread-actions"
+import {
+  mergeEarlierMessages,
+  withoutLoadedStats,
+  type EarlierThread,
+} from "@/lib/games/thread-page"
 import { readTurnCredits } from "@/lib/games/turn-credits"
 import { publishTurnCredits } from "@/lib/polar/credits-channel"
 import type { gameChat } from "@/trigger/chat"
@@ -39,6 +45,7 @@ import type { gameChat } from "@/trigger/chat"
 export function useGameChat({
   gameId,
   initialMessages,
+  initialEarlier,
   initialSessions,
   initialPrompt,
   initialFiles,
@@ -47,6 +54,8 @@ export function useGameChat({
 }: {
   gameId: string
   initialMessages: UIMessage[]
+  /** What exists before `initialMessages`; see `EarlierThread`. */
+  initialEarlier: EarlierThread
   /**
    * The chat session persisted with the thread — the transport's token and its
    * position in the response stream. Handing it over on the first render is
@@ -304,6 +313,47 @@ export function useGameChat({
 
   const pending = status === "submitted" || status === "streaming"
 
+  const [earlier, setEarlier] = useState(initialEarlier)
+  const [loadingEarlier, setLoadingEarlier] = useState(false)
+  const [earlierFailed, setEarlierFailed] = useState(false)
+
+  /**
+   * Every message that reached this thread as history rather than as a new
+   * send, which must never act as a scroll anchor. The scroller jumps to the
+   * first anchor it has not handled, so a page of older user messages landing
+   * unmarked would pull the reader away from where they are reading. Updated
+   * in the same batch that prepends the page, so no render sees one without
+   * the other.
+   */
+  const [historyIds, setHistoryIds] = useState(
+    () => new Set(initialMessages.map((message) => message.id))
+  )
+
+  const loadEarlier = useCallback(async () => {
+    if (loadingEarlier || earlier.cursor === 0) return
+
+    setLoadingEarlier(true)
+    setEarlierFailed(false)
+
+    try {
+      const page = await loadEarlierMessages(gameId, earlier.cursor)
+      const older = withoutGameProgress(page.messages)
+
+      setHistoryIds(
+        (current) => new Set([...current, ...older.map(({ id }) => id)])
+      )
+      setMessages((current) => mergeEarlierMessages(current, older))
+      setEarlier((current) => ({
+        cursor: page.start,
+        stats: withoutLoadedStats(current.stats, older),
+      }))
+    } catch {
+      setEarlierFailed(true)
+    } finally {
+      setLoadingEarlier(false)
+    }
+  }, [earlier.cursor, gameId, loadingEarlier, setMessages])
+
   /**
    * A turn's provisional receipt lives only while its stream does. A stopped
    * turn never receives the final receipt that clears it, and the last
@@ -526,6 +576,12 @@ export function useGameChat({
 
   return {
     messages,
+    earlierStats: earlier.stats,
+    hasEarlier: earlier.cursor > 0,
+    loadingEarlier,
+    earlierFailed,
+    loadEarlier,
+    historyIds,
     status,
     error,
     buildProgress,

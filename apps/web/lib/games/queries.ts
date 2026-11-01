@@ -64,22 +64,7 @@ export async function listGames(): Promise<GameListItem[]> {
  * indistinguishable from one that does not exist — the caller cannot probe
  * for ids it does not own.
  */
-export async function getGame(id: string): Promise<Game | undefined> {
-  const { user } = await requireSession()
-
-  return db.query.games.findFirst({
-    where: (game, { and, eq }) =>
-      and(eq(game.id, id), eq(game.userId, user.id)),
-  })
-}
-
-/**
- * `getGame` without the thread, under the same tenant predicate. Use this
- * unless the caller renders the conversation.
- */
-export async function getGameSummary(
-  id: string
-): Promise<GameSummary | undefined> {
+export async function getGame(id: string): Promise<GameSummary | undefined> {
   const { user } = await requireSession()
 
   return db.query.games.findFirst({
@@ -94,8 +79,7 @@ export async function getGameSummary(
  * not exist, belongs to someone else, or has no sandbox yet.
  *
  * Same tenant predicate as `getGame`, for the routes that only need to reach
- * the sandbox: the thread is left out because `getGame` would read the whole
- * conversation just to hand back one column.
+ * the sandbox and no other column.
  */
 export async function getGameSandboxId(id: string): Promise<string | undefined> {
   const { user } = await requireSession()

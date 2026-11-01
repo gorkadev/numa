@@ -23,7 +23,7 @@ export type MessageHit = { gameId: string; title: string; snippet: string }
  * The `user_id` predicate is the tenant boundary, as in every games query.
  * Only text parts are searched: `lax` jsonpath walks every message's parts
  * and skips any row whose stored shape differs instead of failing the query,
- * since `messages` is unvalidated JSON. No index backs this; it scans the
+ * since `message` is unvalidated JSON. No index backs this; it scans the
  * caller's own rows only, which is fine at the size a player's history has
  * today, and the reason to revisit it is a slow palette, not a guess.
  */
@@ -39,9 +39,10 @@ export async function searchGameMessages(query: string): Promise<MessageHit[]> {
     text: string
   }>(sql`
     select distinct on (g.created_at, g.id) g.id, g.title, part.text
-    from games g,
+    from games g
+      join game_messages m on m.game_id = g.id,
       lateral jsonb_path_query(
-        g.messages, 'lax $[*].parts[*] ? (@.type == "text").text'
+        m.message, 'lax $.parts[*] ? (@.type == "text").text'
       ) as found(value),
       lateral (select found.value #>> '{}' as text) as part
     where g.user_id = ${user.id}
