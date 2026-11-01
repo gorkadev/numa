@@ -16,7 +16,7 @@ Test runner: in `apps/web`, `pnpm exec tsx --test $(find . -name "*.test.ts*" -n
 
 - [x] T1 (S2, S5) inline — `game_messages` table, `thread.ts` read and write. Commit: 8324ca2.
 - [x] T2 (S3) inline — apply schema with `db:push`, backfill production, verify counts. Evidence: L5.
-- [x] T3 (S1, S4) inline — page reads, server action, chat hook and load control. Commits: 8324ca2, 12f45e5. Check in the real app pending.
+- [x] T3 (S1, S4) inline — page reads, server action, chat hook and load control. Commits: 8324ca2, 12f45e5. Evidence: L8.
 - [ ] T4 (S2, S3) inline — drop `games.messages`. Blocked: needs the user's go-ahead, irreversible.
 
 Route evidence: no Writer trigger; one behaviour with coupled surfaces, so the parent writes inline. Risk: item 1 (persisted format, existing data), independent verifier required.
@@ -31,3 +31,4 @@ Route evidence: no Writer trigger; one behaviour with coupled surfaces, so the p
 - L5 Backfill on production 2026-11-01: 27/27 threads rebuilt from `game_messages` equal `games.messages`, 134/134 rows. Typecheck OK, suite 522/522. RED seen on `thread-page.test.ts` (module missing). RDD is off for this clone (clone_local).
 - L6 Verifier blocker: the load control as first `MessageScrollerItem` stopped `preserveScrollOnPrepend` (primitive detects a prepend by the old first child index > 0). Moved outside `MessageScroller`. Also retired anchors of messages sent from this mount on load, and tie-broke the search snippet by position.
 - L7 Verifier: S2-S5 pass; S1 blocker rechecked PASS on 12f45e5 in headless Chrome on a harness of the primitive, not the real app. Accepted advisory: when the last page removes the control, the scroller grows 40px, so the row shifts by that height once. Deploy note: re-run the backfill just before any deploy, while nothing has written through the new code.
+- L8 Real app, game with 19 turns: 10 of 38 rows on open, footer "19 turns" before loading. Three loads, 10->20->30->38 rows, visible row delta 0 on each, including the last page; 38 unique rows, control gone at the end, no console errors captured after the load. A real agent turn through the new save was not run because it spends credits; `saveGameThread` was exercised on the temporary Neon branch.
