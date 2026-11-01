@@ -6,7 +6,7 @@ import { getTranslations } from "next-intl/server"
 
 import { GamePlayView } from "@/components/game-play-view"
 import { signPreviewToken } from "@/lib/games/preview-token"
-import { getGame } from "@/lib/games/queries"
+import { getGameSummary } from "@/lib/games/queries"
 
 /**
  * Deliberately outside the `(app)` route group: `/games/[id]` there renders
@@ -18,11 +18,11 @@ import { getGame } from "@/lib/games/queries"
  * the "conflicting paths" case Next.js's own route-group docs warn about —
  * it composes with the root `app/layout.tsx` alone.
  *
- * `getGame` is called from both `generateMetadata` and this component for
- * the same request; wrapping it in `cache()` is what keeps that down to one
+ * `getGameSummary` is called from both `generateMetadata` and this component
+ * for the same request; wrapping it in `cache()` is what keeps that down to one
  * database round trip instead of two.
  */
-const loadGame = cache((id: string) => getGame(id))
+const loadGame = cache((id: string) => getGameSummary(id))
 
 export async function generateMetadata({
   params,
@@ -48,7 +48,7 @@ export default async function PlayPage({
   /**
    * Same owner-scoped lookup `app/(app)/games/[id]/page.tsx` uses: a game
    * that does not exist and one owned by someone else are indistinguishable
-   * here, both a 404, because `getGame` folds the tenant boundary into the
+   * here, both a 404, because `getGameSummary` folds the tenant boundary into the
    * query itself rather than checking it afterwards.
    */
   const game = await loadGame(id)

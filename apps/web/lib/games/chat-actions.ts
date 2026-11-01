@@ -3,7 +3,7 @@
 import { auth as triggerAuth } from "@trigger.dev/sdk"
 import { chat, type ChatStartSessionParams } from "@trigger.dev/sdk/ai"
 
-import { getGame } from "@/lib/games/queries"
+import { getGameSummary } from "@/lib/games/queries"
 import { saveGameChatSession } from "@/lib/games/thread"
 import type { gameChat } from "@/trigger/chat"
 
@@ -65,12 +65,12 @@ export async function mintGameChatAccessToken(chatId: string) {
 }
 
 /**
- * `getGame` authenticates and folds the user id into the lookup, so a game
- * owned by another user is indistinguishable from one that does not exist —
- * the caller cannot probe for chat ids it does not own.
+ * `getGameSummary` authenticates and folds the user id into the lookup, so a
+ * game owned by another user is indistinguishable from one that does not exist
+ * — the caller cannot probe for chat ids it does not own.
  */
 async function assertGameOwner(gameId: string): Promise<void> {
-  const game = await getGame(gameId)
+  const game = await getGameSummary(gameId)
 
   if (!game) throw new Error("Not found")
 }

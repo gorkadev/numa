@@ -74,6 +74,22 @@ export async function getGame(id: string): Promise<Game | undefined> {
 }
 
 /**
+ * `getGame` without the thread, under the same tenant predicate. Use this
+ * unless the caller renders the conversation.
+ */
+export async function getGameSummary(
+  id: string
+): Promise<GameSummary | undefined> {
+  const { user } = await requireSession()
+
+  return db.query.games.findFirst({
+    columns: { messages: false },
+    where: (game, { and, eq }) =>
+      and(eq(game.id, id), eq(game.userId, user.id)),
+  })
+}
+
+/**
  * The sandbox id of a game the caller owns, or `undefined` when the game does
  * not exist, belongs to someone else, or has no sandbox yet.
  *
