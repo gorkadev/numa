@@ -25,12 +25,12 @@ Test runner: in `apps/web`, `pnpm exec tsx --test $(find . -name "*.test.ts*" -n
 - [x] T3 (S1, S4) inline — page reads, server action, chat hook and load control. Commits: 8324ca2, 12f45e5. Evidence: L8.
 - [ ] T4 (S2, S3) inline — drop `games.messages`. Blocked: needs the user's go-ahead, irreversible.
 - [x] T5 (S8) inline — `game_subagent_runs`, written with the thread, backfilled. Commit: this slice.
-- [ ] T6 (S9) inline — TanStack Query for thread data, invalidated by the activity signal. Commit: pending.
-- [ ] T7 (S6, S7, S8) inline — scroll loading, full outline, full subagent list with lazy detail. Commit: pending.
-- [ ] T9 (S11) inline — bounded saves and reads: append-style save, stored session totals, byte-bounded pages, paged outline and subagent list. Commit: pending.
+- [ ] T6 (S9) delegated — TanStack Query for thread data, invalidated by the activity signal. Commit: pending.
+- [ ] T7 (S6, S7, S8) delegated — scroll loading, full outline, full subagent list with lazy detail. Commit: pending.
+- [ ] T9 (S11) delegated — bounded reads and saves per L15. Agent history is out of scope until the compaction decision (L16). Commit: pending.
 - [ ] T8 (S10) inline — heavy tool outputs on demand. Commit: pending.
 
-Route evidence: no Writer trigger; one behaviour with coupled surfaces, so the parent writes inline. Risk: item 1 (persisted format, existing data), independent verifier required.
+Route evidence: T1-T5 inline, no Writer trigger. T6, T7, T9 delegated to one bounded writer under the long-session backstop (context), as one coupled unit. Risk: item 1 (persisted format, existing data), independent verifier required.
 
 ## Log
 
@@ -49,3 +49,14 @@ Route evidence: no Writer trigger; one behaviour with coupled surfaces, so the p
 - L12 (2026-11-02, user): "y no pensar solo en base a los juegos q tenemos ahora, q tambien, pero pensar siempre q es lo mejor y lo recomendado en hacer, q pasaria si tenemos un chat con muchisimos subagentes, muchiismo texto/interacciones... ponerse siempre en el extremo de los casos para poder abarcar las maximas cosas posibles"
 - L13 Linear costs found against S11: `saveGameThread` sends every row on each save, and one insert is capped at 65535 bind parameters (about 16k messages at four per row); `readEarlierStats` grows with the thread; a page counted in turns has no byte ceiling; a first-load outline grows with turns, which supersedes the first-load decision in L10; the subagent list has no bound; the agent still loads the whole thread each turn.
 - L14 Backfill through `saveSubagentRuns`: 123 runs in 22 games on production. List projection without `timeline`, `toolCalls`, `prompt`, `summary` is 53 kB against 612 kB full.
+- L15 Design for T6, T7, T9:
+  - Cache key `["thread", gameId, lastTurnFinishedAt]`, with `staleTime` and `gcTime` infinite. `lastTurnFinishedAt` arrives with the game row on every navigation, so a finished turn changes the key from any tab or device and needs no realtime delivery. While `useGameWorking(gameId)` is true the cached thread is never reused: fetch fresh. Only thread data is cached, per L11.
+  - `page.tsx` stops reading the thread and keeps reading the game row. `ChatThread` mounts only once the first page exists, so a cache hit mounts synchronously with every page previously loaded and `useChat`'s initial state stays correct.
+  - GET route handlers, each resolving ownership through `getGame`, not server actions, which Next runs one at a time: thread page, outline page, subagent list page, one subagent record.
+  - Pages hold 1 to 5 turns and stop at about 256 kB, never splitting a turn. A `size` column on `game_messages`, written by `threadRows`, avoids reading bodies to measure. A single turn over the ceiling is accepted until T8.
+  - Outline: fetched after first paint, in pages of 200 turns, each `{ id, position, text }` with text cut in SQL to about 160 chars. Clicking an unloaded turn loads up to its position, then `scrollToMessage`. No request on hover.
+  - Subagents: list pages of 100 from `record - timeline - toolCalls - prompt - summary`, loaded by scrolling the list; a run's full record on open; live stream records merged over the list by `agentId`.
+  - Session totals: `games.session_stats` jsonb computed in `saveGameThread` from the messages it holds, in a form that can be added to. The footer shows stored totals plus messages sent from this mount. `readEarlierStats` goes away.
+  - Save: skip rows already stored. Read `position, md5(message::text)`, write the changed rows in chunks under the bind parameter limit.
+  - Scroll loading: no in-flow control; an overlaid spinner outside `MessageScrollerContent`, triggered near the top of the viewport; keep loading while the viewport cannot scroll and earlier pages remain. Failure shows the existing localized message with a retry.
+- L16 Open: `chat.agent` has no `compaction` configured, so an extreme thread exceeds the model's context long before any database limit. Summaries cost model tokens, so this waits for the user's decision.
