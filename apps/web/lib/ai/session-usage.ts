@@ -163,3 +163,70 @@ export function sumSessionTiming(
 
   return total
 }
+
+/**
+ * A thread's totals in a form two of them can be added: stored on the game by
+ * every save, so the footer reads the whole conversation without loading it.
+ */
+export type SessionStats = {
+  usage: SessionUsage | null
+  speed: GenerationSpeed | null
+  timing: StepTimingTotals | null
+  activity: { turns: number; steps: number }
+}
+
+export function sessionStats(messages: UIMessage[]): SessionStats {
+  return {
+    usage: sumSessionUsage(messages),
+    speed: sumSessionSpeed(messages),
+    timing: sumSessionTiming(messages),
+    activity: sumSessionActivity(messages),
+  }
+}
+
+function addUsage(a: SessionUsage, b: SessionUsage): SessionUsage {
+  const input = a.input + b.input
+  const cached = a.cached + b.cached
+  const output = a.output + b.output
+
+  return {
+    total: input + output,
+    input,
+    cached,
+    uncached: input - cached,
+    output,
+    reasoning: a.reasoning + b.reasoning,
+    cacheHit: input === 0 ? 0 : cached / input,
+    credits:
+      a.credits === undefined && b.credits === undefined
+        ? undefined
+        : (a.credits ?? 0) + (b.credits ?? 0),
+    provisional: a.provisional || b.provisional,
+  }
+}
+
+/** Either side missing a reading leaves the other's, as a sum over both threads would. */
+function addOptional<T>(a: T | null, b: T | null, add: (a: T, b: T) => T): T | null {
+  return a && b ? add(a, b) : (a ?? b)
+}
+
+/**
+ * What the footer shows: the stored totals plus whatever this mount has seen
+ * since. `stored` is null for a game that has never been saved.
+ */
+export function addSessionStats(
+  stored: SessionStats | null,
+  live: SessionStats
+): SessionStats {
+  if (!stored) return live
+
+  return {
+    usage: addOptional(stored.usage, live.usage, addUsage),
+    speed: addOptional(stored.speed, live.speed, addSpeed),
+    timing: addOptional(stored.timing, live.timing, addTiming),
+    activity: {
+      turns: stored.activity.turns + live.activity.turns,
+      steps: stored.activity.steps + live.activity.steps,
+    },
+  }
+}

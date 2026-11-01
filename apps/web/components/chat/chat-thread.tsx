@@ -1,8 +1,8 @@
 "use client"
 
 import type { AttachmentPart } from "@/lib/games/attachments"
-import type { EarlierThread } from "@/lib/games/thread-page"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import type { ThreadSnapshot } from "@/lib/games/thread-page"
+import { useCallback, useEffect, useMemo, useRef } from "react"
 
 import type { UIMessage } from "ai"
 import { useTranslations } from "next-intl"
@@ -32,14 +32,13 @@ import { TaskStrip } from "@/components/chat/task-strip"
 import { ThreadOutline } from "@/components/chat/thread-outline"
 import { Thinking } from "@/components/chat/thinking"
 import { useGameChat } from "@/components/chat/use-game-chat"
+import { useThreadOutline, type ThreadKey } from "@/components/chat/use-thread-data"
 import type { TierId } from "@/lib/ai/model-catalog"
 import type { TemplateId } from "@/lib/games/templates/catalog"
 import {
+  addSessionStats,
   latestContextUsage,
-  sumSessionActivity,
-  sumSessionSpeed,
-  sumSessionTiming,
-  sumSessionUsage,
+  sessionStats,
 } from "@/lib/ai/session-usage"
 import { UsageFooter } from "@/components/chat/usage-footer"
 import { thinkingLabelKey } from "@/lib/games/build-progress"
@@ -47,13 +46,14 @@ import type { SubagentRunRecord } from "@/lib/games/harness/records"
 import { deriveTaskStrip, shouldShowTaskStrip } from "@/lib/games/plan-tasks"
 import { loadFileTree } from "@/lib/games/file-tree-cache"
 import { mentionFiles } from "@/lib/games/mentions"
+import { mergeOutlineTurns, outlineTurns } from "@/lib/games/thread-outline"
 import { collectThreadSubagentRuns } from "@/lib/games/tool-parts"
 
 export function ChatThread({
   gameId,
   templateId,
-  initialMessages,
-  initialEarlier,
+  threadKey,
+  initialThread,
   initialSessions,
   initialPrompt,
   initialFiles,
@@ -69,9 +69,10 @@ export function ChatThread({
 }: {
   gameId: string
   templateId: TemplateId
-  initialMessages: UIMessage[]
-  /** What exists before `initialMessages`; see `EarlierThread`. */
-  initialEarlier: EarlierThread
+  /** Where this thread's data is cached. */
+  threadKey: ThreadKey
+  /** Present before this mounts, so `useChat` starts from the real history. */
+  initialThread: ThreadSnapshot
   /**
    * The chat session persisted with the thread — the transport's token and its
    * position in the response stream. Handing it over on the first render is
@@ -138,11 +139,12 @@ export function ChatThread({
   )
   const {
     messages,
-    earlierStats,
+    sessionTail,
     hasEarlier,
     loadingEarlier,
     earlierFailed,
     loadEarlier,
+    loadDownTo,
     historyIds,
     error,
     buildProgress,
@@ -159,8 +161,8 @@ export function ChatThread({
     setInput,
   } = useGameChat({
     gameId,
-    initialMessages,
-    initialEarlier,
+    threadKey,
+    initialThread,
     initialSessions,
     initialPrompt,
     initialFiles,
@@ -170,6 +172,11 @@ export function ChatThread({
 
   const runs = useMemo(() => groupRuns(messages), [messages])
   const trailing = runs.at(-1)
+  const storedTurns = useThreadOutline(threadKey)
+  const turns = useMemo(
+    () => mergeOutlineTurns(storedTurns, outlineTurns(runs)),
+    [runs, storedTurns]
+  )
 
   const subagentRuns = useMemo(
     () => collectThreadSubagentRuns(messages),
@@ -189,15 +196,11 @@ export function ChatThread({
    * ends.
    */
   const taskStripTasks = useMemo(() => deriveTaskStrip(messages), [messages])
-  /** The totals describe the session, not the page: see `EarlierThread`. */
-  const sessionMessages = useMemo(
-    () => [...earlierStats, ...messages],
-    [earlierStats, messages]
+  /** The totals describe the session, not the page: stored, plus what this mount sent. */
+  const session = useMemo(
+    () => addSessionStats(initialThread.stats, sessionStats(sessionTail)),
+    [initialThread.stats, sessionTail]
   )
-  const sessionUsage = useMemo(() => sumSessionUsage(sessionMessages), [sessionMessages])
-  const sessionSpeed = useMemo(() => sumSessionSpeed(sessionMessages), [sessionMessages])
-  const sessionTiming = useMemo(() => sumSessionTiming(sessionMessages), [sessionMessages])
-  const sessionActivity = useMemo(() => sumSessionActivity(sessionMessages), [sessionMessages])
   /**
    * The stream's live reading wins while a turn runs; the newest reply's
    * stamped reading covers a thread opened fresh after a reload. Before any
@@ -245,30 +248,6 @@ export function ChatThread({
        * with no indication it had moved.
        */}
       <MessageScrollerProvider autoScroll>
-        {/**
-         * Outside `MessageScroller` on purpose. The primitive recognises a
-         * prepend by the old first row moving down the list of rows, so a
-         * control sitting in that list stays first and scroll preservation
-         * never runs.
-         */}
-        {hasEarlier ? (
-          <div className="flex shrink-0 flex-col items-center gap-1 pt-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={loadingEarlier}
-              onClick={loadEarlier}
-            >
-              {loadingEarlier ? <Spinner data-icon="inline-start" /> : null}
-              {t("loadEarlier")}
-            </Button>
-            {earlierFailed ? (
-              <p role="alert" className="text-sm text-muted-foreground">
-                {t("loadEarlierFailed")}
-              </p>
-            ) : null}
-          </div>
-        ) : null}
         <MessageScroller className="flex-1">
           <MessageScrollerViewport className="scroll-fade-y! [--scroll-fade-mask:initial]!">
             <MessageScrollerContent className="mx-auto w-full max-w-3xl px-4 py-8 gap-4">
@@ -311,8 +290,20 @@ export function ChatThread({
             </MessageScrollerContent>
           </MessageScrollerViewport>
           <MessageScrollerButton label={t("scrollToEnd")} />
-          {runs.filter((run) => run.role === "user").length > 1 ? (
-            <ThreadOutline runs={runs} />
+          <EarlierLoader
+            hasEarlier={hasEarlier}
+            loading={loadingEarlier}
+            failed={earlierFailed}
+            onLoad={loadEarlier}
+            rows={runs.length}
+          />
+          {turns.length > 1 ? (
+            <ThreadOutline
+              runs={runs}
+              turns={turns}
+              loadDownTo={loadDownTo}
+              loadFailed={earlierFailed}
+            />
           ) : null}
         </MessageScroller>
       </MessageScrollerProvider>
@@ -361,10 +352,10 @@ export function ChatThread({
           placeholder={t("placeholder")}
           usageSlot={
             <UsageFooter
-              usage={sessionUsage}
-              speed={sessionSpeed}
-              activity={sessionActivity}
-              timing={sessionTiming}
+              usage={session.usage}
+              speed={session.speed}
+              activity={session.activity}
+              timing={session.timing}
               context={contextUsage}
               showSessionStats={showSessionStats}
             />
@@ -376,6 +367,76 @@ export function ChatThread({
           }
         />
       </div>
+    </div>
+  )
+}
+
+/** How far from the top the next page starts loading, so a steady scroll rarely reaches it. */
+const NEAR_TOP_PX = 600
+
+/**
+ * Loads history as the reader nears the top, with nothing to press.
+ *
+ * An overlay outside `MessageScrollerContent` on purpose. The primitive
+ * recognises a prepend by the old first row moving down the list of rows, so
+ * anything sitting in that list stays first and scroll preservation never runs;
+ * in the flow above it, its height would shift the rows when it went away.
+ *
+ * Checked on every new row as well as on scroll: a page too short to scroll
+ * raises no scroll event, and earlier pages would stay out of reach.
+ */
+function EarlierLoader({
+  hasEarlier,
+  loading,
+  failed,
+  onLoad,
+  rows,
+}: {
+  hasEarlier: boolean
+  loading: boolean
+  failed: boolean
+  onLoad: () => void
+  rows: number
+}) {
+  const t = useTranslations("ChatActivity")
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const viewport = rootRef.current?.parentElement?.querySelector<HTMLElement>(
+      '[data-slot="message-scroller-viewport"]'
+    )
+
+    if (!viewport || !hasEarlier || loading || failed) return
+
+    const check = () => {
+      if (viewport.scrollTop < NEAR_TOP_PX) onLoad()
+    }
+    const frame = requestAnimationFrame(check)
+
+    viewport.addEventListener("scroll", check, { passive: true })
+
+    return () => {
+      cancelAnimationFrame(frame)
+      viewport.removeEventListener("scroll", check)
+    }
+  }, [failed, hasEarlier, loading, onLoad, rows])
+
+  return (
+    <div
+      ref={rootRef}
+      className="pointer-events-none absolute inset-x-0 top-2 z-10 flex flex-col items-center gap-1"
+    >
+      {loading ? <Spinner /> : null}
+      {failed ? (
+        <div className="pointer-events-auto flex items-center gap-2 rounded-lg bg-popover px-3 py-1 shadow-sm">
+          <p role="alert" className="text-sm text-muted-foreground">
+            {t("loadEarlierFailed")}
+          </p>
+          <Button variant="ghost" size="sm" onClick={onLoad}>
+            {t("retry")}
+          </Button>
+        </div>
+      ) : null}
     </div>
   )
 }

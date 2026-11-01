@@ -7,7 +7,6 @@ import { isTierId } from "@/lib/ai/model-catalog"
 import { signPreviewToken } from "@/lib/games/preview-token"
 import { isGameUnread } from "@/lib/games/activity"
 import { getGame } from "@/lib/games/queries"
-import { readEarlierStats, readThreadPage } from "@/lib/games/thread"
 import {
   DEFAULT_TEMPLATE_ID,
   isTemplateId,
@@ -62,18 +61,12 @@ export default async function GamePage({
   }
 
   /**
-   * The latest page of the thread is rendered on the server, so a reload
-   * restores the conversation without a client-side fetch; earlier pages load
-   * on request. The chat session travels with it:
-   * without the token and stream cursor the transport would open a fresh
-   * session rather than rejoin the one this game already has.
+   * The thread itself is the browser's to fetch and cache, so returning to a
+   * game costs no read of it; this page only ever reads the row, which does
+   * change between turns. The chat session travels with that row: without the
+   * token and stream cursor the transport would open a fresh session rather
+   * than rejoin the one this game already has.
    */
-  const page = await readThreadPage(game.id)
-  const initialEarlier = {
-    cursor: page.start,
-    stats: await readEarlierStats(game.id, page.start),
-  }
-
   const initialSessions = game.chatAccessToken
     ? {
         [game.id]: {
@@ -95,6 +88,7 @@ export default async function GamePage({
   return (
     <CodeWrapProvider wrap={settings.wrapCodeBlocks}>
       <GameChat
+        key={game.id}
         gameId={game.id}
         title={game.title}
         pinned={game.pinnedAt !== null}
@@ -103,8 +97,6 @@ export default async function GamePage({
         }
         previewToken={previewToken}
         lastTurnFinishedAt={game.lastTurnFinishedAt?.getTime() ?? 0}
-        initialMessages={page.messages}
-        initialEarlier={initialEarlier}
         initialSessions={initialSessions}
         initialPrompt={initialPrompt}
         initialFiles={initialFiles}

@@ -15,6 +15,7 @@ import { AppSettings } from "@/components/app-settings"
 import { LocalizedSidebarProvider } from "@/components/localized-sidebar-provider"
 import { AppSidebar } from "@/components/app-sidebar"
 import { GameActivityProvider } from "@/components/game-activity-provider"
+import { QueryProvider } from "@/components/query-provider"
 import { createActivityToken } from "@/lib/games/activity-token"
 import { listGames } from "@/lib/games/queries"
 import { ensureBillingCustomer } from "@/lib/polar/customers"
@@ -50,15 +51,17 @@ async function AuthenticatedShell({ children }: { children: React.ReactNode }) {
   const defaultOpen = cookieStore.get("sidebar_state")?.value !== "false"
 
   return (
-    <GameActivityProvider userId={session.user.id} initialToken={activityToken}>
-      <LocalizedSidebarProvider defaultOpen={defaultOpen}>
-        <Suspense fallback={<SidebarFallback />}>
-          <AuthenticatedSidebar billing={billing} />
-        </Suspense>
-        <SidebarInset>{children}</SidebarInset>
-        <AppSettings billing={billing} />
-      </LocalizedSidebarProvider>
-    </GameActivityProvider>
+    <QueryProvider>
+      <GameActivityProvider userId={session.user.id} initialToken={activityToken}>
+        <LocalizedSidebarProvider defaultOpen={defaultOpen}>
+          <Suspense fallback={<SidebarFallback />}>
+            <AuthenticatedSidebar billing={billing} />
+          </Suspense>
+          <SidebarInset>{children}</SidebarInset>
+          <AppSettings billing={billing} />
+        </LocalizedSidebarProvider>
+      </GameActivityProvider>
+    </QueryProvider>
   )
 }
 

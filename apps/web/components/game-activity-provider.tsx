@@ -2,10 +2,12 @@
 
 import { createContext, use, useEffect, useState, useSyncExternalStore } from "react"
 import { usePathname, useRouter } from "next/navigation"
+import { useQueryClient } from "@tanstack/react-query"
 import { useRealtimeRunsWithTag } from "@trigger.dev/react-hooks"
 import { useTranslations } from "next-intl"
 import { toast } from "@workspace/ui/components/toast"
 
+import { evictThread } from "@/components/chat/use-thread-data"
 import {
   activityTag,
   createActivityStore,
@@ -43,6 +45,7 @@ export function GameActivityProvider({
 }) {
   const [store] = useState(createActivityStore)
   const router = useRouter()
+  const queryClient = useQueryClient()
   const t = useTranslations("GameActivity")
 
   const { runs } = useRealtimeRunsWithTag(activityTag(userId), {
@@ -68,6 +71,12 @@ export function GameActivityProvider({
     const finished = store.setWorking(workingGameIds(runs), seenGameIds(runs))
 
     /**
+     * The key already changes with `lastTurnFinishedAt`, but a back navigation
+     * can restore a page holding the old value, and a failed turn stamps none.
+     */
+    for (const gameId of finished) evictThread(queryClient, gameId)
+
+    /**
      * Safe to write the moment the flag drops: the agent clears `working`
      * only after the save that stamps the finish, so this read lands after it.
      */
@@ -91,7 +100,7 @@ export function GameActivityProvider({
         },
       })
     }
-  }, [runs, store, openGameId, router, t])
+  }, [runs, store, openGameId, queryClient, router, t])
 
   return <ActivityContext value={store}>{children}</ActivityContext>
 }

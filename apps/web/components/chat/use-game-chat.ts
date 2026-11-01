@@ -4,6 +4,7 @@ import type { AttachmentPart } from "@/lib/games/attachments"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { useChat } from "@ai-sdk/react"
+import { useQueryClient } from "@tanstack/react-query"
 import { useTriggerChatTransport } from "@trigger.dev/sdk/chat/react"
 import { lastAssistantMessageIsCompleteWithToolCalls, type UIMessage } from "ai"
 
@@ -25,14 +26,18 @@ import { readContextUsage, type ContextUsage } from "@/lib/games/context-usage"
 import { detachedSend } from "@/lib/games/detached-send"
 import { readGameRevision } from "@/lib/games/revision"
 import type { AskPlayerOutput } from "@/lib/games/tools"
-import { loadEarlierMessages } from "@/lib/games/thread-actions"
 import {
   mergeEarlierMessages,
-  withoutLoadedStats,
-  type EarlierThread,
+  withEarlierPage,
+  type ThreadSnapshot,
 } from "@/lib/games/thread-page"
 import { readTurnCredits } from "@/lib/games/turn-credits"
 import { publishTurnCredits } from "@/lib/polar/credits-channel"
+import {
+  evictThread,
+  fetchThreadPage,
+  type ThreadKey,
+} from "@/components/chat/use-thread-data"
 import type { gameChat } from "@/trigger/chat"
 
 /**
@@ -44,8 +49,8 @@ import type { gameChat } from "@/trigger/chat"
  */
 export function useGameChat({
   gameId,
-  initialMessages,
-  initialEarlier,
+  threadKey,
+  initialThread,
   initialSessions,
   initialPrompt,
   initialFiles,
@@ -53,9 +58,10 @@ export function useGameChat({
   onRevision,
 }: {
   gameId: string
-  initialMessages: UIMessage[]
-  /** What exists before `initialMessages`; see `EarlierThread`. */
-  initialEarlier: EarlierThread
+  /** Where loaded pages are written back, so returning mounts with them. */
+  threadKey: ThreadKey
+  /** The first state of `useChat`, which owns the messages from then on. */
+  initialThread: ThreadSnapshot
   /**
    * The chat session persisted with the thread — the transport's token and its
    * position in the response stream. Handing it over on the first render is
@@ -106,7 +112,7 @@ export function useGameChat({
     if (event.type === "submit") progressTurn.current += 1
     setBuildProgress((current) => reduceGameBuildProgress(current, event))
   }, [])
-  const threadMessages = useMemo(() => withoutGameProgress(initialMessages), [initialMessages])
+  const threadMessages = useMemo(() => withoutGameProgress(initialThread.messages), [initialThread.messages])
   const [failureKind, setFailureKind] = useState<ChatFailureKind>(null)
   /**
    * The orchestrator's latest context reading from the stream. Kept apart from
@@ -313,7 +319,8 @@ export function useGameChat({
 
   const pending = status === "submitted" || status === "streaming"
 
-  const [earlier, setEarlier] = useState(initialEarlier)
+  const queryClient = useQueryClient()
+  const [cursor, setCursor] = useState(initialThread.cursor)
   const [loadingEarlier, setLoadingEarlier] = useState(false)
   const [earlierFailed, setEarlierFailed] = useState(false)
 
@@ -328,37 +335,91 @@ export function useGameChat({
    * without the other.
    */
   const [historyIds, setHistoryIds] = useState(
-    () => new Set(initialMessages.map((message) => message.id))
+    () => new Set(threadMessages.map((message) => message.id))
   )
 
-  const loadEarlier = useCallback(async () => {
-    if (loadingEarlier || earlier.cursor === 0) return
+  /**
+   * The messages the stored totals already count: everything read from the
+   * thread, as opposed to sent from this mount. Kept apart from `historyIds`,
+   * which also takes in sent messages once a load retires their anchors.
+   */
+  const [countedIds, setCountedIds] = useState(
+    () => new Set(threadMessages.map((message) => message.id))
+  )
 
-    setLoadingEarlier(true)
-    setEarlierFailed(false)
+  const sessionTail = useMemo(
+    () => messages.filter(({ id }) => !countedIds.has(id)),
+    [countedIds, messages]
+  )
 
-    try {
-      const page = await loadEarlierMessages(gameId, earlier.cursor)
-      const older = withoutGameProgress(page.messages)
+  /** The loader reads these between awaits, where a render's values would be stale. */
+  const cursorRef = useRef(initialThread.cursor)
+  const latestMessages = useRef(messages)
+  const loadTarget = useRef(Number.POSITIVE_INFINITY)
+  const loadRunning = useRef(false)
 
-      setHistoryIds(
-        (current) =>
-          new Set([
-            ...current,
-            ...[...messages, ...older].map(({ id }) => id),
-          ])
-      )
-      setMessages((current) => mergeEarlierMessages(current, older))
-      setEarlier((current) => ({
-        cursor: page.start,
-        stats: withoutLoadedStats(current.stats, older),
-      }))
-    } catch {
-      setEarlierFailed(true)
-    } finally {
-      setLoadingEarlier(false)
-    }
-  }, [earlier.cursor, gameId, loadingEarlier, messages, setMessages])
+  useEffect(() => {
+    latestMessages.current = messages
+  }, [messages])
+
+  const loadPage = useCallback(async () => {
+    const page = await fetchThreadPage(gameId, cursorRef.current)
+    const older = withoutGameProgress(page.messages)
+    const ids = older.map(({ id }) => id)
+
+    cursorRef.current = page.start
+    queryClient.setQueryData<ThreadSnapshot>(threadKey, (cached) =>
+      withEarlierPage(cached, page)
+    )
+    setHistoryIds(
+      (current) =>
+        new Set([
+          ...current,
+          ...latestMessages.current.map(({ id }) => id),
+          ...ids,
+        ])
+    )
+    setCountedIds((current) => new Set([...current, ...ids]))
+    setMessages((current) => mergeEarlierMessages(current, older))
+    setCursor(page.start)
+  }, [gameId, queryClient, setMessages, threadKey])
+
+  /**
+   * Loads back until `position` is on the page. One loop at a time: a scroll
+   * and an outline click can ask together, and a request made while it runs
+   * only moves where it stops.
+   */
+  const loadDownTo = useCallback(
+    async (position: number) => {
+      if (cursorRef.current === 0) return
+
+      loadTarget.current = Math.min(loadTarget.current, position)
+
+      if (loadRunning.current) return
+
+      loadRunning.current = true
+      setLoadingEarlier(true)
+      setEarlierFailed(false)
+
+      try {
+        while (cursorRef.current > Math.max(loadTarget.current, 0)) {
+          await loadPage()
+        }
+      } catch {
+        setEarlierFailed(true)
+      } finally {
+        loadRunning.current = false
+        loadTarget.current = Number.POSITIVE_INFINITY
+        setLoadingEarlier(false)
+      }
+    },
+    [loadPage]
+  )
+
+  const loadEarlier = useCallback(
+    () => loadDownTo(cursorRef.current - 1),
+    [loadDownTo]
+  )
 
   /**
    * A turn's provisional receipt lives only while its stream does. A stopped
@@ -514,6 +575,7 @@ export function useGameChat({
   function handleSubmit(text: string, files: AttachmentPart[] = []) {
     dispatchBuildProgress({ type: "submit" })
     setFailureKind(null)
+    evictThread(queryClient, gameId)
     sendMessage({ text, files, metadata: outgoingMetadata(tierId) })
     setInput("")
   }
@@ -542,12 +604,13 @@ export function useGameChat({
     if (threadMessages.length === 0) {
       queueMicrotask(() => {
         dispatchBuildProgress({ type: "submit" })
+        evictThread(queryClient, gameId)
         sendMessage({ text: initialPrompt, files: initialFiles, metadata: outgoingMetadata(tierId) })
       })
     }
 
     window.history.replaceState(null, "", `/games/${gameId}`)
-  }, [dispatchBuildProgress, gameId, initialFiles, initialPrompt, sendMessage, threadMessages.length, tierId])
+  }, [dispatchBuildProgress, gameId, initialFiles, initialPrompt, queryClient, sendMessage, threadMessages.length, tierId])
 
   /**
    * A stable per-call answer handler, built once around `addToolOutput`
@@ -582,11 +645,12 @@ export function useGameChat({
 
   return {
     messages,
-    earlierStats: earlier.stats,
-    hasEarlier: earlier.cursor > 0,
+    sessionTail,
+    hasEarlier: cursor > 0,
     loadingEarlier,
     earlierFailed,
     loadEarlier,
+    loadDownTo,
     historyIds,
     status,
     error,

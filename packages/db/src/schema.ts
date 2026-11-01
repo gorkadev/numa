@@ -403,6 +403,13 @@ export const games = pgTable(
      */
     lastTurnFinishedAt: timestamp("last_turn_finished_at", { withTimezone: true }),
     lastReadAt: timestamp("last_read_at", { withTimezone: true }),
+
+    /**
+     * The thread's running totals, rewritten by every save, so the usage footer
+     * describes the whole conversation without reading it. Typed loosely for
+     * the reason `UsageBreakdown` is: the shape belongs to the app.
+     */
+    sessionStats: jsonb("session_stats").$type<Record<string, unknown>>(),
   },
   (table) => [
     /**
@@ -441,6 +448,8 @@ export const gameMessages = pgTable(
     position: integer("position").notNull(),
     role: text("role").$type<UIMessage["role"]>().notNull(),
     message: jsonb("message").$type<UIMessage>().notNull(),
+    /** The message's serialized bytes, so a page can stop at a weight without reading any body. */
+    size: integer("size").notNull().default(0),
   },
   (table) => [primaryKey({ columns: [table.gameId, table.position] })]
 )

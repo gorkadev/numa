@@ -1,6 +1,7 @@
 "use client"
 
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -21,7 +22,6 @@ import {
   outlineIndexFromPointer,
   outlineInteractiveWidth,
   outlineTopPercent,
-  outlineTurns,
   previewText,
   type OutlineRun,
   type OutlineTurn,
@@ -82,11 +82,21 @@ function forwardWheel(event: WheelEvent, viewport: HTMLElement) {
  * what turns row tracking on, so the caller only mounts this once there is
  * more than one turn to move between.
  */
-export function ThreadOutline({ runs }: { runs: OutlineRun[] }) {
+export function ThreadOutline({
+  runs,
+  turns,
+  loadDownTo,
+  loadFailed,
+}: {
+  runs: OutlineRun[]
+  /** Every turn of the thread, loaded or not. */
+  turns: OutlineTurn[]
+  loadDownTo: (position: number) => void
+  loadFailed: boolean
+}) {
   const t = useTranslations("ChatActivity")
   const { scrollToMessage } = useMessageScroller()
   const { visibleMessageIds } = useMessageScrollerVisibility()
-  const turns = outlineTurns(runs)
   const current = currentTurnId(runs, visibleMessageIds)
   const currentIndex = turns.findIndex((turn) => turn.id === current)
   const inView = new Set(visibleMessageIds)
@@ -142,14 +152,45 @@ export function ThreadOutline({ runs }: { runs: OutlineRun[] }) {
   const activeTurn =
     resolvedActiveIndex === null ? null : (turns[resolvedActiveIndex] ?? null)
 
+  /** The turn a click asked for while its page is still on its way. */
+  const [jumpTarget, setJumpTarget] = useState<string | null>(null)
+
+  const scrollToTurn = useCallback(
+    (id: string) => {
+      scrollToMessage(id, {
+        align: "start",
+        scrollMargin: 24,
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+      })
+    },
+    [scrollToMessage]
+  )
+
+  useEffect(() => {
+    if (!jumpTarget) return
+
+    if (loadFailed) {
+      setJumpTarget(null)
+      return
+    }
+
+    if (!runs.some((run) => run.id === jumpTarget)) return
+
+    setJumpTarget(null)
+    /** A frame later, so the row is measured and the prepend has been compensated. */
+    requestAnimationFrame(() => scrollToTurn(jumpTarget))
+  }, [jumpTarget, loadFailed, runs, scrollToTurn])
+
   function select(turn: OutlineTurn) {
-    scrollToMessage(turn.id, {
-      align: "start",
-      scrollMargin: 24,
-      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-        ? "auto"
-        : "smooth",
-    })
+    if (turn.position !== undefined && !runs.some((run) => run.id === turn.id)) {
+      setJumpTarget(turn.id)
+      loadDownTo(turn.position)
+      return
+    }
+
+    scrollToTurn(turn.id)
   }
 
   function indexFromPointer(event: ReactMouseEvent<HTMLElement>) {

@@ -3,7 +3,9 @@ import test from "node:test"
 import type { UIMessage } from "ai"
 
 import {
+  addSessionStats,
   latestContextUsage,
+  sessionStats,
   sumSessionActivity,
   sumSessionSpeed,
   sumSessionTiming,
@@ -183,4 +185,40 @@ test("a turn still running counts with its provisional receipt", () => {
 
 test("a session whose turns have all finished is not provisional", () => {
   assert.equal(sumSessionUsage([reply({ input: 1, output: 1, cached: 0, reasoning: 0 }, 1)])?.provisional, false)
+})
+
+test("sessionStats survives the trip through the jsonb column", () => {
+  const stats = sessionStats([reply({ input: 10, output: 2, cached: 5, reasoning: 1 }, 3)])
+
+  assert.deepEqual(JSON.parse(JSON.stringify(stats)), stats)
+})
+
+test("adding stats reads the same as summing the whole thread", () => {
+  const speed = { tokens: 10, ms: 100 }
+  const first = reply({ input: 30, output: 10, cached: 10, reasoning: 2 }, 3)
+  const second = reply({ input: 10, output: 5, cached: 10, reasoning: 1 }, 2)
+  first.metadata = { ...(first.metadata as object), steps: 2, speed }
+  second.metadata = { ...(second.metadata as object), steps: 1, speed }
+
+  assert.deepEqual(
+    addSessionStats(sessionStats([first]), sessionStats([second])),
+    sessionStats([first, second])
+  )
+})
+
+test("adding to no stored stats gives the live stats", () => {
+  const live = sessionStats([reply({ input: 1, output: 1, cached: 0, reasoning: 0 })])
+
+  assert.deepEqual(addSessionStats(null, live), live)
+})
+
+test("adding a thread with no priced turn keeps the footer hidden", () => {
+  assert.equal(addSessionStats(null, sessionStats([])).usage, null)
+})
+
+test("a credit charge on either side survives the addition", () => {
+  const charged = sessionStats([reply({ input: 1, output: 1, cached: 0, reasoning: 0 }, 4)])
+  const free = sessionStats([reply({ input: 1, output: 1, cached: 0, reasoning: 0 })])
+
+  assert.equal(addSessionStats(free, charged).usage?.credits, 4)
 })

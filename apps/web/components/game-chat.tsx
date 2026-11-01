@@ -1,28 +1,32 @@
 "use client"
 
 import type { AttachmentPart } from "@/lib/games/attachments"
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useMemo, useRef, useState } from "react"
 
-import type { UIMessage } from "ai"
-
-import type { EarlierThread } from "@/lib/games/thread-page"
 import { BotIcon, Folder01Icon, PanelRightIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useTranslations } from "next-intl"
 import { Button } from "@workspace/ui/components/button"
+import { Spinner } from "@workspace/ui/components/spinner"
 
 import { ChatThread } from "@/components/chat/chat-thread"
 import { SidePanel, type FileRequest, type SidePanelTab } from "@/components/chat/side-panel"
 import { SubagentPanel } from "@/components/chat/subagent-panel"
+import {
+  ThreadKeyContext,
+  useSubagentList,
+  useThreadSnapshot,
+} from "@/components/chat/use-thread-data"
 import { GameMenu } from "@/components/game-menu"
 import { MobileSidebarTrigger } from "@/components/mobile-sidebar-trigger"
 import type { TierId } from "@/lib/ai/model-catalog"
 import type { TemplateId } from "@/lib/games/templates/catalog"
 import type { SubagentRunRecord } from "@/lib/games/harness/records"
+import { mergeSubagentRuns } from "@/lib/games/thread-page"
 
 /**
  * The client boundary for a game: the page stays a server component that only
- * loads the thread, while the split between the conversation and the preview —
+ * loads the game, while the thread and the split between the conversation and the preview —
  * which is toggled in the browser — lives from here down.
  *
  * The header is rendered here rather than in the page for the same reason: the
@@ -36,8 +40,6 @@ export function GameChat({
   templateId,
   previewToken,
   lastTurnFinishedAt = 0,
-  initialMessages,
-  initialEarlier,
   initialSessions,
   initialPrompt,
   initialFiles,
@@ -68,8 +70,6 @@ export function GameChat({
    * reported a `revision` of its own.
    */
   lastTurnFinishedAt?: number
-  initialMessages: UIMessage[]
-  initialEarlier: EarlierThread
   initialSessions?: Record<
     string,
     { publicAccessToken: string; lastEventId?: string }
@@ -85,6 +85,17 @@ export function GameChat({
   showSessionStats: boolean
 }) {
   const t = useTranslations("ChatAgents")
+  const tActivity = useTranslations("ChatActivity")
+
+  /**
+   * `useChat` takes its messages only when it mounts, so `ChatThread` waits for
+   * this: on a cache hit it is already here on the first render, every page
+   * read before included.
+   */
+  const { threadKey, snapshot, failed, retry } = useThreadSnapshot(
+    gameId,
+    lastTurnFinishedAt
+  )
 
   /**
    * The preview's revision, owned here because the panel and the thread are
@@ -132,7 +143,13 @@ export function GameChat({
    * `onRevision` already uses for the preview's revision.
    */
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null)
-  const [subagentRuns, setSubagentRuns] = useState<SubagentRunRecord[]>([])
+  const [liveRuns, setLiveRuns] = useState<SubagentRunRecord[]>([])
+  const { listed, hasMore: hasMoreRuns, loadMore } = useSubagentList(threadKey)
+  /** The stored list covers the whole game, whatever part of the thread is loaded. */
+  const subagentRuns = useMemo(
+    () => mergeSubagentRuns(listed, liveRuns),
+    [listed, liveRuns]
+  )
   const hasSubagentRuns = subagentRuns.length > 0
 
   /**
@@ -236,141 +253,163 @@ export function GameChat({
   const filesVersion = revision || lastTurnFinishedAt
 
   return (
-    <div ref={layoutRef} className="flex h-svh overflow-hidden">
-      {/**
-       * `min-w-0` is what lets this pane actually shrink. A flex item's default
-       * `min-width: auto` is the width of its content, so without it a long
-       * unbroken line in the thread would set a floor the panel could never
-       * push past — the split would simply refuse to move.
-       */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-14 shrink-0 items-center gap-1 px-4">
-          <MobileSidebarTrigger className="-ms-1.5" />
-          <h1 className="min-w-0 flex-1 truncate text-sm font-medium">
-            {title}
-          </h1>
-          {previewToken ? (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              /**
-               * The pressed state is what tells the two headers apart. This
-               * control toggles, so it has to show which of the two things it
-               * will do next; the panel's own close button only ever closes
-               * and needs no such state.
-               */
-              className="aria-pressed:bg-muted aria-pressed:text-foreground"
-              onClick={() =>
-                previewPressed ? closePanel() : openPanel("preview")
-              }
-              aria-pressed={previewPressed}
-            >
-              <HugeiconsIcon icon={PanelRightIcon} strokeWidth={2} />
-              <span className="sr-only">
-                {previewPressed ? t("hidePreview") : t("showPreview")}
-              </span>
-            </Button>
-          ) : null}
-          {hasSubagentRuns ? (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="aria-pressed:bg-muted aria-pressed:text-foreground"
-              /**
-               * Always opens on the run list, not wherever the panel was
-               * left: a reader pressing the header button wants an overview
-               * (`subagent-view`'s "Player opens the panel from the header"
-               * scenario), while an inline `SubagentEntry` is the one path
-               * that opens straight onto a single run's detail.
-               */
-              onClick={() => {
-                if (agentsPressed) {
-                  onSubagentPanelOpenChange(false)
-                  return
+    <ThreadKeyContext value={threadKey}>
+      <div ref={layoutRef} className="flex h-svh overflow-hidden">
+        {/**
+         * `min-w-0` is what lets this pane actually shrink. A flex item's default
+         * `min-width: auto` is the width of its content, so without it a long
+         * unbroken line in the thread would set a floor the panel could never
+         * push past — the split would simply refuse to move.
+         */}
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="flex h-14 shrink-0 items-center gap-1 px-4">
+            <MobileSidebarTrigger className="-ms-1.5" />
+            <h1 className="min-w-0 flex-1 truncate text-sm font-medium">
+              {title}
+            </h1>
+            {previewToken ? (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                /**
+                 * The pressed state is what tells the two headers apart. This
+                 * control toggles, so it has to show which of the two things it
+                 * will do next; the panel's own close button only ever closes
+                 * and needs no such state.
+                 */
+                className="aria-pressed:bg-muted aria-pressed:text-foreground"
+                onClick={() =>
+                  previewPressed ? closePanel() : openPanel("preview")
                 }
-                setSelectedRunId(null)
-                onSubagentPanelOpenChange(true)
-              }}
-              aria-pressed={agentsPressed}
-            >
-              <HugeiconsIcon icon={BotIcon} strokeWidth={2} />
-              <span className="sr-only">{t("panelTitle")}</span>
-            </Button>
-          ) : null}
-          {filesAvailable ? (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              /**
-               * Desktop only: on a narrow viewport `SidePanel` is the
-               * preview `Drawer`, which has no Files tab to open onto.
-               */
-              className="aria-pressed:bg-muted aria-pressed:text-foreground max-md:hidden"
-              onClick={() => (filesPressed ? closePanel() : openPanel("files"))}
-              aria-pressed={filesPressed}
-            >
-              <HugeiconsIcon icon={Folder01Icon} strokeWidth={2} />
-              <span className="sr-only">
-                {filesPressed ? t("hideFiles") : t("showFiles")}
-              </span>
-            </Button>
-          ) : null}
-          <GameMenu gameId={gameId} title={title} pinned={pinned} />
-        </header>
-        <ChatThread
-          key={gameId}
+                aria-pressed={previewPressed}
+              >
+                <HugeiconsIcon icon={PanelRightIcon} strokeWidth={2} />
+                <span className="sr-only">
+                  {previewPressed ? t("hidePreview") : t("showPreview")}
+                </span>
+              </Button>
+            ) : null}
+            {hasSubagentRuns ? (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="aria-pressed:bg-muted aria-pressed:text-foreground"
+                /**
+                 * Always opens on the run list, not wherever the panel was
+                 * left: a reader pressing the header button wants an overview
+                 * (`subagent-view`'s "Player opens the panel from the header"
+                 * scenario), while an inline `SubagentEntry` is the one path
+                 * that opens straight onto a single run's detail.
+                 */
+                onClick={() => {
+                  if (agentsPressed) {
+                    onSubagentPanelOpenChange(false)
+                    return
+                  }
+                  setSelectedRunId(null)
+                  onSubagentPanelOpenChange(true)
+                }}
+                aria-pressed={agentsPressed}
+              >
+                <HugeiconsIcon icon={BotIcon} strokeWidth={2} />
+                <span className="sr-only">{t("panelTitle")}</span>
+              </Button>
+            ) : null}
+            {filesAvailable ? (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                /**
+                 * Desktop only: on a narrow viewport `SidePanel` is the
+                 * preview `Drawer`, which has no Files tab to open onto.
+                 */
+                className="aria-pressed:bg-muted aria-pressed:text-foreground max-md:hidden"
+                onClick={() => (filesPressed ? closePanel() : openPanel("files"))}
+                aria-pressed={filesPressed}
+              >
+                <HugeiconsIcon icon={Folder01Icon} strokeWidth={2} />
+                <span className="sr-only">
+                  {filesPressed ? t("hideFiles") : t("showFiles")}
+                </span>
+              </Button>
+            ) : null}
+            <GameMenu gameId={gameId} title={title} pinned={pinned} />
+          </header>
+          {snapshot ? (
+            <ChatThread
+              key={gameId}
+              gameId={gameId}
+              templateId={templateId}
+              threadKey={threadKey}
+              initialThread={snapshot}
+              initialSessions={initialSessions}
+              initialPrompt={initialPrompt}
+              initialFiles={initialFiles}
+              initialTierId={initialTierId}
+              showSessionStats={showSessionStats}
+              contextWindows={contextWindows}
+              onRevision={setRevision}
+              onSelectedRunIdChange={setSelectedRunId}
+              onSubagentPanelOpenChange={onSubagentPanelOpenChange}
+              onSubagentRunsChange={setLiveRuns}
+              onOpenFile={openFile}
+              filesVersion={filesVersion}
+            />
+          ) : (
+            <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2">
+              {failed ? (
+                <>
+                  <p role="alert" className="text-sm text-muted-foreground">
+                    {tActivity("loadEarlierFailed")}
+                  </p>
+                  <Button variant="ghost" size="sm" onClick={retry}>
+                    {tActivity("retry")}
+                  </Button>
+                </>
+              ) : (
+                <Spinner />
+              )}
+            </div>
+          )}
+        </div>
+
+        <SidePanel
           gameId={gameId}
-          templateId={templateId}
-          initialMessages={initialMessages}
-          initialEarlier={initialEarlier}
-          initialSessions={initialSessions}
-          initialPrompt={initialPrompt}
-          initialFiles={initialFiles}
-          initialTierId={initialTierId}
-          showSessionStats={showSessionStats}
-          contextWindows={contextWindows}
-          onRevision={setRevision}
-          onSelectedRunIdChange={setSelectedRunId}
-          onSubagentPanelOpenChange={onSubagentPanelOpenChange}
-          onSubagentRunsChange={setSubagentRuns}
-          onOpenFile={openFile}
+          previewToken={previewToken}
+          previewMounted={previewMounted}
+          revision={revision}
           filesVersion={filesVersion}
+          subagentRuns={subagentRuns}
+          hasMoreRuns={hasMoreRuns}
+          onReachRunsEnd={loadMore}
+          selectedRunId={selectedRunId}
+          onSelectRun={setSelectedRunId}
+          open={effectivePanelOpen}
+          activeTab={effectiveTab ?? activeTab}
+          onActiveTabChange={onSidePanelTabChange}
+          onClose={closePanel}
+          layoutRef={layoutRef}
+          fileRequest={fileRequest}
+        />
+
+        {/**
+         * Mobile only (`SubagentPanel` renders nothing on desktop, where the
+         * Agents tab above lives inside `SidePanel` instead): the bottom
+         * `Drawer` for sub-agent runs, open exactly while the panel is open
+         * on the Agents tab. Dismissing the drawer — the sheet's own swipe or
+         * scrim — closes the whole panel through the same `onSubagentPanelOpenChange`
+         * every other path uses, rather than leaving `panelOpen` true with
+         * nothing left to show for it.
+         */}
+        <SubagentPanel
+          records={subagentRuns}
+          onReachEnd={loadMore}
+          open={agentsPressed}
+          onOpenChange={onSubagentPanelOpenChange}
+          selectedRunId={selectedRunId}
+          onSelectRun={setSelectedRunId}
         />
       </div>
-
-      <SidePanel
-        gameId={gameId}
-        previewToken={previewToken}
-        previewMounted={previewMounted}
-        revision={revision}
-        filesVersion={filesVersion}
-        subagentRuns={subagentRuns}
-        selectedRunId={selectedRunId}
-        onSelectRun={setSelectedRunId}
-        open={effectivePanelOpen}
-        activeTab={effectiveTab ?? activeTab}
-        onActiveTabChange={onSidePanelTabChange}
-        onClose={closePanel}
-        layoutRef={layoutRef}
-        fileRequest={fileRequest}
-      />
-
-      {/**
-       * Mobile only (`SubagentPanel` renders nothing on desktop, where the
-       * Agents tab above lives inside `SidePanel` instead): the bottom
-       * `Drawer` for sub-agent runs, open exactly while the panel is open
-       * on the Agents tab. Dismissing the drawer — the sheet's own swipe or
-       * scrim — closes the whole panel through the same `onSubagentPanelOpenChange`
-       * every other path uses, rather than leaving `panelOpen` true with
-       * nothing left to show for it.
-       */}
-      <SubagentPanel
-        records={subagentRuns}
-        open={agentsPressed}
-        onOpenChange={onSubagentPanelOpenChange}
-        selectedRunId={selectedRunId}
-        onSelectRun={setSelectedRunId}
-      />
-    </div>
+    </ThreadKeyContext>
   )
 }

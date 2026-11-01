@@ -10,9 +10,14 @@ export type OutlineRun = {
 export type OutlineTurn = {
   id: string
   text: string
-  /** The final reply to this turn, as markdown; null until the agent has said something after its last tool call. */
+  /** The final reply to this turn, as markdown; null until the agent has said something after its last tool call, or while its messages are not loaded. */
   assistantText: string | null
+  /** Where the turn sits in the stored thread, which is how a click loads up to it. Absent on a turn sent from this mount, which is always loaded. */
+  position?: number
 }
+
+/** A turn as the outline route returns it: never the reply, and its text cut short. */
+export type StoredOutlineTurn = { id: string; position: number; text: string }
 
 function textOf(message: UIMessage): string {
   return message.parts
@@ -52,6 +57,28 @@ export function outlineTurns(runs: OutlineRun[]): OutlineTurn[] {
       },
     ]
   })
+}
+
+/**
+ * Every turn of the thread: the stored outline names them all, and the loaded
+ * copy of a turn wins because it holds the whole text and the reply. A turn the
+ * outline has not seen yet was sent after it was read, so it goes last.
+ */
+export function mergeOutlineTurns(
+  stored: StoredOutlineTurn[],
+  loaded: OutlineTurn[]
+): OutlineTurn[] {
+  const byId = new Map(loaded.map((turn) => [turn.id, turn]))
+  const known = new Set(stored.map(({ id }) => id))
+
+  return [
+    ...stored.map((turn) => ({
+      ...turn,
+      ...byId.get(turn.id),
+      assistantText: byId.get(turn.id)?.assistantText ?? null,
+    })),
+    ...loaded.filter(({ id }) => !known.has(id)),
+  ]
 }
 
 const ITEM_SPACING = 8

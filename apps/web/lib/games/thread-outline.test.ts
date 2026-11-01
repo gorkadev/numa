@@ -5,6 +5,7 @@ import type { UIMessage } from "ai"
 
 import {
   currentTurnId,
+  mergeOutlineTurns,
   outlineHasPersistentGutter,
   outlineHeightStyle,
   outlineHitStripWidth,
@@ -268,4 +269,31 @@ test("a preview of nothing is nothing", () => {
   assert.equal(previewText(null), null)
   assert.equal(previewText("  \n "), null)
   assert.equal(previewText("```\n```"), null)
+})
+
+test("mergeOutlineTurns keeps stored order and prefers the loaded copy of a turn", () => {
+  const merged = mergeOutlineTurns(
+    [
+      { id: "a", position: 0, text: "cut" },
+      { id: "b", position: 2, text: "second" },
+    ],
+    [{ id: "a", text: "whole", assistantText: "reply" }]
+  )
+
+  assert.deepEqual(merged, [
+    { id: "a", position: 0, text: "whole", assistantText: "reply" },
+    { id: "b", position: 2, text: "second", assistantText: null },
+  ])
+})
+
+test("mergeOutlineTurns adds turns the stored outline has not seen after it", () => {
+  const merged = mergeOutlineTurns(
+    [{ id: "a", position: 0, text: "first" }],
+    [{ id: "live", text: "new", assistantText: null }]
+  )
+
+  assert.deepEqual(
+    merged.map(({ id }) => id),
+    ["a", "live"]
+  )
 })

@@ -6,6 +6,7 @@ import {
   ArrowRight01Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
+import { useEffect, useRef } from "react"
 import { useTranslations } from "next-intl"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -34,11 +35,15 @@ import {
   subagentStatusKey,
 } from "@/components/chat/subagent-entry"
 import { SubagentRunDetail } from "@/components/chat/subagent-run-detail"
+import { useSubagentRunDetail } from "@/components/chat/use-thread-data"
 import type { SubagentRunRecord } from "@/lib/games/harness/records"
+import type { PanelRun } from "@/lib/games/thread-page"
 
 export type SubagentPanelProps = {
-  /** Every sub-agent run recorded on this thread so far, in dispatch order. */
-  records: SubagentRunRecord[]
+  /** The sub-agent runs recorded on this thread and loaded so far, in dispatch order. */
+  records: PanelRun[]
+  /** Called when the end of the list comes into view; see `RunListEnd`. */
+  onReachEnd: () => void
   open: boolean
   onOpenChange: (open: boolean) => void
   /**
@@ -130,6 +135,67 @@ export function SubagentRunRow({
 }
 
 /**
+ * A run's detail. A listed row carries only what the list shows, so opening one
+ * reads the rest; a run the thread has loaded is already whole, and stays live.
+ *
+ * Exported for `side-panel.tsx`'s wide layout.
+ */
+export function OpenedRunDetail({ record }: { record: PanelRun }) {
+  const t = useTranslations("ChatAgents")
+  const { data, isError, refetch } = useSubagentRunDetail(record)
+
+  if (!record.listed) return <SubagentRunDetail record={record} />
+  if (data) return <SubagentRunDetail record={data} />
+
+  if (isError) {
+    return (
+      <div className="flex items-center gap-2">
+        <p role="alert" className="text-sm text-muted-foreground">
+          {t("runFailedToLoad")}
+        </p>
+        <Button variant="ghost" size="sm" onClick={() => void refetch()}>
+          {t("retry")}
+        </Button>
+      </div>
+    )
+  }
+
+  return <Spinner />
+}
+
+/**
+ * Asks for the next page as the list's end comes into view. `rows` re-arms it:
+ * the observer only reports a change, and a short page leaves this in view.
+ *
+ * Exported for `side-panel.tsx`'s wide layout.
+ */
+export function RunListEnd({
+  rows,
+  onReachEnd,
+}: {
+  rows: number
+  onReachEnd: () => void
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const element = ref.current
+
+    if (!element) return
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry?.isIntersecting) onReachEnd()
+    })
+
+    observer.observe(element)
+
+    return () => observer.disconnect()
+  }, [onReachEnd, rows])
+
+  return <div ref={ref} aria-hidden="true" className="h-px" />
+}
+
+/**
  * The scroll region and list/detail body shared by both the desktop docked
  * pane and the mobile `Drawer` below — everything except the header (each
  * shell wires its own title/description into its own markup, so those stay
@@ -164,11 +230,13 @@ export function SubagentPanelBody({
   records,
   selected,
   onSelectRun,
+  onReachEnd,
   className,
 }: {
-  records: SubagentRunRecord[]
-  selected: SubagentRunRecord | null
+  records: PanelRun[]
+  selected: PanelRun | null
   onSelectRun: (agentId: string | null) => void
+  onReachEnd: () => void
   className?: string
 }) {
   const t = useTranslations("ChatAgents")
@@ -195,7 +263,7 @@ export function SubagentPanelBody({
             />
             {t("allRuns")}
           </Button>
-          <SubagentRunDetail record={selected} />
+          <OpenedRunDetail record={selected} />
         </div>
       ) : records.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t("noRuns")}</p>
@@ -208,6 +276,7 @@ export function SubagentPanelBody({
               onSelect={onSelectRun}
             />
           ))}
+          <RunListEnd rows={records.length} onReachEnd={onReachEnd} />
         </ItemGroup>
       )}
     </div>
@@ -249,6 +318,7 @@ const PANEL_DESCRIPTION_KEY = "panelDescription"
  */
 export function SubagentPanel({
   records,
+  onReachEnd,
   open,
   onOpenChange,
   selectedRunId,
@@ -284,6 +354,7 @@ export function SubagentPanel({
           records={records}
           selected={selected}
           onSelectRun={onSelectRun}
+          onReachEnd={onReachEnd}
           className="px-6 pb-6"
         />
       </DrawerContent>

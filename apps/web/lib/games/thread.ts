@@ -1,12 +1,29 @@
+import { createHash } from "node:crypto"
+
 import { db } from "@workspace/db"
 import { gameMessages, games, gameSubagentRuns } from "@workspace/db/schema"
-import { and, asc, desc, eq, gte, lt, notInArray, sql } from "drizzle-orm"
+import { and, asc, desc, eq, gt, gte, lt, sql } from "drizzle-orm"
 import type { UIMessage } from "ai"
 
+import { sessionStats } from "@/lib/ai/session-usage"
+import type { SubagentRunRecord } from "@/lib/games/harness/records"
+import type { StoredOutlineTurn } from "@/lib/games/thread-outline"
 import {
+  changedRows,
+  chunkRows,
+  jsonbText,
+  OUTLINE_PAGE_TURNS,
+  OUTLINE_TEXT_CHARS,
+  pageStart,
+  SAVE_CHUNK_ROWS,
+  SUBAGENT_PAGE_RUNS,
   subagentRows,
   THREAD_PAGE_TURNS,
   threadRows,
+  type ListedSubagentRun,
+  type StoredOutlinePage,
+  type SubagentRunPage,
+  type ThreadPage,
 } from "@/lib/games/thread-page"
 import { collectThreadSubagentRuns } from "@/lib/games/tool-parts"
 
@@ -45,18 +62,19 @@ export async function loadGameThread(gameId: string): Promise<UIMessage[]> {
 }
 
 /**
- * The last `THREAD_PAGE_TURNS` turns before `before`, or of the whole thread
- * when it is absent, and the position that page starts at. A thread with fewer
- * turns left than that starts at 0, which also takes in anything sitting ahead
- * of its first user message.
+ * The page of history ending just before `before`, or at the thread's end when
+ * it is absent, and the position that page starts at. Its bounds are worked out
+ * from `role` and `size` alone, over at most `THREAD_PAGE_TURNS` turns, so no
+ * body is read to decide what a page holds. A thread with fewer turns left than
+ * that measures from 0, which takes in anything ahead of its first user message.
  *
- * No tenant predicate, like everything here: the page and the server action
- * that call this have already resolved the game through `getGame`.
+ * No tenant predicate, like everything here: the routes that call this have
+ * already resolved the game through `getGame`.
  */
 export async function readThreadPage(
   gameId: string,
   before?: number
-): Promise<{ messages: UIMessage[]; start: number }> {
+): Promise<ThreadPage> {
   const inRange = and(
     eq(gameMessages.gameId, gameId),
     before === undefined ? undefined : lt(gameMessages.position, before)
@@ -70,7 +88,17 @@ export async function readThreadPage(
     .offset(THREAD_PAGE_TURNS - 1)
     .limit(1)
 
-  const start = anchor?.position ?? 0
+  const sizes = await db
+    .select({
+      position: gameMessages.position,
+      role: gameMessages.role,
+      size: gameMessages.size,
+    })
+    .from(gameMessages)
+    .where(and(inRange, gte(gameMessages.position, anchor?.position ?? 0)))
+    .orderBy(asc(gameMessages.position))
+
+  const start = pageStart(sizes)
 
   const rows = await db
     .select({ message: gameMessages.message })
@@ -82,42 +110,94 @@ export async function readThreadPage(
 }
 
 /**
- * Every reply before `start`, reduced to what the session totals read. The
- * projection happens in Postgres, so the message bodies never leave the
- * database. See `EarlierThread`.
+ * One page of the thread's turns, oldest first, after position `after`. The
+ * text is joined and cut in Postgres, so a pasted novel stays there.
  */
-export async function readEarlierStats(
+export async function readOutlinePage(
   gameId: string,
-  start: number
-): Promise<UIMessage[]> {
-  if (start === 0) return []
-
-  const rows = await db
+  after?: number
+): Promise<StoredOutlinePage> {
+  const turns = await db
     .select({
-      stats: sql<UIMessage>`jsonb_build_object(
-        'id', ${gameMessages.message}->'id',
-        'role', ${gameMessages.message}->'role',
-        'metadata', coalesce(${gameMessages.message}->'metadata', '{}'::jsonb),
-        'parts', '[]'::jsonb
+      id: sql<string>`${gameMessages.message}->>'id'`,
+      position: gameMessages.position,
+      text: sql<string>`left(
+        btrim(coalesce(
+          (
+            select string_agg(part->>'text', ' ')
+            from jsonb_array_elements(${gameMessages.message}->'parts') as part
+            where part->>'type' = 'text'
+          ),
+          ''
+        )),
+        ${OUTLINE_TEXT_CHARS}::integer
       )`,
     })
     .from(gameMessages)
     .where(
       and(
         eq(gameMessages.gameId, gameId),
-        eq(gameMessages.role, "assistant"),
-        lt(gameMessages.position, start)
+        eq(gameMessages.role, "user"),
+        after === undefined ? undefined : gt(gameMessages.position, after)
       )
     )
     .orderBy(asc(gameMessages.position))
+    .limit(OUTLINE_PAGE_TURNS)
 
-  return rows.map(({ stats }) => stats)
+  return {
+    turns: turns satisfies StoredOutlineTurn[],
+    next: turns.length === OUTLINE_PAGE_TURNS ? turns.at(-1)!.position : null,
+  }
+}
+
+/** One page of the game's runs in dispatch order, without what only a run's detail reads. */
+export async function readSubagentRunPage(
+  gameId: string,
+  after?: number
+): Promise<SubagentRunPage> {
+  const rows = await db
+    .select({
+      position: gameSubagentRuns.position,
+      run: sql<ListedSubagentRun>`${gameSubagentRuns.record} - 'timeline' - 'toolCalls' - 'prompt' - 'summary'`,
+    })
+    .from(gameSubagentRuns)
+    .where(
+      and(
+        eq(gameSubagentRuns.gameId, gameId),
+        after === undefined ? undefined : gt(gameSubagentRuns.position, after)
+      )
+    )
+    .orderBy(asc(gameSubagentRuns.position))
+    .limit(SUBAGENT_PAGE_RUNS)
+
+  return {
+    runs: rows.map(({ run }) => run),
+    next: rows.length === SUBAGENT_PAGE_RUNS ? rows.at(-1)!.position : null,
+  }
+}
+
+export async function readSubagentRun(
+  gameId: string,
+  agentId: string
+): Promise<SubagentRunRecord | undefined> {
+  const [row] = await db
+    .select({ record: gameSubagentRuns.record })
+    .from(gameSubagentRuns)
+    .where(
+      and(
+        eq(gameSubagentRuns.gameId, gameId),
+        eq(gameSubagentRuns.agentId, agentId)
+      )
+    )
+
+  return row?.record as SubagentRunRecord | undefined
 }
 
 /**
  * Rewrites the whole thread, position by position: one game owns one chat, so
- * a turn hands over the full document. Rows whose message did not change are
- * left alone, and rows past the new end are removed.
+ * a turn hands over the full document. Only rows whose message changed travel
+ * to the database, in chunks, so a save costs what the turn added rather than
+ * what the thread weighs; rows past the new end are removed.
  *
  * `lastEventId` and the session token are written in the same transaction as
  * the messages because they describe the same instant: persisting the reply
@@ -157,17 +237,31 @@ export async function saveGameThread({
 
     const rows = threadRows(gameId, messages)
 
-    if (rows.length > 0) {
+    const stored = await tx
+      .select({
+        position: gameMessages.position,
+        hash: sql<string>`md5(${gameMessages.message}::text)`,
+      })
+      .from(gameMessages)
+      .where(eq(gameMessages.gameId, gameId))
+
+    const changed = changedRows(
+      rows,
+      new Map(stored.map(({ position, hash }) => [position, hash])),
+      ({ message }) => createHash("md5").update(jsonbText(message)).digest("hex")
+    )
+
+    for (const chunk of chunkRows(changed, SAVE_CHUNK_ROWS)) {
       await tx
         .insert(gameMessages)
-        .values(rows)
+        .values(chunk)
         .onConflictDoUpdate({
           target: [gameMessages.gameId, gameMessages.position],
           set: {
             role: sql`excluded.role`,
             message: sql`excluded.message`,
+            size: sql`excluded.size`,
           },
-          setWhere: sql`${gameMessages.message} is distinct from excluded.message`,
         })
     }
 
@@ -182,15 +276,15 @@ export async function saveGameThread({
 
     await saveSubagentRuns(tx, gameId, messages)
 
-    const session = {
-      ...(chatAccessToken === undefined ? {} : { chatAccessToken }),
-      ...(lastEventId === undefined ? {} : { lastEventId }),
-      ...(turnFinished ? { lastTurnFinishedAt: sql`now()` } : {}),
-    }
-
-    if (Object.keys(session).length > 0) {
-      await tx.update(games).set(session).where(eq(games.id, gameId))
-    }
+    await tx
+      .update(games)
+      .set({
+        sessionStats: sessionStats(messages),
+        ...(chatAccessToken === undefined ? {} : { chatAccessToken }),
+        ...(lastEventId === undefined ? {} : { lastEventId }),
+        ...(turnFinished ? { lastTurnFinishedAt: sql`now()` } : {}),
+      })
+      .where(eq(games.id, gameId))
   })
 }
 
@@ -204,10 +298,10 @@ export async function saveSubagentRuns(
 ): Promise<void> {
   const rows = subagentRows(gameId, collectThreadSubagentRuns(messages))
 
-  if (rows.length > 0) {
+  for (const chunk of chunkRows(rows, SAVE_CHUNK_ROWS)) {
     await tx
       .insert(gameSubagentRuns)
-      .values(rows)
+      .values(chunk)
       .onConflictDoUpdate({
         target: [gameSubagentRuns.gameId, gameSubagentRuns.agentId],
         set: {
@@ -219,15 +313,15 @@ export async function saveSubagentRuns(
       })
   }
 
+  /** One parameter however many runs there are, unlike `not in` with a list. */
+  const kept = JSON.stringify(rows.map(({ agentId }) => agentId))
+
   await tx.delete(gameSubagentRuns).where(
     and(
       eq(gameSubagentRuns.gameId, gameId),
-      rows.length > 0
-        ? notInArray(
-            gameSubagentRuns.agentId,
-            rows.map(({ agentId }) => agentId)
-          )
-        : undefined
+      sql`${gameSubagentRuns.agentId} not in (
+        select jsonb_array_elements_text(${kept}::jsonb)
+      )`
     )
   )
 }

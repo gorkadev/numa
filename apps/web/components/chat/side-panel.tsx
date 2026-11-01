@@ -31,12 +31,14 @@ import { cn } from "@workspace/ui/lib/utils"
 import { ChatPreviewBody, type PreviewPhase } from "@/components/chat-preview"
 import { FilesTabBody } from "@/components/chat/files-tab"
 import {
+  OpenedRunDetail,
+  RunListEnd,
   SubagentPanelBody,
   SubagentRunRow,
 } from "@/components/chat/subagent-panel"
 import { SubagentRunDetail } from "@/components/chat/subagent-run-detail"
 import { Spinner } from "@/components/localized-spinner"
-import type { SubagentRunRecord } from "@/lib/games/harness/records"
+import type { PanelRun } from "@/lib/games/thread-page"
 
 import { filterAgentRuns, type AgentRunFilter } from "./agent-run-filter"
 
@@ -171,10 +173,12 @@ function AgentsTabBody({
   records,
   selectedRunId,
   onSelectRun,
+  onReachEnd,
 }: {
-  records: SubagentRunRecord[]
+  records: PanelRun[]
   selectedRunId: string | null
   onSelectRun: (agentId: string | null) => void
+  onReachEnd: () => void
 }) {
   const t = useTranslations("ChatAgents")
   const [filter, setFilter] = useState<AgentRunFilter>("all")
@@ -202,6 +206,7 @@ function AgentsTabBody({
             records={visibleRecords}
             selected={selected}
             onSelectRun={onSelectRun}
+            onReachEnd={onReachEnd}
             className="px-3 pt-3 pb-3"
           />
         )}
@@ -222,13 +227,14 @@ function AgentsTabBody({
                     onSelect={onSelectRun}
                   />
                 ))}
+                <RunListEnd rows={records.length} onReachEnd={onReachEnd} />
               </ItemGroup>
             )}
           </div>
         </div>
         <div className="no-scrollbar min-h-0 flex-1 scroll-fade overflow-y-auto overscroll-contain p-4">
           {selected ? (
-            <SubagentRunDetail record={selected} />
+            <OpenedRunDetail record={selected} />
           ) : (
             <p className="text-sm text-muted-foreground">
               {t("selectRun")}
@@ -252,7 +258,10 @@ export type SidePanelProps = {
   revision: number
   /** The version the Files tab reads at — `game-chat.tsx` derives it from `revision` and the last finished turn. */
   filesVersion: number
-  subagentRuns: SubagentRunRecord[]
+  subagentRuns: PanelRun[]
+  /** More runs exist than `subagentRuns` holds. */
+  hasMoreRuns: boolean
+  onReachRunsEnd: () => void
   selectedRunId: string | null
   onSelectRun: (agentId: string | null) => void
   open: boolean
@@ -304,6 +313,8 @@ export function SidePanel({
   revision,
   filesVersion,
   subagentRuns,
+  hasMoreRuns,
+  onReachRunsEnd,
   selectedRunId,
   onSelectRun,
   open,
@@ -507,6 +518,7 @@ export function SidePanel({
                 ) : (
                   <span className="text-xs text-muted-foreground">
                     {subagentRuns.length}
+                    {hasMoreRuns ? "+" : null}
                   </span>
                 )}
               </button>
@@ -605,6 +617,7 @@ export function SidePanel({
                 records={subagentRuns}
                 selectedRunId={selectedRunId}
                 onSelectRun={onSelectRun}
+                onReachEnd={onReachRunsEnd}
               />
             </div>
           ) : null}
