@@ -47,7 +47,7 @@ export async function searchGameMessages(query: string): Promise<MessageHit[]> {
       lateral (select found.value #>> '{}' as text) as part
     where g.user_id = ${user.id}
       and part.text ilike ${`%${escapeLike(needle)}%`} escape '\\'
-    order by g.created_at desc, g.id
+    order by g.created_at desc, g.id, m.position
     limit ${MAX_HITS}
   `)
 

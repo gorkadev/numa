@@ -321,9 +321,11 @@ export function useGameChat({
    * Every message that reached this thread as history rather than as a new
    * send, which must never act as a scroll anchor. The scroller jumps to the
    * first anchor it has not handled, so a page of older user messages landing
-   * unmarked would pull the reader away from where they are reading. Updated
-   * in the same batch that prepends the page, so no render sees one without
-   * the other.
+   * unmarked would pull the reader away from where they are reading. A load
+   * also retires the anchors of messages sent from this mount, whose rows it
+   * pushes down the list to where the scroller would treat them as new.
+   * Updated in the same batch that prepends the page, so no render sees one
+   * without the other.
    */
   const [historyIds, setHistoryIds] = useState(
     () => new Set(initialMessages.map((message) => message.id))
@@ -340,7 +342,11 @@ export function useGameChat({
       const older = withoutGameProgress(page.messages)
 
       setHistoryIds(
-        (current) => new Set([...current, ...older.map(({ id }) => id)])
+        (current) =>
+          new Set([
+            ...current,
+            ...[...messages, ...older].map(({ id }) => id),
+          ])
       )
       setMessages((current) => mergeEarlierMessages(current, older))
       setEarlier((current) => ({
@@ -352,7 +358,7 @@ export function useGameChat({
     } finally {
       setLoadingEarlier(false)
     }
-  }, [earlier.cursor, gameId, loadingEarlier, setMessages])
+  }, [earlier.cursor, gameId, loadingEarlier, messages, setMessages])
 
   /**
    * A turn's provisional receipt lives only while its stream does. A stopped

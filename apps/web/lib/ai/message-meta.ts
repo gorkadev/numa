@@ -12,7 +12,7 @@ import type { TurnCost } from "./pricing"
  *
  * It rides in `metadata` for the same reason the model choice does — see
  * `./message-model.ts`. `metadata` is already round-tripped through the
- * `games.messages` jsonb column on every turn, so none of this costs a schema
+ * `game_messages` jsonb column on every turn, so none of this costs a schema
  * change, and none of it reaches the model: `convertToModelMessages` drops
  * metadata on the way into the provider, which is what keeps a cost report
  * from becoming part of the conversation the agent reads back.

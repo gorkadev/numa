@@ -17,7 +17,7 @@ import {
  * player never chose. The URL does not either, since a game reached from the
  * sidebar carries no query string.
  *
- * The thread does, and it is already round-tripped through `games.messages` on
+ * The thread does, and it is already round-tripped through `game_messages` on
  * every turn. `metadata` rides along inside that jsonb column, so this costs no
  * schema change: a tier choice stays a property of the turn it was made for,
  * not of the game.

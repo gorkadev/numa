@@ -245,27 +245,33 @@ export function ChatThread({
        * with no indication it had moved.
        */}
       <MessageScrollerProvider autoScroll>
+        {/**
+         * Outside `MessageScroller` on purpose. The primitive recognises a
+         * prepend by the old first row moving down the list of rows, so a
+         * control sitting in that list stays first and scroll preservation
+         * never runs.
+         */}
+        {hasEarlier ? (
+          <div className="flex shrink-0 flex-col items-center gap-1 pt-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={loadingEarlier}
+              onClick={loadEarlier}
+            >
+              {loadingEarlier ? <Spinner data-icon="inline-start" /> : null}
+              {t("loadEarlier")}
+            </Button>
+            {earlierFailed ? (
+              <p role="alert" className="text-sm text-muted-foreground">
+                {t("loadEarlierFailed")}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
         <MessageScroller className="flex-1">
           <MessageScrollerViewport className="scroll-fade-y! [--scroll-fade-mask:initial]!">
             <MessageScrollerContent className="mx-auto w-full max-w-3xl px-4 py-8 gap-4">
-              {hasEarlier ? (
-                <MessageScrollerItem className="flex flex-col items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={loadingEarlier}
-                    onClick={loadEarlier}
-                  >
-                    {loadingEarlier ? <Spinner data-icon="inline-start" /> : null}
-                    {t("loadEarlier")}
-                  </Button>
-                  {earlierFailed ? (
-                    <p role="alert" className="text-sm text-muted-foreground">
-                      {t("loadEarlierFailed")}
-                    </p>
-                  ) : null}
-                </MessageScrollerItem>
-              ) : null}
               {runs.map((run, index) => (
                 <MessageScrollerItem
                   key={run.id}
