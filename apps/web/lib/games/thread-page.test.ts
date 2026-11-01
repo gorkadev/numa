@@ -5,6 +5,7 @@ import type { UIMessage } from "ai"
 
 import {
   mergeEarlierMessages,
+  subagentRows,
   threadRows,
   withoutLoadedStats,
 } from "./thread-page"
@@ -56,4 +57,17 @@ test("withoutLoadedStats drops the skeletons of messages now loaded", () => {
     withoutLoadedStats(stats, [message("b", "assistant")]).map(({ id }) => id),
     ["a"]
   )
+})
+
+test("subagentRows numbers runs in first-dispatch order", () => {
+  const record = { agentId: "agent-1", role: "explore", status: "done" }
+
+  assert.deepEqual(subagentRows("game", [record as never]), [
+    {
+      gameId: "game",
+      agentId: "agent-1",
+      position: 0,
+      record,
+    },
+  ])
 })

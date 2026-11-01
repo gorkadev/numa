@@ -1,9 +1,14 @@
 import { db } from "@workspace/db"
-import { gameMessages, games } from "@workspace/db/schema"
-import { and, asc, desc, eq, gte, lt, sql } from "drizzle-orm"
+import { gameMessages, games, gameSubagentRuns } from "@workspace/db/schema"
+import { and, asc, desc, eq, gte, lt, notInArray, sql } from "drizzle-orm"
 import type { UIMessage } from "ai"
 
-import { THREAD_PAGE_TURNS, threadRows } from "@/lib/games/thread-page"
+import {
+  subagentRows,
+  THREAD_PAGE_TURNS,
+  threadRows,
+} from "@/lib/games/thread-page"
+import { collectThreadSubagentRuns } from "@/lib/games/tool-parts"
 
 /**
  * A game's chat thread lives in `game_messages`, one row per message; the two
@@ -175,6 +180,8 @@ export async function saveGameThread({
         )
       )
 
+    await saveSubagentRuns(tx, gameId, messages)
+
     const session = {
       ...(chatAccessToken === undefined ? {} : { chatAccessToken }),
       ...(lastEventId === undefined ? {} : { lastEventId }),
@@ -185,6 +192,44 @@ export async function saveGameThread({
       await tx.update(games).set(session).where(eq(games.id, gameId))
     }
   })
+}
+
+type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0]
+
+/** Derived from the messages being saved, so the two can never disagree. */
+export async function saveSubagentRuns(
+  tx: Transaction,
+  gameId: string,
+  messages: UIMessage[]
+): Promise<void> {
+  const rows = subagentRows(gameId, collectThreadSubagentRuns(messages))
+
+  if (rows.length > 0) {
+    await tx
+      .insert(gameSubagentRuns)
+      .values(rows)
+      .onConflictDoUpdate({
+        target: [gameSubagentRuns.gameId, gameSubagentRuns.agentId],
+        set: {
+          position: sql`excluded.position`,
+          record: sql`excluded.record`,
+        },
+        setWhere: sql`${gameSubagentRuns.record} is distinct from excluded.record
+          or ${gameSubagentRuns.position} is distinct from excluded.position`,
+      })
+  }
+
+  await tx.delete(gameSubagentRuns).where(
+    and(
+      eq(gameSubagentRuns.gameId, gameId),
+      rows.length > 0
+        ? notInArray(
+            gameSubagentRuns.agentId,
+            rows.map(({ agentId }) => agentId)
+          )
+        : undefined
+    )
+  )
 }
 
 /**

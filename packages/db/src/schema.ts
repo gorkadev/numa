@@ -446,6 +446,29 @@ export const gameMessages = pgTable(
 )
 
 /**
+ * Every sub-agent run of a game, derived from the thread and written in the
+ * same transaction as it. The panel lists all of a game's runs whatever part
+ * of the thread is loaded, and most of a run's weight (its timeline, tool calls
+ * and report) only travels when that run is opened.
+ *
+ * `record` is typed loosely for the reason `UsageBreakdown` is: the shape
+ * belongs to the app, which this package must not import.
+ */
+export const gameSubagentRuns = pgTable(
+  "game_subagent_runs",
+  {
+    gameId: uuid("game_id")
+      .notNull()
+      .references(() => games.id, { onDelete: "cascade" }),
+    agentId: text("agent_id").notNull(),
+    /** First-dispatch order, which is the order the panel lists runs in. */
+    position: integer("position").notNull(),
+    record: jsonb("record").$type<Record<string, unknown>>().notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.gameId, table.agentId] })]
+)
+
+/**
  * One row per completed chat turn: what it spent, and what that is estimated to
  * have cost. Append-only — nothing in the application updates or deletes a row
  * here, because the question this table answers is historical ("what did this

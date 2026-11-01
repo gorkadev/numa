@@ -11,6 +11,12 @@ Test runner: in `apps/web`, `pnpm exec tsx --test $(find . -name "*.test.ts*" -n
 - S3 "a poder ser, intentemos preservarlos, ns si podriamos con alguna migracion o similar hacerlo": existing threads are copied, not lost.
 - S4 Assumption: session totals in the usage footer keep covering the whole thread.
 - S5 Assumption: the agent still receives the full history on every turn.
+- S6 Earlier messages load on scroll: "sin boton, lo cargamos haciendo scroll".
+- S7 The outline paints every turn: "en el outline pintamos todos, sabiendo de manera sencilla el total q hay". Hover must not issue a request (L10).
+- S8 "no tiene sentido q no puedas ver todos los subagentes si no has hecho scroll en el chat": every run is listed from the first render, stored apart from the thread.
+- S9 "si un juego no esta ejecutandose, esq no va a cambiar NUNCA, cacheamos y no hacemos peticion. si entro a un juego, cargo hasta arriba todos los mensajes, me voy a otro, a otro, vuelvo a estos dos... no hacemos peticion de nuevo": TanStack Query caches thread data, invalidated when a turn finishes.
+- S10 "hacer un equilibrio entre traer la informacion necesaria en base a lo q el usuario ve": heavy tool outputs load on demand, after checking what each render needs.
+- S11 "no pensar solo en base a los juegos q tenemos ahora [...] pensar siempre q es lo mejor y lo recomendado en hacer, q pasaria si tenemos un chat con muchisimos subagentes, muchiismo texto/interacciones... ponerse siempre en el extremo de los casos": every read and write stays bounded on an extreme thread, whatever today's data shows.
 
 ## Tasks
 
@@ -18,6 +24,11 @@ Test runner: in `apps/web`, `pnpm exec tsx --test $(find . -name "*.test.ts*" -n
 - [x] T2 (S3) inline — apply schema with `db:push`, backfill production, verify counts. Evidence: L5.
 - [x] T3 (S1, S4) inline — page reads, server action, chat hook and load control. Commits: 8324ca2, 12f45e5. Evidence: L8.
 - [ ] T4 (S2, S3) inline — drop `games.messages`. Blocked: needs the user's go-ahead, irreversible.
+- [x] T5 (S8) inline — `game_subagent_runs`, written with the thread, backfilled. Commit: this slice.
+- [ ] T6 (S9) inline — TanStack Query for thread data, invalidated by the activity signal. Commit: pending.
+- [ ] T7 (S6, S7, S8) inline — scroll loading, full outline, full subagent list with lazy detail. Commit: pending.
+- [ ] T9 (S11) inline — bounded saves and reads: append-style save, stored session totals, byte-bounded pages, paged outline and subagent list. Commit: pending.
+- [ ] T8 (S10) inline — heavy tool outputs on demand. Commit: pending.
 
 Route evidence: no Writer trigger; one behaviour with coupled surfaces, so the parent writes inline. Risk: item 1 (persisted format, existing data), independent verifier required.
 
@@ -32,3 +43,9 @@ Route evidence: no Writer trigger; one behaviour with coupled surfaces, so the p
 - L6 Verifier blocker: the load control as first `MessageScrollerItem` stopped `preserveScrollOnPrepend` (primitive detects a prepend by the old first child index > 0). Moved outside `MessageScroller`. Also retired anchors of messages sent from this mount on load, and tie-broke the search snippet by position.
 - L7 Verifier: S2-S5 pass; S1 blocker rechecked PASS on 12f45e5 in headless Chrome on a harness of the primitive, not the real app. Accepted advisory: when the last page removes the control, the scroller grows 40px, so the row shifts by that height once. Deploy note: re-run the backfill just before any deploy, while nothing has written through the new code.
 - L8 Real app, game with 19 turns: 10 of 38 rows on open, footer "19 turns" before loading. Three loads, 10->20->30->38 rows, visible row delta 0 on each, including the last page; 38 unique rows, control gone at the end, no console errors captured after the load. A real agent turn through the new save was not run because it spends credits; `saveGameThread` was exercised on the temporary Neon branch.
+- L9 (2026-11-02, user): "okey me parece si. esq piensa 2 cosas: primero tenemos q intentar, en la medida de lo posible, hacer un equilibrio entre traer la informacion necesaria en base a lo q el usuario ve, y segundo, cachear; si un juego no esta ejecutandose, esq no va a cambiar NUNCA, cacheamos y no hacemos peticion. si entro a un juego, cargo hasta arriba todos los mensajes, me voy a otro, a otro, vuelvo a estos dos... no hacemos peticion de nuevo, para que? ahi encaja perfecto tanstack query yo creo"
+- L10 Evidence: a 5-turn tail averages 149 kB against 154 kB full; dispatch tools 2.0 MB, read_file 1.5 MB, text 0.2 MB of 4.15 MB; user messages 27 kB for 69 rows. So outline data travels in the first load and hover issues no request.
+- L11 S9 premise checked: only `saveGameThread` writes the thread, called from two turn hooks in `trigger/chat.ts`, and the agent clears `working` after the save. The `games` row does change between turns (title, pin, read state, sandbox, token), so only thread data is cached.
+- L12 (2026-11-02, user): "y no pensar solo en base a los juegos q tenemos ahora, q tambien, pero pensar siempre q es lo mejor y lo recomendado en hacer, q pasaria si tenemos un chat con muchisimos subagentes, muchiismo texto/interacciones... ponerse siempre en el extremo de los casos para poder abarcar las maximas cosas posibles"
+- L13 Linear costs found against S11: `saveGameThread` sends every row on each save, and one insert is capped at 65535 bind parameters (about 16k messages at four per row); `readEarlierStats` grows with the thread; a page counted in turns has no byte ceiling; a first-load outline grows with turns, which supersedes the first-load decision in L10; the subagent list has no bound; the agent still loads the whole thread each turn.
+- L14 Backfill through `saveSubagentRuns`: 123 runs in 22 games on production. List projection without `timeline`, `toolCalls`, `prompt`, `summary` is 53 kB against 612 kB full.

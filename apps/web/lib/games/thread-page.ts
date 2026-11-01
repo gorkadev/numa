@@ -1,5 +1,7 @@
 import type { UIMessage } from "ai"
 
+import type { SubagentRunRecord } from "@/lib/games/harness/records"
+
 /**
  * How many turns one page of history holds. Pages are counted in turns rather
  * than messages so each starts on a user message: `groupRuns` folds consecutive
@@ -24,6 +26,15 @@ export function threadRows(gameId: string, messages: UIMessage[]) {
     position,
     role: message.role,
     message,
+  }))
+}
+
+export function subagentRows(gameId: string, runs: SubagentRunRecord[]) {
+  return runs.map((run, position) => ({
+    gameId,
+    agentId: run.agentId,
+    position,
+    record: run as Record<string, unknown>,
   }))
 }
 
