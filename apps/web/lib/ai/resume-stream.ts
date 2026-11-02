@@ -36,6 +36,37 @@ export async function withFirstChunk<T>(
 }
 
 /**
+ * Asks whether a turn is running, without committing to anything until a chunk
+ * proves one is.
+ *
+ * `settle` is for a send that overtakes the question. The transport keeps its
+ * streaming flag per chat, and an aborted subscription clears it while closing,
+ * so a send that starts first loses the flag and stops following its own turn
+ * at the next long-poll window. A send waits for `settle` before it starts.
+ */
+export function startStreamProbe<T>(
+  reconnect: (abortSignal: AbortSignal) => Promise<ReadableStream<T> | null>
+) {
+  const controller = new AbortController()
+  const found = reconnect(controller.signal).then((stream) =>
+    stream ? withFirstChunk(stream) : null
+  )
+
+  return {
+    found,
+    abort: () => controller.abort(),
+    aborted: () => controller.signal.aborted,
+    settle: async () => {
+      controller.abort()
+
+      const stream = await found.catch(() => null)
+
+      await stream?.cancel().catch(() => undefined)
+    },
+  }
+}
+
+/**
  * Takes the chunk that would erase a message out of the stream a reload
  * resumes.
  *

@@ -6,13 +6,17 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useChat } from "@ai-sdk/react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useTriggerChatTransport } from "@trigger.dev/sdk/chat/react"
-import { lastAssistantMessageIsCompleteWithToolCalls, type UIMessage } from "ai"
+import {
+  lastAssistantMessageIsCompleteWithToolCalls,
+  type UIMessage,
+  type UIMessageChunk,
+} from "ai"
 
 import { sentAtMetadata, withoutLiveReceipts } from "@/lib/ai/message-meta"
 import { liveSessionStats } from "@/lib/ai/session-usage"
 import { readThreadTier, tierMetadata } from "@/lib/ai/message-model"
 import { DEFAULT_TIER_ID, type TierId } from "@/lib/ai/model-catalog"
-import { withFirstChunk, withoutContinuationOf } from "@/lib/ai/resume-stream"
+import { startStreamProbe, withoutContinuationOf } from "@/lib/ai/resume-stream"
 import {
   mintGameChatAccessToken,
   startGameChatSession,
@@ -171,6 +175,11 @@ export function useGameChat({
     sessions: initialSessions,
   })
 
+  /** The mount's question to the transport, until it has an answer. */
+  const activeProbe = useRef<ReturnType<
+    typeof startStreamProbe<UIMessageChunk>
+  > | null>(null)
+
   /** A running turn's stream, held from the mount's probe until `useChat` takes it. */
   const foundStream = useRef<{
     stream: Awaited<ReturnType<typeof transport.reconnectToStream>>
@@ -218,11 +227,15 @@ export function useGameChat({
    */
   const chatTransport = useMemo(
     () => ({
-      sendMessages: detachedSend((options: Parameters<typeof transport.sendMessages>[0]) =>
-        transport.sendMessages({
-          ...options,
-          messages: withoutTrimmedParts(options.messages),
-        })
+      sendMessages: detachedSend(
+        async (options: Parameters<typeof transport.sendMessages>[0]) => {
+          await activeProbe.current?.settle()
+
+          return transport.sendMessages({
+            ...options,
+            messages: withoutTrimmedParts(options.messages),
+          })
+        }
       ),
       reconnectToStream: async (
         options: Parameters<typeof transport.reconnectToStream>[0]
@@ -540,8 +553,6 @@ export function useGameChat({
 
       return currentAttempt.gameId === gameId && currentAttempt.id === attempt
     }
-    const probe = new AbortController()
-
     /**
      * Nothing is announced, and `resumeStream` is not called, until a chunk
      * proves a turn is running. Most mounts have nothing to reconnect to, but
@@ -558,15 +569,21 @@ export function useGameChat({
      * then found the aborted stream still registered in the transport and gave
      * up. Entering a chat whose agent was working showed nothing until reload.
      */
+    let probe: ReturnType<typeof startStreamProbe<UIMessageChunk>> | undefined
     const resumeTimer = setTimeout(() => void (async () => {
       try {
-        const reconnected = await transport.reconnectToStream({
-          chatId: gameId,
-          abortSignal: probe.signal,
-        })
-        const stream = reconnected && (await withFirstChunk(reconnected))
+        const started = startStreamProbe((abortSignal) =>
+          transport.reconnectToStream({ chatId: gameId, abortSignal })
+        )
 
-        if (!stream) return
+        probe = started
+        activeProbe.current = started
+
+        const stream = await started.found.finally(() => {
+          if (activeProbe.current === started) activeProbe.current = null
+        })
+
+        if (!stream || started.aborted()) return
 
         if (!isCurrentAttempt()) {
           void stream.cancel()
@@ -575,7 +592,7 @@ export function useGameChat({
 
         setReconnecting(true)
         dispatchBuildProgress({ type: "reconnect-start" })
-        foundStream.current = { stream, abort: () => probe.abort() }
+        foundStream.current = { stream, abort: started.abort }
         await resumeStream()
 
         if (isCurrentAttempt()) {
@@ -585,7 +602,7 @@ export function useGameChat({
           setReconnecting(false)
         }
       } catch {
-        if (isCurrentAttempt()) {
+        if (isCurrentAttempt() && !probe?.aborted()) {
           dispatchBuildProgress({ type: "disconnect" })
           setReconnecting(false)
         }
@@ -594,7 +611,7 @@ export function useGameChat({
 
     return () => {
       clearTimeout(resumeTimer)
-      probe.abort()
+      probe?.abort()
       const currentAttempt = reconnectAttempt.current
 
       if (currentAttempt.gameId === gameId && currentAttempt.id === attempt) {
