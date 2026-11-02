@@ -98,8 +98,12 @@ export function useThreadSnapshot(
   const [failed, setFailed] = useState(false)
   const [attempt, setAttempt] = useState(0)
 
-  /** A mounted chat reconnects to or sent any turn it sees running. */
-  if (working && !followed) setFollowed(true)
+  /**
+   * Reported by the chat itself, not read off `working`: a mounted chat only
+   * reconnects once, on mount, so a turn started in another tab runs here
+   * without ever reaching its stream, and that thread has to be replaced.
+   */
+  const followTurn = useCallback(() => setFollowed(true), [])
 
   if (lastTurnFinishedAt !== seen && !working) {
     setSeen(lastTurnFinishedAt)
@@ -166,6 +170,7 @@ export function useThreadSnapshot(
     snapshot: shown?.snapshot ?? null,
     failed,
     retry,
+    followTurn,
   }
 }
 

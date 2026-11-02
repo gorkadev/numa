@@ -58,6 +58,7 @@ export function useGameChat({
   initialFiles,
   initialTierId,
   onRevision,
+  onTurnFollowed,
 }: {
   gameId: string
   /** Where loaded pages are written back, so returning mounts with them. */
@@ -95,6 +96,7 @@ export function useGameChat({
    * signal is handed up rather than acted on here.
    */
   onRevision?: (revision: number) => void
+  onTurnFollowed: () => void
 }) {
   const [input, setInput] = useState("")
   const reconnectAttempt = useRef({
@@ -325,6 +327,10 @@ export function useGameChat({
   })
 
   const pending = status === "submitted" || status === "streaming"
+
+  useEffect(() => {
+    if (pending) onTurnFollowed()
+  }, [onTurnFollowed, pending])
 
   const queryClient = useQueryClient()
   const [cursor, setCursor] = useState(initialThread.cursor)
