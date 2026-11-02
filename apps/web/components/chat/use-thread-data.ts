@@ -104,6 +104,8 @@ export function useThreadSnapshot(
    * without ever reaching its stream, and that thread has to be replaced.
    */
   const followTurn = useCallback(() => setFollowed(true), [])
+  /** A failed send may never stamp the row, so it cannot wait for that to clear. */
+  const abandonTurn = useCallback(() => setFollowed(false), [])
 
   if (lastTurnFinishedAt !== seen && !working) {
     setSeen(lastTurnFinishedAt)
@@ -171,6 +173,7 @@ export function useThreadSnapshot(
     failed,
     retry,
     followTurn,
+    abandonTurn,
   }
 }
 

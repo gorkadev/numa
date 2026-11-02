@@ -61,6 +61,7 @@ export function ChatThread({
   showSessionStats,
   onRevision,
   onTurnFollowed,
+  onTurnAbandoned,
   onSelectedRunIdChange,
   onSubagentPanelOpenChange,
   onSubagentRunsChange,
@@ -110,6 +111,8 @@ export function ChatThread({
   onRevision?: (revision: number) => void
   /** Says this chat is sending or streaming a turn, so its messages stay current. */
   onTurnFollowed: () => void
+  /** Says that turn failed, so a later one from elsewhere is not assumed followed. */
+  onTurnAbandoned: () => void
   /**
    * The sub-agent panel's state is lifted to `game-chat.tsx`, which renders
    * the actual `SubagentPanel` (design.md decision 16;
@@ -171,6 +174,7 @@ export function ChatThread({
     initialTierId,
     onRevision,
     onTurnFollowed,
+  onTurnAbandoned,
   })
 
   const runs = useMemo(() => groupRuns(messages), [messages])

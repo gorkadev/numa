@@ -59,6 +59,7 @@ export function useGameChat({
   initialTierId,
   onRevision,
   onTurnFollowed,
+  onTurnAbandoned,
 }: {
   gameId: string
   /** Where loaded pages are written back, so returning mounts with them. */
@@ -97,6 +98,7 @@ export function useGameChat({
    */
   onRevision?: (revision: number) => void
   onTurnFollowed: () => void
+  onTurnAbandoned: () => void
 }) {
   const [input, setInput] = useState("")
   const reconnectAttempt = useRef({
@@ -331,6 +333,10 @@ export function useGameChat({
   useEffect(() => {
     if (pending) onTurnFollowed()
   }, [onTurnFollowed, pending])
+
+  useEffect(() => {
+    if (status === "error") onTurnAbandoned()
+  }, [onTurnAbandoned, status])
 
   const queryClient = useQueryClient()
   const [cursor, setCursor] = useState(initialThread.cursor)

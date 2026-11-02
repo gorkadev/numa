@@ -95,7 +95,7 @@ export function GameChat({
    * this: on a cache hit it is already here on the first render, every page
    * read before included. Replacing the thread is a new mount for the same reason.
    */
-  const { threadKey, snapshot, failed, retry, followTurn } = useThreadSnapshot(
+  const { threadKey, snapshot, failed, retry, followTurn, abandonTurn } = useThreadSnapshot(
     gameId,
     lastTurnFinishedAt,
     rowSettled
@@ -344,6 +344,7 @@ export function GameChat({
               key={threadKey[2]}
               gameId={gameId}
               onTurnFollowed={followTurn}
+              onTurnAbandoned={abandonTurn}
               templateId={templateId}
               threadKey={threadKey}
               initialThread={snapshot}
