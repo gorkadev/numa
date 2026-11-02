@@ -62,7 +62,13 @@
     "listings": "Listados",
     "filesWritten": "Archivos escritos",
     "edits": "Ediciones",
-    "filesDeleted": "Archivos eliminados"
+    "filesDeleted": "Archivos eliminados",
+    "compacted": "Contexto compactado",
+    "compactedAuto": "Contexto compactado automáticamente",
+    "compactedSummary": "Resumen con el que sigue el agente",
+    "compacting": "Compactando el contexto…",
+    "compactFailed": "No se pudo compactar la conversación. Inténtalo de nuevo.",
+    "compactSkipped": "Todavía no hay nada que compactar"
   },
   "ChatUsage": {
     "speed": "tok/s",
@@ -329,6 +335,9 @@
     "mentionFiles": "Archivos",
     "mentionLoading": "Cargando archivos…",
     "mentionEmpty": "Ningún archivo coincide",
+    "commandList": "Acciones",
+    "commandEmpty": "Ninguna acción coincide",
+    "commandCompact": "Resume la conversación para que el agente tenga espacio para seguir",
     "placeholder": "Describe el juego que quieres crear…",
     "sendMessage": "Enviar mensaje",
     "stopGenerating": "Detener la generación",

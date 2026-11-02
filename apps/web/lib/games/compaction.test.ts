@@ -5,8 +5,10 @@ import type { ModelMessage, UIMessage } from "ai"
 
 import {
   agentHistory,
+  canCompact,
   compactionMarker,
   latestCompaction,
+  readCompacting,
   readCompaction,
   shouldAutoCompact,
   withoutFileParts,
@@ -104,6 +106,58 @@ describe("withSummary", () => {
     assert.equal(messages.length, 2)
     assert.equal(messages[0]!.role, "user")
     assert.match(String(messages[0]!.content), /S/)
+  })
+})
+
+describe("readCompacting", () => {
+  it("reads each status, with the marker a manual compaction sends", () => {
+    const marker = compactionMarker({ summary: "S", trigger: "manual", tokens: 1, window: 2 })
+
+    assert.deepEqual(readCompacting({ type: "data-compacting", data: { status: "compacting" } }), { status: "compacting" })
+    assert.deepEqual(readCompacting({ type: "data-compacting", data: { status: "done", marker } }), { status: "done", marker })
+    assert.deepEqual(readCompacting({ type: "data-compacting", data: { status: "done" } }), { status: "done" })
+    assert.deepEqual(readCompacting({ type: "data-compacting", data: { status: "failed" } }), { status: "failed" })
+    assert.deepEqual(readCompacting({ type: "data-compacting", data: { status: "skipped" } }), { status: "skipped" })
+  })
+
+  it("ignores other parts and malformed data", () => {
+    assert.equal(readCompacting({ type: "data-compaction", data: { status: "done" } }), null)
+    assert.equal(readCompacting({ type: "data-compacting", data: { status: "nope" } }), null)
+    assert.deepEqual(
+      readCompacting({ type: "data-compacting", data: { status: "done", marker: { id: "x", role: "user", parts: [] } } }),
+      { status: "done" }
+    )
+  })
+})
+
+describe("canCompact", () => {
+  const marker = compactionMarker({ summary: "S", trigger: "manual", tokens: 1, window: 2 })
+
+  it("compacts a thread with turns since the latest marker", () => {
+    assert.equal(canCompact([user("u1", "a"), assistant("a1", "b")]), true)
+    assert.equal(canCompact([user("u1", "a"), marker, user("u2", "c"), assistant("a2", "d")]), true)
+  })
+
+  it("refuses an empty thread or one compacted since its last turn", () => {
+    assert.equal(canCompact([]), false)
+    assert.equal(canCompact([user("u1", "a"), assistant("a1", "b"), marker]), false)
+  })
+
+  it("refuses while a question waits for the player", () => {
+    const asking: UIMessage = {
+      id: "a1",
+      role: "assistant",
+      parts: [
+        {
+          type: "tool-ask_player",
+          toolCallId: "t1",
+          state: "input-available",
+          input: { question: "Which?" },
+        },
+      ],
+    }
+
+    assert.equal(canCompact([user("u1", "a"), asking]), false)
   })
 })
 

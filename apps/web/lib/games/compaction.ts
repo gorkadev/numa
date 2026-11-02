@@ -1,4 +1,4 @@
-import { generateId, generateText } from "ai"
+import { generateId, generateText, isToolUIPart } from "ai"
 import type { LanguageModelUsage, ModelMessage, UIMessage } from "ai"
 
 import type { ContextUsage } from "./context-usage"
@@ -76,6 +76,38 @@ export function readCompaction(message: UIMessage): CompactionData | null {
   return { summary: data.summary, trigger: data.trigger, tokens: data.tokens, window: data.window }
 }
 
+export type CompactingStatus =
+  | { status: "compacting" }
+  /** `marker` comes only from `/compact`; a turn's marker arrives with the saved thread. */
+  | { status: "done"; marker?: UIMessage }
+  | { status: "failed" }
+  | { status: "skipped" }
+
+/** Reads a `data-compacting` stream part; anything else, or a malformed one, is null. */
+export function readCompacting(part: { type: string; data?: unknown }): CompactingStatus | null {
+  if (part.type !== COMPACTING_PART) return null
+
+  const data = part.data as { status?: unknown; marker?: unknown } | null | undefined
+
+  if (typeof data !== "object" || data === null) return null
+
+  switch (data.status) {
+    case "compacting":
+    case "failed":
+    case "skipped":
+      return { status: data.status }
+    case "done": {
+      const marker = data.marker as UIMessage | undefined
+
+      return marker && typeof marker === "object" && readCompaction(marker)
+        ? { status: "done", marker }
+        : { status: "done" }
+    }
+    default:
+      return null
+  }
+}
+
 export function isCompactionMarker(message: UIMessage): boolean {
   return readCompaction(message) !== null
 }
@@ -90,6 +122,30 @@ export function latestCompaction(
   }
 
   return null
+}
+
+/**
+ * Whether the thread has anything a compaction could fold away, and nothing it
+ * would cut in half. A question still waiting for the player (`ask_player`) is
+ * the case to refuse: the answer is merged into the message that asked, so a
+ * marker after that message would hide the answer from the agent.
+ */
+export function canCompact(messages: UIMessage[]): boolean {
+  const start = (latestCompaction(messages)?.index ?? -1) + 1
+  const since = messages.slice(start)
+
+  if (!since.some((message) => message.role === "user")) return false
+
+  const last = since.at(-1)
+
+  return !(
+    last?.role === "assistant" &&
+    last.parts.some(
+      (part) =>
+        isToolUIPart(part) &&
+        (part.state === "input-streaming" || part.state === "input-available")
+    )
+  )
 }
 
 function summaryText(summary: string): string {

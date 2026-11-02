@@ -27,6 +27,7 @@ import {
   withoutGameProgress,
   type GameBuildProgressEvent,
 } from "@/lib/games/build-progress"
+import { readCompacting } from "@/lib/games/compaction"
 import { readContextUsage, type ContextUsage } from "@/lib/games/context-usage"
 import { detachedSend } from "@/lib/games/detached-send"
 import { readGameRevision } from "@/lib/games/revision"
@@ -130,6 +131,10 @@ export function useGameChat({
    * reply's metadata and covers a reload (see `latestContextUsage`).
    */
   const [liveContext, setLiveContext] = useState<ContextUsage | null>(null)
+  /** A summary being written, by `/compact` or at the end of a turn. */
+  const [compacting, setCompacting] = useState(false)
+  /** Why the last `/compact` changed nothing; cleared by the next send or compaction. */
+  const [compactNotice, setCompactNotice] = useState<"failed" | "skipped" | null>(null)
 
   /**
    * The tier the next turn is sent with. It lives here rather than in the
@@ -339,6 +344,11 @@ export function useGameChat({
       const context = readContextUsage(part)
 
       if (context !== null) setLiveContext(context)
+
+      /** A turn's own compaction; its marker arrives with the saved thread. */
+      const compaction = readCompacting(part)
+
+      if (compaction !== null) setCompacting(compaction.status === "compacting")
 
       const phase = readGameProgress(part)
 
@@ -635,6 +645,7 @@ export function useGameChat({
   function handleSubmit(text: string, files: AttachmentPart[] = []) {
     dispatchBuildProgress({ type: "submit" })
     setFailureKind(null)
+    setCompactNotice(null)
     evictThread(queryClient, gameId)
     sendMessage({ text, files, metadata: outgoingMetadata(tierId) })
     setInput("")
@@ -689,6 +700,61 @@ export function useGameChat({
     [addToolOutput, gameId, queryClient]
   )
 
+  /**
+   * `/compact` (chat-compaction S3). An action rather than a message: the agent
+   * writes the summary without running a turn, and the stream carries only its
+   * status and, once saved, the marker, appended here so the thread shows it
+   * without a reload. The cached thread is evicted because it no longer holds
+   * the thread the server has.
+   */
+  const compact = useCallback(async () => {
+    if (pending || compacting) return
+
+    setCompacting(true)
+    setCompactNotice(null)
+    setFailureKind(null)
+
+    let notice: "failed" | "skipped" | null = "failed"
+
+    try {
+      const stream = await transport.sendAction(gameId, { type: "compact" })
+      const reader = stream.getReader()
+
+      for (;;) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const part = value as { type: string; data?: unknown }
+        const failure = readChatFailureKind(part)
+
+        if (failure !== null) {
+          setFailureKind(failure)
+          notice = null
+        }
+
+        const status = readCompacting(part)
+
+        if (status?.status === "done") {
+          notice = status.marker ? null : "failed"
+
+          if (status.marker) {
+            const marker = status.marker
+
+            setMessages((current) => [...current, marker])
+            evictThread(queryClient, gameId)
+          }
+        } else if (status?.status === "skipped") {
+          notice = "skipped"
+        }
+      }
+    } catch {
+      notice = "failed"
+    } finally {
+      setCompactNotice(notice)
+      setCompacting(false)
+    }
+  }, [compacting, gameId, pending, queryClient, setMessages, transport])
+
   const stopBuild = useCallback(() => {
     const reconnect = reconnectAttempt.current
     reconnectAttempt.current = {
@@ -725,6 +791,9 @@ export function useGameChat({
     setTierId,
     pending,
     reconnecting,
+    compacting,
+    compact,
+    compactNotice,
     input,
     setInput,
   }

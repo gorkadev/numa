@@ -154,6 +154,55 @@ export async function ingestImprovementCredits({
 }
 
 /**
+ * Tells Polar that a user spent credits on compacting a game's thread with
+ * `/compact`. An automatic compaction is part of its turn and is billed with
+ * it; this one runs outside any turn, so it gets its own event.
+ *
+ * It needs its own key because a turn's (`gameId:runId:turn`) would collide:
+ * an action does not advance the turn counter, so it would carry the key of
+ * the turn before it and Polar would drop it as a duplicate. The marker's id
+ * is unique to this compaction. Same contract as `ingestTurnCredits`: never
+ * throws, returns whether Polar accepted it.
+ */
+export async function ingestCompactionCredits({
+  userId,
+  gameId,
+  compactionId,
+  credits,
+  modelId,
+}: {
+  userId: string
+  gameId: string
+  compactionId: string
+  credits: number
+  modelId: string
+}): Promise<boolean> {
+  if (credits <= 0) return false
+
+  try {
+    await polar.events.ingest({
+      events: [
+        {
+          name: GAME_TURN_EVENT_NAME,
+          externalCustomerId: userId,
+          externalId: `compaction:${gameId}:${compactionId}`,
+          metadata: {
+            [CREDITS_METADATA_PROPERTY]: credits,
+            model: modelId,
+            game_id: gameId,
+            reason: "compaction",
+          },
+        },
+      ],
+    })
+
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
  * Claws back the unearned share of a Pro→Max upgrade's credit grant.
  *
  * # The exploit this closes

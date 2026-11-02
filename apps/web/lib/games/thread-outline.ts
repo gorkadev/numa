@@ -3,7 +3,8 @@ import type { UIMessage } from "ai"
 /** A thread row as the outline reads it: the shape `chat-thread.tsx` renders. */
 export type OutlineRun = {
   id: string
-  role: "user" | "assistant"
+  /** A compaction marker is a run of its own, and never a turn. */
+  role: "user" | "assistant" | "compaction"
   messages: UIMessage[]
 }
 

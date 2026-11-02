@@ -8,7 +8,7 @@ import Paragraph from "@tiptap/extension-paragraph"
 import Text from "@tiptap/extension-text"
 import { Placeholder, UndoRedo } from "@tiptap/extensions"
 import { useEditor } from "@tiptap/react"
-import type { SuggestionOptions } from "@tiptap/suggestion"
+import Suggestion, { type SuggestionOptions } from "@tiptap/suggestion"
 
 import { docToText, mentionedPaths, textToDoc } from "@/lib/games/mention-doc"
 
@@ -40,6 +40,9 @@ type ComposerEditor = {
   placeholder: string
   disabled: boolean
   suggestion: Omit<SuggestionOptions, "editor">
+  /** The `/` actions menu's suggestion; without it, `/` is plain text. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- any item type; the composer owns it
+  commandSuggestion?: Omit<SuggestionOptions<any>, "editor">
   /** Paths `@path` may turn into chips when text is written in from outside. */
   knownPaths: readonly string[] | null
   /** Opens a chip's file in the side panel; without it a chip is not clickable. */
@@ -62,6 +65,7 @@ export function useComposerEditor({
   placeholder,
   disabled,
   suggestion,
+  commandSuggestion,
   knownPaths,
   onOpenFile,
 }: ComposerEditor) {
@@ -112,6 +116,21 @@ export function useComposerEditor({
         ],
         suggestion,
       }),
+      /**
+       * The `/` actions menu. Same priority as the mention suggestion, so it
+       * also takes Enter ahead of sending while its list is open.
+       */
+      ...(commandSuggestion
+        ? [
+            Extension.create({
+              name: "slashCommands",
+              priority: 101,
+              addProseMirrorPlugins() {
+                return [Suggestion({ editor: this.editor, ...commandSuggestion })]
+              },
+            }),
+          ]
+        : []),
       /**
        * Enter sends and Shift+Enter starts a new line, as in the text area it
        * replaces. The priority sits between the mention suggestion (101), which
