@@ -298,7 +298,27 @@ export async function saveSubagentRuns(
 ): Promise<void> {
   const rows = subagentRows(gameId, collectThreadSubagentRuns(messages))
 
-  for (const chunk of chunkRows(rows, SAVE_CHUNK_ROWS)) {
+  /** Compared here so a finished run costs nothing on later saves, as with messages. */
+  const stored = await tx
+    .select({
+      agentId: gameSubagentRuns.agentId,
+      position: gameSubagentRuns.position,
+      hash: sql<string>`md5(${gameSubagentRuns.record}::text)`,
+    })
+    .from(gameSubagentRuns)
+    .where(eq(gameSubagentRuns.gameId, gameId))
+
+  const held = new Map(stored.map((run) => [run.agentId, run]))
+  const changed = rows.filter(({ agentId, position, record }) => {
+    const run = held.get(agentId)
+
+    return (
+      run?.position !== position ||
+      run.hash !== createHash("md5").update(jsonbText(record)).digest("hex")
+    )
+  })
+
+  for (const chunk of chunkRows(changed, SAVE_CHUNK_ROWS)) {
     await tx
       .insert(gameSubagentRuns)
       .values(chunk)

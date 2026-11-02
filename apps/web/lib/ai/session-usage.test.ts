@@ -5,6 +5,7 @@ import type { UIMessage } from "ai"
 import {
   addSessionStats,
   latestContextUsage,
+  liveSessionStats,
   sessionStats,
   sumSessionActivity,
   sumSessionSpeed,
@@ -221,4 +222,46 @@ test("a credit charge on either side survives the addition", () => {
   const free = sessionStats([reply({ input: 1, output: 1, cached: 0, reasoning: 0 })])
 
   assert.equal(addSessionStats(free, charged).usage?.credits, 4)
+})
+
+test("liveSessionStats counts what a reply gained after it was stored", () => {
+  const receipt = (input: number, credits: number): UIMessage => ({
+    id: "question",
+    role: "assistant",
+    parts: [],
+    metadata: { tokens: { input, output: 0, cached: 0, reasoning: 0 }, credits },
+  })
+  const stored = sessionStats([receipt(110, 2)])
+  const counted = new Map([["question", receipt(110, 2)]])
+
+  const live = liveSessionStats([receipt(330, 6)], counted)
+  const footer = addSessionStats(stored, live).usage
+
+  assert.equal(footer?.input, 330)
+  assert.equal(footer?.credits, 6)
+})
+
+test("liveSessionStats adds nothing for a reply that has not changed", () => {
+  const same: UIMessage = {
+    id: "reply",
+    role: "assistant",
+    parts: [],
+    metadata: { tokens: { input: 10, output: 5, cached: 0, reasoning: 0 } },
+  }
+
+  const live = liveSessionStats([{ ...same }], new Map([["reply", same]]))
+
+  assert.equal(live.usage, null)
+  assert.deepEqual(live.activity, { turns: 0, steps: 0 })
+})
+
+test("liveSessionStats counts a message sent from this mount in full", () => {
+  const sent: UIMessage = {
+    id: "sent",
+    role: "assistant",
+    parts: [],
+    metadata: { tokens: { input: 7, output: 3, cached: 0, reasoning: 0 } },
+  }
+
+  assert.equal(liveSessionStats([sent], new Map()).usage?.total, 10)
 })

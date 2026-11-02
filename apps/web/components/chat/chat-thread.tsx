@@ -38,7 +38,6 @@ import type { TemplateId } from "@/lib/games/templates/catalog"
 import {
   addSessionStats,
   latestContextUsage,
-  sessionStats,
 } from "@/lib/ai/session-usage"
 import { UsageFooter } from "@/components/chat/usage-footer"
 import { thinkingLabelKey } from "@/lib/games/build-progress"
@@ -139,7 +138,7 @@ export function ChatThread({
   )
   const {
     messages,
-    sessionTail,
+    liveStats,
     hasEarlier,
     loadingEarlier,
     earlierFailed,
@@ -198,8 +197,8 @@ export function ChatThread({
   const taskStripTasks = useMemo(() => deriveTaskStrip(messages), [messages])
   /** The totals describe the session, not the page: stored, plus what this mount sent. */
   const session = useMemo(
-    () => addSessionStats(initialThread.stats, sessionStats(sessionTail)),
-    [initialThread.stats, sessionTail]
+    () => addSessionStats(initialThread.stats, liveStats),
+    [initialThread.stats, liveStats]
   )
   /**
    * The stream's live reading wins while a turn runs; the newest reply's

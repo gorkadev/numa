@@ -22,6 +22,9 @@ export const SUBAGENT_PAGE_RUNS = 100
 /** Far under Postgres's 65535 bind parameters, and it keeps one statement's payload small. */
 export const SAVE_CHUNK_ROWS = 500
 
+/** The largest value `position`, a Postgres `integer`, can hold. */
+const MAX_POSITION = 2_147_483_647
+
 /** The thread as the browser caches it: the loaded tail and what lies before it. */
 export type ThreadSnapshot = {
   messages: UIMessage[]
@@ -149,7 +152,14 @@ export function parseCursor(raw: string | null): number | null | undefined {
 
   const cursor = Number(raw)
 
-  return raw !== "" && Number.isSafeInteger(cursor) && cursor >= 0 ? cursor : null
+  return raw !== "" && Number.isSafeInteger(cursor) && cursor >= 0 && cursor <= MAX_POSITION
+    ? cursor
+    : null
+}
+
+/** Postgres rejects anything else in a uuid column, which would surface as a 500. */
+export function isGameId(id: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
 }
 
 /**

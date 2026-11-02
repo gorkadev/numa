@@ -76,7 +76,7 @@ export const MAX_TOOL_CALL_ERROR_CHARS = 200
  * carries — not a limit any role's own step budget approaches today
  * (`harness/roles.ts`'s highest `maxSteps` is 20), but a bound that keeps a
  * malformed or maliciously oversized persisted record unparseable rather
- * than accepted, and keeps a single `games.messages` row bounded regardless
+ * than accepted, and keeps a single `game_messages` row bounded regardless
  * of what a future role's step budget turns out to be.
  */
 export const MAX_TOOL_CALLS_PER_RECORD = 100
@@ -86,7 +86,7 @@ export const MAX_EDITS_PER_RECORD = 100
  * A defensive ceiling on how long the recorded `prompt` stays — the same
  * reasoning as `MAX_TOOL_CALL_ERROR_CHARS` above, sized for a whole prompt
  * rather than a one-line tool error: long enough to keep real context, short
- * enough that a single `games.messages` row stays bounded no matter how
+ * enough that a single `game_messages` row stays bounded no matter how
  * large a caller's own prompt gets.
  */
 export const MAX_PROMPT_CHARS = 8_000

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { getGame } from "@/lib/games/queries"
+import { isGameId } from "@/lib/games/thread-page"
 import { readSubagentRun } from "@/lib/games/thread"
 
 const privateHeaders = { "cache-control": "no-store, private" }
@@ -11,6 +12,10 @@ export async function GET(
   context: { params: Promise<{ id: string; agentId: string }> }
 ) {
   const { id, agentId } = await context.params
+
+  if (!isGameId(id)) {
+    return new Response(null, { status: 404, headers: privateHeaders })
+  }
 
   if (!(await getGame(id))) {
     return new Response(null, { status: 404, headers: privateHeaders })

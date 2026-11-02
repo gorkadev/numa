@@ -14,6 +14,7 @@ import {
   useQuery,
   useQueryClient,
   type QueryClient,
+  isCancelledError,
 } from "@tanstack/react-query"
 
 import { useGameWorking } from "@/components/game-activity-provider"
@@ -115,8 +116,12 @@ export function useThreadSnapshot(gameId: string, lastTurnFinishedAt: number) {
       .then((thread) => {
         if (active) setSnapshot(thread)
       })
-      .catch(() => {
-        if (active) setFailed(true)
+      .catch((error: unknown) => {
+        if (!active) return
+
+        /** A turn finishing mid-fetch evicts this query; that is not a failure. */
+        if (isCancelledError(error)) setAttempt((current) => current + 1)
+        else setFailed(true)
       })
 
     return () => {

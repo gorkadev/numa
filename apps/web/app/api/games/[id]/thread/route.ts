@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import type { SessionStats } from "@/lib/ai/session-usage"
 import { getGame } from "@/lib/games/queries"
 import { readThreadPage } from "@/lib/games/thread"
-import { parseCursor } from "@/lib/games/thread-page"
+import { isGameId, parseCursor } from "@/lib/games/thread-page"
 
 const privateHeaders = { "cache-control": "no-store, private" }
 
@@ -18,6 +18,10 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params
+
+  if (!isGameId(id)) {
+    return new Response(null, { status: 404, headers: privateHeaders })
+  }
   const before = parseCursor(request.nextUrl.searchParams.get("before"))
 
   if (before === null) {

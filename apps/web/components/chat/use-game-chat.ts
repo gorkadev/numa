@@ -9,6 +9,7 @@ import { useTriggerChatTransport } from "@trigger.dev/sdk/chat/react"
 import { lastAssistantMessageIsCompleteWithToolCalls, type UIMessage } from "ai"
 
 import { sentAtMetadata, withoutLiveReceipts } from "@/lib/ai/message-meta"
+import { liveSessionStats } from "@/lib/ai/session-usage"
 import { readThreadTier, tierMetadata } from "@/lib/ai/message-model"
 import { DEFAULT_TIER_ID, type TierId } from "@/lib/ai/model-catalog"
 import { withoutContinuationOf } from "@/lib/ai/resume-stream"
@@ -343,13 +344,13 @@ export function useGameChat({
    * thread, as opposed to sent from this mount. Kept apart from `historyIds`,
    * which also takes in sent messages once a load retires their anchors.
    */
-  const [countedIds, setCountedIds] = useState(
-    () => new Set(threadMessages.map((message) => message.id))
+  const [counted, setCounted] = useState(
+    () => new Map(threadMessages.map((message) => [message.id, message]))
   )
 
-  const sessionTail = useMemo(
-    () => messages.filter(({ id }) => !countedIds.has(id)),
-    [countedIds, messages]
+  const liveStats = useMemo(
+    () => liveSessionStats(messages, counted),
+    [counted, messages]
   )
 
   /** The loader reads these between awaits, where a render's values would be stale. */
@@ -379,7 +380,10 @@ export function useGameChat({
           ...ids,
         ])
     )
-    setCountedIds((current) => new Set([...current, ...ids]))
+    setCounted(
+      (current) =>
+        new Map([...older.map((message) => [message.id, message] as const), ...current])
+    )
     setMessages((current) => mergeEarlierMessages(current, older))
     setCursor(page.start)
   }, [gameId, queryClient, setMessages, threadKey])
@@ -623,9 +627,10 @@ export function useGameChat({
   const onAnswer = useCallback(
     (toolCallId: string, output: AskPlayerOutput) => {
       setFailureKind(null)
+      evictThread(queryClient, gameId)
       addToolOutput({ tool: "ask_player", toolCallId, output })
     },
-    [addToolOutput]
+    [addToolOutput, gameId, queryClient]
   )
 
   const stopBuild = useCallback(() => {
@@ -645,7 +650,7 @@ export function useGameChat({
 
   return {
     messages,
-    sessionTail,
+    liveStats,
     hasEarlier: cursor > 0,
     loadingEarlier,
     earlierFailed,

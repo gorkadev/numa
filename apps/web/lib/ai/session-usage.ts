@@ -230,3 +230,42 @@ export function addSessionStats(
     },
   }
 }
+
+function negated<T>(value: T): T {
+  if (typeof value === "number") return -value as T
+  if (typeof value !== "object" || value === null) return value
+
+  return Object.fromEntries(
+    Object.entries(value).map(([key, field]) => [key, negated(field)])
+  ) as T
+}
+
+/**
+ * What the held messages add to the stored totals. A message sent from this
+ * mount counts whole. One already counted adds only what it gained: answering
+ * `ask_player` continues the same reply, so `withTurnMeta` grows a receipt the
+ * stored totals hold in its earlier state.
+ */
+export function liveSessionStats(
+  messages: UIMessage[],
+  counted: ReadonlyMap<string, UIMessage>
+): SessionStats {
+  const added: UIMessage[] = []
+  const superseded: UIMessage[] = []
+
+  for (const message of messages) {
+    const stored = counted.get(message.id)
+
+    if (!stored) {
+      added.push(message)
+    } else if (
+      message.metadata !== stored.metadata &&
+      JSON.stringify(message.metadata) !== JSON.stringify(stored.metadata)
+    ) {
+      added.push(message)
+      superseded.push(stored)
+    }
+  }
+
+  return addSessionStats(sessionStats(added), negated(sessionStats(superseded)))
+}

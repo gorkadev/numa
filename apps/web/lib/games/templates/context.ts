@@ -4,6 +4,7 @@ import { db } from "@workspace/db"
 import { games } from "@workspace/db/schema"
 import { eq } from "drizzle-orm"
 
+import { loadGameThread } from "../thread"
 import { readPlanAssetReceipt } from "../harness/plan-store"
 import type { GameDimension } from "../dimension"
 import { hasSuccessfulGameFileWrites, type AssetReceipt } from "../harness/plan-validation"
@@ -96,7 +97,6 @@ export async function readGameTemplateBuildContext(gameId: string): Promise<Game
     .select({
       templateId: games.templateId,
       templateVersion: games.templateVersion,
-      messages: games.messages,
     })
     .from(games)
     .where(eq(games.id, gameId))
@@ -106,7 +106,7 @@ export async function readGameTemplateBuildContext(gameId: string): Promise<Game
 
   const dimension = templateDimension(game.templateId)
   const contract = await readTemplateContract(game.templateId, game.templateVersion)
-  const isFreshGameBuild = !hasSuccessfulGameFileWrites(game.messages)
+  const isFreshGameBuild = !hasSuccessfulGameFileWrites(await loadGameThread(gameId))
   if (!contract) {
     return {
       dimension,

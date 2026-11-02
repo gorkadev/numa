@@ -1,5 +1,6 @@
 "use client"
 
+import { useQueryClient } from "@tanstack/react-query"
 import { useEffect, useState, useTransition } from "react"
 
 import { usePathname, useRouter } from "next/navigation"
@@ -107,6 +108,7 @@ export function CommandPalette({
   onOpenChange: (open: boolean) => void
 }) {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const t = useTranslations("Shell")
   const gameMenu = useTranslations("GameMenu")
   const settings = useTranslations("Settings")
@@ -185,6 +187,8 @@ export function CommandPalette({
     try {
       const { error } = await authClient.signOut()
       if (error) throw error
+      /** The cache outlives the session, and the next player must not inherit it. */
+      queryClient.clear()
       router.push("/sign-in")
     } catch {
       toast.add({

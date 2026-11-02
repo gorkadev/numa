@@ -10,6 +10,7 @@ import {
   mergeEarlierMessages,
   mergeSubagentRuns,
   pageStart,
+  isGameId,
   parseCursor,
   reusableThread,
   subagentRows,
@@ -260,4 +261,14 @@ test("mergeSubagentRuns appends a live run the list has not reached", () => {
     merged.map(({ agentId }) => agentId),
     ["a", "z"]
   )
+})
+
+test("parseCursor refuses a position past the column's range", () => {
+  assert.equal(parseCursor("2147483647"), 2147483647)
+  assert.equal(parseCursor("2147483648"), null)
+})
+
+test("isGameId accepts only a uuid", () => {
+  assert.equal(isGameId("dcbbf363-1f85-4186-84e3-9ff98a710ff0"), true)
+  assert.equal(isGameId("not-a-game"), false)
 })
