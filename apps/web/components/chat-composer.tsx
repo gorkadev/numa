@@ -61,6 +61,15 @@ import { canImprove, improverTooltip } from "@/lib/games/improver/allowance"
 import type { ImproverMode } from "@/lib/games/improver/instructions"
 import type { TemplateId } from "@/lib/games/templates/catalog"
 
+/**
+ * The popover surface, lifted by a deeper shadow, with no focus ring: the caret
+ * already says where the player is typing. The blur sits on a pseudo-element
+ * because a `backdrop-filter` here would stop the mention list inside from
+ * blurring what lies behind the composer. `z-10` keeps that list over the thread.
+ */
+const COMPOSER_SURFACE =
+  "z-10 bg-popover/70 shadow-xl ring-1 shadow-black/10 ring-foreground/5 inset-shadow-xs inset-shadow-white/5 before:pointer-events-none before:absolute before:inset-0 before:-z-1 before:rounded-[inherit] before:backdrop-blur-2xl before:backdrop-saturate-150 has-[[data-slot=input-group-control]:focus-visible]:border-transparent has-[[data-slot=input-group-control]:focus-visible]:ring-1 has-[[data-slot=input-group-control]:focus-visible]:ring-foreground/5 dark:bg-popover/70 dark:shadow-black/40 dark:ring-foreground/10 dark:has-[[data-slot=input-group-control]:focus-visible]:ring-foreground/10"
+
 type ChatComposerProps = {
   value: string
   onValueChange: (value: string) => void
@@ -261,7 +270,7 @@ export function ChatComposer({
     <form onSubmit={handleSubmit} className="flex w-full flex-col">
       <div className="flex w-full flex-col">
         {tasksSlot}
-        <InputGroup>
+        <InputGroup className={COMPOSER_SURFACE}>
           {attachable ? (
             <input
               ref={fileInput}
@@ -337,7 +346,7 @@ export function ChatComposer({
                 top: mentions.anchor.top,
                 left: `min(${mentions.anchor.left}px, calc(100% - min(26rem, 100%)))`,
               }}
-              className="absolute z-50 flex max-h-72 w-[min(26rem,100%)] -translate-y-[calc(100%+0.5rem)] flex-col overflow-hidden rounded-2xl bg-popover p-1 text-sm text-popover-foreground shadow-lg ring-1 ring-foreground/5 dark:ring-foreground/10"
+              className="absolute z-50 flex max-h-72 w-[min(26rem,100%)] -translate-y-[calc(100%+0.5rem)] flex-col overflow-hidden rounded-2xl bg-popover/70 p-1 text-sm text-popover-foreground shadow-lg ring-1 ring-foreground/5 backdrop-blur-2xl backdrop-saturate-150 dark:ring-foreground/10"
             >
               {mentions.matches.length > 0 ? (
                 <ul
@@ -360,7 +369,7 @@ export function ChatComposer({
                         onMouseDown={(event) => event.preventDefault()}
                         onMouseMove={() => mentions.highlightAt(index)}
                         onClick={() => mentions.choose(path)}
-                        className="flex cursor-default scroll-my-8 items-center gap-2 rounded-xl px-2.5 py-1.5 aria-selected:bg-accent aria-selected:text-accent-foreground"
+                        className="flex cursor-default scroll-my-8 items-center gap-2 rounded-xl px-2.5 py-1.5 aria-selected:bg-foreground/10 aria-selected:text-accent-foreground"
                       >
                         <HugeiconsIcon icon={File01Icon} strokeWidth={2} className="size-4 shrink-0 text-muted-foreground" />
                         <span className="shrink-0">

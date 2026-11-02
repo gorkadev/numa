@@ -7,8 +7,8 @@ import { MobileSidebarTrigger } from "@/components/mobile-sidebar-trigger"
 /**
  * The chat shell, measured from `GameChat` at 375/768/1280: a 56px header with
  * `px-4`, `gap-1` and 28px icon controls; a 736px message column (`max-w-3xl`
- * inside `px-4`) whose bubbles cap at 80% of the row; and the 112px composer
- * surface.
+ * inside `px-4`) whose bubbles cap at 80% of the row; the 112px composer
+ * surface; and the 32px usage footer that closes the column.
  *
  * The header, the column and the composer's outer padding are the same
  * classes `game-chat.tsx` and `chat-thread.tsx` use. The bubbles are the
@@ -80,13 +80,13 @@ export function ChatBodySkeleton() {
         </div>
       </div>
       {/**
-       * `InputGroup` is a client component, so its surface is mirrored here
-       * instead: `rounded-2xl` (18px) over `bg-input/50`, a 64px control
-       * area and a 46px addon row (6 top + 8 bottom + a 32px send control),
-       * 112 in total once the transparent border is counted.
+       * `InputGroup` is a client component, so the composer's surface is
+       * mirrored here instead: `rounded-2xl` (18px), a 64px control area and a
+       * 46px addon row (6 top + 8 bottom + a 32px send control), 112 in total
+       * once the transparent border is counted.
        */}
-      <div className="mx-auto flex w-full max-w-3xl shrink-0 flex-col gap-2 px-4 pb-4">
-        <div className="flex w-full flex-col rounded-2xl border border-transparent bg-input/50">
+      <div className="mx-auto flex w-full max-w-3xl shrink-0 flex-col px-4">
+        <div className="flex w-full flex-col rounded-2xl border border-transparent bg-popover/70 shadow-xl ring-1 shadow-black/10 ring-foreground/5 dark:shadow-black/40 dark:ring-foreground/10">
           <div className="flex h-16 items-start px-3 py-3">
             <Skeleton className="h-5 w-2/5" />
           </div>
@@ -94,6 +94,9 @@ export function ChatBodySkeleton() {
             <Skeleton className="h-6 w-28" />
             <Skeleton className="ml-auto size-8 rounded-full" />
           </div>
+        </div>
+        <div className="flex items-center justify-center gap-1 py-1">
+          <Skeleton className="h-6 w-40" />
         </div>
       </div>
     </div>

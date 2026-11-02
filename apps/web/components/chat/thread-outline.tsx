@@ -366,7 +366,7 @@ function Preview({
       onMouseMove={(event) => event.stopPropagation()}
       style={{ top: `${topPercent}%`, transform: `translateY(${translate})` }}
     >
-      <span className="block rounded-xl border border-foreground/10 bg-popover/80 p-3 text-left text-popover-foreground shadow-xl shadow-black/25 backdrop-blur-xl backdrop-saturate-150">
+      <span className="block rounded-2xl bg-popover/70 p-3 text-left text-popover-foreground shadow-lg ring-1 ring-foreground/5 backdrop-blur-2xl backdrop-saturate-150 dark:ring-foreground/10">
         <span className="block max-w-full truncate text-sm leading-5 font-medium">
           {previewText(turn.text) ?? fallback}
         </span>
