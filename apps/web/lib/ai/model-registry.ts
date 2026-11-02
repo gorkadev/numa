@@ -213,7 +213,7 @@ const TIER_PROFILES: Record<TierId, TierProfile> = {
  * a fast player get the same title model. Swapping it means editing only the
  * list here, like `TIER_PROFILES`.
  */
-export type UtilityTask = "title" | "improve"
+export type UtilityTask = "title" | "improve" | "compact"
 
 const UTILITY_MODELS: Record<UtilityTask, SlotCandidates> = {
   title: ["lite-minimal"],
@@ -223,6 +223,11 @@ const UTILITY_MODELS: Record<UtilityTask, SlotCandidates> = {
    * none — same Lite rate card either way.
    */
   improve: ["lite-medium"],
+  /**
+   * Compaction summaries are all the agent keeps of a long game's history, so
+   * they get Flash rather than Lite (chat-compaction L3), whatever the tier.
+   */
+  compact: ["flash-medium"],
 }
 
 export type ResolvedModel = {
