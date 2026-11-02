@@ -132,9 +132,15 @@ export function useGameChat({
    */
   const [liveContext, setLiveContext] = useState<ContextUsage | null>(null)
   /** A summary being written, by `/compact` or at the end of a turn. */
-  const [compacting, setCompacting] = useState(false)
+  const [requestCompacting, setCompacting] = useState(false)
+  /**
+   * A turn's own compaction, read off its stream. Only believed while the turn
+   * streams, so a stream cut between its status chunks cannot leave the
+   * composer disabled.
+   */
+  const [turnCompacting, setTurnCompacting] = useState(false)
   /** Why the last `/compact` changed nothing; cleared by the next send or compaction. */
-  const [compactNotice, setCompactNotice] = useState<"failed" | "skipped" | null>(null)
+  const [compactNotice, setCompactNotice] = useState<"failed" | "empty" | "question" | null>(null)
 
   /**
    * The tier the next turn is sent with. It lives here rather than in the
@@ -348,7 +354,7 @@ export function useGameChat({
       /** A turn's own compaction; its marker arrives with the saved thread. */
       const compaction = readCompacting(part)
 
-      if (compaction !== null) setCompacting(compaction.status === "compacting")
+      if (compaction !== null) setTurnCompacting(compaction.status === "compacting")
 
       const phase = readGameProgress(part)
 
@@ -362,6 +368,7 @@ export function useGameChat({
   })
 
   const pending = status === "submitted" || status === "streaming"
+  const compacting = requestCompacting || (turnCompacting && pending)
 
   useEffect(() => {
     if (pending) onTurnFollowed()
@@ -714,7 +721,7 @@ export function useGameChat({
     setCompactNotice(null)
     setFailureKind(null)
 
-    let notice: "failed" | "skipped" | null = "failed"
+    let notice: "failed" | "empty" | "question" | null = "failed"
 
     try {
       const stream = await transport.sendAction(gameId, { type: "compact" })
@@ -744,7 +751,7 @@ export function useGameChat({
             evictThread(queryClient, gameId)
           }
         } else if (status?.status === "skipped") {
-          notice = "skipped"
+          notice = status.reason
         }
       }
     } catch {

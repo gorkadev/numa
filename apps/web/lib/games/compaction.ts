@@ -81,7 +81,7 @@ export type CompactingStatus =
   /** `marker` comes only from `/compact`; a turn's marker arrives with the saved thread. */
   | { status: "done"; marker?: UIMessage }
   | { status: "failed" }
-  | { status: "skipped" }
+  | { status: "skipped"; reason: CompactRefusal }
 
 /** Reads a `data-compacting` stream part; anything else, or a malformed one, is null. */
 export function readCompacting(part: { type: string; data?: unknown }): CompactingStatus | null {
@@ -94,8 +94,9 @@ export function readCompacting(part: { type: string; data?: unknown }): Compacti
   switch (data.status) {
     case "compacting":
     case "failed":
-    case "skipped":
       return { status: data.status }
+    case "skipped":
+      return { status: "skipped", reason: (data as { reason?: unknown }).reason === "question" ? "question" : "empty" }
     case "done": {
       const marker = data.marker as UIMessage | undefined
 
@@ -131,21 +132,28 @@ export function latestCompaction(
  * marker after that message would hide the answer from the agent.
  */
 export function canCompact(messages: UIMessage[]): boolean {
+  return compactRefusal(messages) === null
+}
+
+/** Why `canCompact` says no: nothing new since the last marker, or an open question. */
+export type CompactRefusal = "empty" | "question"
+
+export function compactRefusal(messages: UIMessage[]): CompactRefusal | null {
   const start = (latestCompaction(messages)?.index ?? -1) + 1
   const since = messages.slice(start)
 
-  if (!since.some((message) => message.role === "user")) return false
+  if (!since.some((message) => message.role === "user")) return "empty"
 
   const last = since.at(-1)
-
-  return !(
+  const asking =
     last?.role === "assistant" &&
     last.parts.some(
       (part) =>
         isToolUIPart(part) &&
         (part.state === "input-streaming" || part.state === "input-available")
     )
-  )
+
+  return asking ? "question" : null
 }
 
 function summaryText(summary: string): string {

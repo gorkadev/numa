@@ -68,7 +68,8 @@
     "compactedSummary": "Summary the agent continues from",
     "compacting": "Compacting context…",
     "compactFailed": "The conversation could not be compacted. Try again.",
-    "compactSkipped": "Nothing to compact yet"
+    "compactSkipped": "Nothing to compact yet",
+    "compactQuestion": "Answer the agent's question before compacting"
   },
   "ChatUsage": {
     "speed": "tok/s",

@@ -68,7 +68,8 @@
     "compactedSummary": "Resumen con el que sigue el agente",
     "compacting": "Compactando el contexto…",
     "compactFailed": "No se pudo compactar la conversación. Inténtalo de nuevo.",
-    "compactSkipped": "Todavía no hay nada que compactar"
+    "compactSkipped": "Todavía no hay nada que compactar",
+    "compactQuestion": "Responde a la pregunta del agente antes de compactar"
   },
   "ChatUsage": {
     "speed": "tok/s",
