@@ -32,6 +32,7 @@ import {
   withEarlierPage,
   type ThreadSnapshot,
 } from "@/lib/games/thread-page"
+import { withoutTrimmedParts } from "@/lib/games/tool-parts"
 import { readTurnCredits } from "@/lib/games/turn-credits"
 import { publishTurnCredits } from "@/lib/polar/credits-channel"
 import {
@@ -209,7 +210,12 @@ export function useGameChat({
    */
   const chatTransport = useMemo(
     () => ({
-      sendMessages: detachedSend(transport.sendMessages),
+      sendMessages: detachedSend((options: Parameters<typeof transport.sendMessages>[0]) =>
+        transport.sendMessages({
+          ...options,
+          messages: withoutTrimmedParts(options.messages),
+        })
+      ),
       reconnectToStream: async (
         options: Parameters<typeof transport.reconnectToStream>[0]
       ) => {

@@ -25,7 +25,7 @@ import {
   type SubagentRunPage,
   type ThreadPage,
 } from "@/lib/games/thread-page"
-import { collectThreadSubagentRuns } from "@/lib/games/tool-parts"
+import { collectThreadSubagentRuns, trimMessage } from "@/lib/games/tool-parts"
 
 /**
  * A game's chat thread lives in `game_messages`, one row per message; the two
@@ -68,6 +68,9 @@ export async function loadGameThread(gameId: string): Promise<UIMessage[]> {
  * body is read to decide what a page holds. A thread with fewer turns left than
  * that measures from 0, which takes in anything ahead of its first user message.
  *
+ * This is what the browser receives, so tool parts come back trimmed; anything
+ * feeding the agent reads `loadGameThread`, which never trims.
+ *
  * No tenant predicate, like everything here: the routes that call this have
  * already resolved the game through `getGame`.
  */
@@ -106,7 +109,7 @@ export async function readThreadPage(
     .where(and(inRange, gte(gameMessages.position, start)))
     .orderBy(asc(gameMessages.position))
 
-  return { messages: rows.map(({ message }) => message), start }
+  return { messages: rows.map(({ message }) => trimMessage(message)), start }
 }
 
 /**

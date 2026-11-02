@@ -45,6 +45,26 @@ test("threadRows measures a row in bytes, not characters", () => {
   assert.equal(row?.size, Buffer.byteLength(JSON.stringify(message("ñ"))))
 })
 
+test("threadRows measures a row at the weight the browser receives", () => {
+  const heavy: UIMessage = {
+    id: "m",
+    role: "assistant",
+    parts: [
+      {
+        type: "tool-read_file",
+        toolCallId: "r",
+        state: "output-available",
+        input: { path: "a.js" },
+        output: { content: "x".repeat(10_000) },
+      },
+    ],
+  }
+  const [row] = threadRows("game", [heavy])
+
+  assert.ok(row && row.size < 500)
+  assert.deepEqual(row?.message, heavy)
+})
+
 test("threadRows of an empty thread is empty", () => {
   assert.deepEqual(threadRows("game", []), [])
 })

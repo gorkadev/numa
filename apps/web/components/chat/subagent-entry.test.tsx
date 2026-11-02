@@ -225,3 +225,18 @@ test("each terminal outcome has a sentence and only normal reports are disclosed
   assert.doesNotMatch(render({ summary: "  " }), /<strong>/)
   assert.match(render({}, "es"), /Ver detalles/)
 })
+
+test("a listed run shows its line and reads nothing until it is opened", () => {
+  const listed = renderToStaticMarkup(
+    <NextIntlClientProvider locale="en" messages={en}>
+      <SubagentEntry
+        record={{ ...record, summary: "", prompt: "", listed: true }}
+        onSelect={() => undefined}
+      />
+    </NextIntlClientProvider>
+  )
+
+  assert.match(listed, new RegExp(en.ChatAgents.trace.done.split("{")[0]!.trim() || "."))
+  assert.doesNotMatch(listed, /Final report/)
+  assert.doesNotMatch(listed, new RegExp(en.ChatAgents.trace.empty))
+})

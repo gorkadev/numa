@@ -3,6 +3,7 @@ import type { UIMessage } from "ai"
 import type { SessionStats } from "@/lib/ai/session-usage"
 import type { SubagentRunRecord } from "@/lib/games/harness/records"
 import type { StoredOutlineTurn } from "@/lib/games/thread-outline"
+import { trimMessage } from "@/lib/games/tool-parts"
 
 /**
  * How many turns one page of history holds at most. Pages are counted in turns
@@ -50,6 +51,11 @@ export type SubagentRunPage = { runs: ListedSubagentRun[]; next: number | null }
 /** A record whose detail fields are placeholders until the run is opened. */
 export type PanelRun = SubagentRunRecord & { listed?: true }
 
+/**
+ * `size` is what the row weighs to the browser, not what it holds: it only ever
+ * sets page bounds, and those limit a response. A row written before this kept
+ * its stored weight, which is higher, so its pages only come out smaller.
+ */
 export function threadRows(gameId: string, messages: UIMessage[]) {
   const encoder = new TextEncoder()
 
@@ -58,7 +64,7 @@ export function threadRows(gameId: string, messages: UIMessage[]) {
     position,
     role: message.role,
     message,
-    size: encoder.encode(JSON.stringify(message)).length,
+    size: encoder.encode(JSON.stringify(trimMessage(message))).length,
   }))
 }
 

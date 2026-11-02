@@ -17,9 +17,11 @@ import {
   TraceLine,
   TraceTitle,
 } from "@workspace/ui/components/trace"
+import { Button } from "@workspace/ui/components/button"
 import { Markdown } from "@/components/chat/markdown"
 import { SubagentTimeline } from "@/components/chat/subagent-timeline"
 import { localizedToolCallLabel } from "@/components/chat/tool-group"
+import { useSubagentRunDetail } from "@/components/chat/use-subagent-run-detail"
 
 import { Spinner } from "@/components/localized-spinner"
 import { AgentBot } from "@/components/chat/agent-bot"
@@ -28,6 +30,7 @@ import type {
   SubagentRunRecord,
   SubagentRunStatus,
 } from "@/lib/games/harness/records"
+import type { PanelRun } from "@/lib/games/thread-page"
 
 /**
  * Plain-text status for everywhere a finished (or not-yet-started) run's
@@ -66,7 +69,7 @@ function statusIcon(status: SubagentRunStatus) {
 }
 
 export type SubagentEntryProps = {
-  record: SubagentRunRecord
+  record: PanelRun
   /**
    * Opens the panel on this run. Takes only the `agentId`, not an
    * open/selection pair, so 10b can lift `{ open, selectedRunId }` in
@@ -79,10 +82,11 @@ export type SubagentEntryProps = {
 /** Recorded calls are bounded history, not a reconstruction of live activity. */
 export function SubagentEntry({ record, onSelect }: SubagentEntryProps) {
   const t = useTranslations("ChatAgents")
-  const activityT = useTranslations("ChatActivity")
   const running = record.status === "running"
   // Initialize once: streamed updates must not undo the reader's choice.
   const [open, setOpen] = useState(running)
+  /** Stays true once opened, so closing plays out over the content it read. */
+  const [opened, setOpened] = useState(running)
   const role = t(`roles.${record.role}.name`)
   const activity = record.activity
   const title = running
@@ -92,13 +96,16 @@ export function SubagentEntry({ record, onSelect }: SubagentEntryProps) {
       ? t(`trace.${activity}`, { role })
       : t("trace.running", { role, activity: activity || t("trace.working") })
     : t(`trace.${record.status}`, { role })
-  const report =
-    ["done", "partial", "blocked"].includes(record.status) &&
-    record.summary.trim()
 
   return (
     <Trace className="ps-[13px]">
-      <TraceCollapsible open={open} onOpenChange={setOpen}>
+      <TraceCollapsible
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next)
+          if (next) setOpened(true)
+        }}
+      >
         <TraceCollapsibleTrigger>
           <TraceLine
             status={
@@ -124,72 +131,122 @@ export function SubagentEntry({ record, onSelect }: SubagentEntryProps) {
           </TraceLine>
         </TraceCollapsibleTrigger>
         <TraceCollapsibleContent keepMounted>
-          {/**
-           * The timeline replaces the flat call list. A record written before
-           * the timeline existed has `timeline: []` and a populated
-           * `toolCalls`, so it keeps the old list — an old thread must not
-           * look worse than it did, and synthesising a timeline from
-           * `toolCalls` would invent an order the record never had.
-           */}
-          {record.timeline.length > 0 ? (
-            <SubagentTimeline entries={record.timeline} running={running} />
-          ) : (
-            <>
-              <Trace role="list">
-                {record.toolCalls.map((call) => (
-                  <TraceLine
-                    key={call.toolCallId}
-                    role="listitem"
-                    status={call.ok ? undefined : "error"}
-                  >
-                    <TraceIcon>
-                      <HugeiconsIcon
-                        icon={call.ok ? CircleCheckIcon : Alert01Icon}
-                        strokeWidth={2}
-                      />
-                    </TraceIcon>
-                    <TraceTitle>
-                      {localizedToolCallLabel(
-                        call.toolName,
-                        call.path,
-                        call.ok ? "done" : "failed",
-                        activityT
-                      ) ??
-                        t(call.ok ? "trace.callDone" : "trace.callFailed", {
-                          path: call.path ? ` ${call.path}` : "",
-                        })}
-                    </TraceTitle>
-                  </TraceLine>
-                ))}
-              </Trace>
-              {record.toolCalls.length === 0 && (
-                <p className="text-sm">{t("trace.empty")}</p>
-              )}
-            </>
-          )}
-          {report && (
-            <Trace className="mt-2">
-              <TraceCollapsible defaultOpen={false}>
-                <TraceCollapsibleTrigger>
-                  <TraceLine>
-                    <TraceTitle>{t("trace.report")}</TraceTitle>
-                  </TraceLine>
-                </TraceCollapsibleTrigger>
-                <TraceCollapsibleContent keepMounted>
-                  <Markdown>{record.summary}</Markdown>
-                </TraceCollapsibleContent>
-              </TraceCollapsible>
-            </Trace>
-          )}
-          <button
-            type="button"
-            className="mt-2 rounded-lg text-sm text-muted-foreground hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/30 focus-visible:outline-none"
-            onClick={() => onSelect(record.agentId)}
-          >
-            {t("trace.details")}
-          </button>
+          {!record.listed ? (
+            <EntryBody record={record} onSelect={onSelect} />
+          ) : opened ? (
+            <ListedEntryBody record={record} onSelect={onSelect} />
+          ) : null}
         </TraceCollapsibleContent>
       </TraceCollapsible>
     </Trace>
+  )
+}
+
+/** A run trimmed out of the page reads its whole record the first time it is opened. */
+function ListedEntryBody({ record, onSelect }: SubagentEntryProps) {
+  const t = useTranslations("ChatAgents")
+  const { data, isError, refetch } = useSubagentRunDetail(record)
+
+  if (data) return <EntryBody record={data} onSelect={onSelect} />
+
+  if (isError) {
+    return (
+      <div className="flex items-center gap-2">
+        <p role="alert" className="text-sm text-muted-foreground">
+          {t("runFailedToLoad")}
+        </p>
+        <Button variant="ghost" size="sm" onClick={() => void refetch()}>
+          {t("retry")}
+        </Button>
+      </div>
+    )
+  }
+
+  return <Spinner />
+}
+
+function EntryBody({
+  record,
+  onSelect,
+}: {
+  record: SubagentRunRecord
+  onSelect: (agentId: string) => void
+}) {
+  const t = useTranslations("ChatAgents")
+  const activityT = useTranslations("ChatActivity")
+  const report =
+    ["done", "partial", "blocked"].includes(record.status) &&
+    record.summary.trim()
+
+  return (
+    <>
+      {/**
+       * The timeline replaces the flat call list. A record written before
+       * the timeline existed has `timeline: []` and a populated
+       * `toolCalls`, so it keeps the old list — an old thread must not
+       * look worse than it did, and synthesising a timeline from
+       * `toolCalls` would invent an order the record never had.
+       */}
+      {record.timeline.length > 0 ? (
+        <SubagentTimeline
+            entries={record.timeline}
+            running={record.status === "running"}
+          />
+      ) : (
+        <>
+          <Trace role="list">
+            {record.toolCalls.map((call) => (
+              <TraceLine
+                key={call.toolCallId}
+                role="listitem"
+                status={call.ok ? undefined : "error"}
+              >
+                <TraceIcon>
+                  <HugeiconsIcon
+                    icon={call.ok ? CircleCheckIcon : Alert01Icon}
+                    strokeWidth={2}
+                  />
+                </TraceIcon>
+                <TraceTitle>
+                  {localizedToolCallLabel(
+                    call.toolName,
+                    call.path,
+                    call.ok ? "done" : "failed",
+                    activityT
+                  ) ??
+                    t(call.ok ? "trace.callDone" : "trace.callFailed", {
+                      path: call.path ? ` ${call.path}` : "",
+                    })}
+                </TraceTitle>
+              </TraceLine>
+            ))}
+          </Trace>
+          {record.toolCalls.length === 0 && (
+            <p className="text-sm">{t("trace.empty")}</p>
+          )}
+        </>
+      )}
+      {report && (
+        <Trace className="mt-2">
+          <TraceCollapsible defaultOpen={false}>
+            <TraceCollapsibleTrigger>
+              <TraceLine>
+                <TraceTitle>{t("trace.report")}</TraceTitle>
+              </TraceLine>
+            </TraceCollapsibleTrigger>
+            <TraceCollapsibleContent keepMounted>
+              <Markdown>{record.summary}</Markdown>
+            </TraceCollapsibleContent>
+          </TraceCollapsible>
+        </Trace>
+      )}
+      <button
+        type="button"
+        className="mt-2 rounded-lg text-sm text-muted-foreground hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/30 focus-visible:outline-none"
+        onClick={() => onSelect(record.agentId)}
+      >
+        {t("trace.details")}
+      </button>
+    </>
   )
 }

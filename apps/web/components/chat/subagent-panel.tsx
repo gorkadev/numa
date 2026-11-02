@@ -35,7 +35,7 @@ import {
   subagentStatusKey,
 } from "@/components/chat/subagent-entry"
 import { SubagentRunDetail } from "@/components/chat/subagent-run-detail"
-import { useSubagentRunDetail } from "@/components/chat/use-thread-data"
+import { useSubagentRunDetail } from "@/components/chat/use-subagent-run-detail"
 import type { SubagentRunRecord } from "@/lib/games/harness/records"
 import type { PanelRun } from "@/lib/games/thread-page"
 

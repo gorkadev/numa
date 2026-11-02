@@ -10,8 +10,10 @@ import {
 import { askPlayerQuestion, type AskQuestion } from "@/lib/games/ask-player"
 import {
   collectSubagentRuns,
+  subagentRunRecordSchema,
   type SubagentRunRecord,
 } from "@/lib/games/harness/records"
+import type { PanelRun } from "@/lib/games/thread-page"
 
 /**
  * The two shapes a tool call ever arrives as. A statically declared tool
@@ -223,10 +225,17 @@ function dispatchOutput(part: ToolPart): unknown {
  * own preliminary snapshot and its final persisted shape are both valid
  * input to `collectSubagentRuns` (task 10b.3).
  */
-function subagentRunsForPart(part: ToolPart): SubagentRunRecord[] {
+function subagentRunsForPart(part: ToolPart): PanelRun[] {
   const output = dispatchOutput(part)
 
-  return output === undefined ? [] : collectSubagentRuns([output])
+  if (output === undefined) return []
+
+  const runs = collectSubagentRuns([output])
+
+  /** Marked here because the record schema strips anything it does not declare. */
+  return isTrimmed(part)
+    ? runs.map((run) => ({ ...run, listed: true as const }))
+    : runs
 }
 
 /**
@@ -238,16 +247,180 @@ function subagentRunsForPart(part: ToolPart): SubagentRunRecord[] {
  * inline entries below (`subagent-view`'s Sub-Agent Records Survive Reload
  * requirement).
  */
-export function collectThreadSubagentRuns(
-  messages: UIMessage[]
-): SubagentRunRecord[] {
-  const outputs = messages
-    .flatMap((message) => message.parts)
-    .filter((part): part is ToolPart => isToolUIPart(part))
-    .map(dispatchOutput)
-    .filter((output) => output !== undefined)
+export function collectThreadSubagentRuns(messages: UIMessage[]): PanelRun[] {
+  const byId = new Map<string, PanelRun>()
 
-  return collectSubagentRuns(outputs)
+  for (const part of messages.flatMap((message) => message.parts)) {
+    if (!isToolUIPart(part)) continue
+
+    for (const run of subagentRunsForPart(part)) byId.set(run.agentId, run)
+  }
+
+  return [...byId.values()]
+}
+
+/**
+ * The tools whose call only ever reads as a line in the thread. Their results
+ * are never drawn: the line takes its verb from `toolError` and its file from
+ * `toolPath`, so a result reaches the browser as nothing but its error. There
+ * is no disclosure to load one into, by design (see `ToolGroup`).
+ */
+const FILE_TOOL_NAMES = new Set([
+  "read_file",
+  "list_files",
+  "write_file",
+  "replace_text",
+  "delete_file",
+  "load_skill",
+])
+
+/** Whether a part reached the browser without what only the agent's history needs. */
+export function isTrimmed(part: UIMessage["parts"][number]): boolean {
+  return (part as { trimmed?: unknown }).trimmed === true
+}
+
+/** Keeps what the inline entry draws; opening it reads the rest by `agentId`. */
+function trimRun(raw: unknown): SubagentRunRecord | undefined {
+  const parsed = subagentRunRecordSchema.safeParse(raw)
+
+  if (!parsed.success) return undefined
+
+  return {
+    ...parsed.data,
+    timeline: [],
+    toolCalls: [],
+    prompt: "",
+    summary: "",
+  }
+}
+
+function trimOutcome(raw: unknown): unknown {
+  if (typeof raw !== "object" || raw === null) return raw
+
+  const { taskId, envelope, record } = raw as Record<string, unknown>
+  const status =
+    typeof envelope === "object" && envelope !== null
+      ? (envelope as { status?: unknown }).status
+      : undefined
+
+  return {
+    taskId,
+    ...(status === undefined ? {} : { envelope: { status } }),
+    ...(record === undefined ? {} : { record: trimRun(record) }),
+  }
+}
+
+/**
+ * What a settled dispatch's output still has to answer: `error`, which the
+ * thread and the task strip read; `tasks`, a plan's list for the strip; and the
+ * run records in each shape `collectSubagentRuns` accepts. An older output is
+ * itself a bare record, which is what `trimRun(value)` picks up.
+ */
+function trimDispatchOutput(output: unknown): unknown {
+  if (typeof output !== "object" || output === null) return output
+
+  const value = output as Record<string, unknown>
+  const { error, tasks, record, outcomes, runs } = value
+
+  return {
+    ...trimRun(value),
+    ...(error === undefined ? {} : { error }),
+    ...(tasks === undefined ? {} : { tasks }),
+    ...(record === undefined ? {} : { record: trimRun(record) }),
+    ...(Array.isArray(outcomes) ? { outcomes: outcomes.map(trimOutcome) } : {}),
+    ...(Array.isArray(runs) ? { runs: runs.map(trimRun) } : {}),
+  }
+}
+
+/** Only `deriveTaskStrip` reads a dispatch's input, and only from `run_tasks`. */
+function trimDispatchInput(input: unknown): unknown {
+  if (typeof input !== "object" || input === null) return {}
+
+  const { taskIds, tasks } = input as Record<string, unknown>
+
+  return {
+    ...(taskIds === undefined ? {} : { taskIds }),
+    ...(Array.isArray(tasks)
+      ? {
+          tasks: tasks.map((task) => {
+            if (typeof task !== "object" || task === null) return task
+
+            const { id, title, role } = task as Record<string, unknown>
+
+            return { id, title, role }
+          }),
+        }
+      : {}),
+  }
+}
+
+function trimPart(part: ToolPart): ToolPart {
+  const name = getToolName(part)
+  const dispatch = DISPATCH_TOOL_NAMES.has(name)
+
+  if (!dispatch && !FILE_TOOL_NAMES.has(name)) return part
+  if (!isSettled(part)) return part
+  if (part.state === "output-available" && part.preliminary === true) return part
+  if (subagentRunsForPart(part).some(({ status }) => status === "running")) {
+    return part
+  }
+
+  /** Provider metadata is a thought signature for the model, often the heaviest field. */
+  const { callProviderMetadata, resultProviderMetadata, ...kept } =
+    part as ToolPart & {
+      callProviderMetadata?: unknown
+      resultProviderMetadata?: unknown
+    }
+  const path = toolPath(part.input)
+  const error = outputError(part.output)
+
+  return {
+    ...kept,
+    input: dispatch ? trimDispatchInput(part.input) : path ? { path } : {},
+    ...(part.state === "output-available"
+      ? {
+          output: dispatch
+            ? trimDispatchOutput(part.output)
+            : error === null
+              ? {}
+              : { error },
+        }
+      : {}),
+    trimmed: true,
+  } as unknown as ToolPart
+}
+
+/**
+ * A message as the browser receives it: every settled tool call reduced to what
+ * rendering and derived state read, so a page stops carrying file contents and
+ * sub-agent transcripts nobody has opened.
+ *
+ * Only for what leaves the server, and only for a tool named above: stored rows
+ * stay whole because the agent's history is rebuilt from them, and `ask_player`
+ * or a call still running must reach the browser exactly as it is.
+ */
+export function trimMessage(message: UIMessage): UIMessage {
+  const parts = message.parts.map((part) =>
+    isToolUIPart(part) ? trimPart(part) : part
+  )
+
+  return parts.every((part, index) => part === message.parts[index])
+    ? message
+    : { ...message, parts }
+}
+
+/**
+ * Takes trimmed parts back out of what goes to the agent. Answering `ask_player`
+ * sends the message that asked, and the transport keeps every settled tool part
+ * of it. The agent ignores a part it already holds as settled, so this is not
+ * what protects its history; it is what keeps a projection off the wire at all.
+ */
+export function withoutTrimmedParts(messages: UIMessage[]): UIMessage[] {
+  return messages.map((message) => {
+    const parts = message.parts.filter((part) => !isTrimmed(part))
+
+    return parts.length === message.parts.length ? message : { ...message, parts }
+  })
 }
 
 /**
@@ -340,7 +513,7 @@ export function toolLabel(part: ToolPart): string {
 export type PartBlock =
   | { kind: "text"; key: string; text: string; state?: "streaming" | "done" }
   | { kind: "tools"; key: string; parts: ToolPart[] }
-  | { kind: "agent"; key: string; records: SubagentRunRecord[] }
+  | { kind: "agent"; key: string; records: PanelRun[] }
   | { kind: "reasoning"; key: string; parts: ReasoningUIPart[] }
   | {
       kind: "ask"

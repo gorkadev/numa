@@ -1,8 +1,6 @@
 "use client"
 
 import {
-  createContext,
-  use,
   useCallback,
   useEffect,
   useMemo,
@@ -11,20 +9,22 @@ import {
 
 import {
   useInfiniteQuery,
-  useQuery,
   useQueryClient,
   type QueryClient,
   isCancelledError,
 } from "@tanstack/react-query"
 
+import {
+  getJson,
+  ThreadKeyContext,
+  type ThreadKey,
+} from "@/components/chat/use-subagent-run-detail"
 import { useGameWorking } from "@/components/game-activity-provider"
-import type { SubagentRunRecord } from "@/lib/games/harness/records"
 import {
   reusableThread,
   threadQueryKey,
   threadScope,
   type ListedSubagentRun,
-  type PanelRun,
   type StoredOutlinePage,
   type SubagentRunPage,
   type ThreadPage,
@@ -32,18 +32,7 @@ import {
 } from "@/lib/games/thread-page"
 import type { StoredOutlineTurn } from "@/lib/games/thread-outline"
 
-export type ThreadKey = ReturnType<typeof threadQueryKey>
-
-/** The key this game's mount read its thread under, for the panels below it. */
-export const ThreadKeyContext = createContext<ThreadKey | null>(null)
-
-async function getJson<T>(url: string): Promise<T> {
-  const response = await fetch(url)
-
-  if (!response.ok) throw new Error(`Request failed: ${response.status}`)
-
-  return response.json() as Promise<T>
-}
+export { ThreadKeyContext, type ThreadKey }
 
 function withCursor(path: string, name: string, value: number | undefined) {
   return value === undefined ? path : `${path}?${name}=${value}`
@@ -190,18 +179,4 @@ export function useSubagentList(threadKey: ThreadKey) {
   }, [fetchNextPage, hasNextPage, isFetchingNextPage])
 
   return { listed, hasMore: hasNextPage, loadMore }
-}
-
-/** A listed run's whole record, read when it is opened and kept from then on. */
-export function useSubagentRunDetail(record: PanelRun) {
-  const threadKey = use(ThreadKeyContext)
-
-  return useQuery({
-    queryKey: [...(threadKey ?? []), "subagent", record.agentId],
-    enabled: record.listed === true && threadKey !== null,
-    queryFn: () =>
-      getJson<SubagentRunRecord>(
-        `/api/games/${threadKey?.[1]}/subagents/${encodeURIComponent(record.agentId)}`
-      ),
-  })
 }
