@@ -1,5 +1,5 @@
 import { chat } from "@trigger.dev/sdk/ai"
-import type { LanguageModelUsage } from "ai"
+import type { LanguageModelUsage, UIMessage } from "ai"
 
 import { DEFAULT_TIER_ID, type TierId } from "@/lib/ai/model-catalog"
 import type { ModelEntryId, ServedCall, Slot } from "@/lib/ai/model-registry"
@@ -106,6 +106,11 @@ type TurnStateData = {
   context: ContextUsage | undefined
   /** The orchestrator's output and generation time so far this turn, summed over steps. */
   speed: GenerationSpeed | undefined
+  /**
+   * The compaction marker this turn wrote, appended to the thread by
+   * `onTurnComplete`'s save. See `lib/games/compaction.ts`.
+   */
+  compaction: UIMessage | undefined
   /** Orchestrator steps finished so far this turn. */
   steps: number
   /** Where the orchestrator's time went so far this turn, summed over steps. */
@@ -222,6 +227,16 @@ export const turnState = {
   /** Records the orchestrator's latest step reading; the newest one wins. */
   setContext(context: ContextUsage): void {
     local.context = context
+  },
+
+  /** Keeps the marker a compaction wrote, for this turn's final save. */
+  setCompaction(marker: UIMessage): void {
+    local.compaction = marker
+  },
+
+  /** The turn's compaction marker, guarded by turn like `contextFor`. */
+  compactionFor(turn: number): UIMessage | undefined {
+    return local.turn === turn ? local.compaction : undefined
   },
 
   /** Adds one orchestrator step's generation speed to the turn's total. */
@@ -343,6 +358,7 @@ export const turnState = {
       verifyBaseline: undefined,
       unfinishedTaskIds: new Set(),
       context: undefined,
+      compaction: undefined,
       speed: undefined,
       steps: 0,
       timing: undefined,
@@ -371,6 +387,7 @@ export const turnState = {
     local.verifyBaseline = undefined
     local.unfinishedTaskIds = new Set()
     local.context = undefined
+    local.compaction = undefined
     local.orchestratorSteps = []
   },
 

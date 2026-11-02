@@ -1,6 +1,7 @@
 import { logger, metadata, tags } from "@trigger.dev/sdk"
 import { chat, upsertIncomingMessage } from "@trigger.dev/sdk/ai"
 import {
+  convertToModelMessages,
   getToolName,
   isToolUIPart,
   stepCountIs,
@@ -13,6 +14,13 @@ import { z } from "zod"
 
 import { orchestratorModelSettings } from "@/lib/ai/agent"
 import { liveTurnChunk, turnMetaChunk, withTurnMeta } from "@/lib/ai/message-meta"
+import {
+  agentHistory,
+  COMPACTING_PART,
+  compactionMarker,
+  shouldAutoCompact,
+  summarizeHistory,
+} from "@/lib/games/compaction"
 import { contextUsageChunk, contextUsageOf } from "@/lib/games/context-usage"
 import { speedOfStep } from "@/lib/games/generation-speed"
 import { timingOfStep } from "@/lib/games/step-timing"
@@ -22,6 +30,7 @@ import {
   entryContextWindow,
   resolveModel,
   resolveTier,
+  resolveUtilityModel,
   type FallbackHooks,
   type ModelEntryId,
 } from "@/lib/ai/model-registry"
@@ -61,6 +70,87 @@ const TURN_DEADLINE_MS = 3300_000
 
 // Run-local like turnState; initialized on every boot, frozen anew per turn.
 const turnPricing = chat.local<{ snapshot: PricingSnapshot }>({ id: "turnPricing" })
+
+/**
+ * The tools `run` resolved this turn, so a completion hook can convert the
+ * thread to model messages exactly as the SDK does. Run-local like turnPricing.
+ */
+const turnTools = chat.local<{ tools: ToolSet | undefined }>({ id: "turnTools" })
+
+/**
+ * The conversion the SDK applies to the thread itself (its `toModelMessages`):
+ * with the turn's tools, so each result goes through its `toModelOutput`.
+ */
+function toModelHistory(tools: ToolSet | undefined) {
+  return (messages: UIMessage[]) =>
+    convertToModelMessages(messages, {
+      ignoreIncompleteToolCalls: true,
+      ...(tools ? { tools } : {}),
+    })
+}
+
+/**
+ * Compacts the thread once the orchestrator's context reaches 80% of its
+ * window (chat-compaction S1). The summary is priced into this turn's ledger,
+ * so it is charged in credits with the turn (S4), and the marker waits in
+ * `turnState` for `onTurnComplete`'s save. A failed summary leaves the thread
+ * as it was: the next turn tries again.
+ */
+async function compactAfterTurn({
+  chatId,
+  turn,
+  uiMessages,
+  messages,
+  writer,
+}: {
+  chatId: string
+  turn: number
+  uiMessages: UIMessage[]
+  messages: Parameters<typeof agentHistory>[1]
+  writer: { write: (chunk: Parameters<typeof chat.response.write>[0]) => void }
+}): Promise<void> {
+  const context = turnState.contextFor(turn)
+  if (!context || !shouldAutoCompact(context)) return
+
+  let served: ModelEntryId | undefined
+  const { model, primary } = resolveUtilityModel("compact", {
+    isUnavailable: () => false,
+    markUnavailable: () => {},
+    onServed: ({ entryId }) => {
+      served = entryId
+    },
+  })
+
+  writer.write({ type: COMPACTING_PART, data: { status: "compacting" }, transient: true })
+
+  try {
+    const history = await agentHistory(uiMessages, messages, toModelHistory(turnTools.tools))
+    const { summary, usage } = await summarizeHistory({
+      history,
+      model,
+      providerOptions: primary.providerOptions,
+    })
+
+    turnState.addUsage({
+      agentId: "compaction",
+      role: "compaction",
+      slot: "mid",
+      modelId: served ?? primary.id,
+      usage,
+      status: "done",
+    })
+
+    if (summary) {
+      turnState.setCompaction(
+        compactionMarker({ summary, trigger: "auto", tokens: context.tokens, window: context.window })
+      )
+    }
+  } catch (error) {
+    logger.warn("Compaction failed", { chatId, turn, error: String(error) })
+  } finally {
+    writer.write({ type: COMPACTING_PART, data: { status: "done" }, transient: true })
+  }
+}
 
 /**
  * A turn is a loop, not a single answer: read the file, edit it, check the
@@ -535,6 +625,7 @@ export const gameChat = chat.agent({
   onBoot: async ({ chatId, ctx }) => {
     turnState.init()
     turnPricing.init({ snapshot: capturePricingSnapshot() })
+    turnTools.init({ tools: undefined })
 
     /**
      * Tags the run with its owner so the sidebar's single per-player
@@ -778,6 +869,9 @@ export const gameChat = chat.agent({
    * resubscribing tab can, then costs a running game nothing.
    */
   onBeforeTurnComplete: async ({
+    chatId,
+    uiMessages,
+    messages,
     responseMessage,
     writer,
     usage,
@@ -826,6 +920,15 @@ export const gameChat = chat.agent({
         usage,
         status: error ? "error" : stopped ? "aborted" : "done",
       })
+
+      /**
+       * Before pricing, so the receipt below already includes the summary.
+       * Only after a turn that finished: a stopped or failed one is better
+       * retried from its full history.
+       */
+      if (!stopped && !error) {
+        await compactAfterTurn({ chatId, turn, uiMessages, messages, writer })
+      }
 
       const cost = priceTurn(turnState.tier, turnState.ledgerFor(turn), turnPricing.snapshot)
 
@@ -926,6 +1029,7 @@ export const gameChat = chat.agent({
      * take?" after a reload. See `lib/ai/message-meta.ts`.
      */
     const currentTurn = turnState.isCurrentTurn(turn)
+    const compaction = turnState.compactionFor(turn)
     const verificationData = createGameVerificationData(
       currentTurn ? turnState.verifyOutcome : "not-run",
       changedGameFiles(uiMessages[uiMessages.length - 1]?.role === "assistant" ? uiMessages[uiMessages.length - 1] : undefined),
@@ -951,7 +1055,7 @@ export const gameChat = chat.agent({
             turnState.speedFor(turn),
             turnState.stepsFor(turn),
             turnState.timingFor(turn)
-          )
+          ).concat(compaction ? [compaction] : [])
         ),
         chatAccessToken,
         lastEventId,
@@ -999,6 +1103,7 @@ export const gameChat = chat.agent({
      * auto-injected one").
      */
     const baseStreamTextOptions = chat.toStreamTextOptions({ tools })
+    turnTools.tools = tools
 
     /**
      * The orchestrator writes the tasks itself, so it needs what a planner
@@ -1026,7 +1131,12 @@ export const gameChat = chat.agent({
      * gone rather than failing the whole turn.
      */
     const ownerId = await getGameUserId(chatId)
-    const modelMessages = await resolveAttachments(messages, ownerId ?? null, (key) =>
+    /**
+     * After a compaction the agent gets the latest summary plus what followed
+     * it, not the whole thread the SDK converted (see `lib/games/compaction.ts`).
+     */
+    const history = await agentHistory(chat.history.all(), messages, toModelHistory(tools))
+    const modelMessages = await resolveAttachments(history, ownerId ?? null, (key) =>
       readAttachmentBytes(key).catch((error: unknown) => {
         logger.warn("Attachment unreadable", { chatId, key, error: String(error) })
         return null
