@@ -1,7 +1,7 @@
 "use client"
 
 import { useTranslations } from "next-intl"
-import { ArrowDown01Icon } from "@hugeicons/core-free-icons"
+import { ArrowDown01Icon, ArrowShrink02Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 
 import {
@@ -26,7 +26,8 @@ export function CompactionDivider({ compaction }: { compaction: CompactionData }
     <Collapsible className="flex flex-col gap-2">
       <CollapsibleTrigger className="group flex items-center gap-3 text-xs text-muted-foreground hover:text-foreground">
         <span className="h-px flex-1 bg-border" />
-        <span className="flex items-center gap-1">
+        <span className="flex items-center gap-1.5">
+          <HugeiconsIcon icon={ArrowShrink02Icon} strokeWidth={2} className="size-3.5" />
           {compaction.trigger === "auto" ? t("compactedAuto") : t("compacted")}
           <HugeiconsIcon
             icon={ArrowDown01Icon}

@@ -77,7 +77,12 @@ export default async function RootLayout({
         <NextIntlClientProvider locale={resolvedLocale} messages={messages}>
           <LocaleReconciler locale={resolvedLocale} />
           <LocalizedToaster>
-            <TooltipProvider>
+            {/**
+             * A short wait before any tooltip opens, so passing the pointer
+             * over a control (a message's time, an action icon) does not flash
+             * its tooltip. Once one is open, its neighbours open at once.
+             */}
+            <TooltipProvider delay={300}>
               <ThemeProvider>{children}</ThemeProvider>
             </TooltipProvider>
           </LocalizedToaster>
