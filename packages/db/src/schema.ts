@@ -327,13 +327,6 @@ export const games = pgTable(
     templateVersion: integer("template_version").notNull().default(1),
 
     /**
-     * Superseded by `game_messages`, which every read and write now uses. The
-     * column stays until the backfilled threads have been checked in real use;
-     * nothing updates it, so it is frozen at the backfill.
-     */
-    messages: jsonb("messages").$type<UIMessage[]>().notNull().default([]),
-
-    /**
      * The Trigger.dev chat Session backing this game's thread, as the browser
      * needs it back on page load. The Session outlives the runs it schedules,
      * so a tab opened tomorrow reconnects to the same conversation instead of
@@ -352,9 +345,9 @@ export const games = pgTable(
      * here, so chunks already rendered are not redelivered and an in-flight
      * turn continues streaming.
      *
-     * Written in the same statement as `messages` on purpose — a reload
-     * between the two writes would resume from a stale cursor and render the
-     * assistant's reply twice. It is keyed to the Session, not to a run, so it
+     * Written in the same transaction as the thread's rows on purpose — a
+     * reload between the two writes would resume from a stale cursor and
+     * render the assistant's reply twice. It is keyed to the Session, not to a run, so it
      * is never cleared when a run ends.
      */
     lastEventId: text("last_event_id"),

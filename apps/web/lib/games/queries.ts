@@ -15,11 +15,10 @@ import { requireSession } from "@/lib/session"
  * put every unpinned game ahead of the pinned ones instead of behind them.
  */
 /**
- * A game without its thread. The thread is the whole conversation, tool calls
- * and the files they wrote included — megabytes per game — so anything that
- * only needs a game's name or state must not pull it over the network.
+ * A game's row. Its thread lives in `game_messages`, read in pages, so the row
+ * stays small enough to read on every request.
  */
-export type GameSummary = Omit<Game, "messages">
+export type GameSummary = Game
 
 /**
  * What the sidebar and the command palette render of a game.
@@ -68,7 +67,6 @@ export async function getGame(id: string): Promise<GameSummary | undefined> {
   const { user } = await requireSession()
 
   return db.query.games.findFirst({
-    columns: { messages: false },
     where: (game, { and, eq }) =>
       and(eq(game.id, id), eq(game.userId, user.id)),
   })
@@ -109,13 +107,7 @@ export async function getGameSandboxId(id: string): Promise<string | undefined> 
  * `getGame`.
  */
 export async function getGameForPreview(id: string): Promise<GameSummary | undefined> {
-  /**
-   * Called for every file the game requests — each module, each sprite — so
-   * the thread is left out: a game with hundreds of assets would otherwise read
-   * its whole conversation hundreds of times on a single load.
-   */
   return db.query.games.findFirst({
-    columns: { messages: false },
     where: (game, { eq }) => eq(game.id, id),
   })
 }
