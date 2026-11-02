@@ -12,7 +12,10 @@ import {
   pageStart,
   isGameId,
   parseCursor,
+  gameRowQueryKey,
+  replacesThread,
   reusableThread,
+  threadScope,
   subagentRows,
   THREAD_PAGE_BYTES,
   THREAD_PAGE_TURNS,
@@ -291,4 +294,26 @@ test("parseCursor refuses a position past the column's range", () => {
 test("isGameId accepts only a uuid", () => {
   assert.equal(isGameId("dcbbf363-1f85-4186-84e3-9ff98a710ff0"), true)
   assert.equal(isGameId("not-a-game"), false)
+})
+
+const turn = { seen: 100, revalidated: 200, working: false, held: false }
+
+test("replacesThread takes a turn the mounted thread never saw", () => {
+  assert.equal(replacesThread(turn), true)
+})
+
+test("replacesThread leaves the thread alone when nothing changed", () => {
+  assert.equal(replacesThread({ ...turn, revalidated: 100 }), false)
+})
+
+test("replacesThread waits while the game is working", () => {
+  assert.equal(replacesThread({ ...turn, working: true }), false)
+})
+
+test("replacesThread keeps a thread that already holds the turn", () => {
+  assert.equal(replacesThread({ ...turn, held: true }), false)
+})
+
+test("gameRowQueryKey is apart from the thread's scope", () => {
+  assert.notEqual(gameRowQueryKey("g")[0], threadScope("g")[0])
 })

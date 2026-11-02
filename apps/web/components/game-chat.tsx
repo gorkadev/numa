@@ -7,8 +7,8 @@ import { BotIcon, Folder01Icon, PanelRightIcon } from "@hugeicons/core-free-icon
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useTranslations } from "next-intl"
 import { Button } from "@workspace/ui/components/button"
-import { Spinner } from "@workspace/ui/components/spinner"
 
+import { ChatBodySkeleton } from "@/components/chat/chat-skeleton"
 import { ChatThread } from "@/components/chat/chat-thread"
 import { SidePanel, type FileRequest, type SidePanelTab } from "@/components/chat/side-panel"
 import { SubagentPanel } from "@/components/chat/subagent-panel"
@@ -25,9 +25,9 @@ import type { SubagentRunRecord } from "@/lib/games/harness/records"
 import { mergeSubagentRuns } from "@/lib/games/thread-page"
 
 /**
- * The client boundary for a game: the page stays a server component that only
- * loads the game, while the thread and the split between the conversation and the preview —
- * which is toggled in the browser — lives from here down.
+ * The chat of a game whose row is in hand: the thread and the split between the
+ * conversation and the preview, which is toggled in the browser, live from here
+ * down. `GameRoute` above it owns reading the row.
  *
  * The header is rendered here rather than in the page for the same reason: the
  * toggle and the pane it controls have to share one piece of state, and a
@@ -40,6 +40,7 @@ export function GameChat({
   templateId,
   previewToken,
   lastTurnFinishedAt = 0,
+  rowSettled = true,
   initialSessions,
   initialPrompt,
   initialFiles,
@@ -70,6 +71,8 @@ export function GameChat({
    * reported a `revision` of its own.
    */
   lastTurnFinishedAt?: number
+  /** False while the row is being read again, which a thread cache miss waits for. */
+  rowSettled?: boolean
   initialSessions?: Record<
     string,
     { publicAccessToken: string; lastEventId?: string }
@@ -90,11 +93,12 @@ export function GameChat({
   /**
    * `useChat` takes its messages only when it mounts, so `ChatThread` waits for
    * this: on a cache hit it is already here on the first render, every page
-   * read before included.
+   * read before included. Replacing the thread is a new mount for the same reason.
    */
   const { threadKey, snapshot, failed, retry } = useThreadSnapshot(
     gameId,
-    lastTurnFinishedAt
+    lastTurnFinishedAt,
+    rowSettled
   )
 
   /**
@@ -337,7 +341,7 @@ export function GameChat({
           </header>
           {snapshot ? (
             <ChatThread
-              key={gameId}
+              key={threadKey[2]}
               gameId={gameId}
               templateId={templateId}
               threadKey={threadKey}
@@ -355,21 +359,17 @@ export function GameChat({
               onOpenFile={openFile}
               filesVersion={filesVersion}
             />
-          ) : (
+          ) : failed ? (
             <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2">
-              {failed ? (
-                <>
-                  <p role="alert" className="text-sm text-muted-foreground">
-                    {tActivity("loadEarlierFailed")}
-                  </p>
-                  <Button variant="ghost" size="sm" onClick={retry}>
-                    {tActivity("retry")}
-                  </Button>
-                </>
-              ) : (
-                <Spinner />
-              )}
+              <p role="alert" className="text-sm text-muted-foreground">
+                {tActivity("loadEarlierFailed")}
+              </p>
+              <Button variant="ghost" size="sm" onClick={retry}>
+                {tActivity("retry")}
+              </Button>
             </div>
+          ) : (
+            <ChatBodySkeleton />
           )}
         </div>
 

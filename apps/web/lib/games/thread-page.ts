@@ -2,6 +2,7 @@ import type { UIMessage } from "ai"
 
 import type { SessionStats } from "@/lib/ai/session-usage"
 import type { SubagentRunRecord } from "@/lib/games/harness/records"
+import type { TemplateId } from "@/lib/games/templates/catalog"
 import type { StoredOutlineTurn } from "@/lib/games/thread-outline"
 import { trimMessage } from "@/lib/games/tool-parts"
 
@@ -136,6 +137,53 @@ export function reusableThread(
   if (working || !cached || cached.messages.length === 0) return null
 
   return cached
+}
+
+/**
+ * What a game's route needs from the server. Kept to what the page draws: the
+ * owner, the sandbox id and the read marks stay on the server, and `unread`
+ * travels as the answer rather than as the marks it was computed from.
+ */
+export type GameRow = {
+  id: string
+  title: string
+  pinned: boolean
+  templateId: TemplateId
+  previewToken?: string
+  /** In epoch ms, 0 for none. */
+  lastTurnFinishedAt: number
+  session?: { publicAccessToken: string; lastEventId?: string }
+  unread: boolean
+  settings: { wrapCodeBlocks: boolean; showSessionStats: boolean }
+}
+
+/**
+ * Apart from `threadScope` because the two age differently: the thread is kept
+ * until a turn changes it, while the row is shown from cache and read again on
+ * every entry.
+ */
+export function gameRowQueryKey(gameId: string) {
+  return ["game", gameId] as const
+}
+
+/**
+ * Whether a revalidated row means the mounted thread is out of date. A working
+ * game is still writing it, and a thread that followed the turn itself already
+ * holds what the row reports, so remounting either would only lose the reader's
+ * place.
+ */
+export function replacesThread({
+  seen,
+  revalidated,
+  working,
+  held,
+}: {
+  seen: number
+  revalidated: number
+  working: boolean
+  held: boolean
+}): boolean {
+  return revalidated !== seen && !working && !held
 }
 
 /** Keeps pages in the cache, so coming back mounts with everything already read. */

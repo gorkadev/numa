@@ -21,6 +21,7 @@ import {
 } from "@/components/chat/use-subagent-run-detail"
 import { useGameWorking } from "@/components/game-activity-provider"
 import {
+  replacesThread,
   reusableThread,
   threadQueryKey,
   threadScope,
@@ -57,40 +58,77 @@ export function evictThread(client: QueryClient, gameId: string) {
 }
 
 /**
- * The thread a chat mounts with, or null until it exists. Reads the cache
- * directly rather than through an observer: `useChat` owns the messages from
- * the moment it mounts, so this only ever answers once, and a hit answers on
- * the first render with every page loaded before.
+ * The thread a chat shows, or null until it exists. Reads the cache directly
+ * rather than through an observer: `useChat` owns the messages from the moment
+ * it mounts, so a hit answers on the first render with every page loaded before.
  *
- * Read once per mount, so a `lastTurnFinishedAt` arriving later cannot move a
- * live thread onto another key.
+ * `rowSettled` holds a miss back until the row has been read again: a working
+ * game needs the row's stream cursor, and a turn the cached row has not heard
+ * of would have this fetch under a key that is about to change.
+ *
+ * A revalidated `lastTurnFinishedAt` moves a mounted thread only by
+ * `replacesThread`, and the old thread stays on screen until the new one is in
+ * hand, so a replacement has no empty frame.
  */
-export function useThreadSnapshot(gameId: string, lastTurnFinishedAt: number) {
+export function useThreadSnapshot(
+  gameId: string,
+  lastTurnFinishedAt: number,
+  rowSettled: boolean
+) {
   const client = useQueryClient()
   const working = useGameWorking(gameId)
-  const [threadKey] = useState(() => threadQueryKey(gameId, lastTurnFinishedAt))
 
-  const [snapshot, setSnapshot] = useState<ThreadSnapshot | null>(() => {
-    const cached = reusableThread(
-      client.getQueryData<ThreadSnapshot>(threadKey),
-      working
-    )
+  const readCached = (turn: number) => {
+    const key = threadQueryKey(gameId, turn)
+    const cached = reusableThread(client.getQueryData<ThreadSnapshot>(key), working)
 
-    if (!cached) client.removeQueries({ queryKey: threadKey })
+    if (!cached) client.removeQueries({ queryKey: key })
 
     return cached
+  }
+
+  const [target, setTarget] = useState(lastTurnFinishedAt)
+  const [seen, setSeen] = useState(lastTurnFinishedAt)
+  const [followed, setFollowed] = useState(false)
+  const [shown, setShown] = useState<{ turn: number; snapshot: ThreadSnapshot } | null>(() => {
+    const snapshot = readCached(lastTurnFinishedAt)
+
+    return snapshot ? { turn: lastTurnFinishedAt, snapshot } : null
   })
   const [failed, setFailed] = useState(false)
   const [attempt, setAttempt] = useState(0)
 
+  /** A mounted chat reconnects to or sent any turn it sees running. */
+  if (working && !followed) setFollowed(true)
+
+  if (lastTurnFinishedAt !== seen && !working) {
+    setSeen(lastTurnFinishedAt)
+    setFollowed(false)
+
+    if (
+      replacesThread({
+        seen,
+        revalidated: lastTurnFinishedAt,
+        working,
+        held: followed && shown !== null,
+      })
+    ) {
+      const snapshot = readCached(lastTurnFinishedAt)
+
+      setTarget(lastTurnFinishedAt)
+      setFailed(false)
+      if (snapshot) setShown({ turn: lastTurnFinishedAt, snapshot })
+    }
+  }
+
   useEffect(() => {
-    if (snapshot) return
+    if (shown?.turn === target || !rowSettled) return
 
     let active = true
 
     client
       .fetchQuery({
-        queryKey: threadKey,
+        queryKey: threadQueryKey(gameId, target),
         staleTime: 0,
         queryFn: async (): Promise<ThreadSnapshot> => {
           const page = await fetchThreadPage(gameId)
@@ -102,8 +140,8 @@ export function useThreadSnapshot(gameId: string, lastTurnFinishedAt: number) {
           }
         },
       })
-      .then((thread) => {
-        if (active) setSnapshot(thread)
+      .then((snapshot) => {
+        if (active) setShown({ turn: target, snapshot })
       })
       .catch((error: unknown) => {
         if (!active) return
@@ -116,14 +154,19 @@ export function useThreadSnapshot(gameId: string, lastTurnFinishedAt: number) {
     return () => {
       active = false
     }
-  }, [attempt, client, gameId, snapshot, threadKey])
+  }, [attempt, client, gameId, rowSettled, shown?.turn, target])
 
   const retry = useCallback(() => {
     setFailed(false)
     setAttempt((current) => current + 1)
   }, [])
 
-  return { threadKey, snapshot, failed, retry }
+  return {
+    threadKey: threadQueryKey(gameId, shown?.turn ?? target),
+    snapshot: shown?.snapshot ?? null,
+    failed,
+    retry,
+  }
 }
 
 /**
