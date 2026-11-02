@@ -2,11 +2,13 @@ import { logger, metadata, tags } from "@trigger.dev/sdk"
 import { chat, upsertIncomingMessage } from "@trigger.dev/sdk/ai"
 import {
   convertToModelMessages,
+  generateId,
   getToolName,
   isToolUIPart,
   stepCountIs,
   streamText,
   type Instructions,
+  type LanguageModelUsage,
   type ToolSet,
   type UIMessage,
 } from "ai"
@@ -16,6 +18,7 @@ import { orchestratorModelSettings } from "@/lib/ai/agent"
 import { liveTurnChunk, turnMetaChunk, withTurnMeta } from "@/lib/ai/message-meta"
 import {
   agentHistory,
+  canCompact,
   COMPACTING_PART,
   compactionMarker,
   shouldAutoCompact,
@@ -25,16 +28,22 @@ import { contextUsageChunk, contextUsageOf } from "@/lib/games/context-usage"
 import { speedOfStep } from "@/lib/games/generation-speed"
 import { timingOfStep } from "@/lib/games/step-timing"
 import { withThreadTier } from "@/lib/ai/message-model"
-import { tierIdSchema } from "@/lib/ai/model-catalog"
+import { tierIdSchema, type TierId } from "@/lib/ai/model-catalog"
 import {
   entryContextWindow,
   resolveModel,
   resolveTier,
   resolveUtilityModel,
+  strongContextWindows,
   type FallbackHooks,
   type ModelEntryId,
 } from "@/lib/ai/model-registry"
-import { capturePricingSnapshot, priceTurn, type PricingSnapshot } from "@/lib/ai/pricing"
+import {
+  capturePricingSnapshot,
+  priceTurn,
+  turnCreditCost,
+  type PricingSnapshot,
+} from "@/lib/ai/pricing"
 import { createGameSandbox } from "@/lib/daytona/utils"
 import { HARNESS_PHASES } from "@/lib/games/harness/flags"
 import { createExploreTool } from "@/lib/games/harness/tools/explore"
@@ -59,6 +68,7 @@ import { createGameTools } from "@/lib/games/tools"
 import { turnCreditsChunk } from "@/lib/games/turn-credits"
 import { getGameUserId, recordTurnUsage } from "@/lib/games/usage"
 import { getCreditBalance } from "@/lib/polar/balance"
+import { ingestCompactionCredits } from "@/lib/polar/events"
 
 /**
  * How long past a turn's start `chat.local`'s `deadline` gives every dispatch
@@ -90,6 +100,67 @@ function toModelHistory(tools: ToolSet | undefined) {
 }
 
 /**
+ * The orchestrator's tools for one game. Also what a `/compact` outside any
+ * turn converts the thread with, so tool results read as they do in a turn.
+ *
+ * `run_tasks` and `load_skill` are built for the game's dimension (its
+ * persisted template's), so a task can only request, and a model can only
+ * load, that dimension's skills.
+ */
+async function resolveGameTools(chatId: string) {
+  const dimension = await readGameDimension(chatId)
+
+  return {
+    ...createGameTools(chatId, { readBudgetGuard: orchestratorReadBudgetGuard }),
+    explore: createExploreTool(chatId),
+    plan: createPlanTool(chatId, {
+      onStart: () => chat.response.write(gameProgressChunk("planning")),
+    }),
+    run_tasks: createRunTasksTool(chatId, dimension, {
+      onStart: () => chat.response.write(gameProgressChunk("building")),
+    }),
+    verify: createVerifyTool(chatId, {
+      onStart: () => chat.response.write(gameProgressChunk("verifying")),
+    }),
+    load_skill: createLoadSkillTool(dimension),
+  }
+}
+
+/**
+ * Writes a summary of what the agent would receive now: the latest summary
+ * plus what followed it, or the whole thread before any compaction. Served by
+ * the `compact` utility model (Flash, chat-compaction S4).
+ */
+async function writeSummary({
+  chatId,
+  uiMessages,
+  messages,
+}: {
+  chatId: string
+  uiMessages: UIMessage[]
+  messages: Parameters<typeof agentHistory>[1]
+}): Promise<{ summary: string; usage: LanguageModelUsage; modelId: ModelEntryId }> {
+  let served: ModelEntryId | undefined
+  const { model, primary } = resolveUtilityModel("compact", {
+    isUnavailable: () => false,
+    markUnavailable: () => {},
+    onServed: ({ entryId }) => {
+      served = entryId
+    },
+  })
+
+  const tools = turnTools.tools ?? (await resolveGameTools(chatId))
+  const history = await agentHistory(uiMessages, messages, toModelHistory(tools))
+  const { summary, usage } = await summarizeHistory({
+    history,
+    model,
+    providerOptions: primary.providerOptions,
+  })
+
+  return { summary, usage, modelId: served ?? primary.id }
+}
+
+/**
  * Compacts the thread once the orchestrator's context reaches 80% of its
  * window (chat-compaction S1). The summary is priced into this turn's ledger,
  * so it is charged in credits with the turn (S4), and the marker waits in
@@ -110,32 +181,18 @@ async function compactAfterTurn({
   writer: { write: (chunk: Parameters<typeof chat.response.write>[0]) => void }
 }): Promise<void> {
   const context = turnState.contextFor(turn)
-  if (!context || !shouldAutoCompact(context)) return
-
-  let served: ModelEntryId | undefined
-  const { model, primary } = resolveUtilityModel("compact", {
-    isUnavailable: () => false,
-    markUnavailable: () => {},
-    onServed: ({ entryId }) => {
-      served = entryId
-    },
-  })
+  if (!context || !shouldAutoCompact(context) || !canCompact(uiMessages)) return
 
   writer.write({ type: COMPACTING_PART, data: { status: "compacting" }, transient: true })
 
   try {
-    const history = await agentHistory(uiMessages, messages, toModelHistory(turnTools.tools))
-    const { summary, usage } = await summarizeHistory({
-      history,
-      model,
-      providerOptions: primary.providerOptions,
-    })
+    const { summary, usage, modelId } = await writeSummary({ chatId, uiMessages, messages })
 
     turnState.addUsage({
       agentId: "compaction",
       role: "compaction",
       slot: "mid",
-      modelId: served ?? primary.id,
+      modelId,
       usage,
       status: "done",
     })
@@ -149,6 +206,89 @@ async function compactAfterTurn({
     logger.warn("Compaction failed", { chatId, turn, error: String(error) })
   } finally {
     writer.write({ type: COMPACTING_PART, data: { status: "done" }, transient: true })
+  }
+}
+
+/**
+ * `/compact` (chat-compaction S3): the same summary, on the player's request
+ * and outside any turn. Refused without credits, like a turn, and when there
+ * is nothing to fold away. It is billed on its own (`ingestCompactionCredits`)
+ * because an action never reaches `onTurnComplete`.
+ *
+ * The thread is saved with `turnFinished`, which moves the game's
+ * `last_turn_finished_at`: every cached copy of the thread is keyed on it, so
+ * none can be served without the marker afterwards.
+ */
+async function compactOnRequest({
+  chatId,
+  uiMessages,
+  messages,
+  tier,
+}: {
+  chatId: string
+  uiMessages: UIMessage[]
+  messages: Parameters<typeof agentHistory>[1]
+  tier: TierId | undefined
+}): Promise<void> {
+  const userId = await getGameUserId(chatId)
+
+  if (!userId) {
+    writeGameUnavailable()
+    return
+  }
+
+  const credits = await getCreditBalance(userId)
+
+  if (credits.status === "unprovisioned" || (credits.status === "ok" && credits.balance <= 0)) {
+    writeCreditsExhausted(credits.status === "ok" ? credits.balance : null)
+    return
+  }
+
+  if (!canCompact(uiMessages)) {
+    chat.response.write({ type: COMPACTING_PART, data: { status: "skipped" }, transient: true })
+    return
+  }
+
+  chat.response.write({ type: COMPACTING_PART, data: { status: "compacting" }, transient: true })
+
+  try {
+    const snapshot = capturePricingSnapshot()
+    const { summary, usage, modelId } = await writeSummary({ chatId, uiMessages, messages })
+    const marker = summary
+      ? compactionMarker({
+          summary,
+          trigger: "manual",
+          tokens: usage.inputTokens ?? 0,
+          window: strongContextWindows()[resolveTier(tier)],
+        })
+      : null
+
+    if (marker) {
+      await saveGameThread({
+        gameId: chatId,
+        messages: withoutGameProgress([...uiMessages, marker]),
+        turnFinished: true,
+      })
+    }
+
+    /** The marker travels whole, so the open chat can show it without a reload. */
+    chat.response.write({
+      type: COMPACTING_PART,
+      data: marker ? { status: "done", marker } : { status: "failed" },
+      transient: true,
+    })
+
+    /** Spent either way: an empty summary still cost the request. */
+    await ingestCompactionCredits({
+      userId,
+      gameId: chatId,
+      compactionId: marker?.id ?? generateId(),
+      credits: turnCreditCost({ modelId, usage, snapshot }),
+      modelId,
+    })
+  } catch (error) {
+    logger.warn("Compaction failed", { chatId, error: String(error) })
+    chat.response.write({ type: COMPACTING_PART, data: { status: "failed" }, transient: true })
   }
 }
 
@@ -596,6 +736,19 @@ export const gameChat = chat.agent({
     .default({}),
 
   /**
+   * Commands the composer's `/` menu sends (chat-compaction S2). Actions are
+   * not turns: only `hydrateMessages` and `onAction` run, so the thread is
+   * loaded from the database exactly as a turn would see it.
+   */
+  actionSchema: z.discriminatedUnion("type", [z.object({ type: z.literal("compact") })]),
+
+  onAction: async ({ action, chatId, uiMessages, messages, clientData }) => {
+    if (action.type === "compact") {
+      await compactOnRequest({ chatId, uiMessages, messages, tier: clientData?.tier })
+    }
+  },
+
+  /**
    * Without this, `chat.agent` falls back to the AI SDK's own default
    * `onError`: the literal string `"An error occurred."` for every failure.
    * Benchmark traces caught a `run_tasks` call whose input failed
@@ -668,24 +821,7 @@ export const gameChat = chat.agent({
    * persisted template's), so a task can only request, and a model can only
    * load, that dimension's skills.
    */
-  tools: async ({ chatId }) => {
-    const dimension = await readGameDimension(chatId)
-
-    return {
-    ...createGameTools(chatId, { readBudgetGuard: orchestratorReadBudgetGuard }),
-    explore: createExploreTool(chatId),
-    plan: createPlanTool(chatId, {
-      onStart: () => chat.response.write(gameProgressChunk("planning")),
-    }),
-    run_tasks: createRunTasksTool(chatId, dimension, {
-      onStart: () => chat.response.write(gameProgressChunk("building")),
-    }),
-    verify: createVerifyTool(chatId, {
-      onStart: () => chat.response.write(gameProgressChunk("verifying")),
-    }),
-    load_skill: createLoadSkillTool(dimension),
-    }
-  },
+  tools: ({ chatId }) => resolveGameTools(chatId),
 
   /**
    * Refuses a turn the user has no credits for.

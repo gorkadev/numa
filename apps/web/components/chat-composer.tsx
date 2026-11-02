@@ -49,6 +49,7 @@ import { useComposerAttachments } from "@/components/chat/use-composer-attachmen
 import { useComposerEditor } from "@/components/chat/use-composer-editor"
 import { useComposerShortcuts } from "@/components/chat/use-composer-shortcuts"
 import { useFileMentions, type MentionFilesLoader } from "@/components/chat/use-file-mentions"
+import { useSlashCommands, type ComposerCommand } from "@/components/chat/use-slash-commands"
 import { usePromptImprover } from "@/components/chat/use-prompt-improver"
 import { useSpeechDictation } from "@/components/chat/use-speech-dictation"
 import { useIsMac } from "@/hooks/use-is-mac"
@@ -123,6 +124,11 @@ type ChatComposerProps = {
   /** Opens a mentioned file in the side panel when its chip is clicked. */
   onOpenFile?: (path: string) => void
   /**
+   * Turns on the `/` actions menu: typing `/` lists these, filtered as you
+   * type, and choosing one runs it. Without it, `/` is text.
+   */
+  commands?: ComposerCommand[]
+  /**
    * Turns on attachments: a + button opens the system file picker, and the
    * files picked are uploaded and sent with the message, as context for the
    * model only.
@@ -149,6 +155,7 @@ export function ChatComposer({
   improverMode,
   loadMentionFiles,
   onOpenFile,
+  commands,
   attachable = false,
 }: ChatComposerProps) {
   const t = useTranslations("GameComposer")
@@ -206,6 +213,8 @@ export function ChatComposer({
   const mentionListId = useId()
   const textareaDisabled = pending || active || improver.improving
   const mentions = useFileMentions(loadMentionFiles, mentionListId)
+  const commandListId = useId()
+  const slash = useSlashCommands(commands, commandListId)
   const editor = useComposerEditor({
     value,
     onValueChange: replaceValue,
@@ -213,6 +222,7 @@ export function ChatComposer({
     placeholder: placeholder ?? t("placeholder"),
     disabled: textareaDisabled,
     suggestion: mentions.suggestion,
+    commandSuggestion: commands ? slash.suggestion : undefined,
     knownPaths: mentions.files,
     onOpenFile,
   })
@@ -398,6 +408,46 @@ export function ChatComposer({
                 <p className="px-2.5 py-1.5 text-muted-foreground">
                   {mentions.loading ? t("mentionLoading") : t("mentionEmpty")}
                 </p>
+              )}
+            </div>
+          ) : null}
+          {slash.open ? (
+            <div
+              data-slot="command-list"
+              style={{
+                top: slash.anchor.top,
+                left: `min(${slash.anchor.left}px, calc(100% - min(26rem, 100%)))`,
+              }}
+              className="absolute z-50 flex max-h-72 w-[min(26rem,100%)] -translate-y-[calc(100%+0.5rem)] flex-col overflow-hidden rounded-2xl bg-popover/70 p-1 text-sm text-popover-foreground shadow-lg ring-1 ring-foreground/5 backdrop-blur-2xl backdrop-saturate-150 dark:ring-foreground/10"
+            >
+              {slash.matches.length > 0 ? (
+                <ul
+                  id={commandListId}
+                  role="listbox"
+                  aria-label={t("commandList")}
+                  className="no-scrollbar min-h-0 scroll-fade overflow-y-auto overscroll-contain"
+                >
+                  {slash.matches.map((command, index) => (
+                    <li
+                      key={command.name}
+                      id={`${commandListId}-${index}`}
+                      role="option"
+                      aria-selected={index === slash.index}
+                      /** Keeps focus in the text area, which a click would take. */
+                      onMouseDown={(event) => event.preventDefault()}
+                      onMouseMove={() => slash.highlightAt(index)}
+                      onClick={() => slash.choose(command)}
+                      className="flex cursor-default scroll-my-8 items-baseline gap-2 rounded-xl px-2.5 py-1.5 aria-selected:bg-foreground/10 aria-selected:text-accent-foreground"
+                    >
+                      <span className="shrink-0 font-medium">/{command.name}</span>
+                      <span className="min-w-0 truncate text-xs text-muted-foreground">
+                        {command.description}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="px-2.5 py-1.5 text-muted-foreground">{t("commandEmpty")}</p>
               )}
             </div>
           ) : null}

@@ -28,6 +28,7 @@ import { Spinner } from "@workspace/ui/components/spinner"
 import { ChatComposer } from "@/components/chat-composer"
 import { AssistantAvatar } from "@/components/chat/assistant-avatar"
 import { ChatMessage } from "@/components/chat/chat-message"
+import { CompactingDivider, CompactionDivider } from "@/components/chat/compaction-divider"
 import { TaskStrip } from "@/components/chat/task-strip"
 import { ThreadOutline } from "@/components/chat/thread-outline"
 import { Thinking } from "@/components/chat/thinking"
@@ -46,6 +47,7 @@ import { deriveTaskStrip, shouldShowTaskStrip } from "@/lib/games/plan-tasks"
 import { loadFileTree } from "@/lib/games/file-tree-cache"
 import { mentionFiles } from "@/lib/games/mentions"
 import { mergeOutlineTurns, outlineTurns } from "@/lib/games/thread-outline"
+import { readCompaction } from "@/lib/games/compaction"
 import { collectThreadSubagentRuns } from "@/lib/games/tool-parts"
 
 export function ChatThread({
@@ -132,6 +134,8 @@ export function ChatThread({
   filesVersion: number
 }) {
   const t = useTranslations("ChatActivity")
+  const tMessages = useTranslations("ChatMessages")
+  const tComposer = useTranslations("GameComposer")
 
   /** The same listing the Files tab reads, flattened for the composer's `@` picker. */
   const loadMentionFiles = useCallback(
@@ -162,6 +166,9 @@ export function ChatThread({
     setTierId,
     pending,
     reconnecting,
+    compacting,
+    compact,
+    compactNotice,
     input,
     setInput,
   } = useGameChat({
@@ -176,6 +183,12 @@ export function ChatThread({
     onTurnFollowed,
   onTurnAbandoned,
   })
+
+  /** The composer's `/` actions (chat-compaction S2, S3). */
+  const commands = useMemo(
+    () => [{ name: "compact", description: tComposer("commandCompact"), run: () => void compact() }],
+    [compact, tComposer]
+  )
 
   const runs = useMemo(() => groupRuns(messages), [messages])
   const trailing = runs.at(-1)
@@ -258,7 +271,14 @@ export function ChatThread({
         <MessageScroller className="flex-1">
           <MessageScrollerViewport className="scroll-fade-y! [--scroll-fade-mask:initial]!">
             <MessageScrollerContent className="mx-auto w-full max-w-3xl px-4 py-8 gap-4">
-              {runs.map((run, index) => (
+              {runs.map((run, index) => {
+                const compaction = run.role === "compaction" ? readCompaction(run.messages[0]!) : null
+
+                return compaction ? (
+                  <MessageScrollerItem key={run.id} messageId={run.id}>
+                    <CompactionDivider compaction={compaction} />
+                  </MessageScrollerItem>
+                ) : (
                 <MessageScrollerItem
                   key={run.id}
                   messageId={run.id}
@@ -271,7 +291,7 @@ export function ChatThread({
                   scrollAnchor={run.role === "user" && !historyIds.has(run.id)}
                 >
                   <ChatMessage
-                    role={run.role}
+                    role={run.role === "user" ? "user" : "assistant"}
                     messages={run.messages}
                     streaming={pending && index === runs.length - 1}
                     reconnecting={reconnecting && index === runs.length - 1}
@@ -283,7 +303,13 @@ export function ChatThread({
                     onOpenFile={onOpenFile}
                   />
                 </MessageScrollerItem>
-              ))}
+                )
+              })}
+              {compacting ? (
+                <MessageScrollerItem>
+                  <CompactingDivider />
+                </MessageScrollerItem>
+              ) : null}
               {showLeadingThinking ? (
                 <MessageScrollerItem>
                   <Message align="start">
@@ -321,6 +347,14 @@ export function ChatThread({
          * and may contain diagnostics, so unknown failures use a localized
          * fallback rather than comparing or displaying English prose.
          */}
+        {compactNotice && !error ? (
+          <Alert>
+            <HugeiconsIcon icon={Alert01Icon} strokeWidth={2} />
+            <AlertDescription>
+              {compactNotice === "skipped" ? tMessages("compactSkipped") : tMessages("compactFailed")}
+            </AlertDescription>
+          </Alert>
+        ) : null}
         {error ? (
           <Alert variant="destructive">
             <HugeiconsIcon icon={Alert01Icon} strokeWidth={2} />
@@ -347,7 +381,7 @@ export function ChatThread({
            * the run stays alive for the next message — so cancelling costs the
            * conversation nothing.
            */
-          onStop={stop}
+          onStop={compacting ? undefined : stop}
           tierId={tierId}
           onTierChange={setTierId}
           templateId={templateId}
@@ -355,7 +389,8 @@ export function ChatThread({
           loadMentionFiles={loadMentionFiles}
           onOpenFile={onOpenFile}
           autoFocus
-          pending={pending}
+          pending={pending || compacting}
+          commands={commands}
           placeholder={t("placeholder")}
           usageSlot={
             <UsageFooter
@@ -448,7 +483,8 @@ function EarlierLoader({
   )
 }
 
-type Run = { id: string; role: "user" | "assistant"; messages: UIMessage[] }
+/** A compaction marker is a row of its own, never folded into a reply. */
+type Run = { id: string; role: "user" | "assistant" | "compaction"; messages: UIMessage[] }
 
 /**
  * Consecutive messages, folded into the rows the thread actually renders.
@@ -470,6 +506,11 @@ function groupRuns(messages: UIMessage[]): Run[] {
 
   for (const message of messages) {
     const open = runs.at(-1)
+
+    if (readCompaction(message)) {
+      runs.push({ id: message.id, role: "compaction", messages: [message] })
+      continue
+    }
 
     if (message.role === "assistant" && open?.role === "assistant") {
       open.messages.push(message)

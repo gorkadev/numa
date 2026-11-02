@@ -62,7 +62,13 @@
     "listings": "Listings",
     "filesWritten": "Files written",
     "edits": "Edits",
-    "filesDeleted": "Files deleted"
+    "filesDeleted": "Files deleted",
+    "compacted": "Context compacted",
+    "compactedAuto": "Context compacted automatically",
+    "compactedSummary": "Summary the agent continues from",
+    "compacting": "Compacting context…",
+    "compactFailed": "The conversation could not be compacted. Try again.",
+    "compactSkipped": "Nothing to compact yet"
   },
   "ChatUsage": {
     "speed": "tok/s",
@@ -329,6 +335,9 @@
     "mentionFiles": "Files",
     "mentionLoading": "Loading files…",
     "mentionEmpty": "No matching files",
+    "commandList": "Actions",
+    "commandEmpty": "No matching actions",
+    "commandCompact": "Summarize the conversation so the agent has room to keep going",
     "placeholder": "Describe the game you want to build…",
     "sendMessage": "Send message",
     "stopGenerating": "Stop generating",
