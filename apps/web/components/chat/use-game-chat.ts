@@ -12,7 +12,7 @@ import { sentAtMetadata, withoutLiveReceipts } from "@/lib/ai/message-meta"
 import { liveSessionStats } from "@/lib/ai/session-usage"
 import { readThreadTier, tierMetadata } from "@/lib/ai/message-model"
 import { DEFAULT_TIER_ID, type TierId } from "@/lib/ai/model-catalog"
-import { withoutContinuationOf } from "@/lib/ai/resume-stream"
+import { withFirstChunk, withoutContinuationOf } from "@/lib/ai/resume-stream"
 import {
   mintGameChatAccessToken,
   startGameChatSession,
@@ -171,14 +171,18 @@ export function useGameChat({
     sessions: initialSessions,
   })
 
+  /** A running turn's stream, held from the mount's probe until `useChat` takes it. */
+  const foundStream = useRef<{
+    stream: Awaited<ReturnType<typeof transport.reconnectToStream>>
+    abort: () => void
+  } | null>(null)
+
   /**
    * The message a resumed stream might be continuing, read once on mount.
    *
    * Only a thread already sitting on an assistant message has one, and the
    * resume happens on mount, so nothing arriving later can change the answer.
    */
-  const streamFound = useRef<(() => void) | undefined>(undefined)
-
   const [resumedHeadId] = useState(() => {
     const last = threadMessages.at(-1)
 
@@ -223,9 +227,15 @@ export function useGameChat({
       reconnectToStream: async (
         options: Parameters<typeof transport.reconnectToStream>[0]
       ) => {
-        const stream = await transport.reconnectToStream(options)
+        const found = foundStream.current
 
-        if (stream) streamFound.current?.()
+        foundStream.current = null
+
+        if (found) {
+          options.abortSignal?.addEventListener("abort", found.abort, { once: true })
+        }
+
+        const stream = found?.stream ?? (await transport.reconnectToStream(options))
 
         return stream && resumedHeadId
           ? stream.pipeThrough(withoutContinuationOf(resumedHeadId))
@@ -525,27 +535,23 @@ export function useGameChat({
 
     reconnectAttempt.current = { gameId, id: attempt, receivedPhase: false }
 
-    /**
-     * Nothing is announced yet. Most mounts have nothing to reconnect to — the
-     * last turn finished long ago — and the transport only learns that after a
-     * round trip. Flipping `reconnecting` and the build-progress label on
-     * before the answer put a "Reconnecting…" line above the composer and a
-     * thinking indicator inside the last reply on every entry, then took both
-     * away a moment later, which read as flicker. The transport reports back
-     * through `streamFound` the moment a live stream does exist.
-     */
-    streamFound.current = () => {
+    const isCurrentAttempt = () => {
       const currentAttempt = reconnectAttempt.current
 
-      if (currentAttempt.gameId !== gameId || currentAttempt.id !== attempt) {
-        return
-      }
-
-      setReconnecting(true)
-      dispatchBuildProgress({ type: "reconnect-start" })
+      return currentAttempt.gameId === gameId && currentAttempt.id === attempt
     }
+    const probe = new AbortController()
 
     /**
+     * Nothing is announced, and `resumeStream` is not called, until a chunk
+     * proves a turn is running. Most mounts have nothing to reconnect to, but
+     * the transport answers with a stream before it knows that, and
+     * `resumeStream` turns any stream into a `submitted` status: every entry
+     * disabled the composer, dropped its focus, showed the stop button and
+     * "Reconnecting…", then took it all back when the stream closed empty.
+     *
+     * The subscription aborts without stopping the turn: only a sender owns it.
+     *
      * Deferred a tick so React's development double mount settles first: its
      * fake unmount runs `useChat`'s cleanup, `chat.stop()`, which aborted a
      * reconnect started on the first mount, and the second mount's reconnect
@@ -554,18 +560,32 @@ export function useGameChat({
      */
     const resumeTimer = setTimeout(() => void (async () => {
       try {
+        const reconnected = await transport.reconnectToStream({
+          chatId: gameId,
+          abortSignal: probe.signal,
+        })
+        const stream = reconnected && (await withFirstChunk(reconnected))
+
+        if (!stream) return
+
+        if (!isCurrentAttempt()) {
+          void stream.cancel()
+          return
+        }
+
+        setReconnecting(true)
+        dispatchBuildProgress({ type: "reconnect-start" })
+        foundStream.current = { stream, abort: () => probe.abort() }
         await resumeStream()
 
-        const currentAttempt = reconnectAttempt.current
-        if (currentAttempt.gameId === gameId && currentAttempt.id === attempt) {
-          if (!currentAttempt.receivedPhase) {
+        if (isCurrentAttempt()) {
+          if (!reconnectAttempt.current.receivedPhase) {
             dispatchBuildProgress({ type: "reconnect-end" })
           }
           setReconnecting(false)
         }
       } catch {
-        const currentAttempt = reconnectAttempt.current
-        if (currentAttempt.gameId === gameId && currentAttempt.id === attempt) {
+        if (isCurrentAttempt()) {
           dispatchBuildProgress({ type: "disconnect" })
           setReconnecting(false)
         }
@@ -574,6 +594,7 @@ export function useGameChat({
 
     return () => {
       clearTimeout(resumeTimer)
+      probe.abort()
       const currentAttempt = reconnectAttempt.current
 
       if (currentAttempt.gameId === gameId && currentAttempt.id === attempt) {
@@ -585,7 +606,7 @@ export function useGameChat({
         resumedChatId.current = null
       }
     }
-  }, [dispatchBuildProgress, gameId, hasHistory, resumeStream])
+  }, [dispatchBuildProgress, gameId, hasHistory, resumeStream, transport])
 
   /**
    * The metadata records the choice on the message itself, which is what the
