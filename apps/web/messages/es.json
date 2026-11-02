@@ -619,7 +619,15 @@
       "sessionStats": "Estadísticas de sesión",
       "sessionStatsDescription": "Muestra turnos, pasos y tokens por segundo bajo el editor, con los tiempos de la sesión al hacer clic.",
       "wrapCode": "Ajustar código por defecto",
-      "wrapCodeDescription": "Los bloques de código de los mensajes, los subagentes y el visor de archivos empiezan con las líneas largas ajustadas. Cada bloque mantiene su propio botón."
+      "wrapCodeDescription": "Los bloques de código de los mensajes, los subagentes y el visor de archivos empiezan con las líneas largas ajustadas. Cada bloque mantiene su propio botón.",
+      "speechTitle": "Lectura en voz alta",
+      "speechVoice": "Voz en {language}",
+      "speechVoiceDescription": "La voz para los mensajes escritos en {language}, entre las instaladas en este dispositivo.",
+      "speechVoiceAutomatic": "Automática",
+      "speechVoiceSearch": "Voz de lectura en voz alta",
+      "speechVoiceSearchDescription": "La voz de cada idioma, entre las instaladas en este dispositivo.",
+      "speechRate": "Velocidad",
+      "speechRateDescription": "A qué velocidad se leen los mensajes en este dispositivo."
     },
     "shortcuts": {
       "navigationGroup": "Navegación",

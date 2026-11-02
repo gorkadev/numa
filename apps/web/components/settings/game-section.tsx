@@ -25,6 +25,7 @@ import {
   SettingsGroup,
   SettingsRow,
 } from "@/components/settings/settings-group"
+import { SpeechSettings } from "@/components/settings/speech-settings"
 import { DEFAULT_TIER_ID, TIERS, isTierId } from "@/lib/ai/model-catalog"
 import { IMPROVER_DAILY_LIMIT } from "@/lib/games/improver/allowance"
 import { publishImproverAllowanceStale } from "@/lib/games/improver/allowance-channel"
@@ -170,6 +171,7 @@ export function GameSettingsSection() {
           </ItemActions>
         </SettingsRow>
       </SettingsGroup>
+      <SpeechSettings />
       <SettingsGroup
         title={t("improverTitle")}
         description={t("improverDescription", IMPROVER_DAILY_LIMIT)}

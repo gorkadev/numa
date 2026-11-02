@@ -49,6 +49,18 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
     description: "Settings.game.wrapCodeDescription",
   },
   {
+    id: "speech-voice",
+    section: "game",
+    title: "Settings.game.speechVoiceSearch",
+    description: "Settings.game.speechVoiceSearchDescription",
+  },
+  {
+    id: "speech-rate",
+    section: "game",
+    title: "Settings.game.speechRate",
+    description: "Settings.game.speechRateDescription",
+  },
+  {
     id: "improver-overage",
     section: "game",
     title: "Settings.game.improverOverage",

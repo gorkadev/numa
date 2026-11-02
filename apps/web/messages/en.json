@@ -619,7 +619,15 @@
       "sessionStats": "Session statistics",
       "sessionStatsDescription": "Show turns, steps and tokens per second under the composer, with the session's timing on click.",
       "wrapCode": "Wrap code by default",
-      "wrapCodeDescription": "Code blocks in messages, sub-agents and the Files viewer start with long lines wrapped. Each block keeps its own toggle."
+      "wrapCodeDescription": "Code blocks in messages, sub-agents and the Files viewer start with long lines wrapped. Each block keeps its own toggle.",
+      "speechTitle": "Read aloud",
+      "speechVoice": "Voice in {language}",
+      "speechVoiceDescription": "The voice for messages written in {language}, from those installed on this device.",
+      "speechVoiceAutomatic": "Automatic",
+      "speechVoiceSearch": "Read aloud voice",
+      "speechVoiceSearchDescription": "The voice for each language, from those installed on this device.",
+      "speechRate": "Speed",
+      "speechRateDescription": "How fast messages are read aloud on this device."
     },
     "shortcuts": {
       "navigationGroup": "Navigation",

@@ -24,6 +24,12 @@ import {
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip"
 
+import {
+  browserLanguageDetector,
+  detectWithBrowser,
+  guessMessageLanguage,
+} from "@/lib/speech-language"
+import { pickSpeechVoice, readSpeechPreferences } from "@/lib/speech-preferences"
 import { TokenUsagePanel } from "@/components/chat/token-usage-panel"
 import {
   UsagePanelHeader,
@@ -179,7 +185,7 @@ function SpeechButton({ text }: { text: string }) {
     try {
       const synthesis = window.speechSynthesis
       const utterance = new SpeechSynthesisUtterance(text)
-      utterance.lang = document.documentElement.lang || locale
+      const fallback = document.documentElement.lang || locale
 
       const playback: ActiveSpeech = {
         owner: owner.current,
@@ -201,8 +207,33 @@ function SpeechButton({ text }: { text: string }) {
         setFailed(true)
       }
 
+      const start = (language: string) => {
+        const preferences = readSpeechPreferences(window.localStorage)
+        const voice = pickSpeechVoice(synthesis.getVoices(), language, preferences)
+
+        utterance.lang = language
+        if (voice) utterance.voice = voice
+        utterance.rate = preferences.rate
+        synthesis.speak(utterance)
+      }
+      const detector = browserLanguageDetector()
+
       setSpeaking(true)
-      synthesis.speak(utterance)
+
+      /**
+       * The message's language, not the interface's: a voice reading another
+       * language sounds wrong. Without a detector this stays synchronous,
+       * because Safari only speaks inside the click itself.
+       */
+      if (detector) {
+        void detectWithBrowser(text, detector).then((language) => {
+          if (activeSpeech === playback) {
+            start(language ?? guessMessageLanguage(text, fallback))
+          }
+        })
+      } else {
+        start(guessMessageLanguage(text, fallback))
+      }
     } catch {
       activeSpeech = undefined
       setSpeaking(false)
