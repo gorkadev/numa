@@ -351,7 +351,11 @@ export function ChatThread({
           <Alert>
             <HugeiconsIcon icon={Alert01Icon} strokeWidth={2} />
             <AlertDescription>
-              {compactNotice === "skipped" ? tMessages("compactSkipped") : tMessages("compactFailed")}
+              {compactNotice === "empty"
+                ? tMessages("compactSkipped")
+                : compactNotice === "question"
+                  ? tMessages("compactQuestion")
+                  : tMessages("compactFailed")}
             </AlertDescription>
           </Alert>
         ) : null}

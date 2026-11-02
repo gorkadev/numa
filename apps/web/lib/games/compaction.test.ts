@@ -7,6 +7,7 @@ import {
   agentHistory,
   canCompact,
   compactionMarker,
+  compactRefusal,
   latestCompaction,
   readCompacting,
   readCompaction,
@@ -117,7 +118,8 @@ describe("readCompacting", () => {
     assert.deepEqual(readCompacting({ type: "data-compacting", data: { status: "done", marker } }), { status: "done", marker })
     assert.deepEqual(readCompacting({ type: "data-compacting", data: { status: "done" } }), { status: "done" })
     assert.deepEqual(readCompacting({ type: "data-compacting", data: { status: "failed" } }), { status: "failed" })
-    assert.deepEqual(readCompacting({ type: "data-compacting", data: { status: "skipped" } }), { status: "skipped" })
+    assert.deepEqual(readCompacting({ type: "data-compacting", data: { status: "skipped", reason: "question" } }), { status: "skipped", reason: "question" })
+    assert.deepEqual(readCompacting({ type: "data-compacting", data: { status: "skipped" } }), { status: "skipped", reason: "empty" })
   })
 
   it("ignores other parts and malformed data", () => {
@@ -158,6 +160,8 @@ describe("canCompact", () => {
     }
 
     assert.equal(canCompact([user("u1", "a"), asking]), false)
+    assert.equal(compactRefusal([user("u1", "a"), asking]), "question")
+    assert.equal(compactRefusal([]), "empty")
   })
 })
 

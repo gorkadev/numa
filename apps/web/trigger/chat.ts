@@ -20,6 +20,7 @@ import {
   agentHistory,
   canCompact,
   COMPACTING_PART,
+  compactRefusal,
   compactionMarker,
   shouldAutoCompact,
   summarizeHistory,
@@ -244,8 +245,10 @@ async function compactOnRequest({
     return
   }
 
-  if (!canCompact(uiMessages)) {
-    chat.response.write({ type: COMPACTING_PART, data: { status: "skipped" }, transient: true })
+  const refusal = compactRefusal(uiMessages)
+
+  if (refusal) {
+    chat.response.write({ type: COMPACTING_PART, data: { status: "skipped", reason: refusal }, transient: true })
     return
   }
 
