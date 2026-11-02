@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 
 import { Button } from "@workspace/ui/components/button"
+import { Skeleton } from "@workspace/ui/components/skeleton"
 import {
   Select,
   SelectContent,
@@ -13,7 +14,6 @@ import {
 } from "@workspace/ui/components/select"
 import { useTranslations } from "next-intl"
 
-import { Spinner } from "@/components/localized-spinner"
 import type { ModelScene } from "./model-scene"
 
 type ModelState =
@@ -79,9 +79,8 @@ export function ModelViewer({ src, name }: { src: string; name: string }) {
     <div data-slot="model-viewer" data-src={src} className="relative h-full min-h-0">
       <div ref={containerRef} className="absolute inset-0" />
       {state.status === "loading" && (
-        <div className="absolute inset-0 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-          <Spinner className="size-4" />
-          {t("loadingFile", { name })}
+        <div role="status" aria-label={t("loadingFile", { name })} className="absolute inset-4">
+          <Skeleton className="size-full" />
         </div>
       )}
       {state.status === "failed" && (

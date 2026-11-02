@@ -14,11 +14,12 @@ import {
   CodeBlockLine,
   CodeBlockTitle,
 } from "@workspace/ui/components/code-block"
+import { Skeleton } from "@workspace/ui/components/skeleton"
 import { useFormatter, useTranslations } from "next-intl"
 
-import { Spinner } from "@/components/localized-spinner"
 import { useDefaultCodeWrap } from "@/components/chat/code-wrap"
 import { useHighlightedCode } from "@/hooks/use-highlighted-code"
+import { loadHighlighter } from "@/lib/highlighter"
 import { fileContentUrl, fileViewOf, MAX_VIEW_BYTES, previewAssetUrl } from "@/lib/games/files"
 import type { ReadGameFileResult } from "@/lib/games/files-server"
 import { ModelViewer } from "./model-viewer"
@@ -96,6 +97,8 @@ function MediaFrame({ children }: { children: React.ReactNode }) {
   )
 }
 
+const LOADING_LINE_WIDTHS = ["w-2/5", "w-3/5", "w-1/2", "w-4/5", "w-1/3", "w-2/3", "w-1/2", "w-1/4"]
+
 type TextState =
   | { status: "loading" }
   | { status: "failed" }
@@ -121,21 +124,45 @@ function TextFile({
     fetch(fileContentUrl(gameId, file.path, version), { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error(String(response.status))
-        setState({ status: "done", result: await response.json() })
+
+        // Awaited with the text so the file's first paint is already colored.
+        const [result] = await Promise.all([
+          response.json(),
+          loadHighlighter(language).catch(() => null),
+        ])
+
+        // The abort no longer reaches this far once the body has been read.
+        if (!controller.signal.aborted) setState({ status: "done", result })
       })
       .catch(() => {
         if (!controller.signal.aborted) setState({ status: "failed" })
       })
 
     return () => controller.abort()
-  }, [gameId, file.path, version, attempt])
+  }, [gameId, file.path, language, version, attempt])
 
   if (state.status === "loading") {
     return (
-      <div className="flex h-full items-center justify-center gap-2 text-sm text-muted-foreground">
-        <Spinner className="size-4" />
-        {t("loadingFile", { name: file.name })}
-      </div>
+      <CodeBlock
+        role="status"
+        aria-label={t("loadingFile", { name: file.name })}
+        className="h-full rounded-none bg-transparent ring-0 dark:ring-0"
+      >
+        <CodeBlockHeader>
+          <CodeBlockTitle className="font-mono text-xs text-muted-foreground">
+            {file.path}
+          </CodeBlockTitle>
+          <CodeBlockActions>
+            <Skeleton className="size-6" />
+            <Skeleton className="size-6" />
+          </CodeBlockActions>
+        </CodeBlockHeader>
+        <div className="flex flex-col gap-2 p-4">
+          {LOADING_LINE_WIDTHS.map((width, index) => (
+            <Skeleton key={index} className={`h-4 ${width}`} />
+          ))}
+        </div>
+      </CodeBlock>
     )
   }
 

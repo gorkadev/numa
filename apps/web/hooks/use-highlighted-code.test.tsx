@@ -2,6 +2,8 @@ import assert from "node:assert/strict"
 import test from "node:test"
 import * as React from "react"
 import { renderToStaticMarkup } from "react-dom/server"
+import { loadHighlighter, MAX_HIGHLIGHTED_LINE } from "@/lib/highlighter"
+
 import { useHighlightedCode } from "./use-highlighted-code"
 
 Object.assign(globalThis, { React })
@@ -36,4 +38,24 @@ test("hook removes only one trailing newline for unknown language and streamed s
       expected
     )
   }
+})
+
+test("a language already loaded highlights on the first render", async () => {
+  await loadHighlighter("javascript")
+
+  assert.match(
+    renderToStaticMarkup(<PlainLines value={"const a = 1"} language="javascript" />),
+    /--shiki-light/
+  )
+})
+
+test("a line too long to color skips the highlighter and keeps the text", async () => {
+  await loadHighlighter("javascript")
+
+  const longLine = `const a = "${"x".repeat(MAX_HIGHLIGHTED_LINE)}"`
+
+  assert.equal(
+    renderToStaticMarkup(<PlainLines value={`let b\n${longLine}`} language="javascript" />),
+    `<span>let b</span><span>${longLine.replaceAll('"', "&quot;")}</span>`
+  )
 })

@@ -64,6 +64,36 @@ function getLanguage(language: string) {
   return aliases[name] ?? null
 }
 
+/**
+ * The longest line sent to the highlighter. Past this the file is minified, so
+ * color helps nobody, while tokenizing it blocks the page for seconds. A file
+ * holding such a line is shown as plain text.
+ */
+export const MAX_HIGHLIGHTED_LINE = 20_000
+
+export function hasUnhighlightableLine(code: string) {
+  let start = 0
+
+  while (start <= code.length) {
+    const newline = code.indexOf("\n", start)
+    const end = newline === -1 ? code.length : newline
+
+    if (end - start > MAX_HIGHLIGHTED_LINE) return true
+    start = end + 1
+  }
+
+  return false
+}
+
+type Highlighter = Awaited<ReturnType<typeof createHighlighter>>
+
+const loaded = new Map<string, Highlighter>()
+
+/** The highlighter already loaded for a language, usable during a render. */
+export function peekHighlighter(language: string) {
+  return loaded.get(language)
+}
+
 // Loads a language and returns a highlighter for it, or null for a language
 // that is not listed.
 export async function loadHighlighter(language: string) {
@@ -72,6 +102,15 @@ export async function loadHighlighter(language: string) {
   if (!lang) {
     return null
   }
+
+  const highlighter = loaded.get(language) ?? (await createHighlighter(lang))
+
+  loaded.set(language, highlighter)
+
+  return highlighter
+}
+
+async function createHighlighter(lang: keyof typeof languages | "ansi") {
 
   const shiki = await getHighlighter()
 

@@ -1,6 +1,10 @@
 import * as React from "react"
 
-import { loadHighlighter } from "@/lib/highlighter"
+import {
+  hasUnhighlightableLine,
+  loadHighlighter,
+  peekHighlighter,
+} from "@/lib/highlighter"
 
 export function useHighlightedCode(value: string, language: string) {
   // A trailing newline would render as an extra empty line.
@@ -8,8 +12,14 @@ export function useHighlightedCode(value: string, language: string) {
   const [loaded, setLoaded] = React.useState<{
     language: string
     highlighter: Awaited<ReturnType<typeof loadHighlighter>>
-  } | null>(null)
-  const highlighter = loaded?.language === language ? loaded.highlighter : null
+  } | null>(() => {
+    const ready = peekHighlighter(language)
+
+    return ready ? { language, highlighter: ready } : null
+  })
+  const unhighlightable = React.useMemo(() => hasUnhighlightableLine(code), [code])
+  const highlighter =
+    loaded?.language === language && !unhighlightable ? loaded.highlighter : null
 
   React.useEffect(() => {
     let cancelled = false

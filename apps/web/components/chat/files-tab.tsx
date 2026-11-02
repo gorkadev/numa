@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 import { ArrowLeft01Icon, Cancel01Icon, Search01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
@@ -122,6 +122,28 @@ export function FilesTabBody({
     [gameId, version]
   )
   const [query, setQuery] = useState("")
+  const searchRef = useRef<HTMLInputElement>(null)
+  const canSearch = state.status === "ready" && state.tree.length > 0
+
+  /**
+   * Opening the tab is usually the start of a search. The tree can take seconds
+   * on a sleeping sandbox, so focus is left alone if the player has started
+   * typing elsewhere, and on touch screens, where it would raise the keyboard.
+   */
+  useEffect(() => {
+    if (!canSearch || !window.matchMedia("(pointer: fine)").matches) return
+
+    const focused = document.activeElement
+
+    if (
+      focused instanceof HTMLElement &&
+      (focused.isContentEditable || focused.matches("input, textarea, select"))
+    ) {
+      return
+    }
+
+    searchRef.current?.focus()
+  }, [canSearch])
 
   if (state.status === "loading") {
     return (
@@ -192,6 +214,7 @@ export function FilesTabBody({
           <HugeiconsIcon icon={Search01Icon} strokeWidth={2} />
         </InputGroupAddon>
         <InputGroupInput
+          ref={searchRef}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           onKeyDown={(event) => {
