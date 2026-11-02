@@ -25,12 +25,12 @@ Test runner: in `apps/web`, `pnpm exec tsx --test $(find . -name "*.test.ts*" -n
 - [x] T2 (S3) inline — apply schema with `db:push`, backfill production, verify counts. Evidence: L5.
 - [x] T3 (S1, S4) inline — page reads, server action, chat hook and load control. Commits: 8324ca2, 12f45e5. Evidence: L8.
 - [ ] T4 (S2, S3) inline — drop `games.messages`. Blocked: needs the user's go-ahead, irreversible.
-- [x] T5 (S8) inline — `game_subagent_runs`, written with the thread, backfilled. Commit: this slice.
-- [x] T6 (S9) delegated — TanStack Query for thread data, invalidated by the activity signal. Evidence: L17. Commit: pending.
-- [x] T7 (S6, S7, S8) delegated — scroll loading, full outline, full subagent list with lazy detail. Evidence: L17. Commit: pending.
-- [x] T9 (S11) delegated — bounded reads and saves per L15. Agent history is out of scope until the compaction decision (L16). Evidence: L17. Commit: pending.
-- [x] T8 (S10, S11) delegated — heavy tool outputs on demand. Evidence: L22. Commit: pending.
-- [x] T11 (S12, S6) delegated — instant return from cache; scroll at the top measured, no change. Evidence: L25. Commit: pending.
+- [x] T5 (S8) inline — `game_subagent_runs`, written with the thread, backfilled. Commit: 511b585.
+- [x] T6 (S9) delegated — TanStack Query for thread data, invalidated by the activity signal. Evidence: L17. Commit: 7b2c6f7.
+- [x] T7 (S6, S7, S8) delegated — scroll loading, full outline, full subagent list with lazy detail. Evidence: L17. Commit: 7b2c6f7.
+- [x] T9 (S11) delegated — bounded reads and saves per L15. Agent history is out of scope until the compaction decision (L16). Evidence: L17. Commit: 7b2c6f7.
+- [x] T8 (S10, S11) delegated — heavy tool outputs on demand. Commit: ac924d5.
+- [x] T11 (S12, S6) delegated — instant return from cache; scroll at the top measured, no change. Commits: c9d9f07, b64e119, 9b2c53a.
 
 Route evidence: T1-T5 inline, no Writer trigger. T6, T7, T9 delegated to one bounded writer under the long-session backstop (context), as one coupled unit. Risk: item 1 (persisted format, existing data), independent verifier required.
 
@@ -75,3 +75,5 @@ Route evidence: T1-T5 inline, no Writer trigger. T6, T7, T9 delegated to one bou
 - L25 Final verifier on c9d9f07: trimmed messages cannot reach storage (real SDK merge plus `saveGameThread`), trim differential 0 across 32 games, return hops 0 skeleton samples, suite 578/578. Blocker: a turn started in another tab left a mounted chat stale, because `followed` was read off `working`. Fixed: the chat reports the turns it actually sends or streams. Not run, needs a real turn: mid-stream leave and return, brand-new `initialPrompt`, this fix end to end. Production instant commit unproven: `next build` needs `DAYTONA_API_KEY`.
 - L26 (2026-11-02, user): false "working" states from Vertex timeouts and Trigger cancellations are out of scope; verified stored records of game 60913af6 say running.
 - L27 Recheck of b64e119: PASS for a clean tab, followed turns, render loops and revalidation (driven by `working` falling or `renderedAt`). Narrow failure: a failed send kept `followed` true. Second correction: `status === "error"` clears it. No further recheck under the correction bound; a real two-tab turn remains the pending proof.
+- L28 (2026-11-02, user): "ps funciona bien si, pero el problema esq argon da error". Cause was the user's own typo in `apps/web/.env.local`, `aGOOGLE_VERTEX_PROJECT`, now fixed by the user; no code involved. A real turn worked for the user, per that message; Argon after the typo fix was not re-confirmed here.
+- L29 Next step: the user checks brand-new prompt, mid-stream return and two tabs. Then T4 (needs go-ahead), push and PR in slices (about 4,000 lines; run `chained-pr`), production measure of instant return, T10 compaction backlog. Neon branch `verify-thread-cache` (`br-red-king-b2r6tz9u`) awaits deletion approval.
