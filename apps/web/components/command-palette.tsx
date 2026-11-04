@@ -53,7 +53,12 @@ import { useIsMac } from "@/hooks/use-is-mac"
 import { useSettingsDialog } from "@/hooks/use-settings-dialog"
 import { createGame, setGamePinned } from "@/lib/games/actions"
 import { MIN_MESSAGE_QUERY_LENGTH } from "@/lib/games/message-search"
-import { searchGameMessages, type MessageHit } from "@/lib/games/search-actions"
+import {
+  readGameListItem,
+  searchGameMessages,
+  searchGames,
+  type MessageHit,
+} from "@/lib/games/search-actions"
 import { openGameIdOf } from "@/lib/games/activity"
 import { DEFAULT_TEMPLATE_ID, TEMPLATES } from "@/lib/games/templates/catalog"
 import { backFrom, type PalettePage } from "@/lib/command-palette/pages"
@@ -138,6 +143,13 @@ export function CommandPalette({
   const messageQuery =
     !page && scope !== "commands" ? parseQuery(search).text.trim() : ""
   const messageHits = useMessageHits(messageQuery)
+  /**
+   * The games whose title matches, from the server: the sidebar only holds
+   * the pages it has scrolled to. `null` until the answer for this exact text
+   * arrives, and while it is on its way cmdk filters the loaded games as it
+   * always has, so typing never empties the list in between.
+   */
+  const gameHits = useGameHits(messageQuery)
 
   /**
    * Individual settings, from the same index and ranking as the settings
@@ -281,11 +293,12 @@ export function CommandPalette({
   useEffect(() => {
     onOpenChange(false)
   }, [pathname, onOpenChange])
-  const currentGame = games.find((game) => game.id === openGameId)
+  const currentGame = useCurrentGame(games, openGameId, open)
 
-  /** Same split as the sidebar: `listGames` already sorts pinned first. */
-  const pinnedGames = games.filter((game) => game.pinnedAt !== null)
-  const recentGames = games.filter((game) => game.pinnedAt === null)
+  /** Same split as the sidebar; both sources list pinned games first. */
+  const listedGames = gameHits ?? games
+  const pinnedGames = listedGames.filter((game) => game.pinnedAt !== null)
+  const recentGames = listedGames.filter((game) => game.pinnedAt === null)
 
   const [renameOpen, setRenameOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -616,14 +629,24 @@ export function CommandPalette({
               {showGames && pinnedGames.length > 0 && (
                 <CommandGroup heading={t("pinned")}>
                   {pinnedGames.map((game) => (
-                    <GameItem key={game.id} game={game} onSelect={go} />
+                    <GameItem
+                      key={game.id}
+                      game={game}
+                      matched={gameHits ? messageQuery : undefined}
+                      onSelect={go}
+                    />
                   ))}
                 </CommandGroup>
               )}
               {showGames && recentGames.length > 0 && (
                 <CommandGroup heading={t("recents")}>
                   {recentGames.map((game) => (
-                    <GameItem key={game.id} game={game} onSelect={go} />
+                    <GameItem
+                      key={game.id}
+                      game={game}
+                      matched={gameHits ? messageQuery : undefined}
+                      onSelect={go}
+                    />
                   ))}
                 </CommandGroup>
               )}
@@ -717,9 +740,17 @@ export function CommandPalette({
  */
 function GameItem({
   game,
+  matched,
   onSelect,
 }: {
   game: GameListItem
+  /**
+   * The text the server matched this game on. The server folds accents and
+   * cmdk does not, so "dragon" would be filtered out of "Dragón" again here;
+   * leading the value with the query keeps every server hit, the same way
+   * the settings rows are kept.
+   */
+  matched?: string
   onSelect: (href: string) => void
 }) {
   const t = useTranslations("GameMenu")
@@ -734,7 +765,7 @@ function GameItem({
        * Spelling it out keeps the match on the title alone, and the id keeps
        * two games of the same name distinct.
        */
-      value={`${game.title} ${game.id}`}
+      value={`${matched ? `${matched} ` : ""}${game.title} ${game.id}`}
       onSelect={() => onSelect(`/games/${game.id}`)}
     >
       <HugeiconsIcon icon={MessageCircleIcon} strokeWidth={2} />
@@ -772,8 +803,13 @@ function ShortcutHint({ label }: { label: ShortcutLabel }) {
   )
 }
 
-/** How long typing has to pause before the palette asks the server. */
-const MESSAGE_SEARCH_DELAY_MS = 250
+/**
+ * How long typing has to pause before the palette asks the server, for the
+ * two searches that do: message text and game titles. Commands, settings and
+ * themes are a fixed list already in the browser, so they filter on every
+ * keystroke with no wait.
+ */
+const SERVER_SEARCH_DELAY_MS = 250
 
 /**
  * Message hits for the search, fetched once typing pauses. A reply that
@@ -798,7 +834,7 @@ function useMessageHits(query: string): MessageHit[] {
         .catch(() => {
           /* The title search still works; message hits just do not show. */
         })
-    }, MESSAGE_SEARCH_DELAY_MS)
+    }, SERVER_SEARCH_DELAY_MS)
 
     return () => {
       current = false
@@ -807,6 +843,68 @@ function useMessageHits(query: string): MessageHit[] {
   }, [query])
 
   return result.query === query ? result.hits : []
+}
+
+/**
+ * Title hits for the search, fetched once typing pauses, with the same
+ * guard as `useMessageHits` against a slow reply for an older query.
+ */
+function useGameHits(query: string): GameListItem[] | null {
+  const [result, setResult] = useState<{
+    query: string
+    hits: GameListItem[]
+  } | null>(null)
+
+  useEffect(() => {
+    if (!query) return
+
+    let current = true
+    const timer = setTimeout(() => {
+      searchGames(query)
+        .then((hits) => {
+          if (current) setResult({ query, hits })
+        })
+        .catch(() => {
+          /* The loaded games still filter locally. */
+        })
+    }, SERVER_SEARCH_DELAY_MS)
+
+    return () => {
+      current = false
+      clearTimeout(timer)
+    }
+  }, [query])
+
+  return query && result?.query === query ? result.hits : null
+}
+
+/**
+ * The game on screen, for the palette's "Current game" actions. Usually it
+ * is among the loaded games; when the reader opened one further down than
+ * the sidebar has scrolled, it is read on its own, again each time the
+ * palette opens so a pin or a rename made since shows.
+ */
+function useCurrentGame(
+  games: readonly GameListItem[],
+  openGameId: string | undefined,
+  open: boolean
+): GameListItem | undefined {
+  const listed = games.find((game) => game.id === openGameId)
+  const [fetched, setFetched] = useState<GameListItem | null>(null)
+
+  useEffect(() => {
+    if (listed || !openGameId || !open) return
+
+    let current = true
+    readGameListItem(openGameId)
+      .then((game) => current && setFetched(game))
+      .catch(() => current && setFetched(null))
+    return () => {
+      current = false
+    }
+  }, [listed, openGameId, open])
+
+  return listed ?? (fetched && fetched.id === openGameId ? fetched : undefined)
 }
 
 /**
