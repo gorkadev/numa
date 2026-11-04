@@ -7,6 +7,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
 import {
+  LibraryIcon,
   MessageCircleIcon,
   PencilEdit02Icon,
   SearchIcon,
@@ -282,6 +283,25 @@ export function AppSidebar({
                     <Kbd className="ml-auto group-data-[collapsible=icon]:hidden">
                       {newGameHint}
                     </Kbd>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    className={MENU_ICON}
+                    isActive={pathname === "/library"}
+                    tooltip={{
+                      children: (
+                        <span className="text-[13px] font-medium">
+                          {t("library")}
+                        </span>
+                      ),
+                      sideOffset: 25,
+                    }}
+                    onClick={() => setOpenMobile(false)}
+                    render={<Link href="/library" />}
+                  >
+                    <HugeiconsIcon icon={LibraryIcon} />
+                    <span>{t("library")}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem className="hidden group-data-[collapsible=icon]:block">

@@ -694,6 +694,44 @@ export const userSettings = pgTable("user_settings", {
 export type UserSettings = typeof userSettings.$inferSelect
 
 /**
+ * Every file a user uploaded from the composer, as stored in the R2 uploads
+ * bucket under `users/<user_id>/<id>`. The bucket keeps only the bytes and
+ * their type, so this row is where the library reads a file's name, size and
+ * date without touching R2. Written by the upload route right after the
+ * object is stored; the id is the object's id, so a row always names a key.
+ */
+export const attachments = pgTable(
+  "attachments",
+  {
+    id: uuid("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    filename: text("filename").notNull(),
+    mediaType: text("media_type").notNull(),
+    size: integer("size").notNull(),
+    /**
+     * Milliseconds, not Postgres's default microseconds: the library pages by
+     * `(created_at, id)` and its cursor carries the date through JavaScript,
+     * which keeps only milliseconds. Stored any finer, a cursor would fall
+     * between two rows and a page would skip or repeat them.
+     */
+    createdAt: timestamp("created_at", { withTimezone: true, precision: 3 })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("attachments_user_id_created_at_idx").on(
+      table.userId,
+      table.createdAt.desc(),
+      table.id.desc()
+    ),
+  ]
+)
+
+export type Attachment = typeof attachments.$inferSelect
+
+/**
  * The ledger of prompt improvements: what counts against the daily quota and
  * what a charged improvement is billed from. Not a foreign key to `user.id`,
  * for the same reason `turn_usage.user_id` is not one — spend that happened
