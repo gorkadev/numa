@@ -552,6 +552,7 @@
     "switchAccount": "Switch account",
     "loadingAccounts": "Loading accounts…",
     "retryLoadingAccounts": "Retry loading accounts",
+    "retryLoadingGames": "Couldn't load more. Try again",
     "addAccount": "Add account",
     "signOut": "Sign out",
     "couldNotSwitchAccount": "Could not switch account",

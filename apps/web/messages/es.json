@@ -552,6 +552,7 @@
     "switchAccount": "Cambiar de cuenta",
     "loadingAccounts": "Cargando cuentas…",
     "retryLoadingAccounts": "Reintentar la carga de cuentas",
+    "retryLoadingGames": "No se pudieron cargar más. Reintentar",
     "addAccount": "Añadir cuenta",
     "signOut": "Cerrar sesión",
     "couldNotSwitchAccount": "No se pudo cambiar de cuenta",

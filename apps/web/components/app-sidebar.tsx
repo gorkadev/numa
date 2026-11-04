@@ -13,7 +13,7 @@ import {
   SearchIcon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import type { GameListItem } from "@/lib/games/queries"
+import type { GameListItem, GamesPage } from "@/lib/games/game-list"
 import { Button } from "@workspace/ui/components/button"
 import { Empty, EmptyDescription } from "@workspace/ui/components/empty"
 import { Kbd } from "@workspace/ui/components/kbd"
@@ -48,6 +48,9 @@ import { CommandPalette } from "@/components/command-palette"
 import { CreditsButton } from "@/components/credits-button"
 import { useSeedGameTitles, useSeedUnreadGames } from "@/components/game-activity-provider"
 import { GameRow } from "@/components/game-row"
+import { LoadMoreSentinel } from "@/components/load-more-sentinel"
+import { Spinner } from "@/components/localized-spinner"
+import { useSidebarGames } from "@/components/use-sidebar-games"
 import { NavUser } from "@/components/nav-user"
 import { UpgradeCard } from "@/components/upgrade-card"
 import { useIsMac } from "@/hooks/use-is-mac"
@@ -73,12 +76,16 @@ const NEW_GAME_KEY = "o"
 const SEARCH_KEY = "k"
 
 export function AppSidebar({
-  games,
+  pinned,
+  recents,
   billing: initialBilling,
   upgradeHref,
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
-  games: GameListItem[]
+  /** Every pinned game. */
+  pinned: GameListItem[]
+  /** The first page of the unpinned games; the rest load as the list scrolls. */
+  recents: GamesPage
   billing: BillingSummary
   /**
    * The checkout URL for the Pro product, built by the layout.
@@ -101,21 +108,48 @@ export function AppSidebar({
    */
   const billing = useLiveBilling(initialBilling)
 
+  const {
+    games,
+    pinned: pinnedGames,
+    recents: recentGames,
+    hasMore,
+    loadingMore,
+    loadMoreFailed,
+    loadMore,
+  } = useSidebarGames({ pinned, recents })
+
   /** The unread dots at load, from the rows already here; live changes come from the run subscription. */
   useSeedUnreadGames(games.filter(isGameUnread).map((game) => game.id))
   useSeedGameTitles(games)
 
-  /**
-   * `listGames` already sorts pinned-first, so the split here is a single
-   * pass over an already-ordered list rather than a second sort — a game
-   * only ever shows up in one of the two groups, never both.
-   */
-  const pinnedGames = games.filter((game) => game.pinnedAt !== null)
-  const recentGames = games.filter((game) => game.pinnedAt === null)
 
   const pathname = usePathname()
   const router = useRouter()
   const t = useTranslations("Shell")
+
+  /** The end of a list of games: the next page loads as it nears view. */
+  const listEnd = (
+    <>
+      <LoadMoreSentinel
+        onReach={loadMore}
+        enabled={hasMore && !loadingMore && !loadMoreFailed}
+      />
+      {loadingMore ? (
+        <div className="flex justify-center py-2">
+          <Spinner className="size-4 text-muted-foreground" />
+        </div>
+      ) : loadMoreFailed ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full text-muted-foreground"
+          onClick={loadMore}
+        >
+          {t("retryLoadingGames")}
+        </Button>
+      ) : null}
+    </>
+  )
   const isMac = useIsMac()
   const { state, setOpenMobile } = useSidebar()
   const [searchOpen, setSearchOpen] = useState(false)
@@ -373,6 +407,7 @@ export function AppSidebar({
                               <GameRow key={game.id} game={game} closeOnSelect />
                             ))}
                           </SidebarMenu>
+                          {listEnd}
                         </div>
                       )}
                     </PopoverContent>
@@ -433,11 +468,14 @@ export function AppSidebar({
                   </EmptyDescription>
                 </Empty>
               ) : (
-                <SidebarMenu>
-                  {recentGames.map((game) => (
-                    <GameRow key={game.id} game={game} />
-                  ))}
-                </SidebarMenu>
+                <>
+                  <SidebarMenu>
+                    {recentGames.map((game) => (
+                      <GameRow key={game.id} game={game} />
+                    ))}
+                  </SidebarMenu>
+                  {listEnd}
+                </>
               )}
             </SidebarGroupContent>
           </SidebarGroup>

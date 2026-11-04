@@ -1,18 +1,20 @@
 import { db } from "@workspace/db"
 import type { Game } from "@workspace/db/schema"
 
+import {
+  GAME_LIST_COLUMNS,
+  GAMES_PAGE_SIZE,
+  gamesPage,
+  type GameListItem,
+  type GamesPage,
+} from "@/lib/games/game-list"
 import { requireSession } from "@/lib/session"
 
 /**
  * Every read is scoped to the caller's own `user_id` — the tenant boundary,
  * so it is derived from the session here and never accepted as an argument.
- *
- * Ordered pinned-first, most-recently-pinned first, then everything else
- * newest first — the one query answers both the sidebar's "Pinned" group and
- * its "Recents" group, which only split the same list on `pinnedAt` rather
- * than issuing a second query for it. `nulls last` on the first key is load
- * bearing: Postgres's own default for `desc` is `nulls first`, which would
- * put every unpinned game ahead of the pinned ones instead of behind them.
+ * (`readRecentGames` takes the id from callers that already resolved it from
+ * the session, so one request does not resolve it twice.)
  */
 /**
  * A game's row. Its thread lives in `game_messages`, read in pages, so the row
@@ -20,41 +22,69 @@ import { requireSession } from "@/lib/session"
  */
 export type GameSummary = Game
 
-/**
- * What the sidebar and the command palette render of a game.
- *
- * These rows are props of client components, so everything in them is
- * serialized into the page sent to the browser. The chat access token, the
- * stream cursor and the sandbox id have no business there, and every game
- * would carry its own on every navigation. `lastTurnFinishedAt` and
- * `lastReadAt` stay because the unread dot is derived from them.
- */
-export type GameListItem = Pick<
-  Game,
-  "id" | "title" | "pinnedAt" | "lastTurnFinishedAt" | "lastReadAt"
->
+export type { GameListItem } from "@/lib/games/game-list"
 
-export async function listGames(): Promise<GameListItem[]> {
+/**
+ * Every pinned game, most recently pinned first. Never paginated: pinning is
+ * a deliberate act, so the set stays small, and the sidebar shows all of it.
+ */
+export async function listPinnedGames(): Promise<GameListItem[]> {
   const { user } = await requireSession()
 
-  /**
-   * Runs on every render of the app shell, for every game the user has: the
-   * thread is left out, or each navigation would transfer every conversation.
-   */
   return db.query.games.findMany({
-    columns: {
-      id: true,
-      title: true,
-      pinnedAt: true,
-      lastTurnFinishedAt: true,
-      lastReadAt: true,
-    },
-    where: (game, { eq }) => eq(game.userId, user.id),
-    orderBy: (game, { desc, sql }) => [
-      sql`${game.pinnedAt} desc nulls last`,
-      desc(game.createdAt),
-    ],
+    columns: GAME_LIST_COLUMNS,
+    where: (game, { and, eq, isNotNull }) =>
+      and(eq(game.userId, user.id), isNotNull(game.pinnedAt)),
+    orderBy: (game, { desc }) => [desc(game.pinnedAt)],
   })
+}
+
+/**
+ * One page of the user's unpinned games, newest first.
+ *
+ * Keyset pagination on `(created_at, id)`. The cursor is only the last game's
+ * id, and its `created_at` is read here, in the same statement: the stored
+ * microseconds never cross JavaScript, which keeps milliseconds and would
+ * place the cursor between two rows. A cursor naming a game that is gone (or
+ * someone else's) matches nothing and ends the list instead of restarting it.
+ */
+export async function readRecentGames(
+  userId: string,
+  after?: string
+): Promise<GamesPage> {
+  const rows = await db.query.games.findMany({
+    columns: GAME_LIST_COLUMNS,
+    where: (game, { and, eq, isNull, sql }) =>
+      and(
+        eq(game.userId, userId),
+        isNull(game.pinnedAt),
+        after
+          ? sql`(${game.createdAt}, ${game.id}) < (select g.created_at, g.id from games g where g.id = ${after} and g.user_id = ${userId})`
+          : undefined
+      ),
+    orderBy: (game, { desc }) => [desc(game.createdAt), desc(game.id)],
+    limit: GAMES_PAGE_SIZE + 1,
+  })
+
+  return gamesPage(rows, GAMES_PAGE_SIZE)
+}
+
+/**
+ * What the app shell renders the game list from: all pinned games and the
+ * first page of the rest. Runs on every render of the shell, so it reads a
+ * bounded number of rows however many games the user has.
+ */
+export async function listSidebarGames(): Promise<{
+  pinned: GameListItem[]
+  recents: GamesPage
+}> {
+  const { user } = await requireSession()
+  const [pinned, recents] = await Promise.all([
+    listPinnedGames(),
+    readRecentGames(user.id),
+  ])
+
+  return { pinned, recents }
 }
 
 /**
