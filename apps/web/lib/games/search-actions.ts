@@ -9,6 +9,9 @@ import {
   matchSnippet,
   MIN_MESSAGE_QUERY_LENGTH,
 } from "@/lib/games/message-search"
+import { GAME_LIST_COLUMNS, type GameListItem } from "@/lib/games/game-list"
+import { isGameId } from "@/lib/games/thread-page"
+import { containsPattern, foldedContains } from "@/lib/search-fold"
 import { requireSession } from "@/lib/session"
 
 const MAX_HITS = 8
@@ -55,4 +58,55 @@ export async function searchGameMessages(query: string): Promise<MessageHit[]> {
     const snippet = matchSnippet(row.text, needle, SNIPPET_RADIUS)
     return snippet ? [{ gameId: row.id, title: row.title, snippet }] : []
   })
+}
+
+/** At most this many games answer a title search; the palette is not a list view. */
+const MAX_GAME_HITS = 20
+
+/**
+ * Games whose title contains the query, accents and case aside, across every
+ * game the user has — the sidebar only holds the pages it has scrolled to, so
+ * the palette asks the server rather than filtering what happens to be
+ * loaded. Pinned games first, then newest first, the order the sidebar shows
+ * them in.
+ */
+export async function searchGames(query: string): Promise<GameListItem[]> {
+  const { user } = await requireSession()
+
+  const pattern = containsPattern(query)
+  if (!pattern) return []
+
+  return db.query.games.findMany({
+    columns: GAME_LIST_COLUMNS,
+    where: (game, { and, eq }) =>
+      and(
+        eq(game.userId, user.id),
+        foldedContains(game.title, pattern)
+      ),
+    orderBy: (game, { desc }) => [
+      sql`${game.pinnedAt} desc nulls last`,
+      desc(game.createdAt),
+    ],
+    limit: MAX_GAME_HITS,
+  })
+}
+
+/**
+ * One of the user's games as the palette lists it, for the game on screen
+ * when it is not among the pages the sidebar has loaded. `null` when the id
+ * is not one of theirs.
+ */
+export async function readGameListItem(
+  id: string
+): Promise<GameListItem | null> {
+  const { user } = await requireSession()
+  if (!isGameId(id)) return null
+
+  const game = await db.query.games.findFirst({
+    columns: GAME_LIST_COLUMNS,
+    where: (game, { and, eq }) =>
+      and(eq(game.id, id), eq(game.userId, user.id)),
+  })
+
+  return game ?? null
 }
