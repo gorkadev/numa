@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server"
+import { db } from "@workspace/db"
+import { attachments } from "@workspace/db/schema"
 
 import {
   attachmentKey,
@@ -42,6 +44,7 @@ export async function POST(request: Request) {
   }
 
   const id = crypto.randomUUID()
+  const filename = file.name.slice(0, 200)
 
   try {
     await putAttachment(attachmentKey(session.user.id, id), await file.arrayBuffer(), mediaType)
@@ -50,8 +53,24 @@ export async function POST(request: Request) {
     return new Response(null, { status: 503, headers: privateHeaders })
   }
 
+  /**
+   * The library's record of the file. A failure here does not fail the
+   * upload: the object is stored and the message can still carry it, it only
+   * goes missing from the library.
+   */
+  await db
+    .insert(attachments)
+    .values({
+      id,
+      userId: session.user.id,
+      filename,
+      mediaType,
+      size: file.size,
+    })
+    .catch((error: unknown) => console.error("Attachment record failed", error))
+
   return NextResponse.json(
-    { url: attachmentUrl(id), mediaType, filename: file.name.slice(0, 200) },
+    { url: attachmentUrl(id), mediaType, filename },
     { headers: privateHeaders }
   )
 }
