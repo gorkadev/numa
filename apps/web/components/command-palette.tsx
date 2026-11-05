@@ -52,6 +52,7 @@ import { LOCALE_OPTIONS, useChangeLocale } from "@/components/locale-switcher"
 import { useIsMac } from "@/hooks/use-is-mac"
 import { useSettingsDialog } from "@/hooks/use-settings-dialog"
 import { createGame, setGamePinned } from "@/lib/games/actions"
+import { requestMessageJump } from "@/lib/games/message-jump"
 import { MIN_MESSAGE_QUERY_LENGTH } from "@/lib/games/message-search"
 import {
   readGameListItem,
@@ -662,7 +663,15 @@ export function CommandPalette({
                    * the server found; the id keeps two hits apart.
                    */
                   value={`${hit.title} ${hit.snippet} message-${hit.gameId}`}
-                  onSelect={() => go(`/games/${hit.gameId}`)}
+                  onSelect={() => {
+                    requestMessageJump({
+                      gameId: hit.gameId,
+                      position: hit.position,
+                      messageId: hit.messageId,
+                      query: messageQuery,
+                    })
+                    go(`/games/${hit.gameId}`)
+                  }}
                 >
                   <HugeiconsIcon icon={MessageCircleIcon} strokeWidth={2} />
                   <div className="flex min-w-0 flex-col">

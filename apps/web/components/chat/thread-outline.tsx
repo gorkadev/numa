@@ -14,6 +14,7 @@ import {
 } from "@workspace/ui/components/message-scroller"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { useRunJump } from "@/components/chat/use-run-jump"
 import {
   currentTurnId,
   outlineHasPersistentGutter,
@@ -86,12 +87,16 @@ export function ThreadOutline({
   runs,
   turns,
   loadDownTo,
+  hasEarlier,
+  loadingEarlier,
   loadFailed,
 }: {
   runs: OutlineRun[]
   /** Every turn of the thread, loaded or not. */
   turns: OutlineTurn[]
   loadDownTo: (position: number) => void
+  hasEarlier: boolean
+  loadingEarlier: boolean
   loadFailed: boolean
 }) {
   const t = useTranslations("ChatActivity")
@@ -152,8 +157,13 @@ export function ThreadOutline({
   const activeTurn =
     resolvedActiveIndex === null ? null : (turns[resolvedActiveIndex] ?? null)
 
-  /** The turn a click asked for while its page is still on its way. */
-  const [jumpTarget, setJumpTarget] = useState<string | null>(null)
+  const jump = useRunJump({
+    runs,
+    loadDownTo,
+    hasEarlier,
+    loadingEarlier,
+    loadFailed,
+  })
 
   const scrollToTurn = useCallback(
     (id: string) => {
@@ -168,29 +178,8 @@ export function ThreadOutline({
     [scrollToMessage]
   )
 
-  useEffect(() => {
-    if (!jumpTarget) return
-
-    if (loadFailed) {
-      setJumpTarget(null)
-      return
-    }
-
-    if (!runs.some((run) => run.id === jumpTarget)) return
-
-    setJumpTarget(null)
-    /** A frame later, so the row is measured and the prepend has been compensated. */
-    requestAnimationFrame(() => scrollToTurn(jumpTarget))
-  }, [jumpTarget, loadFailed, runs, scrollToTurn])
-
   function select(turn: OutlineTurn) {
-    if (turn.position !== undefined && !runs.some((run) => run.id === turn.id)) {
-      setJumpTarget(turn.id)
-      loadDownTo(turn.position)
-      return
-    }
-
-    scrollToTurn(turn.id)
+    jump({ messageId: turn.id, position: turn.position, arrive: scrollToTurn })
   }
 
   function indexFromPointer(event: ReactMouseEvent<HTMLElement>) {

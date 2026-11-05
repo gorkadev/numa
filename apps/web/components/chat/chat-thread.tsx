@@ -2,7 +2,7 @@
 
 import type { AttachmentPart } from "@/lib/games/attachments"
 import type { ThreadSnapshot } from "@/lib/games/thread-page"
-import { useCallback, useEffect, useMemo, useRef } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import type { UIMessage } from "ai"
 import { useTranslations } from "next-intl"
@@ -24,10 +24,12 @@ import {
   MessageScrollerViewport,
 } from "@workspace/ui/components/message-scroller"
 import { Spinner } from "@workspace/ui/components/spinner"
+import { cn } from "@workspace/ui/lib/utils"
 
 import { ChatComposer } from "@/components/chat-composer"
 import { AssistantAvatar } from "@/components/chat/assistant-avatar"
 import { ChatMessage } from "@/components/chat/chat-message"
+import { SearchJump } from "@/components/chat/search-jump"
 import { CompactingDivider, CompactionDivider } from "@/components/chat/compaction-divider"
 import { TaskStrip } from "@/components/chat/task-strip"
 import { ThreadOutline } from "@/components/chat/thread-outline"
@@ -48,6 +50,7 @@ import { loadFileTree } from "@/lib/games/file-tree-cache"
 import { mentionFiles } from "@/lib/games/mentions"
 import { mergeOutlineTurns, outlineTurns } from "@/lib/games/thread-outline"
 import { readCompaction } from "@/lib/games/compaction"
+import { pendingMessageJump } from "@/lib/games/message-jump"
 import { collectThreadSubagentRuns } from "@/lib/games/tool-parts"
 
 export function ChatThread({
@@ -191,6 +194,16 @@ export function ChatThread({
   )
 
   const runs = useMemo(() => groupRuns(messages), [messages])
+
+  /**
+   * A thread opened from a palette message hit stays hidden until it sits on
+   * that message, so it never shows its end first and then jumps. A hit for
+   * the thread already on screen just moves it.
+   */
+  const [openingAtHit, setOpeningAtHit] = useState(
+    () => pendingMessageJump(gameId) !== null
+  )
+  const revealThread = useCallback(() => setOpeningAtHit(false), [])
   const trailing = runs.at(-1)
   const storedTurns = useThreadOutline(threadKey)
   const turns = useMemo(
@@ -269,7 +282,12 @@ export function ChatThread({
        */}
       <MessageScrollerProvider autoScroll>
         <MessageScroller className="flex-1">
-          <MessageScrollerViewport className="scroll-fade-y! [--scroll-fade-mask:initial]!">
+          <MessageScrollerViewport
+            className={cn(
+              "scroll-fade-y! [--scroll-fade-mask:initial]!",
+              openingAtHit && "invisible"
+            )}
+          >
             <MessageScrollerContent className="mx-auto w-full max-w-3xl px-4 py-8 gap-4">
               {runs.map((run, index) => {
                 const compaction = run.role === "compaction" ? readCompaction(run.messages[0]!) : null
@@ -323,6 +341,15 @@ export function ChatThread({
             </MessageScrollerContent>
           </MessageScrollerViewport>
           <MessageScrollerButton label={t("scrollToEnd")} />
+          <SearchJump
+            gameId={gameId}
+            runs={runs}
+            loadDownTo={loadDownTo}
+            hasEarlier={hasEarlier}
+            loadingEarlier={loadingEarlier}
+            loadFailed={earlierFailed}
+            onSettled={revealThread}
+          />
           <EarlierLoader
             hasEarlier={hasEarlier}
             loading={loadingEarlier}
@@ -335,6 +362,8 @@ export function ChatThread({
               runs={runs}
               turns={turns}
               loadDownTo={loadDownTo}
+              hasEarlier={hasEarlier}
+              loadingEarlier={loadingEarlier}
               loadFailed={earlierFailed}
             />
           ) : null}
