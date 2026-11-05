@@ -220,6 +220,11 @@
   body {
     @apply bg-background text-foreground;
     }
+  /* The text a palette message hit matched (`search-jump.tsx`). */
+  ::highlight(message-search-hit) {
+    background-color: color-mix(in oklch, var(--primary) 30%, transparent);
+    color: inherit;
+  }
 }
 /*
   Both axes at once, for a scroller that overflows in both — code without
