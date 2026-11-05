@@ -35,13 +35,17 @@ export async function setLocalePreference(value: unknown): Promise<void> {
   await writeLocaleCookie(value)
 }
 
-/** Bring a signed-in browser's cookie into line with the effective server locale. */
-export async function reconcileLocaleCookie(): Promise<void> {
+/**
+ * Bring a signed-in browser's cookie into line with the account's locale.
+ * Resolves to whether the cookie changed, which is when the page already
+ * rendered in the old locale and has to be fetched again.
+ */
+export async function reconcileLocaleCookie(): Promise<boolean> {
   const requestHeaders = await headers()
-  if (!getSessionCookie(requestHeaders)) return
+  if (!getSessionCookie(requestHeaders)) return false
 
   const user = await getAuthenticatedLocaleUser()
-  if (!user) return
+  if (!user) return false
 
   const store = await cookies()
   const locale = resolveLocale({
@@ -50,7 +54,8 @@ export async function reconcileLocaleCookie(): Promise<void> {
     acceptLanguage: requestHeaders.get("accept-language"),
   })
 
-  if (store.get(LOCALE_COOKIE_NAME)?.value !== locale) {
-    store.set(LOCALE_COOKIE_NAME, locale, LOCALE_COOKIE_OPTIONS)
-  }
+  if (store.get(LOCALE_COOKIE_NAME)?.value === locale) return false
+
+  store.set(LOCALE_COOKIE_NAME, locale, LOCALE_COOKIE_OPTIONS)
+  return true
 }

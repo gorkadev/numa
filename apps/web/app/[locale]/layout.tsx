@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { hasLocale, NextIntlClientProvider } from "next-intl"
-import { getLocale, getMessages, getTranslations } from "next-intl/server"
+import { getMessages, getTranslations } from "next-intl/server"
 
 import "@workspace/ui/globals.css"
 import "blobatar/motion.css"
@@ -12,11 +12,6 @@ import { TooltipProvider } from "@workspace/ui/components/tooltip"
 import { routing } from "@/i18n/routing"
 import { LocaleReconciler } from "@/components/locale-reconciler"
 import { fontMono, inter } from "@/lib/fonts"
-
-// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
-// Remove this opt-out after verifying the segment passes validation without it.
-// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
-export const instant = false;
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }))
@@ -48,16 +43,11 @@ export default async function RootLayout({
 
   if (!hasLocale(routing.locales, locale)) notFound()
 
-  // The rewritten route parameter can lag behind a cookie or account change.
-  // Request config is the canonical precedence resolver for both providers.
-  const resolvedLocale = await getLocale()
-  if (!hasLocale(routing.locales, resolvedLocale)) notFound()
-
   const messages = await getMessages()
 
   return (
     <html
-      lang={resolvedLocale}
+      lang={locale}
       suppressHydrationWarning
       className={cn(
         "antialiased",
@@ -76,8 +66,8 @@ export default async function RootLayout({
          * already on screen. Here it also survives navigation, so a toast
          * raised just before a redirect is still readable after it.
          */}
-        <NextIntlClientProvider locale={resolvedLocale} messages={messages}>
-          <LocaleReconciler locale={resolvedLocale} />
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <LocaleReconciler locale={locale} />
           <LocalizedToaster>
             {/**
              * A short wait before any tooltip opens, so passing the pointer
