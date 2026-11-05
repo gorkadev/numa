@@ -74,6 +74,20 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
     keywords: "Settings.searchKeywords.profilePicture",
   },
   { id: "full-name", section: "account", title: "Settings.fullName" },
+  {
+    id: "username",
+    section: "account",
+    title: "Settings.username",
+    description: "Settings.usernameDescription",
+    keywords: "Settings.searchKeywords.username",
+  },
+  {
+    id: "profile-activity",
+    section: "account",
+    title: "Settings.profileActivity",
+    description: "Settings.profileActivityDescription",
+    keywords: "Settings.searchKeywords.profileActivity",
+  },
   { id: "email", section: "account", title: "Settings.email" },
   {
     id: "connected-accounts",

@@ -9,7 +9,20 @@ test("a user with no settings row reads the defaults", () => {
     defaultTierId: null,
     showSessionStats: true,
     wrapCodeBlocks: true,
+    profileActivityMetric: "turns",
   })
+})
+
+test("a stored profile metric that is no longer a metric reads as turns", () => {
+  const row = {
+    improverOverageBilling: false,
+    defaultTierId: null,
+    showSessionStats: true,
+    wrapCodeBlocks: true,
+  }
+
+  assert.equal(gameSettingsOf({ ...row, profileActivityMetric: "credits" }).profileActivityMetric, "credits")
+  assert.equal(gameSettingsOf({ ...row, profileActivityMetric: "minutes" }).profileActivityMetric, "turns")
 })
 
 test("a stored tier that is no longer a tier reads as no preference", () => {
@@ -19,12 +32,14 @@ test("a stored tier that is no longer a tier reads as no preference", () => {
       defaultTierId: "turbo",
       showSessionStats: false,
       wrapCodeBlocks: false,
+      profileActivityMetric: "tokens",
     }),
     {
       improverOverageBilling: true,
       defaultTierId: null,
       showSessionStats: false,
       wrapCodeBlocks: false,
+      profileActivityMetric: "tokens",
     }
   )
   assert.equal(
@@ -33,6 +48,7 @@ test("a stored tier that is no longer a tier reads as no preference", () => {
       defaultTierId: "pro",
       showSessionStats: true,
       wrapCodeBlocks: true,
+      profileActivityMetric: "turns",
     }).defaultTierId,
     "pro"
   )
@@ -51,6 +67,10 @@ test("a patch accepts one known field at a time and nothing else", () => {
   assert.deepEqual(gameSettingsPatchSchema.parse({ wrapCodeBlocks: false }), {
     wrapCodeBlocks: false,
   })
+  assert.deepEqual(gameSettingsPatchSchema.parse({ profileActivityMetric: "credits" }), {
+    profileActivityMetric: "credits",
+  })
+  assert.throws(() => gameSettingsPatchSchema.parse({ profileActivityMetric: "minutes" }))
   assert.throws(() => gameSettingsPatchSchema.parse({ wrapCodeBlocks: "yes" }))
   assert.throws(() => gameSettingsPatchSchema.parse({ defaultTierId: "turbo" }))
   assert.throws(() => gameSettingsPatchSchema.parse({ defaultTierId: null }))

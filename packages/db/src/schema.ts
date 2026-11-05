@@ -686,6 +686,15 @@ export const userSettings = pgTable("user_settings", {
   /** Whether code blocks in the chat and the Files viewer start wrapped. */
   wrapCodeBlocks: boolean("wrap_code_blocks").notNull().default(true),
 
+  /**
+   * What the profile's activity heatmap counts: "turns", "credits" or
+   * "tokens". Text rather than an enum so a new metric needs no DDL; the app
+   * reads anything it does not know as "turns".
+   */
+  profileActivityMetric: text("profile_activity_metric")
+    .notNull()
+    .default("turns"),
+
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

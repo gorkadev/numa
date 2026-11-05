@@ -29,26 +29,34 @@
   "Profile": {
     "title": "Perfil",
     "edit": "Editar",
-    "sample": "Datos de ejemplo; no reflejan tu uso real",
-    "exampleHandle": "Identificador de perfil no disponible",
-    "games": "Juegos de ejemplo",
-    "tokens": "Tokens de ejemplo",
-    "days": "Días activos de ejemplo",
-    "integrations": "Integraciones conectadas",
-    "activity": "Actividad",
-    "daily": "Diario",
-    "weekly": "Semanal",
-    "cumulative": "Acumulado",
-    "less": "Menos",
-    "more": "Más",
-    "units": "tokens",
-    "statistics": "Estadísticas de actividad",
+    "setUsername": "Elige un nombre de usuario",
+    "games": "Juegos",
     "activeDays": "Días activos",
+    "currentStreak": "Racha actual",
+    "total": {
+      "turns": "{count, plural, one {# turno} other {# turnos}} en el último año",
+      "credits": "{count, plural, one {# crédito} other {# créditos}} en el último año",
+      "tokens": "{count, plural, one {# token} other {# tokens}} en el último año"
+    },
+    "metrics": {
+      "turns": "Turnos",
+      "credits": "Créditos",
+      "tokens": "Tokens"
+    },
+    "units": {
+      "turns": "{count, plural, one {turno} other {turnos}}",
+      "credits": "{count, plural, one {crédito} other {créditos}}",
+      "tokens": "{count, plural, one {token} other {tokens}}"
+    },
+    "days": "{count, plural, one {# día} other {# días}}",
+    "statistics": "Estadísticas de actividad",
     "average": "Media diaria",
     "peak": "Día de mayor actividad",
-    "mostUsed": "Integraciones más usadas",
-    "exampleIntegration": "Vista previa de integración",
-    "notConnected": "Solo ejemplo; no hay ninguna integración vinculada"
+    "longestStreak": "Racha más larga",
+    "topGames": "Juegos más trabajados",
+    "noGames": "Tus juegos aparecerán aquí cuando crees uno.",
+    "turnCount": "{count, plural, one {# turno} other {# turnos}}",
+    "changeMetric": "Cambiar lo que se cuenta"
   },
   "Home": {
     "emptyTitle": "¿Qué creamos hoy?",
@@ -151,18 +159,45 @@
       "emptyFinished": "No hay ejecuciones de agentes finalizadas."
     },
     "roles": {
-      "explorer": { "name": "Explorador", "specialty": "Análisis del proyecto" },
-      "planner": { "name": "Arquitecto", "specialty": "Planificación" },
-      "gameplay": { "name": "Constructor", "specialty": "Mecánicas de juego" },
-      "visuals": { "name": "Artista", "specialty": "Diseño visual" },
-      "audio": { "name": "Compositor", "specialty": "Audio y música" },
-      "verifier": { "name": "Verificador", "specialty": "Pruebas y validación" }
+      "explorer": {
+        "name": "Explorador",
+        "specialty": "Análisis del proyecto"
+      },
+      "planner": {
+        "name": "Arquitecto",
+        "specialty": "Planificación"
+      },
+      "gameplay": {
+        "name": "Constructor",
+        "specialty": "Mecánicas de juego"
+      },
+      "visuals": {
+        "name": "Artista",
+        "specialty": "Diseño visual"
+      },
+      "audio": {
+        "name": "Compositor",
+        "specialty": "Audio y música"
+      },
+      "verifier": {
+        "name": "Verificador",
+        "specialty": "Pruebas y validación"
+      }
     },
     "tierLabel": "Nivel",
     "effortLabel": "Esfuerzo de razonamiento",
     "metadataUnavailable": "No disponible",
-    "tiers": { "pro": "Pro", "balanced": "Equilibrado", "fast": "Rápido" },
-    "efforts": { "minimal": "Mínimo", "low": "Bajo", "medium": "Medio", "high": "Alto" },
+    "tiers": {
+      "pro": "Pro",
+      "balanced": "Equilibrado",
+      "fast": "Rápido"
+    },
+    "efforts": {
+      "minimal": "Mínimo",
+      "low": "Bajo",
+      "medium": "Medio",
+      "high": "Alto"
+    },
     "previewTab": "Vista previa",
     "agentsTab": "Agentes",
     "filesTab": "Archivos",
@@ -634,7 +669,9 @@
       "managePlan": "mejorar plan precios comprar créditos recarga",
       "billingPortal": "método de pago tarjeta facturas polar",
       "cancelSubscription": "darse de baja anular suscripción",
-      "history": "facturas recibos pedidos pagos"
+      "history": "facturas recibos pedidos pagos",
+      "username": "nombre de usuario usuario alias identificador @",
+      "profileActivity": "actividad calendario mapa de calor turnos créditos tokens contribuciones perfil"
     },
     "personalGroup": "Personal",
     "billingGroup": "Facturación",
@@ -700,6 +737,18 @@
     "initialsInsteadOfPicture": "Se mostrarán tus iniciales cuando no tengas una foto.",
     "remove": "Eliminar",
     "fullName": "Nombre completo",
+    "username": "Nombre de usuario",
+    "usernameDescription": "Aparece en tu perfil como @usuario.",
+    "couldNotSaveUsername": "No se pudo guardar tu nombre de usuario",
+    "usernameIssues": {
+      "tooShort": "Usa al menos 3 caracteres.",
+      "tooLong": "Usa 30 caracteres como máximo.",
+      "invalid": "Usa solo letras, números, «_» y «.».",
+      "taken": "Ese nombre de usuario ya está en uso."
+    },
+    "profileActivity": "Actividad del perfil",
+    "profileActivityDescription": "Qué cuenta el calendario de actividad de tu perfil.",
+    "couldNotSaveProfileActivity": "No se pudo guardar el ajuste de actividad del perfil",
     "email": "Correo electrónico",
     "emailManagedByProvider": "Lo gestiona la cuenta con la que inicias sesión.",
     "connectedAccounts": "Cuentas conectadas",

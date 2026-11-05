@@ -29,26 +29,34 @@
   "Profile": {
     "title": "Profile",
     "edit": "Edit",
-    "sample": "Sample data — not your actual usage",
-    "exampleHandle": "Profile handle unavailable",
-    "games": "Example games",
-    "tokens": "Example tokens",
-    "days": "Example active days",
-    "integrations": "Connected integrations",
-    "activity": "Activity",
-    "daily": "Daily",
-    "weekly": "Weekly",
-    "cumulative": "Cumulative",
-    "less": "Less",
-    "more": "More",
-    "units": "tokens",
-    "statistics": "Activity statistics",
+    "setUsername": "Choose a username",
+    "games": "Games",
     "activeDays": "Active days",
+    "currentStreak": "Current streak",
+    "total": {
+      "turns": "{count, plural, one {# turn} other {# turns}} in the last year",
+      "credits": "{count, plural, one {# credit} other {# credits}} in the last year",
+      "tokens": "{count, plural, one {# token} other {# tokens}} in the last year"
+    },
+    "metrics": {
+      "turns": "Turns",
+      "credits": "Credits",
+      "tokens": "Tokens"
+    },
+    "units": {
+      "turns": "{count, plural, one {turn} other {turns}}",
+      "credits": "{count, plural, one {credit} other {credits}}",
+      "tokens": "{count, plural, one {token} other {tokens}}"
+    },
+    "days": "{count, plural, one {# day} other {# days}}",
+    "statistics": "Activity statistics",
     "average": "Daily average",
     "peak": "Peak day",
-    "mostUsed": "Most-used integrations",
-    "exampleIntegration": "Integration preview",
-    "notConnected": "Example only — no integration is linked"
+    "longestStreak": "Longest streak",
+    "topGames": "Most-worked games",
+    "noGames": "Your games will show up here once you build one.",
+    "turnCount": "{count, plural, one {# turn} other {# turns}}",
+    "changeMetric": "Change what this counts"
   },
   "Home": {
     "emptyTitle": "What should we build today?",
@@ -151,18 +159,45 @@
       "emptyFinished": "No finished agent runs."
     },
     "roles": {
-      "explorer": { "name": "Scout", "specialty": "Project analysis" },
-      "planner": { "name": "Architect", "specialty": "Planning" },
-      "gameplay": { "name": "Builder", "specialty": "Game mechanics" },
-      "visuals": { "name": "Artist", "specialty": "Visual design" },
-      "audio": { "name": "Composer", "specialty": "Audio and music" },
-      "verifier": { "name": "Tester", "specialty": "Testing and validation" }
+      "explorer": {
+        "name": "Scout",
+        "specialty": "Project analysis"
+      },
+      "planner": {
+        "name": "Architect",
+        "specialty": "Planning"
+      },
+      "gameplay": {
+        "name": "Builder",
+        "specialty": "Game mechanics"
+      },
+      "visuals": {
+        "name": "Artist",
+        "specialty": "Visual design"
+      },
+      "audio": {
+        "name": "Composer",
+        "specialty": "Audio and music"
+      },
+      "verifier": {
+        "name": "Tester",
+        "specialty": "Testing and validation"
+      }
     },
     "tierLabel": "Tier",
     "effortLabel": "Reasoning effort",
     "metadataUnavailable": "Unavailable",
-    "tiers": { "pro": "Pro", "balanced": "Balanced", "fast": "Fast" },
-    "efforts": { "minimal": "Minimal", "low": "Low", "medium": "Medium", "high": "High" },
+    "tiers": {
+      "pro": "Pro",
+      "balanced": "Balanced",
+      "fast": "Fast"
+    },
+    "efforts": {
+      "minimal": "Minimal",
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High"
+    },
     "previewTab": "Preview",
     "agentsTab": "Agents",
     "filesTab": "Files",
@@ -634,7 +669,9 @@
       "managePlan": "upgrade downgrade pricing buy credits top-up",
       "billingPortal": "payment method card invoices polar",
       "cancelSubscription": "unsubscribe stop downgrade to free",
-      "history": "invoices receipts orders payments"
+      "history": "invoices receipts orders payments",
+      "username": "username handle user name @",
+      "profileActivity": "activity heatmap calendar turns credits tokens contributions profile"
     },
     "personalGroup": "Personal",
     "billingGroup": "Billing",
@@ -700,6 +737,18 @@
     "initialsInsteadOfPicture": "Your initials are used while you have no picture.",
     "remove": "Remove",
     "fullName": "Full name",
+    "username": "Username",
+    "usernameDescription": "Shown on your profile as @username.",
+    "couldNotSaveUsername": "Could not save your username",
+    "usernameIssues": {
+      "tooShort": "Use at least 3 characters.",
+      "tooLong": "Use 30 characters or fewer.",
+      "invalid": "Use only letters, numbers, “_” and “.”.",
+      "taken": "That username is already taken."
+    },
+    "profileActivity": "Profile activity",
+    "profileActivityDescription": "What the activity calendar on your profile counts.",
+    "couldNotSaveProfileActivity": "Could not save the profile activity setting",
     "email": "Email",
     "emailManagedByProvider": "Managed by the account you sign in with.",
     "connectedAccounts": "Connected accounts",
