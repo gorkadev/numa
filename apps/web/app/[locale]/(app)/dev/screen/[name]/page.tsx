@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import { notFound } from "next/navigation"
 
 import { ChatSkeleton } from "@/components/chat/chat-skeleton"
@@ -19,13 +20,21 @@ import PlayLoading from "../../../../games/[id]/play/loading"
  * them; loading screens are the route's own `loading.tsx`, rendered as the
  * page so they stay on screen.
  */
-export default async function DevScreen({
+export default function DevScreen({
   params,
 }: {
   params: Promise<{ name: string }>
 }) {
   if (!devScreensEnabled) notFound()
 
+  return (
+    <Suspense fallback={null}>
+      <Screen params={params} />
+    </Suspense>
+  )
+}
+
+async function Screen({ params }: { params: Promise<{ name: string }> }) {
   const { name } = await params
 
   switch (name as DevScreenId) {
