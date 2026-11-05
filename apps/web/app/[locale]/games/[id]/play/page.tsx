@@ -8,6 +8,11 @@ import { GamePlayView } from "@/components/game-play-view"
 import { signPreviewToken } from "@/lib/games/preview-token"
 import { getGame } from "@/lib/games/queries"
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 /**
  * Deliberately outside the `(app)` route group: `/games/[id]` there renders
  * inside `AppLayout`'s `SidebarProvider`, and this route wants none of

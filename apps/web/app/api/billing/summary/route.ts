@@ -19,9 +19,10 @@ import { getBillingSummary } from "@/lib/polar/plan"
  * A credit balance that a proxy is allowed to hold for even a few seconds is a
  * balance that lies to the user immediately after the turn they just spent. It
  * is also per-user, so a shared cache entry would be a cross-tenant leak
- * rather than merely stale. `dynamic` states the first, the header states the
- * second, and `getBillingSummary` reads the user id from the session on every
- * call.
+ * rather than merely stale. With Cache Components a `GET` handler runs on
+ * every request unless it opts into `"use cache"`, which states the first;
+ * the header states the second, and `getBillingSummary` reads the user id
+ * from the session on every call.
  *
  * # Why there is no auth check here
  *
@@ -31,8 +32,6 @@ import { getBillingSummary } from "@/lib/polar/plan"
  * caller can ask about a user other than itself — the identity is taken from
  * the session, never from the request.
  */
-export const dynamic = "force-dynamic"
-
 export async function GET() {
   return NextResponse.json(await getBillingSummary(), {
     headers: { "cache-control": "no-store, private" },
