@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react"
 import { FingerPrintIcon, MoreHorizontalIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { getAuthenticatorName } from "@better-auth/passkey"
 import { useFormatter, useTranslations } from "next-intl"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -46,8 +45,14 @@ type Passkey = NonNullable<
   Awaited<ReturnType<typeof authClient.passkey.listUserPasskeys>>["data"]
 >[number]
 
+/**
+ * The server names a passkey after its authenticator when it is registered
+ * (`afterVerification` in `lib/auth.ts`). Resolving the AAGUID here as well
+ * would import `@better-auth/passkey`'s root entry, which is the whole server
+ * plugin, into the browser.
+ */
 function passkeyLabel(passkey: Passkey, fallback: string) {
-  return passkey.name || getAuthenticatorName(passkey.aaguid) || fallback
+  return passkey.name || fallback
 }
 
 export function PasskeysSection() {

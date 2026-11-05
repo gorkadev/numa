@@ -1,11 +1,21 @@
 "use client"
 
-import { Suspense } from "react"
+import { Suspense, useState } from "react"
+import dynamic from "next/dynamic"
 
-import { SettingsDialog } from "@/components/settings-dialog"
 import { useSettingsDialog } from "@/hooks/use-settings-dialog"
 import { useSettingsShortcut } from "@/hooks/use-settings-shortcut"
 import type { BillingSummary } from "@/lib/polar/plan"
+
+/**
+ * Loaded the first time the dialog opens: it is closed on almost every page
+ * view, and its sections bring passkey, two-factor and billing code that no
+ * other part of the app shell needs.
+ */
+const SettingsDialog = dynamic(
+  () => import("@/components/settings-dialog").then((m) => m.SettingsDialog),
+  { ssr: false }
+)
 
 function AppSettingsInner({ billing }: { billing: BillingSummary }) {
   const {
@@ -20,6 +30,11 @@ function AppSettingsInner({ billing }: { billing: BillingSummary }) {
   } = useSettingsDialog()
 
   useSettingsShortcut(toggleSettings)
+
+  /** Stays mounted once opened, so closing plays its exit animation. */
+  const [opened, setOpened] = useState(open)
+  if (open && !opened) setOpened(true)
+  if (!opened) return null
 
   return (
     <SettingsDialog

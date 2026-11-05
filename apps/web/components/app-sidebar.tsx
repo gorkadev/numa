@@ -44,7 +44,6 @@ import {
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip"
 
-import { CommandPalette } from "@/components/command-palette"
 import { CreditsButton } from "@/components/credits-button"
 import { useSeedGameTitles, useSeedUnreadGames } from "@/components/game-activity-provider"
 import { GameRow } from "@/components/game-row"
@@ -57,6 +56,55 @@ import { useIsMac } from "@/hooks/use-is-mac"
 import { useLiveBilling } from "@/hooks/use-live-billing"
 import { isGameUnread } from "@/lib/games/activity"
 import type { BillingSummary } from "@/lib/polar/plan"
+
+type CommandPaletteComponent =
+  typeof import("@/components/command-palette").CommandPalette
+
+/**
+ * `cmdk` and its dialog stack, loaded once the page is idle (or on the first
+ * ⌘K, if that comes sooner) rather than with every app route's first load.
+ *
+ * The palette is always mounted closed before it opens: a Radix dialog that
+ * mounts already open does not move focus into the search box.
+ */
+function useCommandPalette(open: boolean) {
+  const [Palette, setPalette] = useState<CommandPaletteComponent | null>(null)
+  const [mountedClosed, setMountedClosed] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    const load = () =>
+      void import("@/components/command-palette").then((m) => {
+        if (!cancelled) setPalette(() => m.CommandPalette)
+      })
+
+    if (open) {
+      load()
+      return () => {
+        cancelled = true
+      }
+    }
+
+    /** Safari has no `requestIdleCallback`. */
+    const idle = typeof window.requestIdleCallback === "function"
+    const id = idle
+      ? window.requestIdleCallback(load)
+      : window.setTimeout(load, 1)
+    return () => {
+      cancelled = true
+      if (idle) window.cancelIdleCallback(id)
+      else window.clearTimeout(id)
+    }
+  }, [open])
+
+  useEffect(() => {
+    // Opening has to wait for the commit that mounted the palette closed.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (Palette) setMountedClosed(true)
+  }, [Palette])
+
+  return { Palette, canOpen: mountedClosed }
+}
 
 /**
  * What every rail button wears.
@@ -153,6 +201,7 @@ export function AppSidebar({
   const isMac = useIsMac()
   const { state, setOpenMobile } = useSidebar()
   const [searchOpen, setSearchOpen] = useState(false)
+  const { Palette, canOpen } = useCommandPalette(searchOpen)
 
   const newGameHint = isMac ? "⌘⇧O" : "Ctrl ⇧ O"
   const searchHint = isMac ? "⌘K" : "Ctrl K"
@@ -194,11 +243,13 @@ export function AppSidebar({
 
   return (
     <>
-      <CommandPalette
-        games={games}
-        open={searchOpen}
-        onOpenChange={setSearchOpen}
-      />
+      {Palette && (
+        <Palette
+          games={games}
+          open={searchOpen && canOpen}
+          onOpenChange={setSearchOpen}
+        />
+      )}
       <Sidebar collapsible="icon" variant="floating" {...props}>
         <SidebarHeader className="flex-row items-center justify-between group-data-[collapsible=icon]:justify-center">
           <Link
