@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
    */
   serverExternalPackages: ["@daytona/sdk"],
   cacheComponents: true,
-  partialPrefetching: false,
+  partialPrefetching: true,
   devIndicators: false,
   allowedDevOrigins: ['192.168.1.234'],
 }
