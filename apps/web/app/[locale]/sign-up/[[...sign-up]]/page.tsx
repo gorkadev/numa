@@ -1,10 +1,5 @@
 import { redirect } from "next/navigation"
 
-// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
-// Remove this opt-out after verifying the segment passes validation without it.
-// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
-export const instant = false;
-
 /**
  * There is no separate sign-up flow: every provider in `lib/auth.ts` is a
  * social provider, and `signIn.social` creates the account on first use the
