@@ -120,6 +120,14 @@ export default function proxy(request: NextRequest): NextResponse {
     return NextResponse.next()
   }
 
+  // A signed-in browser has nothing left to do on the TOTP challenge. Same
+  // optimistic cookie-presence check as the sign-in redirect below: it gives a
+  // real 307 without reading the session, so the challenge page can be
+  // prerendered (Cache Components). The page's own guard is no longer needed.
+  if (pathname === "/sign-in/two-factor" && getSessionCookie(request)) {
+    return NextResponse.redirect(new URL("/", request.url))
+  }
+
   // Public auth pages still need locale negotiation and the internal rewrite
   // to app/[locale]. Only public handler paths bypass locale middleware above.
   const localeResponse = handleI18nRouting(request)
