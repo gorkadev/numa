@@ -8,11 +8,6 @@ import {
   devScreensEnabled,
 } from "@/lib/dev-screens"
 
-// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
-// Remove this opt-out after verifying the segment passes validation without it.
-// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
-export const instant = false;
-
 /** A desktop viewport, shrunk to fit a card. */
 const FRAME = { width: 1280, height: 800, scale: 0.3 }
 

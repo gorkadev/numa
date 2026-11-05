@@ -51,11 +51,6 @@ import { getLocale, getTranslations } from "next-intl/server"
 
 import { changePlanAction } from "./actions"
 
-// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
-// Remove this opt-out after verifying the segment passes validation without it.
-// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
-export const instant = false;
-
 /**
  * Renders an estimated charge, in cents, as a dollar amount for the upgrade
  * preview.
