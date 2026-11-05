@@ -17,7 +17,14 @@ import { requireSession } from "@/lib/session"
 const MAX_HITS = 8
 const SNIPPET_RADIUS = 40
 
-export type MessageHit = { gameId: string; title: string; snippet: string }
+export type MessageHit = {
+  gameId: string
+  title: string
+  snippet: string
+  /** Where the matching message sits in the thread, so the palette can open it there. */
+  position: number
+  messageId: string
+}
 
 /**
  * The player's games whose chat mentions `query`, one hit per game, newest
@@ -40,8 +47,11 @@ export async function searchGameMessages(query: string): Promise<MessageHit[]> {
     id: string
     title: string
     text: string
+    position: number
+    message_id: string | null
   }>(sql`
-    select distinct on (g.created_at, g.id) g.id, g.title, part.text
+    select distinct on (g.created_at, g.id)
+      g.id, g.title, part.text, m.position, m.message ->> 'id' as message_id
     from games g
       join game_messages m on m.game_id = g.id,
       lateral jsonb_path_query(
@@ -56,7 +66,17 @@ export async function searchGameMessages(query: string): Promise<MessageHit[]> {
 
   return rows.flatMap((row) => {
     const snippet = matchSnippet(row.text, needle, SNIPPET_RADIUS)
-    return snippet ? [{ gameId: row.id, title: row.title, snippet }] : []
+    return snippet && row.message_id
+      ? [
+          {
+            gameId: row.id,
+            title: row.title,
+            snippet,
+            position: row.position,
+            messageId: row.message_id,
+          },
+        ]
+      : []
   })
 }
 
