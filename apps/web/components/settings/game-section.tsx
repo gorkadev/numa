@@ -54,6 +54,7 @@ export function GameSettingsSection() {
           defaultTierId: null,
           showSessionStats: true,
           wrapCodeBlocks: true,
+          profileActivityMetric: "turns",
         })
       )
   }, [])

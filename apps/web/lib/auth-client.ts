@@ -3,6 +3,7 @@ import {
   lastLoginMethodClient,
   multiSessionClient,
   twoFactorClient,
+  usernameClient,
 } from "better-auth/client/plugins"
 import { passkeyClient } from "@better-auth/passkey/client"
 
@@ -37,6 +38,9 @@ import { passkeyClient } from "@better-auth/passkey/client"
  * `lastLoginMethodClient()` adds `getLastUsedLoginMethod()`. It reads a
  * plain cookie the server set (`httpOnly: false` by design), so it answers
  * synchronously, with no request, on a page where nobody is signed in yet.
+ *
+ * `usernameClient()` types `user.username` on the session and lets
+ * `updateUser({ username })` set it; the server plugin validates it there.
  */
 export const authClient = createAuthClient({
   plugins: [
@@ -44,5 +48,6 @@ export const authClient = createAuthClient({
     passkeyClient(),
     multiSessionClient(),
     lastLoginMethodClient(),
+    usernameClient(),
   ],
 })

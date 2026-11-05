@@ -1,9 +1,10 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useSyncExternalStore } from "react"
 import { PencilEdit01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { useTranslations } from "next-intl"
+import Link from "next/link"
+import { useFormatter, useTranslations } from "next-intl"
 import { Button } from "@workspace/ui/components/button"
 import {
   Avatar,
@@ -20,110 +21,97 @@ import {
   HeatmapCalendar,
   type HeatmapDatum,
 } from "@workspace/ui/components/heatmap-calendar"
-import {
-  ToggleGroup,
-  ToggleGroupItem,
-} from "@workspace/ui/components/toggle-group"
 
 import { MobileSidebarTrigger } from "@/components/mobile-sidebar-trigger"
+import { useSettingsDialog } from "@/hooks/use-settings-dialog"
 import { initials } from "@/lib/format/initials"
+import {
+  ACTIVITY_WINDOW_DAYS,
+  activityStats,
+  dailyTotals,
+  dayKey,
+  type ActivityMetric,
+  type ProfileActivity,
+} from "@/lib/profile/activity"
 
-type Mode = "daily" | "weekly" | "cumulative"
-type Labels = Record<
-  | "title"
-  | "sample"
-  | "exampleHandle"
-  | "games"
-  | "tokens"
-  | "days"
-  | "integrations"
-  | "activity"
-  | "daily"
-  | "weekly"
-  | "cumulative"
-  | "less"
-  | "more"
-  | "units"
-  | "statistics"
-  | "activeDays"
-  | "average"
-  | "peak"
-  | "mostUsed"
-  | "exampleIntegration"
-  | "notConnected",
-  string
->
+function subscribeNever() {
+  return () => {}
+}
 
-// Fixed example series: no account usage or integration information is queried here.
-function exampleDaily(index: number) {
-  return index % 11 === 0
-    ? 0
-    : ((index * 17 + Math.floor(index / 7) * 3) % 8) + 1
+/**
+ * The viewer's time zone. The server renders in UTC; hydration keeps that
+ * value, then React re-renders with the browser's own zone, so days are the
+ * viewer's local days without the server ever having to know them.
+ */
+function useTimeZone() {
+  return useSyncExternalStore(
+    subscribeNever,
+    () => Intl.DateTimeFormat().resolvedOptions().timeZone,
+    () => "UTC"
+  )
 }
 
 export function ProfilePage({
   name,
   email,
   image,
-  labels,
+  username,
   locale,
+  metric,
+  activity,
 }: {
   name: string
   email: string
   image?: string | null
-  labels: Labels
+  username: string | null
   locale: string
+  metric: ActivityMetric
+  activity: ProfileActivity
 }) {
   const t = useTranslations("Profile")
-  const [mode, setMode] = useState<Mode>("daily")
-  const [today] = useState(() => new Date())
-  const year = today.getFullYear()
-  // Calendar keys are UTC dates, but "today" follows the viewer's local calendar day.
-  const dayCount =
-    Math.round(
-      (Date.UTC(year, today.getMonth(), today.getDate()) -
-        Date.UTC(year, 0, 1)) /
-        86_400_000
-    ) + 1
-  const dailyValues = useMemo(
-    () => Array.from({ length: dayCount }, (_, index) => exampleDaily(index)),
-    [dayCount]
+  const format = useFormatter()
+  const { openSettings } = useSettingsDialog()
+  const timeZone = useTimeZone()
+
+  const daily = useMemo(
+    () => dailyTotals(activity.buckets, metric, timeZone),
+    [activity.buckets, metric, timeZone]
   )
-  const total = dailyValues.reduce((sum, value) => sum + value, 0)
-  const activeDays = dailyValues.filter((value) => value > 0).length
-  const peak = Math.max(...dailyValues)
-  const formatNumber = new Intl.NumberFormat(locale)
-  const data = useMemo<HeatmapDatum[]>(() => {
-    let cumulative = 0
-    return dailyValues.map((daily, index) => {
-      cumulative += daily
-      const value =
-        mode === "daily"
-          ? daily
-          : mode === "weekly"
-            ? dailyValues
-                .slice(Math.max(0, index - 6), index + 1)
-                .reduce((sum, count) => sum + count, 0)
-            : cumulative
-      return { date: new Date(Date.UTC(year, 0, index + 1)), value }
-    })
-  }, [dailyValues, mode, year])
+  const today = dayKey(new Date(), timeZone)
+  const stats = activityStats(daily, today, ACTIVITY_WINDOW_DAYS)
+  const data = useMemo<HeatmapDatum[]>(
+    () => Array.from(daily, ([date, value]) => ({ date, value })),
+    [daily]
+  )
+
+  const number = (value: number) =>
+    format.number(value, { maximumFractionDigits: 1 })
+  const withUnit = (value: number) =>
+    `${number(value)} ${t(`units.${metric}`, { count: value })}`
 
   const summary = [
-    { label: labels.games, value: formatNumber.format(12) },
-    { label: labels.tokens, value: formatNumber.format(total) },
-    { label: labels.days, value: formatNumber.format(activeDays) },
-    { label: labels.integrations, value: formatNumber.format(0) },
+    { label: t("games"), value: number(activity.gameCount) },
+    { label: t(`metrics.${metric}`), value: number(stats.total) },
+    { label: t("activeDays"), value: number(stats.activeDays) },
+    {
+      label: t("currentStreak"),
+      value: t("days", { count: stats.currentStreak }),
+    },
   ]
   const statistics = [
-    { label: labels.activeDays, value: formatNumber.format(activeDays) },
+    { label: t("average"), value: withUnit(stats.average) },
     {
-      label: labels.average,
-      value: `${formatNumber.format(Math.round(total / dayCount))} ${labels.units}`,
+      label: t("peak"),
+      value: stats.peak
+        ? `${format.dateTime(new Date(`${stats.peak.date}T12:00:00`), {
+            day: "numeric",
+            month: "short",
+          })} · ${withUnit(stats.peak.value)}`
+        : "—",
     },
     {
-      label: labels.peak,
-      value: `${formatNumber.format(peak)} ${labels.units}`,
+      label: t("longestStreak"),
+      value: t("days", { count: stats.longestStreak }),
     },
   ]
 
@@ -132,9 +120,13 @@ export function ProfilePage({
       <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-1 px-4">
         <MobileSidebarTrigger className="-ms-1.5" />
         <h1 className="min-w-0 flex-1 truncate text-sm font-medium">
-          {labels.title}
+          {t("title")}
         </h1>
-        <Button variant="ghost" size="sm" disabled>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => openSettings("account")}
+        >
           <HugeiconsIcon icon={PencilEdit01Icon} />
           {t("edit")}
         </Button>
@@ -149,19 +141,24 @@ export function ProfilePage({
           </Avatar>
           <div>
             <h2 className="text-2xl font-semibold tracking-tight">{name}</h2>
-            <p className="text-muted-foreground">{email}</p>
-            <p className="text-sm text-muted-foreground">
-              {labels.exampleHandle}
-            </p>
+            {username ? (
+              <p className="text-muted-foreground">@{username}</p>
+            ) : (
+              <button
+                type="button"
+                className="text-muted-foreground underline-offset-4 hover:underline"
+                onClick={() => openSettings("account", "username")}
+              >
+                {t("setUsername")}
+              </button>
+            )}
+            <p className="text-sm text-muted-foreground">{email}</p>
           </div>
-          <p className="rounded-md bg-muted px-3 py-1 text-sm text-muted-foreground">
-            {labels.sample}
-          </p>
         </div>
 
         <div
           className="grid grid-cols-2 overflow-hidden rounded-xl border bg-card md:grid-cols-4"
-          aria-label={labels.title}
+          aria-label={t("title")}
         >
           {summary.map(({ label, value }) => (
             <div
@@ -174,39 +171,23 @@ export function ProfilePage({
           ))}
         </div>
 
-        <section aria-label={labels.activity} className="space-y-4">
+        <section aria-labelledby="profile-activity" className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold">{labels.activity}</h2>
-            <ToggleGroup
-              value={[mode]}
-              onValueChange={(values) => {
-                const next = values[0]
-                if (
-                  next === "daily" ||
-                  next === "weekly" ||
-                  next === "cumulative"
-                )
-                  setMode(next)
-              }}
-              variant="outline"
+            <h2 id="profile-activity" className="text-lg font-semibold">
+              {t(`total.${metric}`, { count: stats.total })}
+            </h2>
+            <Button
+              variant="ghost"
               size="sm"
-              aria-label={labels.activity}
+              onClick={() => openSettings("account", "profile-activity")}
             >
-              {(["daily", "weekly", "cumulative"] as const).map((option) => (
-                <ToggleGroupItem
-                  key={option}
-                  value={option}
-                  aria-label={labels[option]}
-                >
-                  {labels[option]}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
+              {t("changeMetric")}
+            </Button>
           </div>
           <HeatmapCalendar
             calendarOnly
             data={data}
-            year={year}
+            rangeDays={ACTIVITY_WINDOW_DAYS}
             cellSize={10}
             cellGap={2}
             tooltipDelay={150}
@@ -221,8 +202,7 @@ export function ProfilePage({
             ]}
             renderTooltip={(cell) => (
               <span>
-                {cell.label}: {formatNumber.format(cell.value)} {labels.units} ·{" "}
-                {labels.sample}
+                {cell.label}: {withUnit(cell.value)}
               </span>
             )}
             axisLabels={{ showWeekdays: false }}
@@ -232,33 +212,41 @@ export function ProfilePage({
         <div className="grid gap-3 md:grid-cols-2">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">{labels.statistics}</CardTitle>
+              <CardTitle className="text-base">{t("statistics")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <p className="text-xs text-muted-foreground">{labels.sample}</p>
               {statistics.map(({ label, value }) => (
                 <div
                   key={label}
                   className="flex justify-between gap-4 border-b pb-2 last:border-0"
                 >
                   <span className="text-muted-foreground">{label}</span>
-                  <strong className="tabular-nums">{value}</strong>
+                  <strong className="text-end tabular-nums">{value}</strong>
                 </div>
               ))}
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">{labels.mostUsed}</CardTitle>
+              <CardTitle className="text-base">{t("topGames")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <p className="text-xs text-muted-foreground">{labels.sample}</p>
-              <div className="rounded-lg border p-3">
-                <p className="font-medium">{labels.exampleIntegration}</p>
-                <p className="text-sm text-muted-foreground">
-                  {labels.notConnected}
-                </p>
-              </div>
+              {activity.topGames.length === 0 ? (
+                <p className="text-sm text-muted-foreground">{t("noGames")}</p>
+              ) : (
+                activity.topGames.map((game) => (
+                  <Link
+                    key={game.id}
+                    href={`/games/${game.id}`}
+                    className="flex justify-between gap-4 border-b pb-2 last:border-0 hover:text-foreground"
+                  >
+                    <span className="min-w-0 truncate">{game.title}</span>
+                    <span className="shrink-0 text-muted-foreground tabular-nums">
+                      {t("turnCount", { count: game.turns })}
+                    </span>
+                  </Link>
+                ))
+              )}
             </CardContent>
           </Card>
         </div>

@@ -8,6 +8,7 @@ const settings = {
   defaultTierId: null,
   showSessionStats: true,
   wrapCodeBlocks: false,
+  profileActivityMetric: "turns" as const,
 }
 
 test("a toggle offers the opposite of its saved value", () => {

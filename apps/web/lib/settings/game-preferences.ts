@@ -1,6 +1,7 @@
 import { z } from "zod"
 
 import { isTierId, tierIdSchema, type TierId } from "@/lib/ai/model-catalog"
+import { ACTIVITY_METRICS, type ActivityMetric } from "@/lib/profile/activity"
 
 export type GameSettings = {
   improverOverageBilling: boolean
@@ -10,6 +11,12 @@ export type GameSettings = {
   showSessionStats: boolean
   /** Whether code blocks start with line wrapping on. */
   wrapCodeBlocks: boolean
+  /** What the profile's activity heatmap counts. */
+  profileActivityMetric: ActivityMetric
+}
+
+function isActivityMetric(value: unknown): value is ActivityMetric {
+  return ACTIVITY_METRICS.includes(value as ActivityMetric)
 }
 
 /**
@@ -24,6 +31,7 @@ export function gameSettingsOf(
         defaultTierId: string | null
         showSessionStats: boolean
         wrapCodeBlocks: boolean
+        profileActivityMetric?: string
       }
     | undefined
 ): GameSettings {
@@ -32,6 +40,9 @@ export function gameSettingsOf(
     defaultTierId: isTierId(row?.defaultTierId) ? row.defaultTierId : null,
     showSessionStats: row?.showSessionStats ?? true,
     wrapCodeBlocks: row?.wrapCodeBlocks ?? true,
+    profileActivityMetric: isActivityMetric(row?.profileActivityMetric)
+      ? row.profileActivityMetric
+      : "turns",
   }
 }
 
@@ -46,6 +57,7 @@ export const gameSettingsPatchSchema = z.union([
   z.strictObject({ defaultTierId: tierIdSchema }),
   z.strictObject({ showSessionStats: z.boolean() }),
   z.strictObject({ wrapCodeBlocks: z.boolean() }),
+  z.strictObject({ profileActivityMetric: z.enum(ACTIVITY_METRICS) }),
 ])
 
 export type GameSettingsPatch = z.infer<typeof gameSettingsPatchSchema>

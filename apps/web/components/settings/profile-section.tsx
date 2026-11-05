@@ -31,6 +31,13 @@ import { Spinner } from "@/components/localized-spinner"
 import { authClient } from "@/lib/auth-client"
 import { initials } from "@/lib/format/initials"
 import {
+  normalizeUsername,
+  usernameIssue,
+  usernameIssueFromCode,
+  type UsernameIssue,
+} from "@/lib/profile/username"
+import { ProfileActivityRow } from "@/components/settings/profile-activity-row"
+import {
   SettingsGroup,
   SettingsRow,
 } from "@/components/settings/settings-group"
@@ -75,6 +82,11 @@ export function ProfileSection() {
   const [name, setName] = useState("")
   const [seededFor, setSeededFor] = useState<string | null>(null)
   const [savingName, setSavingName] = useState(false)
+  const [username, setUsername] = useState("")
+  const [savingUsername, setSavingUsername] = useState(false)
+  const [usernameProblem, setUsernameProblem] = useState<UsernameIssue | null>(
+    null
+  )
   const [removingImage, setRemovingImage] = useState(false)
   const [accounts, setAccounts] = useState<LinkedAccount[]>([])
   const [accountsLoading, setAccountsLoading] = useState(true)
@@ -88,6 +100,7 @@ export function ProfileSection() {
   if (user && seededFor !== user.id) {
     setSeededFor(user.id)
     setName(user.name ?? "")
+    setUsername(user.username ?? "")
   }
 
   async function loadAccounts() {
@@ -154,6 +167,50 @@ export function ProfileSection() {
       })
     } finally {
       if (mountedRef.current) setSavingName(false)
+    }
+  }
+
+  /**
+   * Checked here first so a bad value answers without a request, then saved;
+   * the plugin re-validates, lowercases and owns uniqueness. A cleared field
+   * puts the saved username back: nothing on the profile needs one removed.
+   */
+  async function saveUsername() {
+    const next = normalizeUsername(username)
+    const current = user?.username ?? ""
+    if (!next || next === current) {
+      setUsername(current)
+      setUsernameProblem(null)
+      return
+    }
+
+    const issue = usernameIssue(next)
+    if (issue) {
+      setUsernameProblem(issue)
+      return
+    }
+
+    setSavingUsername(true)
+    try {
+      const { error } = await authClient.updateUser({ username: next })
+      const problem = error ? usernameIssueFromCode(error.code) : null
+      setUsernameProblem(problem)
+      if (error && !problem) {
+        toast.add({
+          type: "error",
+          title: t("couldNotSaveUsername"),
+          description: t("genericError"),
+        })
+      }
+      if (!error) setUsername(next)
+    } catch {
+      toast.add({
+        type: "error",
+        title: t("couldNotSaveUsername"),
+        description: t("genericError"),
+      })
+    } finally {
+      if (mountedRef.current) setSavingUsername(false)
     }
   }
 
@@ -291,6 +348,47 @@ export function ProfileSection() {
             />
           </ItemActions>
         </SettingsRow>
+        <SettingsRow settingId="username">
+          <ItemContent>
+            <ItemTitle>{t("username")}</ItemTitle>
+            <ItemDescription
+              id="settings-username-description"
+              className={usernameProblem ? "text-destructive" : undefined}
+            >
+              {usernameProblem
+                ? t(`usernameIssues.${usernameProblem}`)
+                : t("usernameDescription")}
+            </ItemDescription>
+          </ItemContent>
+          <ItemActions>
+            {savingUsername && <Spinner className="size-4" />}
+            <Input
+              className="h-8 w-52"
+              aria-label={t("username")}
+              aria-describedby="settings-username-description"
+              aria-invalid={usernameProblem ? true : undefined}
+              autoCapitalize="none"
+              autoComplete="username"
+              spellCheck={false}
+              placeholder="@"
+              value={username}
+              disabled={savingUsername}
+              onChange={(event) => {
+                setUsername(event.target.value)
+                setUsernameProblem(null)
+              }}
+              onBlur={saveUsername}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") event.currentTarget.blur()
+                if (event.key === "Escape") {
+                  setUsername(user.username ?? "")
+                  setUsernameProblem(null)
+                  event.currentTarget.blur()
+                }
+              }}
+            />
+          </ItemActions>
+        </SettingsRow>
         <SettingsRow settingId="email">
           <ItemContent>
             <ItemTitle>{t("email")}</ItemTitle>
@@ -302,6 +400,10 @@ export function ProfileSection() {
             <span className="text-sm text-muted-foreground">{user.email}</span>
           </ItemActions>
         </SettingsRow>
+      </SettingsGroup>
+
+      <SettingsGroup>
+        <ProfileActivityRow />
       </SettingsGroup>
 
       {(accountsLoading || accountsError || accounts.length > 0) && (

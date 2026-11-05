@@ -15,11 +15,11 @@ const STATISTIC_ROWS = [0, 1, 2]
  * The profile fallback, mirroring `ProfilePage` block for block.
  *
  * Measured anchors: the 56px sticky header (`h-14` + `px-4`), the 80px avatar
- * (`size-20`), the `text-2xl` name line (32), the default-size email line (24)
- * and the `text-sm` handle (20), a stats strip that spans the content width
+ * (`size-20`), the `text-2xl` name line (32), the default-size username line
+ * (24) and the `text-sm` email (20), a stats strip that spans the content width
  * with four equal columns holding a 28px value and a 20px label, and two
- * detail cards that share a `md:grid-cols-2` row at the card primitive's 24px
- * radius.
+ * detail cards (statistics and top games, three rows each) that share a
+ * `md:grid-cols-2` row at the card primitive's 24px radius.
  *
  * The activity calendar is part of the page's height, so its footprint is
  * mirrored too as one block: 52 weeks and seven rows of ten-pixel cells with
@@ -44,7 +44,6 @@ export default function Loading() {
             <Skeleton className="h-6 w-56 max-w-full" />
             <Skeleton className="h-5 w-32" />
           </div>
-          <Skeleton className="h-7 w-24 rounded-md" />
         </div>
 
         <div className="grid grid-cols-2 overflow-hidden rounded-xl border bg-card md:grid-cols-4">
@@ -58,12 +57,8 @@ export default function Loading() {
 
         <section className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <Skeleton className="h-7 w-24" />
-            <div className="flex w-fit items-center gap-0.5">
-              <Skeleton className="h-7 w-14" />
-              <Skeleton className="h-7 w-16" />
-              <Skeleton className="h-7 w-24" />
-            </div>
+            <Skeleton className="h-7 w-56 max-w-full" />
+            <Skeleton className="h-7 w-40" />
           </div>
           <div className="overflow-x-auto">
             <div className="flex w-fit flex-col gap-1">
@@ -81,7 +76,6 @@ export default function Loading() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Skeleton className="h-4 w-40" />
               {STATISTIC_ROWS.map((row) => (
                 <div
                   key={row}
@@ -100,11 +94,15 @@ export default function Loading() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Skeleton className="h-4 w-32" />
-              <div className="flex flex-col gap-1 rounded-lg border p-3">
-                <Skeleton className="h-5 w-40" />
-                <Skeleton className="h-5 w-32" />
-              </div>
+              {STATISTIC_ROWS.map((row) => (
+                <div
+                  key={row}
+                  className="flex justify-between gap-4 border-b pb-2 last:border-0"
+                >
+                  <Skeleton className="h-5 w-36" />
+                  <Skeleton className="h-5 w-16" />
+                </div>
+              ))}
             </CardContent>
           </Card>
         </div>
