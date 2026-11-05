@@ -87,7 +87,6 @@ function GameEntry({
   contextWindows: Record<TierId, number>
   renderedAt: string
 }) {
-  const t = useTranslations("ChatActivity")
   const client = useQueryClient()
   const search = useSearchParams()
   const [initialTurn] = useState(() => readInitialTurn(search))
@@ -152,16 +151,7 @@ function GameEntry({
   if (!row) {
     if (!isError) return <ChatSkeleton />
 
-    return (
-      <div className="flex h-svh flex-col items-center justify-center gap-2">
-        <p role="alert" className="text-sm text-muted-foreground">
-          {t("loadEarlierFailed")}
-        </p>
-        <Button variant="ghost" size="sm" onClick={() => void refetch()}>
-          {t("retry")}
-        </Button>
-      </div>
-    )
+    return <GameLoadError onRetry={() => void refetch()} />
   }
 
   return (
@@ -184,5 +174,21 @@ function GameEntry({
         showSessionStats={row.settings.showSessionStats}
       />
     </CodeWrapProvider>
+  )
+}
+
+/** A game whose row could not be read: the chat has nothing to show yet. */
+export function GameLoadError({ onRetry }: { onRetry: () => void }) {
+  const t = useTranslations("ChatActivity")
+
+  return (
+    <div className="flex h-svh flex-col items-center justify-center gap-2">
+      <p role="alert" className="text-sm text-muted-foreground">
+        {t("loadEarlierFailed")}
+      </p>
+      <Button variant="ghost" size="sm" onClick={onRetry}>
+        {t("retry")}
+      </Button>
+    </div>
   )
 }
