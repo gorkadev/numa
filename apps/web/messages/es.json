@@ -59,6 +59,11 @@
     "description": "No se pudo cargar esta página. Inténtalo de nuevo.",
     "retry": "Intentar de nuevo"
   },
+  "NotFound": {
+    "title": "Página no encontrada",
+    "description": "Esta página no existe o no tienes acceso a ella.",
+    "home": "Volver al inicio"
+  },
   "Metadata": {
     "description": "Crea tus propios juegos de carreras, disparos, rompecabezas y mundos enteros con tus propias palabras. Si puedes describirlo, puedes jugarlo."
   },
