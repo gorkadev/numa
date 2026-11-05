@@ -3,6 +3,11 @@ import { redirect } from "next/navigation"
 import { TwoFactorChallenge } from "@/components/two-factor-challenge"
 import { getSession } from "@/lib/session"
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 /**
  * The TOTP sign-in challenge. `lib/oauth-two-factor.ts`'s
  * `TWO_FACTOR_CHALLENGE_URL` points here, and `proxy.ts`'s `isPublicPath`

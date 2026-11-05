@@ -9,6 +9,8 @@ const nextConfig: NextConfig = {
    * `sandbox.fs.downloadFile` throws, so the SDK runs as a plain Node package.
    */
   serverExternalPackages: ["@daytona/sdk"],
+  cacheComponents: true,
+  partialPrefetching: false,
   devIndicators: false,
   allowedDevOrigins: ['192.168.1.234'],
 }

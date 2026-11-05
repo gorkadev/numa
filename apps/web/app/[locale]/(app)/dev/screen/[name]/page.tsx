@@ -13,6 +13,11 @@ import PricingLoading from "../../../pricing/loading"
 import ProfileLoading from "../../../profile/loading"
 import PlayLoading from "../../../../games/[id]/play/loading"
 
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
+
 /**
  * One screen of the dev gallery (`/dev/screens`), inside the app shell like
  * the real routes. Errors are raised for real, so the real boundaries render

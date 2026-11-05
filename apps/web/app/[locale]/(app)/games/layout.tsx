@@ -1,5 +1,13 @@
+import { Suspense } from "react"
+import { connection } from "next/server"
+
 import { GameRoute } from "@/components/game-route"
 import { strongContextWindows } from "@/lib/ai/model-registry"
+
+// @next-codemod-ignore Cache Components adoption: this segment temporarily allows blocking.
+// Remove this opt-out after verifying the segment passes validation without it.
+// See: https://nextjs.org/docs/app/guides/migrating-to-cache-components
+export const instant = false;
 
 /**
  * The chat lives here rather than in the page because a layout survives moving
@@ -18,11 +26,22 @@ export default function GamesLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <>
-      <GameRoute
-        contextWindows={strongContextWindows()}
-        renderedAt={crypto.randomUUID()}
-      />
+      {/* TODO: Cache Components adoption. Added to unblock the build: remove this boundary to re-trigger the error and review the documented options. */}
+      <Suspense fallback={null}>
+        <FreshGameRoute />
+      </Suspense>
       {children}
     </>
+  )
+}
+
+async function FreshGameRoute() {
+  await connection()
+
+  return (
+    <GameRoute
+      contextWindows={strongContextWindows()}
+      renderedAt={crypto.randomUUID()}
+    />
   )
 }
