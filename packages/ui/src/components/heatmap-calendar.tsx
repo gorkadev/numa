@@ -192,10 +192,23 @@ function addDays(d: Date, days: number) {
   return x
 }
 
+/**
+ * The local calendar day of `d` as YYYY-MM-DD. The grid is built from local
+ * midnights, so a UTC key would shift every cell back a day east of UTC.
+ */
 function toKey(d: Date) {
-  // Using UTC ISO date key keeps things stable for demos.
-  // If you want strict local timezone day mapping, swap this to local YYYY-MM-DD generation.
-  return d.toISOString().slice(0, 10)
+  const month = String(d.getMonth() + 1).padStart(2, "0")
+  const day = String(d.getDate()).padStart(2, "0")
+  return `${d.getFullYear()}-${month}-${day}`
+}
+
+/** A "YYYY-MM-DD" datum names a calendar day, not the UTC midnight `new Date()` would read. */
+function parseDatumDate(date: string | Date) {
+  if (typeof date !== "string") return date
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date)
+  return match
+    ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+    : new Date(date)
 }
 
 function startOfWeek(d: Date, weekStartsOn: 0 | 1) {
@@ -372,8 +385,7 @@ export function HeatmapCalendar({
   const valueMap = React.useMemo(() => {
     const map = new Map<string, { value: number; meta?: unknown }>()
     for (const item of data) {
-      const d = typeof item.date === "string" ? new Date(item.date) : item.date
-      const key = toKey(d)
+      const key = toKey(parseDatumDate(item.date))
 
       const prev = map.get(key)
       const nextVal = (prev?.value ?? 0) + (item.value ?? 0) // sum merge
