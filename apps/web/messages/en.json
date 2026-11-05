@@ -59,6 +59,11 @@
     "description": "We could not load this page. Please try again.",
     "retry": "Try again"
   },
+  "NotFound": {
+    "title": "Page not found",
+    "description": "This page does not exist, or it is not yours to open.",
+    "home": "Go home"
+  },
   "Metadata": {
     "description": "Build your own racers, shooters, puzzles and whole worlds using your own words. If you can describe it, you can play it."
   },

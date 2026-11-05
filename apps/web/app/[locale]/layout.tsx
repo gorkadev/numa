@@ -1,6 +1,5 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
-import { Geist_Mono, Inter } from "next/font/google"
 import { hasLocale, NextIntlClientProvider } from "next-intl"
 import { getLocale, getMessages, getTranslations } from "next-intl/server"
 
@@ -12,13 +11,7 @@ import { LocalizedToaster } from "@/components/localized-toaster"
 import { TooltipProvider } from "@workspace/ui/components/tooltip"
 import { routing } from "@/i18n/routing"
 import { LocaleReconciler } from "@/components/locale-reconciler"
-
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
-
-const fontMono = Geist_Mono({
-  subsets: ["latin"],
-  variable: "--font-mono",
-})
+import { fontMono, inter } from "@/lib/fonts"
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Metadata")

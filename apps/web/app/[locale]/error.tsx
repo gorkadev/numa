@@ -1,14 +1,10 @@
 "use client"
 
+import { Alert02Icon } from "@hugeicons/core-free-icons"
 import { Button } from "@workspace/ui/components/button"
 import { useTranslations } from "next-intl"
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyTitle,
-} from "@workspace/ui/components/empty"
+
+import { StateScreen } from "@/components/state-screen"
 
 export default function Error({
   retry,
@@ -19,16 +15,11 @@ export default function Error({
   const t = useTranslations("Errors")
 
   return (
-    <main className="flex min-h-svh items-center justify-center p-6">
-      <Empty className="max-w-md">
-        <EmptyHeader>
-          <EmptyTitle>{t("title")}</EmptyTitle>
-          <EmptyDescription>{t("description")}</EmptyDescription>
-        </EmptyHeader>
-        <EmptyContent>
-          <Button onClick={retry}>{t("retry")}</Button>
-        </EmptyContent>
-      </Empty>
-    </main>
+    <StateScreen
+      icon={Alert02Icon}
+      title={t("title")}
+      description={t("description")}
+      action={<Button onClick={retry}>{t("retry")}</Button>}
+    />
   )
 }
