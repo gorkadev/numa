@@ -11,10 +11,10 @@ import {
 } from "@workspace/ui/components/empty"
 
 export default function Error({
-  unstable_retry,
+  retry,
 }: {
-  error: Error & { digest?: string }
-  unstable_retry: () => void
+  error: unknown
+  retry: () => void
 }) {
   const t = useTranslations("Errors")
 
@@ -26,7 +26,7 @@ export default function Error({
           <EmptyDescription>{t("description")}</EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
-          <Button onClick={unstable_retry}>{t("retry")}</Button>
+          <Button onClick={retry}>{t("retry")}</Button>
         </EmptyContent>
       </Empty>
     </main>
