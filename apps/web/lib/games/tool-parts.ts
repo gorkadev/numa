@@ -1,10 +1,8 @@
-import {
-  getToolName,
-  isToolUIPart,
-  type DynamicToolUIPart,
-  type ReasoningUIPart,
-  type ToolUIPart,
-  type UIMessage,
+import type {
+  DynamicToolUIPart,
+  ReasoningUIPart,
+  ToolUIPart,
+  UIMessage,
 } from "ai"
 
 import { askPlayerQuestion, type AskQuestion } from "@/lib/games/ask-player"
@@ -23,6 +21,21 @@ import type { PanelRun } from "@/lib/games/thread-page"
  * anyway.
  */
 export type ToolPart = ToolUIPart | DynamicToolUIPart
+
+/**
+ * `isToolUIPart` and `getToolName` as the AI SDK defines them, written out
+ * because this module reaches the browser on every app route (through
+ * `thread-page.ts`) and a value import from `"ai"` ships the whole SDK there.
+ */
+function isToolUIPart(part: UIMessage["parts"][number]): part is ToolPart {
+  return part.type.startsWith("tool-") || part.type === "dynamic-tool"
+}
+
+function getToolName(part: ToolPart): string {
+  return part.type === "dynamic-tool"
+    ? part.toolName
+    : part.type.split("-").slice(1).join("-")
+}
 
 /**
  * How each tool reads in the thread, as the three verbs a marker needs: what
