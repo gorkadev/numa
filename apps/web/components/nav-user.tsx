@@ -208,7 +208,9 @@ export function NavUser({ plan }: { plan: BillingPlan }) {
   }
 
   const { user } = session
-  const title = user.name || user.email
+  // A username, once set, stands in for the name where the active account is
+  // shown; the account list keeps name and email to tell accounts apart.
+  const title = user.username || user.name || user.email
   const planLabel = {
     none: t("planUnavailable"),
     free: t("free"),
