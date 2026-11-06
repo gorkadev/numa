@@ -16,7 +16,7 @@ const STATISTIC_ROWS = [0, 1, 2]
  *
  * Measured anchors: the 56px sticky header (`h-14` + `px-4`), the 80px avatar
  * (`size-20`), the `text-2xl` name line (32), the default-size username line
- * (24) and the `text-sm` email (20), a stats strip that spans the content width
+ * (24) and the `text-sm` email (20), a stats strip (the card primitive) that spans the content width
  * with four equal columns holding a 28px value and a 20px label, and two
  * detail cards (statistics and top games, three rows each) that share a
  * `md:grid-cols-2` row at the card primitive's 24px radius.
@@ -46,14 +46,14 @@ export default function Loading() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 overflow-hidden rounded-xl border bg-card md:grid-cols-4">
+        <Card className="grid grid-cols-2 gap-0 py-0 md:grid-cols-4">
           {SUMMARY_CELLS.map((cell) => (
             <div key={cell} className="min-w-0 p-3 text-center">
               <Skeleton className="mx-auto h-7 w-10" />
               <Skeleton className="mx-auto h-5 w-14" />
             </div>
           ))}
-        </div>
+        </Card>
 
         <section className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">

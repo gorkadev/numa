@@ -156,8 +156,8 @@ export function ProfilePage({
           </div>
         </div>
 
-        <div
-          className="grid grid-cols-2 overflow-hidden rounded-xl border bg-card md:grid-cols-4"
+        <Card
+          className="grid grid-cols-2 gap-0 py-0 md:grid-cols-4"
           aria-label={t("title")}
         >
           {summary.map(({ label, value }) => (
@@ -169,7 +169,7 @@ export function ProfilePage({
               <p className="truncate text-sm text-muted-foreground">{label}</p>
             </div>
           ))}
-        </div>
+        </Card>
 
         <section aria-labelledby="profile-activity" className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
