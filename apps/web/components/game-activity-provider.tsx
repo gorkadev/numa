@@ -8,6 +8,7 @@ import { useTranslations } from "next-intl"
 import { toast } from "@workspace/ui/components/toast"
 
 import { evictThread } from "@/components/chat/use-thread-data"
+import { moveSidebarGamesToTop } from "@/components/use-sidebar-games"
 import {
   activityTag,
   createActivityStore,
@@ -68,7 +69,12 @@ export function GameActivityProvider({
   }, [openGameId, store])
 
   useEffect(() => {
-    const finished = store.setWorking(workingGameIds(runs), seenGameIds(runs))
+    const working = workingGameIds(runs)
+    const started = [...working].filter((gameId) => !store.isWorking(gameId))
+    const finished = store.setWorking(working, seenGameIds(runs))
+
+    /** A turn starting is the player's message landing: "Recents" moves it up. */
+    moveSidebarGamesToTop(queryClient, started)
 
     /**
      * The key already changes with `lastTurnFinishedAt`, but a back navigation

@@ -989,6 +989,7 @@ export const gameChat = chat.agent({
     await saveGameThread({
       gameId: chatId,
       messages: withoutGameProgress(withThreadTier(uiMessages, clientData?.tier)),
+      messageSent: true,
     })
   },
 

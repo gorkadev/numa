@@ -98,3 +98,37 @@ export function combineGames(
 
   return [...pinned, ...recents]
 }
+
+/**
+ * How the unpinned games are ordered: by the last message the player sent
+ * (`activity`, the default, what "Recents" promises) or by when each game was
+ * created. Kept in a cookie so the server renders the first page in the
+ * player's order, with no flash of the other one.
+ */
+export type GamesSort = "activity" | "created"
+
+export const GAMES_SORT_COOKIE = "games-sort"
+
+/** Anything that is not one of the two orders reads as the default. */
+export function parseGamesSort(value: string | null | undefined): GamesSort {
+  return value === "created" ? "created" : "activity"
+}
+
+/**
+ * The loaded pages with one game moved to the top of the first, for the
+ * activity order: a message just sent makes it the most recent game, so the
+ * list can move it before the server has saved anything. A game already on
+ * top, or one no loaded page holds, returns the pages unchanged.
+ */
+export function moveGameToTop(
+  pages: readonly GamesPage[],
+  gameId: string
+): GamesPage[] {
+  const moved = pages.flatMap((page) => page.items).find((game) => game.id === gameId)
+  if (!moved || pages[0]?.items[0]?.id === gameId) return pages as GamesPage[]
+
+  return pages.map((page, index) => {
+    const items = page.items.filter((game) => game.id !== gameId)
+    return { ...page, items: index === 0 ? [moved, ...items] : items }
+  })
+}

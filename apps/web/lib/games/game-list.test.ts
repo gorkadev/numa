@@ -3,8 +3,10 @@ import test from "node:test"
 
 import {
   combineGames,
+  moveGameToTop,
   gamesPage,
   parseGamesCursor,
+  parseGamesSort,
   reviveGamesPage,
 } from "./game-list"
 
@@ -73,4 +75,32 @@ test("pinned games come first, then recents in page order, each game once", () =
     [id(9), id(1), id(2), id(3)]
   )
   assert.deepEqual(combineGames([], []), [])
+})
+
+test("the sort defaults to activity and accepts only the two known orders", () => {
+  assert.equal(parseGamesSort(undefined), "activity")
+  assert.equal(parseGamesSort("garbage"), "activity")
+  assert.equal(parseGamesSort("activity"), "activity")
+  assert.equal(parseGamesSort("created"), "created")
+})
+
+test("a game that just got a message moves to the top of the first page", () => {
+  const pages = [
+    { items: [game(1), game(2)], next: id(2) },
+    { items: [game(3), game(4)], next: null },
+  ]
+
+  const bumped = moveGameToTop(pages, id(3))
+  assert.deepEqual(
+    bumped.map((page) => page.items.map((item) => item.id)),
+    [[id(3), id(1), id(2)], [id(4)]]
+  )
+  assert.equal(bumped[0]?.next, id(2))
+})
+
+test("moving a game already on top, or one not loaded, leaves the pages as they are", () => {
+  const pages = [{ items: [game(1), game(2)], next: null }]
+
+  assert.equal(moveGameToTop(pages, id(1)), pages)
+  assert.equal(moveGameToTop(pages, id(9)), pages)
 })

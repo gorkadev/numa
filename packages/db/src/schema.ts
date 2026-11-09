@@ -1,4 +1,4 @@
-import { relations } from "drizzle-orm"
+import { relations, sql } from "drizzle-orm"
 import {
   boolean,
   index,
@@ -398,6 +398,14 @@ export const games = pgTable(
     lastReadAt: timestamp("last_read_at", { withTimezone: true }),
 
     /**
+     * When the player last sent a message, stamped by the save at the start of
+     * each turn with the database's `now()`. Null until the first one, so the
+     * sidebar's activity order reads `coalesce(last_message_at, created_at)`:
+     * a game nobody has written in yet sorts by when it was made.
+     */
+    lastMessageAt: timestamp("last_message_at", { withTimezone: true }),
+
+    /**
      * The thread's running totals, rewritten by every save, so the usage footer
      * describes the whole conversation without reading it. Typed loosely for
      * the reason `UsageBreakdown` is: the shape belongs to the app.
@@ -414,6 +422,15 @@ export const games = pgTable(
     index("games_user_id_created_at_idx").on(
       table.userId,
       table.createdAt.desc()
+    ),
+    /**
+     * The same read in the activity order (`readRecentGames`), on the exact
+     * expression it sorts and pages by, or Postgres could not use it.
+     */
+    index("games_user_id_activity_idx").on(
+      table.userId,
+      sql`coalesce(${table.lastMessageAt}, ${table.createdAt}) desc`,
+      table.id.desc()
     ),
   ]
 )
