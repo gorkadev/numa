@@ -69,6 +69,7 @@ import { useSidebarGames } from "@/components/use-sidebar-games"
 import { NavUser } from "@/components/nav-user"
 import { UpgradeCard } from "@/components/upgrade-card"
 import { useIsMac } from "@/hooks/use-is-mac"
+import { useRowFlip } from "@/hooks/use-row-flip"
 import { setGamesSort } from "@/lib/games/actions"
 import { useLiveBilling } from "@/hooks/use-live-billing"
 import { isGameUnread } from "@/lib/games/activity"
@@ -189,6 +190,18 @@ export function AppSidebar({
   /** The unread dots at load, from the rows already here; live changes come from the run subscription. */
   useSeedUnreadGames(games.filter(isGameUnread).map((game) => game.id))
   useSeedGameTitles(games)
+  useRowFlip(games)
+
+  /**
+   * Counts sort switches, so the list remounts (and fades in) on each one
+   * but not on first paint, where a fade would only delay the sidebar.
+   */
+  const [shownSort, setShownSort] = useState(sort)
+  const [sortSwitches, setSortSwitches] = useState(0)
+  if (sort !== shownSort) {
+    setShownSort(sort)
+    setSortSwitches((count) => count + 1)
+  }
 
 
   const pathname = usePathname()
@@ -548,7 +561,19 @@ export function AppSidebar({
                 </Empty>
               ) : (
                 <>
-                  <SidebarMenu>
+                  {/**
+                   * A new order is a whole new list, so it fades in rather
+                   * than every row sliding across: 150 ms from transparent,
+                   * through `@starting-style`, only after a switch.
+                   */}
+                  <SidebarMenu
+                    key={sortSwitches}
+                    className={
+                      sortSwitches > 0
+                        ? "transition-opacity duration-150 ease-out starting:opacity-0"
+                        : undefined
+                    }
+                  >
                     {recentGames.map((game) => (
                       <GameRow key={game.id} game={game} />
                     ))}
