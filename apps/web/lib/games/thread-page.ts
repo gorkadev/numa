@@ -1,6 +1,7 @@
 import type { UIMessage } from "ai"
 
 import type { SessionStats } from "@/lib/ai/session-usage"
+import type { MessageAnimationId } from "@/lib/chat/message-animations"
 import type { SubagentRunRecord } from "@/lib/games/harness/records"
 import type { TemplateId } from "@/lib/games/templates/catalog"
 import type { StoredOutlineTurn } from "@/lib/games/thread-outline"
@@ -154,7 +155,11 @@ export type GameRow = {
   lastTurnFinishedAt: number
   session?: { publicAccessToken: string; lastEventId?: string }
   unread: boolean
-  settings: { wrapCodeBlocks: boolean; showSessionStats: boolean }
+  settings: {
+    wrapCodeBlocks: boolean
+    showSessionStats: boolean
+    messageAnimation: MessageAnimationId
+  }
 }
 
 /**

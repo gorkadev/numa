@@ -712,6 +712,13 @@ export const userSettings = pgTable("user_settings", {
     .notNull()
     .default("turns"),
 
+  /**
+   * How a message the player sends enters the chat: one of the presets in
+   * `lib/chat/message-animations.ts`, or "none". Text for the same reason as
+   * the metric above; anything the app does not know reads as "slide-up".
+   */
+  messageAnimation: text("message_animation").notNull().default("slide-up"),
+
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

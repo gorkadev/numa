@@ -58,6 +58,7 @@ export async function GET(
     settings: {
       wrapCodeBlocks: settings.wrapCodeBlocks,
       showSessionStats: settings.showSessionStats,
+      messageAnimation: settings.messageAnimation,
     },
   }
 

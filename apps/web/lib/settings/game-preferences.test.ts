@@ -10,7 +10,21 @@ test("a user with no settings row reads the defaults", () => {
     showSessionStats: true,
     wrapCodeBlocks: true,
     profileActivityMetric: "turns",
+    messageAnimation: "slide-up",
   })
+})
+
+test("a stored message animation that is no longer a preset reads as slide-up", () => {
+  const row = {
+    improverOverageBilling: false,
+    defaultTierId: null,
+    showSessionStats: true,
+    wrapCodeBlocks: true,
+  }
+
+  assert.equal(gameSettingsOf({ ...row, messageAnimation: "pop" }).messageAnimation, "pop")
+  assert.equal(gameSettingsOf({ ...row, messageAnimation: "none" }).messageAnimation, "none")
+  assert.equal(gameSettingsOf({ ...row, messageAnimation: "wobble" }).messageAnimation, "slide-up")
 })
 
 test("a stored profile metric that is no longer a metric reads as turns", () => {
@@ -40,6 +54,7 @@ test("a stored tier that is no longer a tier reads as no preference", () => {
       showSessionStats: false,
       wrapCodeBlocks: false,
       profileActivityMetric: "tokens",
+      messageAnimation: "slide-up",
     }
   )
   assert.equal(
@@ -70,6 +85,10 @@ test("a patch accepts one known field at a time and nothing else", () => {
   assert.deepEqual(gameSettingsPatchSchema.parse({ profileActivityMetric: "credits" }), {
     profileActivityMetric: "credits",
   })
+  assert.deepEqual(gameSettingsPatchSchema.parse({ messageAnimation: "blur-fade" }), {
+    messageAnimation: "blur-fade",
+  })
+  assert.throws(() => gameSettingsPatchSchema.parse({ messageAnimation: "wobble" }))
   assert.throws(() => gameSettingsPatchSchema.parse({ profileActivityMetric: "minutes" }))
   assert.throws(() => gameSettingsPatchSchema.parse({ wrapCodeBlocks: "yes" }))
   assert.throws(() => gameSettingsPatchSchema.parse({ defaultTierId: "turbo" }))

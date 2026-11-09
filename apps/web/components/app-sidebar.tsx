@@ -69,7 +69,6 @@ import { useSidebarGames } from "@/components/use-sidebar-games"
 import { NavUser } from "@/components/nav-user"
 import { UpgradeCard } from "@/components/upgrade-card"
 import { useIsMac } from "@/hooks/use-is-mac"
-import { useRowFlip } from "@/hooks/use-row-flip"
 import { setGamesSort } from "@/lib/games/actions"
 import { useLiveBilling } from "@/hooks/use-live-billing"
 import { isGameUnread } from "@/lib/games/activity"
@@ -190,7 +189,6 @@ export function AppSidebar({
   /** The unread dots at load, from the rows already here; live changes come from the run subscription. */
   useSeedUnreadGames(games.filter(isGameUnread).map((game) => game.id))
   useSeedGameTitles(games)
-  useRowFlip(games)
 
   /**
    * Counts sort switches, so the list remounts (and fades in) on each one

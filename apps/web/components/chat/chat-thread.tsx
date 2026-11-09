@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import type { UIMessage } from "ai"
 import { useTranslations } from "next-intl"
+import { motion, useReducedMotion } from "motion/react"
 import { Alert01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
@@ -29,6 +30,7 @@ import { cn } from "@workspace/ui/lib/utils"
 import { ChatComposer } from "@/components/chat-composer"
 import { AssistantAvatar } from "@/components/chat/assistant-avatar"
 import { ChatMessage } from "@/components/chat/chat-message"
+import { useMessageAnimation } from "@/components/chat/message-animation"
 import { SearchJump } from "@/components/chat/search-jump"
 import { CompactingDivider, CompactionDivider } from "@/components/chat/compaction-divider"
 import { TaskStrip } from "@/components/chat/task-strip"
@@ -50,8 +52,17 @@ import { loadFileTree } from "@/lib/games/file-tree-cache"
 import { mentionFiles } from "@/lib/games/mentions"
 import { mergeOutlineTurns, outlineTurns } from "@/lib/games/thread-outline"
 import { readCompaction } from "@/lib/games/compaction"
+import { messageAnimationVariants } from "@/lib/chat/message-animations"
 import { pendingMessageJump } from "@/lib/games/message-jump"
 import { collectThreadSubagentRuns } from "@/lib/games/tool-parts"
+
+/**
+ * The scroller's row as a motion element, so a sent message can animate its
+ * entrance while keeping `messageId` and `scrollAnchor` (shadcn's "Animating
+ * New Messages"). Every user row renders through it, animated or not, so a
+ * row never switches component (and remounts) when the setting changes.
+ */
+const MotionMessageScrollerItem = motion.create(MessageScrollerItem)
 
 export function ChatThread({
   gameId,
@@ -297,16 +308,19 @@ export function ChatThread({
                     <CompactionDivider compaction={compaction} />
                   </MessageScrollerItem>
                 ) : (
-                <MessageScrollerItem
+                <ThreadRowItem
                   key={run.id}
                   messageId={run.id}
+                  user={run.role === "user"}
                   /**
                    * A turn starts where the player asked for something, so
                    * their message is what the viewport anchors on — the reply
                    * then streams below it rather than shoving it off screen.
                    * Only for messages sent from this mount; see `historyIds`.
+                   * The same test decides whether it animates in: a message
+                   * read back from history was never "sent" on this screen.
                    */
-                  scrollAnchor={run.role === "user" && !historyIds.has(run.id)}
+                  sent={run.role === "user" && !historyIds.has(run.id)}
                 >
                   <ChatMessage
                     role={run.role === "user" ? "user" : "assistant"}
@@ -320,7 +334,7 @@ export function ChatThread({
                     onSelectRun={onSelectRun}
                     onOpenFile={onOpenFile}
                   />
-                </MessageScrollerItem>
+                </ThreadRowItem>
                 )
               })}
               {compacting ? (
@@ -558,4 +572,46 @@ function groupRuns(messages: UIMessage[]): Run[] {
   }
 
   return runs
+}
+
+/**
+ * One message row of the thread. The player's rows go through the motion
+ * item and, when they were just sent, enter with the preset chosen in
+ * Settings › Game (shadcn's presets, `lib/chat/message-animations.ts`); with
+ * "none", reduced motion or a row from history, `initial={false}` renders
+ * them in place. The agent's rows stay plain: their reply streams in, which
+ * is already its own entrance.
+ */
+function ThreadRowItem({
+  messageId,
+  user,
+  sent,
+  children,
+}: {
+  messageId: string
+  user: boolean
+  sent: boolean
+  children: React.ReactNode
+}) {
+  const animation = useMessageAnimation()
+  const reduceMotion = useReducedMotion()
+
+  if (!user) {
+    return <MessageScrollerItem messageId={messageId}>{children}</MessageScrollerItem>
+  }
+
+  const variants = messageAnimationVariants(animation)
+  const animate = sent && variants !== undefined && !reduceMotion
+
+  return (
+    <MotionMessageScrollerItem
+      messageId={messageId}
+      scrollAnchor={sent}
+      variants={variants}
+      initial={animate ? "initial" : false}
+      animate="animate"
+    >
+      {children}
+    </MotionMessageScrollerItem>
+  )
 }

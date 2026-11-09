@@ -43,6 +43,13 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
     description: "Settings.game.sessionStatsDescription",
   },
   {
+    id: "message-animation",
+    section: "game",
+    title: "Settings.game.messageAnimation",
+    description: "Settings.game.messageAnimationDescription",
+    keywords: "Settings.searchKeywords.messageAnimation",
+  },
+  {
     id: "wrap-code",
     section: "game",
     title: "Settings.game.wrapCode",
