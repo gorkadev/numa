@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useTransition } from "react"
 
 import Image from "next/image"
 import Link from "next/link"
@@ -8,13 +8,28 @@ import { usePathname, useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
 import {
   LibraryIcon,
+  ListFilterIcon,
   MessageCircleIcon,
   PencilEdit02Icon,
   SearchIcon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import type { GameListItem, GamesPage } from "@/lib/games/game-list"
+import {
+  parseGamesSort,
+  type GameListItem,
+  type GamesPage,
+  type GamesSort,
+} from "@/lib/games/game-list"
 import { Button } from "@workspace/ui/components/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu"
 import { Empty, EmptyDescription } from "@workspace/ui/components/empty"
 import { Kbd } from "@workspace/ui/components/kbd"
 import {
@@ -29,6 +44,7 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
+  SidebarGroupAction,
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
@@ -53,6 +69,7 @@ import { useSidebarGames } from "@/components/use-sidebar-games"
 import { NavUser } from "@/components/nav-user"
 import { UpgradeCard } from "@/components/upgrade-card"
 import { useIsMac } from "@/hooks/use-is-mac"
+import { setGamesSort } from "@/lib/games/actions"
 import { useLiveBilling } from "@/hooks/use-live-billing"
 import { isGameUnread } from "@/lib/games/activity"
 import type { BillingSummary } from "@/lib/polar/plan"
@@ -126,6 +143,7 @@ const SEARCH_KEY = "k"
 export function AppSidebar({
   pinned,
   recents,
+  sort,
   billing: initialBilling,
   upgradeHref,
   ...props
@@ -134,6 +152,8 @@ export function AppSidebar({
   pinned: GameListItem[]
   /** The first page of the unpinned games; the rest load as the list scrolls. */
   recents: GamesPage
+  /** The order the layout read the first page in, from the sort cookie. */
+  sort: GamesSort
   billing: BillingSummary
   /**
    * The checkout URL for the Pro product, built by the layout.
@@ -164,7 +184,7 @@ export function AppSidebar({
     loadingMore,
     loadMoreFailed,
     loadMore,
-  } = useSidebarGames({ pinned, recents })
+  } = useSidebarGames({ pinned, recents, sort })
 
   /** The unread dots at load, from the rows already here; live changes come from the run subscription. */
   useSeedUnreadGames(games.filter(isGameUnread).map((game) => game.id))
@@ -511,6 +531,7 @@ export function AppSidebar({
            */}
           <SidebarGroup className="min-h-0 flex-1 pb-0 group-data-[collapsible=icon]:hidden">
             <SidebarGroupLabel>{t("recents")}</SidebarGroupLabel>
+            <GamesSortMenu sort={sort} />
             <SidebarGroupContent className="no-scrollbar min-h-0 flex-1 scroll-fade overflow-x-hidden overflow-y-auto overscroll-contain pb-2">
               {games.length === 0 ? (
                 <Empty className="border p-3">
@@ -540,5 +561,58 @@ export function AppSidebar({
         </SidebarFooter>
       </Sidebar>
     </>
+  )
+}
+
+/**
+ * The order of the "Recents" list, beside its label: the last message sent
+ * (the default) or when each game was created. The choice is saved by a
+ * server action that sets the cookie and re-renders the shell, so the radio
+ * shows the pending choice at once while the new first page is on its way.
+ */
+function GamesSortMenu({ sort }: { sort: GamesSort }) {
+  const t = useTranslations("Shell")
+  const [pending, startTransition] = useTransition()
+  const [chosen, setChosen] = useState(sort)
+  const value = pending ? chosen : sort
+
+  return (
+    <DropdownMenu>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <DropdownMenuTrigger
+              render={
+                <SidebarGroupAction aria-label={t("sortGames")}>
+                  <HugeiconsIcon icon={ListFilterIcon} />
+                </SidebarGroupAction>
+              }
+            />
+          }
+        />
+        <TooltipContent side="right">{t("sortGames")}</TooltipContent>
+      </Tooltip>
+      <DropdownMenuContent align="end" className="w-44">
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>{t("sortGames")}</DropdownMenuLabel>
+          <DropdownMenuRadioGroup
+            value={value}
+            onValueChange={(next) => {
+              const parsed = parseGamesSort(String(next))
+              if (parsed === value) return
+              setChosen(parsed)
+              startTransition(() => setGamesSort(parsed))
+            }}
+          >
+            <DropdownMenuRadioItem value="activity" closeOnClick>
+              {t("sortByActivity")}
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="created" closeOnClick>
+              {t("sortByCreated")}
+            </DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

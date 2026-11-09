@@ -1,5 +1,6 @@
 import { db } from "@workspace/db"
-import type { Game } from "@workspace/db/schema"
+import { games, type Game } from "@workspace/db/schema"
+import { sql, type SQL } from "drizzle-orm"
 
 import {
   GAME_LIST_COLUMNS,
@@ -7,6 +8,7 @@ import {
   gamesPage,
   type GameListItem,
   type GamesPage,
+  type GamesSort,
 } from "@/lib/games/game-list"
 import { requireSession } from "@/lib/session"
 
@@ -40,29 +42,53 @@ export async function listPinnedGames(): Promise<GameListItem[]> {
 }
 
 /**
- * One page of the user's unpinned games, newest first.
+ * What each order sorts and pages by. The activity key is the expression
+ * `games_user_id_activity_idx` is built on, spelled the same way, so the
+ * index serves it.
+ */
+const SORT_KEYS: Record<GamesSort, { row: SQL; cursor: SQL }> = {
+  activity: {
+    row: sql`coalesce(${games.lastMessageAt}, ${games.createdAt})`,
+    cursor: sql`coalesce(g.last_message_at, g.created_at)`,
+  },
+  created: {
+    row: sql`${games.createdAt}`,
+    cursor: sql`g.created_at`,
+  },
+}
+
+/**
+ * One page of the user's unpinned games, in the order the player chose: the
+ * latest message first (`activity`), or the newest game first (`created`).
  *
- * Keyset pagination on `(created_at, id)`. The cursor is only the last game's
- * id, and its `created_at` is read here, in the same statement: the stored
+ * Keyset pagination on `(sort key, id)`. The cursor is only the last game's
+ * id, and its sort key is read here, in the same statement: the stored
  * microseconds never cross JavaScript, which keeps milliseconds and would
  * place the cursor between two rows. A cursor naming a game that is gone (or
  * someone else's) matches nothing and ends the list instead of restarting it.
+ *
+ * In the activity order a game can move up between two page reads, when a
+ * message lands in it; it then appears again, already on top, the next time
+ * the first page renders, and `combineGames` keeps it from showing twice.
  */
 export async function readRecentGames(
   userId: string,
-  after?: string
+  after?: string,
+  sort: GamesSort = "activity"
 ): Promise<GamesPage> {
+  const key = SORT_KEYS[sort]
+
   const rows = await db.query.games.findMany({
     columns: GAME_LIST_COLUMNS,
-    where: (game, { and, eq, isNull, sql }) =>
+    where: (game, { and, eq, isNull }) =>
       and(
         eq(game.userId, userId),
         isNull(game.pinnedAt),
         after
-          ? sql`(${game.createdAt}, ${game.id}) < (select g.created_at, g.id from games g where g.id = ${after} and g.user_id = ${userId})`
+          ? sql`(${key.row}, ${game.id}) < (select ${key.cursor}, g.id from games g where g.id = ${after} and g.user_id = ${userId})`
           : undefined
       ),
-    orderBy: (game, { desc }) => [desc(game.createdAt), desc(game.id)],
+    orderBy: (game) => [sql`${key.row} desc`, sql`${game.id} desc`],
     limit: GAMES_PAGE_SIZE + 1,
   })
 
@@ -74,14 +100,14 @@ export async function readRecentGames(
  * first page of the rest. Runs on every render of the shell, so it reads a
  * bounded number of rows however many games the user has.
  */
-export async function listSidebarGames(): Promise<{
+export async function listSidebarGames(sort: GamesSort): Promise<{
   pinned: GameListItem[]
   recents: GamesPage
 }> {
   const { user } = await requireSession()
   const [pinned, recents] = await Promise.all([
     listPinnedGames(),
-    readRecentGames(user.id),
+    readRecentGames(user.id, undefined, sort),
   ])
 
   return { pinned, recents }

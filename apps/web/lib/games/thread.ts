@@ -216,6 +216,7 @@ export async function saveGameThread({
   chatAccessToken,
   lastEventId,
   turnFinished = false,
+  messageSent = false,
 }: {
   gameId: string
   messages: UIMessage[]
@@ -228,6 +229,11 @@ export async function saveGameThread({
    * the moment it began.
    */
   turnFinished?: boolean
+  /**
+   * Stamps `last_message_at`, the sidebar's activity order. Only the save at
+   * the start of a turn passes it: that turn is the player's message.
+   */
+  messageSent?: boolean
 }): Promise<void> {
   await db.transaction(async (tx) => {
     const [game] = await tx
@@ -286,6 +292,7 @@ export async function saveGameThread({
         ...(chatAccessToken === undefined ? {} : { chatAccessToken }),
         ...(lastEventId === undefined ? {} : { lastEventId }),
         ...(turnFinished ? { lastTurnFinishedAt: sql`now()` } : {}),
+        ...(messageSent ? { lastMessageAt: sql`now()` } : {}),
       })
       .where(eq(games.id, gameId))
   })

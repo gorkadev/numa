@@ -17,6 +17,7 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { GameActivityProvider } from "@/components/game-activity-provider"
 import { QueryProvider } from "@/components/query-provider"
 import { createActivityToken } from "@/lib/games/activity-token"
+import { GAMES_SORT_COOKIE, parseGamesSort } from "@/lib/games/game-list"
 import { listSidebarGames } from "@/lib/games/queries"
 import { ensureBillingCustomer } from "@/lib/polar/customers"
 import { summarizeBillingState } from "@/lib/polar/plan"
@@ -75,12 +76,14 @@ async function AuthenticatedSidebar({
    * own boundary lets the route content render after billing is ready while the
    * sidebar replaces its geometry-preserving fallback independently.
    */
-  const { pinned, recents } = await listSidebarGames()
+  const sort = parseGamesSort((await cookies()).get(GAMES_SORT_COOKIE)?.value)
+  const { pinned, recents } = await listSidebarGames(sort)
 
   return (
     <AppSidebar
       pinned={pinned}
       recents={recents}
+      sort={sort}
       billing={billing}
       upgradeHref={`/checkout?products=${POLAR_PRODUCT_PRO_ID}`}
     />

@@ -1,6 +1,7 @@
 "use server"
 
 import { refresh } from "next/cache"
+import { cookies } from "next/headers"
 import { getTranslations } from "next-intl/server"
 import { redirect } from "next/navigation"
 import { db } from "@workspace/db"
@@ -10,6 +11,11 @@ import { and, eq } from "drizzle-orm"
 
 import { DEFAULT_TIER_ID, isTierId } from "@/lib/ai/model-catalog"
 import { parseAttachmentParts } from "@/lib/games/attachments"
+import {
+  GAMES_SORT_COOKIE,
+  parseGamesSort,
+  type GamesSort,
+} from "@/lib/games/game-list"
 import { resolveUtilityModel } from "@/lib/ai/model-registry"
 import { deleteGameSandboxes } from "@/lib/daytona/utils"
 import {
@@ -350,4 +356,22 @@ export async function deleteGame(
   if (viewing) redirect("/")
 
   return null
+}
+
+/**
+ * Remembers how the player orders the sidebar's games, for a year, and
+ * re-renders the shell so the first page arrives in the new order. A cookie
+ * rather than a user setting: it is a view preference of this browser, read
+ * by the layout on every render, and costs no query.
+ */
+export async function setGamesSort(sort: GamesSort): Promise<void> {
+  await requireSession()
+
+  ;(await cookies()).set(GAMES_SORT_COOKIE, parseGamesSort(sort), {
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+    sameSite: "lax",
+  })
+
+  refresh()
 }
