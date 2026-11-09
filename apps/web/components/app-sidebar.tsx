@@ -530,8 +530,15 @@ export function AppSidebar({
            * and does not repeat below it.
            */}
           <SidebarGroup className="min-h-0 flex-1 pb-0 group-data-[collapsible=icon]:hidden">
-            <SidebarGroupLabel>{t("recents")}</SidebarGroupLabel>
-            <GamesSortMenu sort={sort} />
+            {/**
+             * The label's own row is the hover target, so the sort button only
+             * shows up when the pointer is on "Recents", not anywhere in the
+             * list below it.
+             */}
+            <div className="group/recents relative">
+              <SidebarGroupLabel>{t("recents")}</SidebarGroupLabel>
+              <GamesSortMenu sort={sort} />
+            </div>
             <SidebarGroupContent className="no-scrollbar min-h-0 flex-1 scroll-fade overflow-x-hidden overflow-y-auto overscroll-contain pb-2">
               {games.length === 0 ? (
                 <Empty className="border p-3">
@@ -583,8 +590,17 @@ function GamesSortMenu({ sort }: { sort: GamesSort }) {
           render={
             <DropdownMenuTrigger
               render={
-                <SidebarGroupAction aria-label={t("sortGames")}>
-                  <HugeiconsIcon icon={ListFilterIcon} />
+                <SidebarGroupAction
+                  aria-label={t("sortGames")}
+                  /**
+                   * Sized to the `text-xs` label beside it, and hidden until
+                   * that row is hovered from `md` up; keyboard focus and an
+                   * open menu keep it visible. Touch screens have no hover, so
+                   * below `md` it always shows.
+                   */
+                  className="top-1.5 right-1.5 text-sidebar-foreground/70 transition-opacity md:opacity-0 md:group-hover/recents:opacity-100 md:focus-visible:opacity-100 md:data-popup-open:opacity-100 [&>svg]:size-3.5"
+                >
+                  <HugeiconsIcon icon={ListFilterIcon} strokeWidth={2} />
                 </SidebarGroupAction>
               }
             />

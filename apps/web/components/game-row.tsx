@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation"
 import type { GameListItem } from "@/lib/games/queries"
 import { useTranslations } from "next-intl"
 import { MarqueeText } from "@workspace/ui/components/marquee-text"
-import { Spinner } from "@workspace/ui/components/spinner"
 import { PopoverClose } from "@workspace/ui/components/popover"
 import {
   SidebarMenuAction,
@@ -95,7 +94,7 @@ export function GameRow({
       {(working || unread) && (
         <span className="pointer-events-none absolute top-1.5 right-1 hidden aspect-square w-5 items-center justify-center text-sidebar-foreground/70 group-data-[collapsible=icon]:hidden md:flex md:group-hover/menu-item:opacity-0 md:group-focus-within/menu-item:opacity-0 md:group-has-aria-expanded/menu-item:opacity-0">
           {working ? (
-            <Spinner label={t("working")} />
+            <WorkingRing label={t("working")} />
           ) : (
             <span role="status" aria-label={t("unread")} className="size-2 rounded-full bg-primary" />
           )}
@@ -108,5 +107,31 @@ export function GameRow({
         trigger={<SidebarMenuAction showOnHover />}
       />
     </SidebarMenuItem>
+  )
+}
+
+/**
+ * The row's "the agent is working" mark: a faint ring in the app's primary
+ * blue with a brighter arc running around it, the same dot colour as the
+ * unread mark it turns into. Still under reduced motion, where the ring alone
+ * says the turn is in progress.
+ */
+function WorkingRing({ label }: { label: string }) {
+  return (
+    <svg
+      role="status"
+      aria-label={label}
+      viewBox="0 0 16 16"
+      fill="none"
+      className="size-3.5 animate-spin text-primary [animation-duration:900ms] motion-reduce:animate-none"
+    >
+      <circle cx="8" cy="8" r="6" stroke="currentColor" strokeOpacity={0.2} strokeWidth={2} />
+      <path
+        d="M8 2a6 6 0 0 1 6 6"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+    </svg>
   )
 }
