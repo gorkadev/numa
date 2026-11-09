@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { notFound } from "next/navigation"
 import { hasLocale, NextIntlClientProvider } from "next-intl"
 import { getMessages, getTranslations } from "next-intl/server"
@@ -27,9 +27,17 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     description: t("description"),
     icons: {
-      icon: "/logo.svg",
+      icon: [
+        { url: "/logo.svg", type: "image/svg+xml" },
+        { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      ],
+      apple: "/icons/apple-icon.png",
     },
   }
+}
+
+export const viewport: Viewport = {
+  themeColor: "#2563eb",
 }
 
 export default async function RootLayout({
