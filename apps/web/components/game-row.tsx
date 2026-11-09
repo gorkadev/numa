@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import type { GameListItem } from "@/lib/games/queries"
 import { useTranslations } from "next-intl"
+import { motion, useReducedMotion } from "motion/react"
 import { MarqueeText } from "@workspace/ui/components/marquee-text"
 import { PopoverClose } from "@workspace/ui/components/popover"
 import {
@@ -15,6 +16,19 @@ import {
 
 import { useGameUnread, useGameWorking } from "@/components/game-activity-provider"
 import { GameMenu } from "@/components/game-menu"
+import { useSidebarReorders } from "@/components/use-sidebar-games"
+
+const MotionSidebarMenuItem = motion.create(SidebarMenuItem)
+
+/**
+ * The slide a row makes when a sent message moves its game to the top:
+ * strong ease-in-out, since the rows move on screen rather than enter or
+ * leave, and short enough not to hold up the list.
+ */
+const REORDER_TRANSITION = {
+  duration: 0.25,
+  ease: [0.77, 0, 0.175, 1],
+} as const
 
 /**
  * One game in the Recents list.
@@ -44,6 +58,8 @@ export function GameRow({
   const t = useTranslations("GameMenu")
   const working = useGameWorking(game.id)
   const unread = useGameUnread(game.id)
+  const reorders = useSidebarReorders()
+  const reduceMotion = useReducedMotion()
 
   const row = (
     <SidebarMenuButton
@@ -63,9 +79,19 @@ export function GameRow({
   /**
    * `data-marquee-group` gives the title the whole row as its hover target,
    * rather than only the few pixels the text itself covers.
+   *
+   * `layoutDependency` limits the layout animation to the reorders a sent
+   * message causes (`moveSidebarGamesToTop` counts them): Motion only
+   * measures the row when that count changes, so loading a page, switching
+   * the sort or a refresh moves rows without sliding them.
    */
   return (
-    <SidebarMenuItem data-marquee-group data-flip-row={game.id}>
+    <MotionSidebarMenuItem
+      data-marquee-group
+      layout={reduceMotion ? false : "position"}
+      layoutDependency={reorders}
+      transition={REORDER_TRANSITION}
+    >
       {closeOnSelect ? (
         <PopoverClose nativeButton={false} render={row} />
       ) : (
@@ -106,7 +132,7 @@ export function GameRow({
         pinned={game.pinnedAt !== null}
         trigger={<SidebarMenuAction showOnHover />}
       />
-    </SidebarMenuItem>
+    </MotionSidebarMenuItem>
   )
 }
 

@@ -19,6 +19,7 @@ async function readSettingsRow(userId: string) {
       showSessionStats: userSettings.showSessionStats,
       wrapCodeBlocks: userSettings.wrapCodeBlocks,
       profileActivityMetric: userSettings.profileActivityMetric,
+      messageAnimation: userSettings.messageAnimation,
     })
     .from(userSettings)
     .where(eq(userSettings.userId, userId))

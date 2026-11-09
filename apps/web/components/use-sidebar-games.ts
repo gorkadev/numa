@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useSyncExternalStore } from "react"
 import {
   useInfiniteQuery,
   useQueryClient,
@@ -15,7 +15,6 @@ import {
   type GamesPage,
   type GamesSort,
 } from "@/lib/games/game-list"
-import { captureRowPositions } from "@/hooks/use-row-flip"
 
 type LoadedPages = { pages: GamesPage[]; pageParams: (string | null)[] }
 
@@ -28,6 +27,28 @@ const queryKey = (sort: GamesSort) => ["sidebar-games", "recents", sort] as cons
  * order on the server, so the next render of the first page agrees; this only
  * saves waiting for it. The creation order never moves, so it is left alone.
  */
+let reorders = 0
+const reorderListeners = new Set<() => void>()
+
+function subscribeReorders(listener: () => void) {
+  reorderListeners.add(listener)
+  return () => {
+    reorderListeners.delete(listener)
+  }
+}
+
+/**
+ * How many times a sent message has moved a game to the top in this tab: the
+ * rows' `layoutDependency`, so they slide only on those reorders.
+ */
+export function useSidebarReorders(): number {
+  return useSyncExternalStore(
+    subscribeReorders,
+    () => reorders,
+    () => 0
+  )
+}
+
 export function moveSidebarGamesToTop(
   queryClient: QueryClient,
   gameIds: readonly string[]
@@ -41,8 +62,12 @@ export function moveSidebarGamesToTop(
   const pages = gameIds.reduce(moveGameToTop, loaded.pages)
   if (pages === loaded.pages) return
 
-  /** Only a reorder that really happens is animated; see `useRowFlip`. */
-  captureRowPositions()
+  /**
+   * Counted before the list changes, so the rows read the new count in the
+   * same render that moves them: that is what tells Motion to measure.
+   */
+  reorders += 1
+  for (const listener of reorderListeners) listener()
   queryClient.setQueryData<LoadedPages>(key, { ...loaded, pages })
 }
 

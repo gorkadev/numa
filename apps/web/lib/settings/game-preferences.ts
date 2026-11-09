@@ -1,6 +1,12 @@
 import { z } from "zod"
 
 import { isTierId, tierIdSchema, type TierId } from "@/lib/ai/model-catalog"
+import {
+  DEFAULT_MESSAGE_ANIMATION,
+  isMessageAnimationId,
+  MESSAGE_ANIMATION_IDS,
+  type MessageAnimationId,
+} from "@/lib/chat/message-animations"
 import { ACTIVITY_METRICS, type ActivityMetric } from "@/lib/profile/activity"
 
 export type GameSettings = {
@@ -13,6 +19,8 @@ export type GameSettings = {
   wrapCodeBlocks: boolean
   /** What the profile's activity heatmap counts. */
   profileActivityMetric: ActivityMetric
+  /** How a sent message enters the chat; `none` for no animation. */
+  messageAnimation: MessageAnimationId
 }
 
 function isActivityMetric(value: unknown): value is ActivityMetric {
@@ -32,6 +40,7 @@ export function gameSettingsOf(
         showSessionStats: boolean
         wrapCodeBlocks: boolean
         profileActivityMetric?: string
+        messageAnimation?: string
       }
     | undefined
 ): GameSettings {
@@ -43,6 +52,9 @@ export function gameSettingsOf(
     profileActivityMetric: isActivityMetric(row?.profileActivityMetric)
       ? row.profileActivityMetric
       : "turns",
+    messageAnimation: isMessageAnimationId(row?.messageAnimation)
+      ? row.messageAnimation
+      : DEFAULT_MESSAGE_ANIMATION,
   }
 }
 
@@ -58,6 +70,7 @@ export const gameSettingsPatchSchema = z.union([
   z.strictObject({ showSessionStats: z.boolean() }),
   z.strictObject({ wrapCodeBlocks: z.boolean() }),
   z.strictObject({ profileActivityMetric: z.enum(ACTIVITY_METRICS) }),
+  z.strictObject({ messageAnimation: z.enum(MESSAGE_ANIMATION_IDS) }),
 ])
 
 export type GameSettingsPatch = z.infer<typeof gameSettingsPatchSchema>

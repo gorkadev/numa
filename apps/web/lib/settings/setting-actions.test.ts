@@ -9,6 +9,7 @@ const settings = {
   showSessionStats: true,
   wrapCodeBlocks: false,
   profileActivityMetric: "turns" as const,
+  messageAnimation: "slide-up" as const,
 }
 
 test("a toggle offers the opposite of its saved value", () => {

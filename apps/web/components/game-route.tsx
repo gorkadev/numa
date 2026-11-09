@@ -9,6 +9,7 @@ import { Button } from "@workspace/ui/components/button"
 
 import { ChatSkeleton } from "@/components/chat/chat-skeleton"
 import { CodeWrapProvider } from "@/components/chat/code-wrap"
+import { MessageAnimationProvider } from "@/components/chat/message-animation"
 import { useGameWorking } from "@/components/game-activity-provider"
 import { GameChat } from "@/components/game-chat"
 import { isTierId, type TierId } from "@/lib/ai/model-catalog"
@@ -156,6 +157,7 @@ function GameEntry({
 
   return (
     <CodeWrapProvider wrap={row.settings.wrapCodeBlocks}>
+      <MessageAnimationProvider animation={row.settings.messageAnimation}>
       <GameChat
         gameId={gameId}
         title={row.title}
@@ -173,6 +175,7 @@ function GameEntry({
         contextWindows={contextWindows}
         showSessionStats={row.settings.showSessionStats}
       />
+      </MessageAnimationProvider>
     </CodeWrapProvider>
   )
 }

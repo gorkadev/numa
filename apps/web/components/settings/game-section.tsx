@@ -29,9 +29,14 @@ import { SpeechSettings } from "@/components/settings/speech-settings"
 import { DEFAULT_TIER_ID, TIERS, isTierId } from "@/lib/ai/model-catalog"
 import { IMPROVER_DAILY_LIMIT } from "@/lib/games/improver/allowance"
 import { publishImproverAllowanceStale } from "@/lib/games/improver/allowance-channel"
-import type {
-  GameSettings,
-  GameSettingsPatch,
+import {
+  isMessageAnimationId,
+  MESSAGE_ANIMATION_IDS,
+} from "@/lib/chat/message-animations"
+import {
+  gameSettingsOf,
+  type GameSettings,
+  type GameSettingsPatch,
 } from "@/lib/settings/game-preferences"
 import {
   readGameSettings,
@@ -41,6 +46,7 @@ import {
 export function GameSettingsSection() {
   const t = useTranslations("Settings.game")
   const tiers = useTranslations("GameComposer.tiers")
+  const animations = useTranslations("Settings.game.messageAnimations")
   const router = useRouter()
   const [settings, setSettings] = useState<GameSettings | null>(null)
   const [saving, startSaving] = useTransition()
@@ -48,15 +54,7 @@ export function GameSettingsSection() {
   useEffect(() => {
     readGameSettings()
       .then(setSettings)
-      .catch(() =>
-        setSettings({
-          improverOverageBilling: false,
-          defaultTierId: null,
-          showSessionStats: true,
-          wrapCodeBlocks: true,
-          profileActivityMetric: "turns",
-        })
-      )
+      .catch(() => setSettings(gameSettingsOf(undefined)))
   }, [])
 
   /**
@@ -86,6 +84,11 @@ export function GameSettingsSection() {
    * The labels around them are static and render straight away.
    */
   const loading = settings === null
+
+  const animationItems = MESSAGE_ANIMATION_IDS.map((id) => ({
+    value: id,
+    label: animations(id),
+  }))
 
   const tierItems = TIERS.map((tier) => ({
     value: tier.id,
@@ -150,6 +153,44 @@ export function GameSettingsSection() {
                 disabled={saving}
                 onCheckedChange={(next) => change({ showSessionStats: next })}
               />
+            )}
+          </ItemActions>
+        </SettingsRow>
+        <SettingsRow settingId="message-animation">
+          <ItemContent>
+            <ItemTitle id="settings-message-animation">
+              {t("messageAnimation")}
+            </ItemTitle>
+            <ItemDescription>{t("messageAnimationDescription")}</ItemDescription>
+          </ItemContent>
+          <ItemActions>
+            {loading ? (
+              <Skeleton className="h-8 w-24 rounded-2xl" />
+            ) : (
+              <Select
+                value={settings.messageAnimation}
+                onValueChange={(value) => {
+                  if (isMessageAnimationId(value)) change({ messageAnimation: value })
+                }}
+                items={animationItems}
+              >
+                <SelectTrigger
+                  aria-labelledby="settings-message-animation"
+                  disabled={saving}
+                  className="w-full sm:w-auto"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {animationItems.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>
+                        {item.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
             )}
           </ItemActions>
         </SettingsRow>
