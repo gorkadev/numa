@@ -65,7 +65,7 @@ export function GameRow({
    * rather than only the few pixels the text itself covers.
    */
   return (
-    <SidebarMenuItem data-marquee-group>
+    <SidebarMenuItem data-marquee-group data-flip-row={game.id}>
       {closeOnSelect ? (
         <PopoverClose nativeButton={false} render={row} />
       ) : (

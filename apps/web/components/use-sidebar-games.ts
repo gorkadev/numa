@@ -15,6 +15,7 @@ import {
   type GamesPage,
   type GamesSort,
 } from "@/lib/games/game-list"
+import { captureRowPositions } from "@/hooks/use-row-flip"
 
 type LoadedPages = { pages: GamesPage[]; pageParams: (string | null)[] }
 
@@ -33,14 +34,16 @@ export function moveSidebarGamesToTop(
 ) {
   if (gameIds.length === 0) return
 
-  queryClient.setQueryData<LoadedPages>(queryKey("activity"), (loaded) =>
-    loaded
-      ? {
-          ...loaded,
-          pages: gameIds.reduce(moveGameToTop, loaded.pages),
-        }
-      : loaded
-  )
+  const key = queryKey("activity")
+  const loaded = queryClient.getQueryData<LoadedPages>(key)
+  if (!loaded) return
+
+  const pages = gameIds.reduce(moveGameToTop, loaded.pages)
+  if (pages === loaded.pages) return
+
+  /** Only a reorder that really happens is animated; see `useRowFlip`. */
+  captureRowPositions()
+  queryClient.setQueryData<LoadedPages>(key, { ...loaded, pages })
 }
 
 /**
